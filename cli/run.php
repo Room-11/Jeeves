@@ -46,8 +46,6 @@ $cookies = array_map(function($cookie) {
 
 $cookiesHeader = implode('; ', $cookies);
 
-var_dump($cookiesHeader);die;
-
 \Amp\run(function () use ($webSocketUrl, $cookiesHeader) {
     //$handshake = new Handshake($webSocketurl . 'l=57332223');
     $handshake = new Handshake($webSocketUrl . 'l=57365782');
