@@ -1,3 +1,3 @@
 <?php
 
-require_once __DIR__ . '/init.example.php';
+require_once __DIR__ . '/init.development.php';

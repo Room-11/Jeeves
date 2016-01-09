@@ -18,6 +18,8 @@ Chat bot for StackOverflow. Playground for [amphp](https://github.com/amphp) lib
 - Navigate to the openid login page https://openid.stackexchange.com/account/login
 - Find the fkey value (hidden field)
 - Log in using the fkey, username and password at https://openid.stackexchange.com/account/login/submit
+- Navigate to http://stackoverflow.com/users/login?returnurl=stackoverflow.com%2f
+- Log in using the fkey, username and password at http://stackoverflow.com/users/authenticate
 - Get the websocket URL by making a POST request to http://chat.stackoverflow.com/ws-auth with the room id and the fkey
 
 ### Setup the websocket connection

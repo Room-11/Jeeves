@@ -22,6 +22,10 @@ if (!$openIdClient->logIn($fkey)) {
     throw new \Exception('OpenId log in failed.');
 }
 
+$stackOverflowFkey = $openIdClient->getStackOverflowFkey();
+
+var_dump($openIdClient->logInStackOverflow($stackOverflowFkey));
+die;
 $openIdClient->getWebSocketUri($fkey);
 
 /*

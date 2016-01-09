@@ -64,11 +64,50 @@ class Client
     private function verifyLogIn(string $body): bool
     {
         $dom = new \DOMDocument();
-        $dom->loadHTML($body);
+        @$dom->loadHTML($body);
 
         $xpath = new \DOMXPath($dom);
 
         return !$xpath->evaluate("//*[contains(concat(' ', @class, ' '), ' error ')]")->length;
+    }
+
+    public function getStackOverflowFkey(): string
+    {
+        $promise = $this->httpClient->request('http://stackoverflow.com/users/login?returnurl=stackoverflow.com%2f');
+        $response = \Amp\wait($promise);
+
+        $dom = new \DOMDocument();
+        @$dom->loadHTML($response->getBody());
+
+        foreach ($dom->getElementsByTagName('input') as $inputNode) {
+            if (!$inputNode->hasAttribute('name') || $inputNode->getAttribute('name') !== 'fkey') {
+                continue;
+            }
+
+            return $inputNode->getAttribute('value');
+        }
+
+        throw new \Exception('fkey node not found on the page');
+    }
+
+    public function logInStackOverflow(string $fkey): bool
+    {
+        $body = (new FormBody)
+            ->addField('email', $this->credentials->getEmailAddress())
+            ->addField('password', $this->credentials->getPassword())
+            ->addField('fkey', $fkey)
+        ;
+
+        $request = (new Request)
+            ->setUri('http://stackoverflow.com/users/authenticate')
+            ->setMethod('POST')
+            ->setBody($body)
+        ;
+
+        $promise = $this->httpClient->request($request);
+        $response = \Amp\wait($promise);
+
+        return $this->verifyLogin($response->getBody());
     }
 
     public function getWebSocketUri(string $fkey)
@@ -77,12 +116,21 @@ class Client
             ->addField('roomid', 100238) // @todo don't hardcode the room id although 11 is the best
             ->addField('fkey', $fkey)
         ;
-
+var_dump($fkey);die;
         $request = (new Request)
             ->setUri('http://chat.stackoverflow.com/ws-auth')
             ->setMethod('POST')
             ->setBody($body)
+            ->setHeader('X-Requested-With', 'XMLHttpRequest')
         ;
+
+        $request = (new Request)
+            ->setUri('http://chat.stackoverflow.com/rooms/thumbs/11')
+            //->setMethod('POST')
+            //->setBody($body)
+            ->setHeader('X-Requested-With', 'XMLHttpRequest')
+        ;
+
 
         $promise = $this->httpClient->request($request);
         $response = \Amp\wait($promise);
