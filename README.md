@@ -6,9 +6,10 @@ Chat bot for StackOverflow. Playground for [amphp](https://github.com/amphp) lib
 ## Installation
 
 1. Clone the project
-2. Copy init.example.php to init.whatever.php
-3. Change the init include in init.deployment.php
-4. Run the bot using `php ./cli/run.php`
+1. Copy init.example.php to init.whatever.php
+1. Set your openid credentials in init.whatever.php
+1. Change the init include in init.deployment.php
+1. Run the bot using `php ./cli/run.php`
 
 ## Request flow for chat
 
@@ -18,3 +19,7 @@ Chat bot for StackOverflow. Playground for [amphp](https://github.com/amphp) lib
 - Find the fkey value (hidden field)
 - Log in using the fkey, username and password at https://openid.stackexchange.com/account/login/submit
 - Get the websocket URL by making a POST request to http://chat.stackoverflow.com/ws-auth with the room id and the fkey
+
+### Setup the websocket connection
+
+- /ws-auth should return the websocket URI to connect to
