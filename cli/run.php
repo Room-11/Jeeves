@@ -11,7 +11,9 @@ use Room11\Jeeves\OpenId\Client;
 
 require_once __DIR__ . '/../bootstrap.php';
 
-$cookieJar    = new FileCookieJar(__DIR__ . '/../data/cookies' . time() . '.txt');
+$jarName = __DIR__ . '/../data/cookies' . time() . '.txt';
+
+$cookieJar    = new FileCookieJar($jarName);
 $httpClient   = new HttpClient($cookieJar);
 
 $openIdClient = new Client($openIdCredentials, $httpClient);
@@ -24,9 +26,15 @@ if (!$openIdClient->logIn($fkey)) {
 
 $stackOverflowFkey = $openIdClient->getStackOverflowFkey();
 
-var_dump($openIdClient->logInStackOverflow($stackOverflowFkey));
+if (!$openIdClient->logInStackOverflow($stackOverflowFkey)) {
+    throw new \Exception('StackOverflow OpenId log in failed.');
+}
 die;
-$openIdClient->getWebSocketUri($fkey);
+$chatKey = $openIdClient->getChatStackOverflowFkey();
+
+$httpClient->setOption(HttpClient::OP_VERBOSITY, HttpClient::VERBOSE_SEND);
+
+$openIdClient->getWebSocketUri($chatKey);
 
 /*
 \Amp\run(function () {
