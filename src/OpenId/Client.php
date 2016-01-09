@@ -166,22 +166,11 @@ class Client
             ->setUri('http://chat.stackoverflow.com/ws-auth')
             ->setMethod('POST')
             ->setBody($body)
-            //->setHeader('X-Requested-With', 'XMLHttpRequest')
         ;
-
-        //var_dump($request);die;
-/*
-        $request = (new Request)
-            ->setUri('http://chat.stackoverflow.com/rooms/thumbs/11')
-            //->setMethod('POST')
-            //->setBody($body)
-            ->setHeader('X-Requested-With', 'XMLHttpRequest')
-        ;
-*/
 
         $promise = $this->httpClient->request($request);
         $response = \Amp\wait($promise);
 
-        //var_dump($response);
+        return json_decode($response->getBody(), true)['url'];
     }
 }

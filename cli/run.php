@@ -34,9 +34,11 @@ if (!$openIdClient->logInStackOverflow($stackOverflowFkey)) {
 
 $chatKey = $openIdClient->getChatStackOverflowFkey();
 
-$httpClient->setOption(HttpClient::OP_VERBOSITY, HttpClient::VERBOSE_SEND);
+//$httpClient->setOption(HttpClient::OP_VERBOSITY, HttpClient::VERBOSE_SEND);
 
-$openIdClient->getWebSocketUri($chatKey);
+$webSocketurl = $openIdClient->getWebSocketUri($chatKey);
+
+var_dump($webSocketurl);
 
 /*
 \Amp\run(function () {

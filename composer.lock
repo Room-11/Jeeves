@@ -70,12 +70,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/artax.git",
-                "reference": "f0d174ad0b42a6f619fdccfcb99a3059b90e5acc"
+                "reference": "858802e9a2f0628e706be5f193df0a4970f0a116"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/artax/zipball/f0d174ad0b42a6f619fdccfcb99a3059b90e5acc",
-                "reference": "f0d174ad0b42a6f619fdccfcb99a3059b90e5acc",
+                "url": "https://api.github.com/repos/amphp/artax/zipball/858802e9a2f0628e706be5f193df0a4970f0a116",
+                "reference": "858802e9a2f0628e706be5f193df0a4970f0a116",
                 "shasum": ""
             },
             "require": {
@@ -120,7 +120,7 @@
                 "parallel",
                 "rest"
             ],
-            "time": "2015-11-10 00:53:00"
+            "time": "2016-01-09 19:46:13"
         },
         {
             "name": "amphp/cache",
