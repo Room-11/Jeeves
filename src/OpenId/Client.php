@@ -73,7 +73,7 @@ class Client
 
     public function getStackOverflowFkey(): string
     {
-        $promise = $this->httpClient->request('http://stackoverflow.com/users/login?returnurl=%2f');
+        $promise = $this->httpClient->request('https://stackoverflow.com/users/login?returnurl=%2f');
         $response = \Amp\wait($promise);
 
         $dom = new \DOMDocument();
@@ -104,7 +104,7 @@ class Client
         ;
 
         $request = (new Request)
-            ->setUri('http://stackoverflow.com/users/login?returnurl=%2f')
+            ->setUri('https://stackoverflow.com/users/login?returnurl=%2f')
             ->setMethod('POST')
             ->setBody($body)
         ;
@@ -112,12 +112,8 @@ class Client
         $promise = $this->httpClient->request($request);
         $response = \Amp\wait($promise);
 
-        var_dump('THIS SHOULD BE A POST REQUEST (SEE ABOVE) BUT ARTAX TELLS ME IT IS A GET REQUEST');
-        var_dump($response);
-
+        // @todo check if login succeeded
         return true;
-
-        //return $this->verifyLogin($response->getBody());
     }
 
     public function logInStackOverflow_x(string $fkey): bool
@@ -142,7 +138,7 @@ class Client
 
     public function getChatStackOverflowFkey(): string
     {
-        $promise = $this->httpClient->request('http://chat.stackoverflow.com/rooms/11/php');
+        $promise = $this->httpClient->request('http://chat.stackoverflow.com/rooms/100238/test');
         $response = \Amp\wait($promise);
 
         $dom = new \DOMDocument();
@@ -170,8 +166,10 @@ class Client
             ->setUri('http://chat.stackoverflow.com/ws-auth')
             ->setMethod('POST')
             ->setBody($body)
-            ->setHeader('X-Requested-With', 'XMLHttpRequest')
+            //->setHeader('X-Requested-With', 'XMLHttpRequest')
         ;
+
+        //var_dump($request);die;
 /*
         $request = (new Request)
             ->setUri('http://chat.stackoverflow.com/rooms/thumbs/11')
@@ -184,6 +182,6 @@ class Client
         $promise = $this->httpClient->request($request);
         $response = \Amp\wait($promise);
 
-        var_dump($response);
+        //var_dump($response);
     }
 }

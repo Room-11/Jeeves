@@ -26,10 +26,12 @@ if (!$openIdClient->logIn($fkey)) {
 
 $stackOverflowFkey = $openIdClient->getStackOverflowFkey();
 
+//$httpClient->setOption(HttpClient::OP_VERBOSITY, HttpClient::VERBOSE_ALL);
+
 if (!$openIdClient->logInStackOverflow($stackOverflowFkey)) {
     throw new \Exception('StackOverflow OpenId log in failed.');
 }
-die;
+
 $chatKey = $openIdClient->getChatStackOverflowFkey();
 
 $httpClient->setOption(HttpClient::OP_VERBOSITY, HttpClient::VERBOSE_SEND);
