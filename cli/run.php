@@ -50,7 +50,8 @@ $cookiesHeader = implode('; ', $cookies);
     //$handshake = new Handshake($webSocketurl . 'l=57332223');
     $handshake = new Handshake($webSocketUrl . 'l=57365782');
 
-    $handshake->setHeader('Cookie', $cookiesHeader);
+    //$handshake->setHeader('Cookie', $cookiesHeader);
+    $handshake->setHeader('Origin', "http://chat.stackoverflow.com");
 
     $webSocket = new Handler();
 
