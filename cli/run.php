@@ -6,8 +6,8 @@ use Amp\Artax\Cookie\FileCookieJar;
 use Amp\Artax\Client as HttpClient;
 use Room11\Jeeves\OpenId\Client;
 
-//use Amp\Websocket\Handshake;
-//use Room11\Jeeves\WebSocket\Handler;
+use Amp\Websocket\Handshake;
+use Room11\Jeeves\WebSocket\Handler;
 
 require_once __DIR__ . '/../bootstrap.php';
 
@@ -36,15 +36,25 @@ $chatKey = $openIdClient->getChatStackOverflowFkey();
 
 //$httpClient->setOption(HttpClient::OP_VERBOSITY, HttpClient::VERBOSE_SEND);
 
-$webSocketurl = $openIdClient->getWebSocketUri($chatKey);
+$webSocketUrl = $openIdClient->getWebSocketUri($chatKey);
 
-var_dump($webSocketurl);
+//var_dump($webSocketurl);
 
-/*
-\Amp\run(function () {
-    $handshake = new Handshake('wss://chat.sockets.stackexchange.com:443/events/11/474d5f162b1c49dc93cca2b475988e13?l=57332223');
+$cookies = array_map(function($cookie) {
+    return $cookie->getName() . '=' . $cookie->getValue();
+}, $cookieJar->get('stackoverflow.com'));
+
+$cookiesHeader = implode('; ', $cookies);
+
+var_dump($cookiesHeader);die;
+
+\Amp\run(function () use ($webSocketUrl, $cookiesHeader) {
+    //$handshake = new Handshake($webSocketurl . 'l=57332223');
+    $handshake = new Handshake($webSocketUrl . 'l=57365782');
+
+    $handshake->setHeader('Cookie', $cookiesHeader);
+
     $webSocket = new Handler();
 
     $connection = (yield \Amp\websocket($webSocket, $handshake));
 });
-*/

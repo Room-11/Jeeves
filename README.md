@@ -19,7 +19,9 @@ Chat bot for StackOverflow. Playground for [amphp](https://github.com/amphp) lib
 - Find the fkey value (hidden field)
 - Log in using the fkey, username and password at https://openid.stackexchange.com/account/login/submit
 - Navigate to http://stackoverflow.com/users/login?returnurl=stackoverflow.com%2f
-- Log in using the fkey, username and password at http://stackoverflow.com/users/authenticate
+- Log in using the fkey, username and password at http://stackoverflow.com/users/login?returnurl=stackoverflow.com%2f
+- Go to a room e.g. http://chat.stackoverflow.com/rooms/11/php because it's the best...
+- Get the fkey (again, I'm fairly certain by now it stands for fuckingkey)
 - Get the websocket URL by making a POST request to http://chat.stackoverflow.com/ws-auth with the room id and the fkey
 
 ### Setup the websocket connection
