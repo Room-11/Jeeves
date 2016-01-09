@@ -1,0 +1,23 @@
+{
+    "name": "room11/jeeves",
+    "description": "Chat bot",
+    "keywords": ["bot", "chat"],
+    "homepage": "https://github.com/Room-11/Jeeves",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Pieter Hordijk",
+            "email": "info@pieterhordijk.com",
+            "homepage": "https://pieterhordijk.com",
+            "role": "developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {"Room11\\Jeeves\\": "src/"}
+    },
+    "require": {
+        "php": ">=7",
+        "amphp/artax": "2.x-dev",
+        "amphp/websocket": "dev-master"
+    }
+}
