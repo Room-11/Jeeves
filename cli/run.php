@@ -6,6 +6,8 @@ use Amp\Artax\Client as HttpClient;
 use Room11\Jeeves\Fkey\Retriever as FkeyRetreiver;
 use Room11\Jeeves\OpenId\Client;
 
+use Room11\Jeeves\Chat\RoomCollection;
+
 use Amp\Websocket\Handshake;
 use Room11\Jeeves\WebSocket\Handler;
 
@@ -22,11 +24,13 @@ $openIdClient = new Client($openIdCredentials, $httpClient, $fkeyRetriever);
 
 $openIdClient->logIn();
 
+$roomCollection = new RoomCollection($fkeyRetriever, $httpClient);
+
 $chatKey = $fkeyRetriever->get('http://chat.stackoverflow.com/rooms/100286/php');
 
 $webSocketUrl = $openIdClient->getWebSocketUri();
 
-\Amp\run(function () use ($webSocketUrl, $httpClient, $chatKey) {
+\Amp\run(function () use ($webSocketUrl, $httpClient, $chatKey, $roomCollection) {
     $handshake = new Handshake($webSocketUrl . '?l=57365782');
 
     $handshake->setHeader('Origin', "http://chat.stackoverflow.com");
@@ -35,6 +39,11 @@ $webSocketUrl = $openIdClient->getWebSocketUri();
 
     $connection = (yield \Amp\websocket($webSocket, $handshake));
 
+    \Amp\once(function () use ($roomCollection) {
+        $roomCollection->join(11);
+    }, 5000);
+
+    /*
     \Amp\once(function () use ($httpClient, $chatKey) {
         $body = (new FormBody)
             ->addField('text', 'testmessage' . time())
@@ -50,4 +59,5 @@ $webSocketUrl = $openIdClient->getWebSocketUri();
         $promise = $httpClient->request($request);
         $response = yield $promise;
     }, 5000);
+    */
 });
