@@ -9,6 +9,9 @@ use Room11\Jeeves\OpenId\Client;
 use Amp\Websocket\Handshake;
 use Room11\Jeeves\WebSocket\Handler;
 
+use Amp\Artax\Request;
+use Amp\Artax\FormBody;
+
 require_once __DIR__ . '/../bootstrap.php';
 
 $jarName = __DIR__ . '/../data/cookies' . time() . '.txt';
@@ -26,34 +29,36 @@ if (!$openIdClient->logIn($fkey)) {
 
 $stackOverflowFkey = $openIdClient->getStackOverflowFkey();
 
-//$httpClient->setOption(HttpClient::OP_VERBOSITY, HttpClient::VERBOSE_ALL);
-
 if (!$openIdClient->logInStackOverflow($stackOverflowFkey)) {
     throw new \Exception('StackOverflow OpenId log in failed.');
 }
 
 $chatKey = $openIdClient->getChatStackOverflowFkey();
 
-//$httpClient->setOption(HttpClient::OP_VERBOSITY, HttpClient::VERBOSE_SEND);
-
 $webSocketUrl = $openIdClient->getWebSocketUri($chatKey);
 
-//var_dump($webSocketurl);
-
-$cookies = array_map(function($cookie) {
-    return $cookie->getName() . '=' . $cookie->getValue();
-}, $cookieJar->get('stackoverflow.com'));
-
-$cookiesHeader = implode('; ', $cookies);
-
-\Amp\run(function () use ($webSocketUrl, $cookiesHeader) {
-    //$handshake = new Handshake($webSocketurl . 'l=57332223');
+\Amp\run(function () use ($webSocketUrl, $httpClient, $chatKey) {
     $handshake = new Handshake($webSocketUrl . '?l=57365782');
 
-    //$handshake->setHeader('Cookie', $cookiesHeader);
     $handshake->setHeader('Origin', "http://chat.stackoverflow.com");
 
     $webSocket = new Handler();
 
     $connection = (yield \Amp\websocket($webSocket, $handshake));
+
+    \Amp\once(function () use ($httpClient, $chatKey) {
+        $body = (new FormBody)
+            ->addField('text', 'testmessage' . time())
+            ->addField('fkey', $chatKey)
+        ;
+
+        $request = (new Request)
+            ->setUri('http://chat.stackoverflow.com/chats/100286/messages/new')
+            ->setMethod('POST')
+            ->setBody($body)
+        ;
+
+        $promise = $httpClient->request($request);
+        $response = yield $promise;
+    }, 5000);
 });
