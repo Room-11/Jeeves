@@ -5,7 +5,7 @@ namespace Room11\Jeeves\OpenId;
 use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Request;
 use Amp\Artax\FormBody;
-use Room11\Jeeves\Fkey\Retriever as FkeyRetreiver;
+use Room11\Jeeves\Fkey\Retriever as FkeyRetriever;
 
 class Client
 {
@@ -19,7 +19,7 @@ class Client
 
     private $fkeyRetriever;
 
-    public function __construct(Credentials $credentials, HttpClient $httpClient, FkeyRetreiver $fkeyRetriever)
+    public function __construct(Credentials $credentials, HttpClient $httpClient, FkeyRetriever $fkeyRetriever)
     {
         $this->credentials   = $credentials;
         $this->httpClient    = $httpClient;
