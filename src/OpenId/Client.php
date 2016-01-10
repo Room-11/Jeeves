@@ -138,7 +138,7 @@ class Client
 
     public function getChatStackOverflowFkey(): string
     {
-        $promise = $this->httpClient->request('http://chat.stackoverflow.com/rooms/100238/test');
+        $promise = $this->httpClient->request('http://chat.stackoverflow.com/rooms/100286/php');
         $response = \Amp\wait($promise);
 
         $dom = new \DOMDocument();
@@ -158,7 +158,7 @@ class Client
     public function getWebSocketUri(string $fkey)
     {
         $body = (new FormBody)
-            ->addField('roomid', 100238) // @todo don't hardcode the room id although 11 is the best
+            ->addField('roomid', 100286) // @todo don't hardcode the room id although 11 is the best
             ->addField('fkey', $fkey)
         ;
 
