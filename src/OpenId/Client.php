@@ -5,6 +5,7 @@ namespace Room11\Jeeves\OpenId;
 use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Request;
 use Amp\Artax\FormBody;
+use Room11\Jeeves\Fkey\Retriever as FkeyRetreiver;
 
 class Client
 {
@@ -16,37 +17,21 @@ class Client
 
     private $httpClient;
 
-    public function __construct(Credentials $credentials, HttpClient $httpClient)
+    private $fkeyRetriever;
+
+    public function __construct(Credentials $credentials, HttpClient $httpClient, FkeyRetreiver $fkeyRetriever)
     {
-        $this->credentials = $credentials;
-        $this->httpClient  = $httpClient;
+        $this->credentials   = $credentials;
+        $this->httpClient    = $httpClient;
+        $this->fkeyRetriever = $fkeyRetriever;
     }
 
-    public function getFkey(): string
-    {
-        $promise = $this->httpClient->request(self::FKEY_URL);
-        $response = \Amp\wait($promise);
-
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getBody());
-
-        foreach ($dom->getElementsByTagName('input') as $inputNode) {
-            if (!$inputNode->hasAttribute('name') || $inputNode->getAttribute('name') !== 'fkey') {
-                continue;
-            }
-
-            return $inputNode->getAttribute('value');
-        }
-
-        throw new \Exception('fkey node not found on the page');
-    }
-
-    public function logIn(string $fkey): bool
+    public function logIn(): bool
     {
         $body = (new FormBody)
             ->addField('email', $this->credentials->getEmailAddress())
             ->addField('password', $this->credentials->getPassword())
-            ->addField('fkey', $fkey)
+            ->addField('fkey', $this->fkeyRetriever->get(self::FKEY_URL))
         ;
 
         $request = (new Request)
@@ -71,31 +56,12 @@ class Client
         return !$xpath->evaluate("//*[contains(concat(' ', @class, ' '), ' error ')]")->length;
     }
 
-    public function getStackOverflowFkey(): string
-    {
-        $promise = $this->httpClient->request('https://stackoverflow.com/users/login?returnurl=%2f');
-        $response = \Amp\wait($promise);
-
-        $dom = new \DOMDocument();
-        @$dom->loadHTML($response->getBody());
-
-        foreach ($dom->getElementsByTagName('input') as $inputNode) {
-            if (!$inputNode->hasAttribute('name') || $inputNode->getAttribute('name') !== 'fkey') {
-                continue;
-            }
-
-            return $inputNode->getAttribute('value');
-        }
-
-        throw new \Exception('fkey node not found on the page');
-    }
-
-    public function logInStackOverflow(string $fkey): bool
+    public function logInStackOverflow(): bool
     {
         $body = (new FormBody)
             ->addField('email', $this->credentials->getEmailAddress())
             ->addField('password', $this->credentials->getPassword())
-            ->addField('fkey', $fkey)
+            ->addField('fkey', $this->fkeyRetriever->get('https://stackoverflow.com/users/login?returnurl=%2f'))
             ->addField('ssrc', '')
             ->addField('oauth_version', '')
             ->addField('oauth_server', '')
@@ -116,50 +82,11 @@ class Client
         return true;
     }
 
-    public function logInStackOverflow_x(string $fkey): bool
-    {
-        $body = (new FormBody)
-            ->addField('email', $this->credentials->getEmailAddress())
-            ->addField('password', $this->credentials->getPassword())
-            ->addField('fkey', $fkey)
-        ;
-
-        $request = (new Request)
-            ->setUri('http://stackoverflow.com/users/authenticate')
-            ->setMethod('POST')
-            ->setBody($body)
-        ;
-
-        $promise = $this->httpClient->request($request);
-        $response = \Amp\wait($promise);
-
-        return $this->verifyLogin($response->getBody());
-    }
-
-    public function getChatStackOverflowFkey(): string
-    {
-        $promise = $this->httpClient->request('http://chat.stackoverflow.com/rooms/100286/php');
-        $response = \Amp\wait($promise);
-
-        $dom = new \DOMDocument();
-        @$dom->loadHTML($response->getBody());
-
-        foreach ($dom->getElementsByTagName('input') as $inputNode) {
-            if (!$inputNode->hasAttribute('name') || $inputNode->getAttribute('name') !== 'fkey') {
-                continue;
-            }
-
-            return $inputNode->getAttribute('value');
-        }
-
-        throw new \Exception('fkey node not found on the page');
-    }
-
-    public function getWebSocketUri(string $fkey)
+    public function getWebSocketUri()
     {
         $body = (new FormBody)
             ->addField('roomid', 100286) // @todo don't hardcode the room id although 11 is the best
-            ->addField('fkey', $fkey)
+            ->addField('fkey', $this->fkeyRetriever->get('http://chat.stackoverflow.com/rooms/100286/php'))
         ;
 
         $request = (new Request)

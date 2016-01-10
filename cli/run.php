@@ -4,6 +4,7 @@ namespace Room11\Jeeves;
 
 use Amp\Artax\Cookie\FileCookieJar;
 use Amp\Artax\Client as HttpClient;
+use Room11\Jeeves\Fkey\Retriever as FkeyRetreiver;
 use Room11\Jeeves\OpenId\Client;
 
 use Amp\Websocket\Handshake;
@@ -19,23 +20,21 @@ $jarName = __DIR__ . '/../data/cookies' . time() . '.txt';
 $cookieJar    = new FileCookieJar($jarName);
 $httpClient   = new HttpClient($cookieJar);
 
-$openIdClient = new Client($openIdCredentials, $httpClient);
+$fkeyRetriever = new FkeyRetreiver($httpClient);
 
-$fkey = $openIdClient->getFkey();
+$openIdClient = new Client($openIdCredentials, $httpClient, $fkeyRetriever);
 
-if (!$openIdClient->logIn($fkey)) {
+if (!$openIdClient->logIn()) {
     throw new \Exception('OpenId log in failed.');
 }
 
-$stackOverflowFkey = $openIdClient->getStackOverflowFkey();
-
-if (!$openIdClient->logInStackOverflow($stackOverflowFkey)) {
+if (!$openIdClient->logInStackOverflow()) {
     throw new \Exception('StackOverflow OpenId log in failed.');
 }
 
-$chatKey = $openIdClient->getChatStackOverflowFkey();
+$chatKey = $fkeyRetriever->get('http://chat.stackoverflow.com/rooms/100286/php');
 
-$webSocketUrl = $openIdClient->getWebSocketUri($chatKey);
+$webSocketUrl = $openIdClient->getWebSocketUri();
 
 \Amp\run(function () use ($webSocketUrl, $httpClient, $chatKey) {
     $handshake = new Handshake($webSocketUrl . '?l=57365782');
