@@ -25,32 +25,7 @@ class Client
     public function logIn()
     {
         (new OpenIdLogin($this->credentials, $this->httpClient, $this->fkeyRetriever))->logIn();
-    }
-
-    public function logInStackOverflow(): bool
-    {
-        $body = (new FormBody)
-            ->addField('email', $this->credentials->getEmailAddress())
-            ->addField('password', $this->credentials->getPassword())
-            ->addField('fkey', $this->fkeyRetriever->get('https://stackoverflow.com/users/login?returnurl=%2f'))
-            ->addField('ssrc', '')
-            ->addField('oauth_version', '')
-            ->addField('oauth_server', '')
-            ->addField('openid_username', '')
-            ->addField('openid_identifier', '')
-        ;
-
-        $request = (new Request)
-            ->setUri('https://stackoverflow.com/users/login?returnurl=%2f')
-            ->setMethod('POST')
-            ->setBody($body)
-        ;
-
-        $promise = $this->httpClient->request($request);
-        $response = \Amp\wait($promise);
-
-        // @todo check if login succeeded
-        return true;
+        (new StackOverflowLogin($this->credentials, $this->httpClient, $this->fkeyRetriever))->logIn();
     }
 
     public function getWebSocketUri()

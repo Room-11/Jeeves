@@ -22,10 +22,6 @@ $openIdClient = new Client($openIdCredentials, $httpClient, $fkeyRetriever);
 
 $openIdClient->logIn();
 
-if (!$openIdClient->logInStackOverflow()) {
-    throw new \Exception('StackOverflow OpenId log in failed.');
-}
-
 $chatKey = $fkeyRetriever->get('http://chat.stackoverflow.com/rooms/100286/php');
 
 $webSocketUrl = $openIdClient->getWebSocketUri();
