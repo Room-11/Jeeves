@@ -9,10 +9,6 @@ use Room11\Jeeves\Fkey\Retriever as FkeyRetriever;
 
 class Client
 {
-    const FKEY_URL = 'https://openid.stackexchange.com/account/login';
-
-    const LOGIN_URL = 'https://openid.stackexchange.com/account/login/submit';
-
     private $credentials;
 
     private $httpClient;
@@ -26,34 +22,9 @@ class Client
         $this->fkeyRetriever = $fkeyRetriever;
     }
 
-    public function logIn(): bool
+    public function logIn()
     {
-        $body = (new FormBody)
-            ->addField('email', $this->credentials->getEmailAddress())
-            ->addField('password', $this->credentials->getPassword())
-            ->addField('fkey', $this->fkeyRetriever->get(self::FKEY_URL))
-        ;
-
-        $request = (new Request)
-            ->setUri(self::LOGIN_URL)
-            ->setMethod('POST')
-            ->setBody($body)
-        ;
-
-        $promise = $this->httpClient->request($request);
-        $response = \Amp\wait($promise);
-
-        return $this->verifyLogin($response->getBody());
-    }
-
-    private function verifyLogIn(string $body): bool
-    {
-        $dom = new \DOMDocument();
-        @$dom->loadHTML($body);
-
-        $xpath = new \DOMXPath($dom);
-
-        return !$xpath->evaluate("//*[contains(concat(' ', @class, ' '), ' error ')]")->length;
+        (new OpenIdLogin($this->credentials, $this->httpClient, $this->fkeyRetriever))->logIn();
     }
 
     public function logInStackOverflow(): bool

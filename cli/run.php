@@ -20,9 +20,7 @@ $fkeyRetriever = new FkeyRetreiver($httpClient);
 
 $openIdClient = new Client($openIdCredentials, $httpClient, $fkeyRetriever);
 
-if (!$openIdClient->logIn()) {
-    throw new \Exception('OpenId log in failed.');
-}
+$openIdClient->logIn();
 
 if (!$openIdClient->logInStackOverflow()) {
     throw new \Exception('StackOverflow OpenId log in failed.');
