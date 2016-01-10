@@ -2,7 +2,6 @@
 
 namespace Room11\Jeeves;
 
-use Amp\Artax\Cookie\FileCookieJar;
 use Amp\Artax\Client as HttpClient;
 use Room11\Jeeves\Fkey\Retriever as FkeyRetreiver;
 use Room11\Jeeves\OpenId\Client;
@@ -15,10 +14,7 @@ use Amp\Artax\FormBody;
 
 require_once __DIR__ . '/../bootstrap.php';
 
-$jarName = __DIR__ . '/../data/cookies' . time() . '.txt';
-
-$cookieJar    = new FileCookieJar($jarName);
-$httpClient   = new HttpClient($cookieJar);
+$httpClient   = new HttpClient();
 
 $fkeyRetriever = new FkeyRetreiver($httpClient);
 
