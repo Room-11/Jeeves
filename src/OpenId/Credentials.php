@@ -8,18 +8,27 @@ class Credentials
 
     private $password;
 
-    public function __construct($emailAddress, $password)
+    public function __construct(string $emailAddress, string $password)
     {
+        $this->validateEmailAddress($emailAddress);
+
         $this->emailAddress = $emailAddress;
         $this->password     = $password;
     }
 
-    public function getEmailAddress()
+    private function validateEmailAddress(string $emailAddress)
+    {
+        if (!filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidEmailAddressException();
+        }
+    }
+
+    public function getEmailAddress(): string
     {
         return $this->emailAddress;
     }
 
-    public function getPassword()
+    public function getPassword(): string
     {
         return $this->password;
     }
