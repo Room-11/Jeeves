@@ -52,42 +52,4 @@ class Version implements Command
 
         yield $promise;
     }
-
-    // @todo implement me
-    public function getHelp(Message $message)
-    {
-        $body = (new FormBody)
-            ->addField('text', '`!!version` - This command doesn\'t need parameters.')
-            ->addField('fkey', $this->chatKey)
-        ;
-
-        $request = (new Request)
-            ->setUri('http://chat.stackoverflow.com/chats/' . $message->getRoomid() . '/messages/new')
-            ->setMethod('POST')
-            ->setBody($body)
-        ;
-
-        $promise = $this->httpClient->request($request);
-
-        yield $promise;
-    }
-
-    // @todo implement me
-    public function getDescription(Message $message)
-    {
-        $body = (new FormBody)
-            ->addField('text', 'Simple demo plugin which just posts the current version of the bot.')
-            ->addField('fkey', $this->chatKey)
-        ;
-
-        $request = (new Request)
-            ->setUri('http://chat.stackoverflow.com/chats/' . $message->getRoomid() . '/messages/new')
-            ->setMethod('POST')
-            ->setBody($body)
-        ;
-
-        $promise = $this->httpClient->request($request);
-
-        yield $promise;
-    }
 }
