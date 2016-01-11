@@ -358,12 +358,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/websocket.git",
-                "reference": "f88aebfd7c12cf1c568f142d49309ed188921eaf"
+                "reference": "df07f788fb66ff2171e0c2c9275e78fcbdbf3f48"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/websocket/zipball/f88aebfd7c12cf1c568f142d49309ed188921eaf",
-                "reference": "f88aebfd7c12cf1c568f142d49309ed188921eaf",
+                "url": "https://api.github.com/repos/amphp/websocket/zipball/df07f788fb66ff2171e0c2c9275e78fcbdbf3f48",
+                "reference": "df07f788fb66ff2171e0c2c9275e78fcbdbf3f48",
                 "shasum": ""
             },
             "require": {
@@ -409,7 +409,7 @@
                 "non-blocking",
                 "websocket"
             ],
-            "time": "2016-01-08 22:51:27"
+            "time": "2016-01-11 20:27:12"
         },
         {
             "name": "daverandom/libdns",

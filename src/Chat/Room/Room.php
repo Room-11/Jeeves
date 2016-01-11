@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat;
+namespace Room11\Jeeves\Chat\Room;
 
 use Room11\Jeeves\Fkey\Retriever as FkeyRetriever;
 use Amp\Artax\Client as HttpClient;
@@ -22,7 +22,7 @@ class Room
         $this->roomId        = $roomId;
     }
 
-    public function join($chatKey)
+    public function join(string $chatKey)
     {
         $body = (new FormBody)
             ->addField('text', 'testmessage' . time())

@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Message;
 
-class Unknown
+class Unknown implements Message
 {
     private $data;
 

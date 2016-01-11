@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat;
+namespace Room11\Jeeves\Chat\Room;
 
 use Room11\Jeeves\Fkey\Retriever as FkeyRetriever;
 use Amp\Artax\Client as HttpClient;
 
-class RoomCollection
+class Collection
 {
     private $fkeyRetriever;
 
