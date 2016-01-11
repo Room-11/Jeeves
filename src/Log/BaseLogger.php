@@ -1,0 +1,18 @@
+<?php
+
+namespace Room11\Jeeves\Log;
+
+abstract class BaseLogger
+{
+    protected $logLevel;
+
+    public function __construct(int $logLevel)
+    {
+        $this->logLevel = $logLevel;
+    }
+
+    protected function meetsLogLevel(int $messageLogLevel)
+    {
+        return $this->logLevel & $messageLogLevel;
+    }
+}
