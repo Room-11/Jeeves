@@ -19,12 +19,14 @@ class RoomCollection
         $this->httpClient    = $httpClient;
     }
 
-    public function join(int $roomId)
+    public function join(int $roomId, $chatKey)
     {
         if (array_key_exists($roomId, $this->rooms)) {
             return;
         }
 
-        $this->rooms[$roomId] = (new Room($this->fkeyRetriever, $this->httpClient, $roomId))->join();
+        $this->rooms[$roomId] = (new Room($this->fkeyRetriever, $this->httpClient, $roomId));
+
+        yield from $this->rooms[$roomId]->join($chatKey);
     }
 }

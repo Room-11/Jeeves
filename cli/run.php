@@ -39,8 +39,8 @@ $webSocketUrl = $openIdClient->getWebSocketUri();
 
     $connection = (yield \Amp\websocket($webSocket, $handshake));
 
-    \Amp\once(function () use ($roomCollection) {
-        $roomCollection->join(11);
+    \Amp\once(function () use ($roomCollection, $chatKey) {
+        yield from $roomCollection->join(1, $chatKey);
     }, 5000);
 
     /*

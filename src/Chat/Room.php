@@ -22,32 +22,21 @@ class Room
         $this->roomId        = $roomId;
     }
 
-    public function join(): Room
-    {
-        $url = $this->getWebSocketUrl();
-
-        var_dump('joined room ' . $this->roomId);
-        var_dump($url);
-
-        return $this;
-    }
-
-    private function getWebSocketUrl()
+    public function join($chatKey)
     {
         $body = (new FormBody)
-            ->addField('roomid', $this->roomId)
-            ->addField('fkey', $this->fkeyRetriever->get('http://chat.stackoverflow.com/rooms/' . $this->roomId . '/php'))
+            ->addField('text', 'testmessage' . time())
+            ->addField('fkey', $chatKey)
         ;
 
         $request = (new Request)
-            ->setUri('http://chat.stackoverflow.com/ws-auth')
+            ->setUri('http://chat.stackoverflow.com/chats/' . $this->roomId . '/messages/new')
             ->setMethod('POST')
             ->setBody($body)
         ;
 
         $promise = $this->httpClient->request($request);
-        $response = \Amp\wait($promise);
 
-        return json_decode($response->getBody(), true)['url'];
+        yield $promise;
     }
 }
