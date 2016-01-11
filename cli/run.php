@@ -3,7 +3,7 @@
 namespace Room11\Jeeves;
 
 use Amp\Artax\Client as HttpClient;
-use Room11\Jeeves\Fkey\Retriever as FkeyRetreiver;
+use Room11\Jeeves\Fkey\Retriever as FkeyRetriever;
 use Room11\Jeeves\OpenId\Client;
 
 use Room11\Jeeves\Chat\Room\Collection as RoomCollection;
@@ -19,7 +19,7 @@ require_once __DIR__ . '/../bootstrap.php';
 
 $httpClient   = new HttpClient();
 
-$fkeyRetriever = new FkeyRetreiver($httpClient);
+$fkeyRetriever = new FkeyRetriever($httpClient);
 
 $openIdClient = new Client($openIdCredentials, $httpClient, $fkeyRetriever);
 
