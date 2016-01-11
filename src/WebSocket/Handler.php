@@ -5,6 +5,13 @@ namespace Room11\Jeeves\WebSocket;
 use Amp\Websocket;
 
 class Handler implements Websocket {
+    private $messageFactory;
+
+    public function __construct($messageFactory)
+    {
+        $this->messageFactory = $messageFactory;
+    }
+
     /**
      * Invoked when the full two-way websocket upgrade completes
      *
@@ -29,7 +36,14 @@ class Handler implements Websocket {
      */
     public function onData(Websocket\Message $msg)
     {
-        var_dump(yield $msg);
+        $rawMessage = yield $msg;
+
+        var_dump(yield from $this->messageFactory->build($rawMessage));
+        var_dump($rawMessage);
+
+        //var_dump(yield from $this->messageFactory->build($rawMessage));
+
+        //var_dump(yield $msg);
     }
 
     /**

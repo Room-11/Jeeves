@@ -35,7 +35,7 @@ $webSocketUrl = $openIdClient->getWebSocketUri();
 
     $handshake->setHeader('Origin', "http://chat.stackoverflow.com");
 
-    $webSocket = new Handler();
+    $webSocket = new Handler(new \Room11\Jeeves\Chat\Message\Factory());
 
     $connection = (yield \Amp\websocket($webSocket, $handshake));
 
