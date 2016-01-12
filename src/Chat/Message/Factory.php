@@ -20,8 +20,12 @@ class Factory
             return new StarMessage($message['e'][0]);
         }
 
+        if (isset($message['e']) && $message['e'][0]['event_type'] === 10) {
+            return new DeleteMessage($message['e'][0]);
+        }
+
         if (!isset($message['e'])) {
-            return new heartbeat($message);
+            return new Heartbeat($message);
         }
 
         return new Unknown($message);
