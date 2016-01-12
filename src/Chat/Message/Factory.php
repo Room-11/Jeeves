@@ -24,6 +24,9 @@ class Factory
             case 2:
                 return new EditMessage($message);
 
+            case 3:
+                return new UserEnter($message);
+
             case 4:
                 return new UserLeave($message);
 
