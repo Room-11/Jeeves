@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Message;
 
 class Factory
 {
-    public function build(array $data)
+    public function build(array $data): Message
     {
         $message = reset($data);
 

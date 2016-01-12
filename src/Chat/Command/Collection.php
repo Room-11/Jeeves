@@ -15,7 +15,7 @@ class Collection implements Command
         return $this;
     }
 
-    public function handle(Message $message)
+    public function handle(Message $message): \Generator
     {
         foreach ($this->commands as $command) {
             yield from $command->handle($message);

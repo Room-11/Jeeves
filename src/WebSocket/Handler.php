@@ -2,6 +2,8 @@
 
 namespace Room11\Jeeves\WebSocket;
 
+use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
+use Room11\Jeeves\Chat\Command\Collection as CommandCollection;
 use Amp\Websocket;
 
 class Handler implements Websocket
@@ -10,7 +12,7 @@ class Handler implements Websocket
 
     private $commands;
 
-    public function __construct($messageFactory, $commands)
+    public function __construct(MessageFactory $messageFactory, CommandCollection $commands)
     {
         $this->messageFactory = $messageFactory;
         $this->commands       = $commands;
@@ -21,7 +23,7 @@ class Handler implements Websocket
         echo "Connection established\n\n";
     }
 
-    public function onData(Websocket\Message $msg)
+    public function onData(Websocket\Message $msg): \Generator
     {
         $rawMessage = yield $msg;
 

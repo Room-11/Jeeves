@@ -21,7 +21,7 @@ class Version implements Command
         $this->chatKey    = $chatKey;
     }
 
-    public function handle(Message $message)
+    public function handle(Message $message): \Generator
     {
         if (!$this->validMessage($message)) {
             return;
@@ -35,7 +35,7 @@ class Version implements Command
         return get_class($message) === 'Room11\Jeeves\Chat\Message\NewMessage' && trim($message->getContent()) === '!!version';
     }
 
-    private function getVersion(Message $message)
+    private function getVersion(Message $message): \Generator
     {
         $body = (new FormBody)
             ->addField('text', 'v0.0.1')

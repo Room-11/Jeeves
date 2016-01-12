@@ -22,7 +22,7 @@ class Room
         $this->roomId        = $roomId;
     }
 
-    public function join(string $chatKey)
+    public function join(string $chatKey): \Generator
     {
         $body = (new FormBody)
             ->addField('text', 'testmessage' . time())

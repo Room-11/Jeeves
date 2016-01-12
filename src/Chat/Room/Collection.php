@@ -19,7 +19,7 @@ class Collection
         $this->httpClient    = $httpClient;
     }
 
-    public function join(int $roomId, $chatKey)
+    public function join(int $roomId, string $chatKey): \Generator
     {
         if (array_key_exists($roomId, $this->rooms)) {
             return;

@@ -12,13 +12,13 @@ class Test
 
     private $chatKey;
 
-    public function __construct($httpClient, $chatKey)
+    public function __construct(HttpClient $httpClient, string $chatKey)
     {
         $this->httpClient = $httpClient;
         $this->chatKey    = $chatKey;
     }
 
-    public function foo()
+    public function foo(): \Generator
     {
         $body = (new FormBody)
             ->addField('text', 'from ondata event testmessage' . time())

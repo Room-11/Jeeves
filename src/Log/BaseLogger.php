@@ -11,7 +11,7 @@ abstract class BaseLogger
         $this->logLevel = $logLevel;
     }
 
-    protected function meetsLogLevel(int $messageLogLevel)
+    protected function meetsLogLevel(int $messageLogLevel): bool
     {
         return $this->logLevel & $messageLogLevel;
     }

@@ -28,7 +28,7 @@ class Client
         (new StackOverflowLogin($this->credentials, $this->httpClient, $this->fkeyRetriever))->logIn();
     }
 
-    public function getWebSocketUri()
+    public function getWebSocketUri(): string
     {
         $body = (new FormBody)
             ->addField('roomid', 100286) // @todo don't hardcode the room id although 11 is the best
