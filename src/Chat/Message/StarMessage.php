@@ -6,6 +6,8 @@ class StarMessage implements Message
 {
     private $id;
 
+    private $actionId;
+
     private $roomId;
 
     private $messageId;
@@ -20,7 +22,8 @@ class StarMessage implements Message
 
     public function __construct(array $data)
     {
-        $this->id            = $data['id'];
+        $this->id            = $data['message_id'];
+        $this->actionId      = $data['id'];
         $this->roomId        = $data['room_id'];
         $this->messageId     = $data['message_id'];
         $this->content       = $data['content'];
@@ -32,6 +35,11 @@ class StarMessage implements Message
     public function getId(): int
     {
         return $this->id;
+    }
+
+    public function getActionId(): int
+    {
+        return $this->actionId;
     }
 
     public function getRoomId(): int

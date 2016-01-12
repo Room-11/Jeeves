@@ -6,6 +6,8 @@ class EditMessage implements Message
 {
     private $id;
 
+    private $actionId;
+
     private $userId;
 
     private $username;
@@ -20,7 +22,8 @@ class EditMessage implements Message
 
     public function __construct(array $data)
     {
-        $this->id            = $data['id'];
+        $this->id            = $data['message_id'];
+        $this->actionId      = $data['id'];
         $this->userId        = $data['user_id'];
         $this->username      = $data['user_name'];
         $this->roomId        = $data['room_id'];
@@ -32,6 +35,11 @@ class EditMessage implements Message
     public function getId(): int
     {
         return $this->id;
+    }
+
+    public function getActionId(): int
+    {
+        return $this->actionId;
     }
 
     public function getUserId(): int
