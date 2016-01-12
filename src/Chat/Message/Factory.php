@@ -9,7 +9,7 @@ class Factory
         $message = reset($data);
 
         if (isset($message['e'])) {
-            return $this->buildEventMessage($message['e'][0]);
+            return $this->buildEventMessage(reset($message['e']));
         }
 
         return new Heartbeat($message);
