@@ -8,26 +8,30 @@ class Factory
     {
         $message = reset($data);
 
-        if (isset($message['e']) && $message['e'][0]['event_type'] === 1) {
-            return new NewMessage($message['e'][0]);
+        if (isset($message['e'])) {
+            return $this->buildEventMessage($message['e'][0]);
         }
 
-        if (isset($message['e']) && $message['e'][0]['event_type'] === 2) {
-            return new EditMessage($message['e'][0]);
-        }
+        return new Heartbeat($message);
+    }
 
-        if (isset($message['e']) && $message['e'][0]['event_type'] === 6) {
-            return new StarMessage($message['e'][0]);
-        }
+    private function buildEventMessage(array $message): Message
+    {
+        switch ($message['event_type']) {
+            case 1:
+                return new NewMessage($message);
 
-        if (isset($message['e']) && $message['e'][0]['event_type'] === 10) {
-            return new DeleteMessage($message['e'][0]);
-        }
+            case 2:
+                return new EditMessage($message);
 
-        if (!isset($message['e'])) {
-            return new Heartbeat($message);
-        }
+            case 6:
+                return new StarMessage($message);
 
-        return new Unknown($message);
+            case 10:
+                return new DeleteMessage($message);
+
+            default:
+                return new Unknown($message);
+        }
     }
 }
