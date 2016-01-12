@@ -33,9 +33,12 @@ class Handler implements Websocket
     {
         $rawMessage = yield $msg;
 
-        $this->logger->log(Level::MESSAGE, 'Message received', $rawMessage);
-
         $message = $this->messageFactory->build(json_decode($rawMessage, true));
+
+        $this->logger->log(Level::MESSAGE, 'Message received', [
+            'rawMessage' => $rawMessage,
+            'message'    => $message,
+        ]);
 
         if ($message instanceof Unknown) {
             $this->logger->log(Level::UNKNOWN_MESSAGE, 'Unknown message received', $rawMessage);
