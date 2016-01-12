@@ -8,5 +8,6 @@ class Level
     const UNKNOWN_MESSAGE = 2;
     const MESSAGE         = 4;
     const DEBUG           = 8;
-    const ALL             = 15;
+    const EXTRA_DATA      = 16;
+    const ALL             = 23;
 }
