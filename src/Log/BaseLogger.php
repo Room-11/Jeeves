@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Log;
 
-abstract class BaseLogger
+abstract class BaseLogger implements Logger
 {
     protected $logLevel;
 
@@ -13,6 +13,6 @@ abstract class BaseLogger
 
     protected function meetsLogLevel(int $messageLogLevel): bool
     {
-        return $this->logLevel & $messageLogLevel;
+        return (bool) ($this->logLevel & $messageLogLevel);
     }
 }
