@@ -20,6 +20,10 @@ class Factory
             return new StarMessage($message['e'][0]);
         }
 
+        if (!isset($message['e'])) {
+            return new heartbeat($message);
+        }
+
         return new Unknown($message);
     }
 }
