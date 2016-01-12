@@ -35,12 +35,12 @@ $commands = (new CommandCollection())
     ->register(new VersionCommand($httpClient, $chatKey))
 ;
 
-\Amp\run(function () use ($webSocketUrl, $httpClient, $chatKey, $roomCollection, $commands) {
+\Amp\run(function () use ($webSocketUrl, $httpClient, $chatKey, $roomCollection, $commands, $logger) {
     $handshake = new Handshake($webSocketUrl . '?l=57365782');
 
     $handshake->setHeader('Origin', "http://chat.stackoverflow.com");
 
-    $webSocket = new Handler(new MessageFactory(), $commands);
+    $webSocket = new Handler(new MessageFactory(), $commands, $logger);
 
     yield \Amp\websocket($webSocket, $handshake);
 });
