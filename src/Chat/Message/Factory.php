@@ -16,6 +16,10 @@ class Factory
             return new EditMessage($message['e'][0]);
         }
 
+        if (isset($message['e']) && $message['e'][0]['event_type'] === 6) {
+            return new StarMessage($message['e'][0]);
+        }
+
         return new Unknown($message);
     }
 }
