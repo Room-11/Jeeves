@@ -36,6 +36,9 @@ class Factory
             case 6:
                 return new StarMessage($message);
 
+            case 8:
+                return new MentionMessage($message);
+
             case 10:
                 return new DeleteMessage($message);
 
