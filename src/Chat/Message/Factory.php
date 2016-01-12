@@ -30,6 +30,9 @@ class Factory
             case 4:
                 return new UserLeave($message);
 
+            case 5:
+                return new RoomEdit($message);
+
             case 6:
                 return new StarMessage($message);
 
