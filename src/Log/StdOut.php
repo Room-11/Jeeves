@@ -6,18 +6,13 @@ class StdOut extends BaseLogger
 {
     public function log(int $logLevel, string $message, $extraData = null)
     {
-        $this->logMessage($logLevel, $message);
-
-        $this->logExtraData($extraData);
-    }
-
-    private function logMessage(int $logLevel, string $message)
-    {
         if (!$this->meetsLogLevel($logLevel)) {
             return;
         }
 
-        echo sprintf('[%s] %s', (new \DateTime())->format('Y-m-d H:i:s'), $message);
+        echo sprintf("[%s] %s\n", (new \DateTime())->format('Y-m-d H:i:s'), $message);
+
+        $this->logExtraData($extraData);
     }
 
     private function logExtraData($extraData)
