@@ -4,7 +4,10 @@ namespace Room11\Jeeves\WebSocket;
 
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Command\Collection as CommandCollection;
+use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\Log\Level;
 use Amp\Websocket;
+use Room11\Jeeves\Chat\Message\Unknown;
 
 class Handler implements Websocket
 {
@@ -12,22 +15,31 @@ class Handler implements Websocket
 
     private $commands;
 
-    public function __construct(MessageFactory $messageFactory, CommandCollection $commands)
+    private $logger;
+
+    public function __construct(MessageFactory $messageFactory, CommandCollection $commands, Logger $logger)
     {
         $this->messageFactory = $messageFactory;
         $this->commands       = $commands;
+        $this->logger         = $logger;
     }
 
     public function onOpen(Websocket\Endpoint $endpoint, array $headers)
     {
-        echo "Connection established\n\n";
+        $this->logger->log(Level::DEBUG, 'Connection established');
     }
 
     public function onData(Websocket\Message $msg): \Generator
     {
         $rawMessage = yield $msg;
 
+        $this->logger->log(Level::MESSAGE, 'Message received', $rawMessage);
+
         $message = $this->messageFactory->build(json_decode($rawMessage, true));
+
+        if ($message instanceof Unknown) {
+            $this->logger->log(Level::UNKNOWN_MESSAGE, 'Unknown message received', $rawMessage);
+        }
 
         yield from $this->commands->handle($message);
 
