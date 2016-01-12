@@ -10,4 +10,5 @@ class Level
     const DEBUG           = 8;
     const EXTRA_DATA      = 16;
     const ALL             = 23;
+    const NONE            = 0;
 }
