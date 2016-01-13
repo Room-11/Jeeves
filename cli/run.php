@@ -36,6 +36,7 @@ $webSocketUrl = $openIdClient->getWebSocketUri($roomId);
 $commands = (new CommandCollection())
     ->register(new VersionCommand($httpClient, $chatKey))
     ->register(new UrbanCommand($httpClient, $chatKey))
+    ->register(new WikipediaCommand($httpClient, $chatKey))
 ;
 
 \Amp\run(function () use ($webSocketUrl, $httpClient, $chatKey, $roomCollection, $commands, $logger) {

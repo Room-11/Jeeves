@@ -28,11 +28,11 @@ class Client
         (new StackOverflowLogin($this->credentials, $this->httpClient, $this->fkeyRetriever))->logIn();
     }
 
-    public function getWebSocketUri(): string
+    public function getWebSocketUri(int $roomId): string
     {
         $body = (new FormBody)
-            ->addField('roomid', 100286) // @todo don't hardcode the room id although 11 is the best
-            ->addField('fkey', $this->fkeyRetriever->get('http://chat.stackoverflow.com/rooms/100286/php'))
+            ->addField('roomid', $roomId) // @todo don't hardcode the room id although 11 is the best
+            ->addField('fkey', $this->fkeyRetriever->get('http://chat.stackoverflow.com/rooms/' . $roomId . '/php'))
         ;
 
         $request = (new Request)
