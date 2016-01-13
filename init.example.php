@@ -9,4 +9,6 @@ use Room11\Jeeves\Log\NullLogger;
 // https://openid.stackexchange.com/account/login
 $openIdCredentials = new Credentials('openidusername', 'openidpassword');
 
+$roomId = 100286;
+
 $logger = new NullLogger(Level::NONE);

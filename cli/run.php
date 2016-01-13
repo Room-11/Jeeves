@@ -12,6 +12,7 @@ use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 
 use Room11\Jeeves\Chat\Command\Version as VersionCommand;
 use Room11\Jeeves\Chat\Command\Urban as UrbanCommand;
+use Room11\Jeeves\Chat\Command\Wikipedia as WikipediaCommand;
 
 use Amp\Websocket\Handshake;
 use Room11\Jeeves\WebSocket\Handler;
@@ -28,9 +29,9 @@ $openIdClient->logIn();
 
 $roomCollection = new RoomCollection($fkeyRetriever, $httpClient);
 
-$chatKey = $fkeyRetriever->get('http://chat.stackoverflow.com/rooms/100286/php');
+$chatKey = $fkeyRetriever->get('http://chat.stackoverflow.com/rooms/' . $roomId . '/php');
 
-$webSocketUrl = $openIdClient->getWebSocketUri();
+$webSocketUrl = $openIdClient->getWebSocketUri($roomId);
 
 $commands = (new CommandCollection())
     ->register(new VersionCommand($httpClient, $chatKey))
