@@ -15,6 +15,7 @@ use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
 use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
 use Room11\Jeeves\Chat\Plugin\SwordFight as SwordFightPlugin;
 use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
+use Room11\Jeeves\Chat\Plugin\Imdb as ImdbPlugin;
 
 use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
 
@@ -41,6 +42,7 @@ $commands = (new PluginCollection(new CommandFactory()))
     ->register(new WikipediaPlugin($chatClient))
     ->register(new SwordFightPlugin($chatClient))
     ->register(new DocsPlugin($chatClient))
+    ->register(new ImdbPlugin($chatClient))
 ;
 
 $webSocketUrl = $openIdClient->getWebSocketUri($roomId);
