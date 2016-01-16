@@ -10,9 +10,9 @@ use Room11\Jeeves\Chat\Room\Collection as RoomCollection;
 use Room11\Jeeves\Chat\Command\Collection as CommandCollection;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 
-use Room11\Jeeves\Chat\Command\Version as VersionCommand;
-use Room11\Jeeves\Chat\Command\Urban as UrbanCommand;
-use Room11\Jeeves\Chat\Command\Wikipedia as WikipediaCommand;
+use Room11\Jeeves\Chat\Plugin\Version as VersionCommand;
+use Room11\Jeeves\Chat\Plugin\Urban as UrbanCommand;
+use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaCommand;
 
 use Amp\Websocket\Handshake;
 use Room11\Jeeves\WebSocket\Handler;

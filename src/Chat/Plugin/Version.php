@@ -1,7 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat\Command;
+namespace Room11\Jeeves\Chat\Plugin;
 
+use Room11\Jeeves\Chat\Command\Command;
 use Room11\Jeeves\Chat\Message\Message;
 use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Request;
