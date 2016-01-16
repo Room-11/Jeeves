@@ -39,8 +39,6 @@ class Xhr
             ->setBody($body)
         ;
 
-        $promise = $this->httpClient->request($request);
-
-        yield $promise;
+        yield $this->httpClient->request($request);
     }
 }
