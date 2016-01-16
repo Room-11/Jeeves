@@ -13,4 +13,9 @@ class Void implements CommandMessage
     {
         $this->message = $message;
     }
+
+    public function getOrigin(): int
+    {
+        return $this->message->getId();
+    }
 }

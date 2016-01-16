@@ -14,6 +14,11 @@ class Conversation implements CommandMessage
         $this->message = $message;
     }
 
+    public function getOrigin(): int
+    {
+        return $this->message->getId();
+    }
+
     public function getText(): string
     {
         return $this->message->getContent();

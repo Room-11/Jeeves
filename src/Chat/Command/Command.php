@@ -14,6 +14,11 @@ class Command implements CommandMessage
         $this->message = $message;
     }
 
+    public function getOrigin(): int
+    {
+        return $this->message->getId();
+    }
+
     public function getCommand(): string
     {
         $commandParts = explode(' ', $this->message->getContent());

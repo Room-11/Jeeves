@@ -2,4 +2,6 @@
 
 namespace Room11\Jeeves\Chat\Command;
 
-interface Message {}
+interface Message {
+    public function getOrigin(): int;
+}
