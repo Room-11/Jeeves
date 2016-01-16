@@ -18,7 +18,7 @@ class SwordFight implements Plugin
                 'maxDistance' => 15,
             ],
             'response' => [
-                'text' => 'How appropriate! You fight like a cow!',
+                'text'        => 'How appropriate! You fight like a cow!',
                 'maxDistance' => 20,
             ],
         ],
@@ -28,7 +28,7 @@ class SwordFight implements Plugin
                 'maxDistance' => 32,
             ],
             'response' => [
-                'text' => 'And I\'ve got a little TIP for you, get the POINT?',
+                'text'        => 'And I\'ve got a little TIP for you, get the POINT?',
                 'maxDistance' => 25,
             ],
         ],
