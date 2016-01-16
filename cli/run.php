@@ -27,8 +27,6 @@ $openIdClient = new Client($openIdCredentials, $httpClient, $fkeyRetriever);
 
 $openIdClient->logIn();
 
-$roomCollection = new RoomCollection($fkeyRetriever, $httpClient);
-
 $chatKey = $fkeyRetriever->get('http://chat.stackoverflow.com/rooms/' . $roomId . '/php');
 
 $webSocketUrl = $openIdClient->getWebSocketUri($roomId);
