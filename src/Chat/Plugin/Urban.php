@@ -2,13 +2,12 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Command\Command;
 use Room11\Jeeves\Chat\Message\Message;
 use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Request;
 use Amp\Artax\FormBody;
 
-class Urban implements Command
+class Urban implements Plugin
 {
     const COMMAND = 'urban';
 
