@@ -13,6 +13,8 @@ use Room11\Jeeves\Chat\Plugin\Version as VersionPlugin;
 use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
 use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
 
+use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
+
 use Amp\Websocket\Handshake;
 use Room11\Jeeves\WebSocket\Handler;
 
@@ -24,14 +26,19 @@ $openIdClient  = new Client($openIdCredentials, $httpClient, $fkeyRetriever);
 
 $openIdClient->logIn();
 
-$chatKey      = $fkeyRetriever->get('http://chat.stackoverflow.com/rooms/' . $roomId . '/php');
-$webSocketUrl = $openIdClient->getWebSocketUri($roomId);
+$chatClient = new ChatClient(
+    $httpClient,
+    $fkeyRetriever->get('http://chat.stackoverflow.com/rooms/' . $roomId . '/php'),
+    $roomId
+);
 
 $commands = (new PluginCollection())
-    ->register(new VersionPlugin($httpClient, $chatKey))
-    ->register(new UrbanPlugin($httpClient, $chatKey))
-    ->register(new WikipediaPlugin($httpClient, $chatKey))
+    ->register(new VersionPlugin($chatClient))
+    ->register(new UrbanPlugin($chatClient))
+    ->register(new WikipediaPlugin($chatClient))
 ;
+
+$webSocketUrl = $openIdClient->getWebSocketUri($roomId);
 
 \Amp\run(function () use ($webSocketUrl, $commands, $logger) {
     $handshake = new Handshake($webSocketUrl . '?l=57365782');

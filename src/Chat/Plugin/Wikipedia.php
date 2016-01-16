@@ -2,23 +2,18 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Message\Message;
-use Amp\Artax\Client as HttpClient;
-use Amp\Artax\Request;
-use Amp\Artax\FormBody;
+use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
+use Room11\Jeeves\Chat\Command\Message;
 
 class Wikipedia implements Plugin
 {
-    const COMMAND = 'urban';
+    const COMMAND = 'wiki';
 
-    private $httpClient;
+    private $chatClient;
 
-    private $chatKey;
-
-    public function __construct(HttpClient $httpClient, string $chatKey)
+    public function __construct(ChatClient $chatClient)
     {
-        $this->httpClient = $httpClient;
-        $this->chatKey    = $chatKey;
+        $this->chatClient = $chatClient;
     }
 
     public function handle(Message $message): \Generator
@@ -32,66 +27,42 @@ class Wikipedia implements Plugin
 
     private function validMessage(Message $message): bool
     {
-        return get_class($message) === 'Room11\Jeeves\Chat\Message\NewMessage'
-            && strpos($message->getContent(), '!!wiki') === 0
-            && count(explode(' ', trim($message->getContent())) > 1);
+        return get_class($message) === 'Room11\Jeeves\Chat\Command\Command'
+        && $message->getCommand() === self::COMMAND
+        && $message->getParameters();
     }
 
     private function getResult(Message $message): \Generator
     {
-        $fullCommand = explode(' ', trim($message->getContent()));
+        $response = yield from $this->chatClient->request(
+            'https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . rawurlencode(implode('%20', $message->getParameters()))
+        );
 
-        array_shift($fullCommand);
-
-        $promise = $this->httpClient->request('https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . implode('%20', $fullCommand));
-
-        $response = yield $promise;
-
-        $result = json_decode($response->getBody(), true);
+        $result   = json_decode($response->getBody(), true);
         $firstHit = reset($result['query']['pages']);
 
         if (isset($firstHit['pageid'])) {
-            yield from $this->postResult($message, $firstHit);
+            yield from $this->postResult($firstHit);
         } else {
             yield from $this->postNoResult($message);
         }
     }
 
-    private function postResult(Message $message, array $result): \Generator
+    private function postResult(array $result): \Generator
     {
-        $promise = $this->httpClient->request('http://en.wikipedia.org/w/api.php?action=query&prop=info&pageids=' . $result['pageid'] . '&inprop=url&format=json');
+        $response = yield from $this->chatClient->request(
+            'http://en.wikipedia.org/w/api.php?action=query&prop=info&pageids=' . $result['pageid'] . '&inprop=url&format=json'
+        );
 
-        $response = yield $promise;
+        $page = json_decode($response->getBody(), true);
 
-        $page     = json_decode($response->getBody(), true);
-
-        $body = (new FormBody)
-            ->addField('text', $page['query']['pages'][$result['pageid']]['canonicalurl'])
-            ->addField('fkey', $this->chatKey);
-
-        $request = (new Request)
-            ->setUri('http://chat.stackoverflow.com/chats/' . $message->getRoomid() . '/messages/new')
-            ->setMethod('POST')
-            ->setBody($body);
-
-        $promise = $this->httpClient->request($request);
-
-        yield $promise;
+        yield from $this->chatClient->postMessage($page['query']['pages'][$result['pageid']]['canonicalurl']);
     }
 
     private function postNoResult(Message $message): \Generator
     {
-        $body = (new FormBody)
-            ->addField('text', sprintf(':%s %s', $message->getId(), 'Sorry I couldn\'t find that page.'))
-            ->addField('fkey', $this->chatKey);
-
-        $request = (new Request)
-            ->setUri('http://chat.stackoverflow.com/chats/' . $message->getRoomid() . '/messages/new')
-            ->setMethod('POST')
-            ->setBody($body);
-
-        $promise = $this->httpClient->request($request);
-
-        yield $promise;
+        yield from $this->chatClient->postMessage(
+            sprintf(':%s %s', $message->getOrigin(), 'Sorry I couldn\'t find that page.')
+        );
     }
 }

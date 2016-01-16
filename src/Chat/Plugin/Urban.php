@@ -2,23 +2,18 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Message\Message;
-use Amp\Artax\Client as HttpClient;
-use Amp\Artax\Request;
-use Amp\Artax\FormBody;
+use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
+use Room11\Jeeves\Chat\Command\Message;
 
 class Urban implements Plugin
 {
     const COMMAND = 'urban';
 
-    private $httpClient;
+    private $chatClient;
 
-    private $chatKey;
-
-    public function __construct(HttpClient $httpClient, string $chatKey)
+    public function __construct(ChatClient $chatClient)
     {
-        $this->httpClient = $httpClient;
-        $this->chatKey    = $chatKey;
+        $this->chatClient = $chatClient;
     }
 
     public function handle(Message $message): \Generator
@@ -32,39 +27,29 @@ class Urban implements Plugin
 
     private function validMessage(Message $message): bool
     {
-        return get_class($message) === 'Room11\Jeeves\Chat\Message\NewMessage'
-            && strpos($message->getContent(), '!!urban') === 0
-            && count(explode(' ', trim($message->getContent())) > 1);
+        return get_class($message) === 'Room11\Jeeves\Chat\Command\Command'
+            && $message->getCommand() === self::COMMAND
+            && $message->getParameters();
     }
 
     private function getResult(Message $message): \Generator
     {
-        $fullCommand = explode(' ', trim($message->getContent()));
-
-        array_shift($fullCommand);
-
-        $promise = $this->httpClient->request('http://api.urbandictionary.com/v0/define?term=' . implode('%20', $fullCommand));
-
-        $response = yield $promise;
+        $response = yield from $this->chatClient->request(
+            'http://api.urbandictionary.com/v0/define?term=' . rawurlencode(implode('%20', $message->getParameters()))
+        );
 
         $result = json_decode($response->getBody(), true);
 
-        yield from $this->postResult($message, $result);
+        yield from $this->chatClient->postMessage($this->getMessage($result));
     }
 
-    private function postResult(Message $message, array $result)
+    private function getMessage(array $result)
     {
-        $body = (new FormBody)
-            ->addField('text', sprintf('[ [%s](%s) ] %s', $result['list'][0]['word'], $result['list'][0]['permalink'], str_replace('\r\n', "\r\n", $result['list'][0]['definition'])))
-            ->addField('fkey', $this->chatKey);
-
-        $request = (new Request)
-            ->setUri('http://chat.stackoverflow.com/chats/' . $message->getRoomid() . '/messages/new')
-            ->setMethod('POST')
-            ->setBody($body);
-
-        $promise = $this->httpClient->request($request);
-
-        yield $promise;
+        return sprintf(
+            '[ [%s](%s) ] %s',
+            $result['list'][0]['word'],
+            $result['list'][0]['permalink'],
+            str_replace('\r\n', "\r\n", $result['list'][0]['definition'])
+        );
     }
 }

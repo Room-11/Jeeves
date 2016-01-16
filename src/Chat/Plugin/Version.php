@@ -2,23 +2,18 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Message\Message;
-use Amp\Artax\Client as HttpClient;
-use Amp\Artax\Request;
-use Amp\Artax\FormBody;
+use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
+use Room11\Jeeves\Chat\Command\Message;
 
 class Version implements Plugin
 {
     const COMMAND = 'version';
 
-    private $httpClient;
+    private $chatClient;
 
-    private $chatKey;
-
-    public function __construct(HttpClient $httpClient, string $chatKey)
+    public function __construct(ChatClient $chatClient)
     {
-        $this->httpClient = $httpClient;
-        $this->chatKey    = $chatKey;
+        $this->chatClient = $chatClient;
     }
 
     public function handle(Message $message): \Generator
@@ -27,29 +22,16 @@ class Version implements Plugin
             return;
         }
 
-        yield from $this->getVersion($message);
+        yield from $this->getVersion();
     }
 
     private function validMessage(Message $message): bool
     {
-        return get_class($message) === 'Room11\Jeeves\Chat\Message\NewMessage' && trim($message->getContent()) === '!!version';
+        return get_class($message) === 'Room11\Jeeves\Chat\Command\Command' && $message->getCommand() === self::COMMAND;
     }
 
-    private function getVersion(Message $message): \Generator
+    private function getVersion(): \Generator
     {
-        $body = (new FormBody)
-            ->addField('text', 'v0.0.1')
-            ->addField('fkey', $this->chatKey)
-        ;
-
-        $request = (new Request)
-            ->setUri('http://chat.stackoverflow.com/chats/' . $message->getRoomid() . '/messages/new')
-            ->setMethod('POST')
-            ->setBody($body)
-        ;
-
-        $promise = $this->httpClient->request($request);
-
-        yield $promise;
+        yield from $this->chatClient->postMessage('v0.0.3');
     }
 }
