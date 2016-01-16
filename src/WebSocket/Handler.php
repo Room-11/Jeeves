@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\WebSocket;
 
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
-use Room11\Jeeves\Chat\Command\Collection as CommandCollection;
+use Room11\Jeeves\Chat\Plugin\Collection as PluginCollection;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\Level;
 use Amp\Websocket;
@@ -13,14 +13,14 @@ class Handler implements Websocket
 {
     private $messageFactory;
 
-    private $commands;
+    private $plugins;
 
     private $logger;
 
-    public function __construct(MessageFactory $messageFactory, CommandCollection $commands, Logger $logger)
+    public function __construct(MessageFactory $messageFactory, PluginCollection $plugins, Logger $logger)
     {
         $this->messageFactory = $messageFactory;
-        $this->commands       = $commands;
+        $this->plugins        = $plugins;
         $this->logger         = $logger;
     }
 
@@ -44,7 +44,7 @@ class Handler implements Websocket
             $this->logger->log(Level::UNKNOWN_MESSAGE, 'Unknown message received', $rawMessage);
         }
 
-        yield from $this->commands->handle($message);
+        yield from $this->plugins->handle($message);
 
     }
 

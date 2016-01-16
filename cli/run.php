@@ -6,6 +6,7 @@ use Amp\Artax\Client as HttpClient;
 use Room11\Jeeves\Fkey\Retriever as FkeyRetriever;
 use Room11\Jeeves\OpenId\Client;
 
+use Room11\Jeeves\Chat\Command\Factory as CommandFactory;
 use Room11\Jeeves\Chat\Plugin\Collection as PluginCollection;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 
@@ -32,7 +33,7 @@ $chatClient = new ChatClient(
     $roomId
 );
 
-$commands = (new PluginCollection())
+$commands = (new PluginCollection(new CommandFactory()))
     ->register(new VersionPlugin($chatClient))
     ->register(new UrbanPlugin($chatClient))
     ->register(new WikipediaPlugin($chatClient))

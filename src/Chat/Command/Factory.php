@@ -33,8 +33,8 @@ class Factory
     }
 
     // Conversations are messages in which the bot is pinged / mentioned
-    private function isConversation(): bool
+    private function isConversation(Message $message): bool
     {
-        return get_class($this->message) === 'Room11\Jeeves\Chat\Message\MentionMessage';
+        return get_class($message) === 'Room11\Jeeves\Chat\Message\MentionMessage';
     }
 }

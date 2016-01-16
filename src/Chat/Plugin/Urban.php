@@ -45,11 +45,13 @@ class Urban implements Plugin
 
     private function getMessage(array $result)
     {
+        var_dump($result['list'][0]['definition']);
+
         return sprintf(
             '[ [%s](%s) ] %s',
             $result['list'][0]['word'],
             $result['list'][0]['permalink'],
-            str_replace('\r\n', "\r\n", $result['list'][0]['definition'])
+            str_replace("\r\n", ' ', $result['list'][0]['definition'])
         );
     }
 }

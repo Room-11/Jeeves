@@ -3,13 +3,13 @@
 namespace Room11\Jeeves\Chat\Command;
 
 use Room11\Jeeves\Chat\Command\Message as CommandMessage;
-use Room11\Jeeves\Chat\Message\Message;
+use Room11\Jeeves\Chat\Message\Message as ChatMessage;
 
 class Command implements CommandMessage
 {
     private $message;
 
-    public function __construct(Message $message)
+    public function __construct(ChatMessage $message)
     {
         $this->message = $message;
     }

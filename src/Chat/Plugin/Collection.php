@@ -2,11 +2,19 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Command\Message;
+use Room11\Jeeves\Chat\Command\Factory as CommandFactory;
+use Room11\Jeeves\Chat\Message\Message;
 
-class Collection implements Plugin
+class Collection
 {
+    private $commandFactory;
+
     private $plugins = [];
+
+    public function __construct(CommandFactory $commandFactory)
+    {
+        $this->commandFactory = $commandFactory;
+    }
 
     public function register(Plugin $plugin): Collection
     {
@@ -17,8 +25,10 @@ class Collection implements Plugin
 
     public function handle(Message $message): \Generator
     {
+        $command = $this->commandFactory->build($message);
+
         foreach ($this->plugins as $plugin) {
-            yield from $plugin->handle($message);
+            yield from $plugin->handle($command);
         }
     }
 }

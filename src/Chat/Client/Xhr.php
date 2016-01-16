@@ -23,7 +23,9 @@ class Xhr
 
     public function request(string $uri): \Generator
     {
-        yield $this->httpClient->request($uri);
+        $response = yield $this->httpClient->request($uri);
+
+        return $response;
     }
 
     public function postMessage(string $text): \Generator
