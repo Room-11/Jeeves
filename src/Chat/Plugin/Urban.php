@@ -27,9 +27,9 @@ class Urban implements Plugin
 
     private function validMessage(Message $message): bool
     {
-        if (get_class($message) !== 'Room11\Jeeves\Chat\Command\Command') {
-            return false;
-        }
+        return get_class($message) === 'Room11\Jeeves\Chat\Command\Command'
+            && $message->getCommand() === self::COMMAND
+            && $message->getParameters();
     }
 
     private function getResult(Message $message): \Generator
