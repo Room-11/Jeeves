@@ -27,9 +27,9 @@ class Urban implements Plugin
 
     private function validMessage(Message $message): bool
     {
-        return get_class($message) === 'Room11\Jeeves\Chat\Command\Command'
-            && $message->getCommand() === self::COMMAND
-            && $message->getParameters();
+        if (get_class($message) !== 'Room11\Jeeves\Chat\Command\Command') {
+            return false;
+        }
     }
 
     private function getResult(Message $message): \Generator
@@ -43,10 +43,8 @@ class Urban implements Plugin
         yield from $this->chatClient->postMessage($this->getMessage($result));
     }
 
-    private function getMessage(array $result)
+    private function getMessage(array $result): string
     {
-        var_dump($result['list'][0]['definition']);
-
         return sprintf(
             '[ [%s](%s) ] %s',
             $result['list'][0]['word'],
