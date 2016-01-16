@@ -7,7 +7,7 @@ use Room11\Jeeves\Fkey\Retriever as FkeyRetriever;
 use Room11\Jeeves\OpenId\Client;
 
 use Room11\Jeeves\Chat\Room\Collection as RoomCollection;
-use Room11\Jeeves\Chat\Command\Collection as CommandCollection;
+use Room11\Jeeves\Chat\Plugin\Collection as CommandCollection;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 
 use Room11\Jeeves\Chat\Plugin\Version as VersionCommand;
