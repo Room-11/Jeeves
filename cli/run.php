@@ -39,7 +39,7 @@ $commands = (new CommandCollection())
     ->register(new WikipediaCommand($httpClient, $chatKey))
 ;
 
-\Amp\run(function () use ($webSocketUrl, $httpClient, $chatKey, $roomCollection, $commands, $logger) {
+\Amp\run(function () use ($webSocketUrl, $commands, $logger) {
     $handshake = new Handshake($webSocketUrl . '?l=57365782');
 
     $handshake->setHeader('Origin', "http://chat.stackoverflow.com");
