@@ -13,6 +13,7 @@ use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Plugin\Version as VersionPlugin;
 use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
 use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
+use Room11\Jeeves\Chat\Plugin\SwordFight as SwordFightPlugin;
 
 use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
 
@@ -37,6 +38,7 @@ $commands = (new PluginCollection(new CommandFactory()))
     ->register(new VersionPlugin($chatClient))
     ->register(new UrbanPlugin($chatClient))
     ->register(new WikipediaPlugin($chatClient))
+    ->register(new SwordFightPlugin($chatClient))
 ;
 
 $webSocketUrl = $openIdClient->getWebSocketUri($roomId);
