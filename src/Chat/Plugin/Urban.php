@@ -45,7 +45,7 @@ class Urban implements Plugin
 
     private function getMessage(array $result): string
     {
-        return count($result['list']) > 0
+        return $result['result_type'] !== 'no_results'
             ? sprintf(
                 '[ [%s](%s) ] %s',
                 $result['list'][0]['word'],
