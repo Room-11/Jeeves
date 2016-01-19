@@ -45,6 +45,11 @@ class Urban implements Plugin
 
     private function getMessage(array $result): string
     {
+        if ($result['result_type'] === 'no_results')
+        {
+            return 'whatchoo talkin bout willis';
+        }
+
         return sprintf(
             '[ [%s](%s) ] %s',
             $result['list'][0]['word'],
