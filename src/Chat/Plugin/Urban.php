@@ -40,17 +40,26 @@ class Urban implements Plugin
 
         $result = json_decode($response->getBody(), true);
 
+        if ($result['result_type'] === 'no_results')
+        {
+            yield from $this->chatClient->postMessage($this->getUndefinedMessage());
+        }
+
         yield from $this->chatClient->postMessage($this->getMessage($result));
+    }
+
+    private function getUndefinedMessage(): string
+    {
+        return 'whatchoo talkin bout willis';
     }
 
     private function getMessage(array $result): string
     {
-        return $result['result_type'] !== 'no_results'
-            ? sprintf(
-                '[ [%s](%s) ] %s',
-                $result['list'][0]['word'],
-                $result['list'][0]['permalink'],
-                str_replace("\r\n", ' ', $result['list'][0]['definition']))
-            : sprintf('undefined term');
+        return sprintf(
+            '[ [%s](%s) ] %s',
+            $result['list'][0]['word'],
+            $result['list'][0]['permalink'],
+            str_replace("\r\n", ' ', $result['list'][0]['definition'])
+        );
     }
 }
