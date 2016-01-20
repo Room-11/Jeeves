@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
+use Room11\Jeeves\Chat\Command\Command;
 use Room11\Jeeves\Chat\Command\Message;
 use Amp\Artax\Response;
 
@@ -28,7 +29,7 @@ class Docs implements Plugin
 
     private function validMessage(Message $message): bool
     {
-        return get_class($message) === 'Room11\Jeeves\Chat\Command\Command'
+        return $message instanceof Command
             && $message->getCommand() === self::COMMAND
             && $message->getParameters();
     }
