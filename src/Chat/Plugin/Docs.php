@@ -36,9 +36,10 @@ class Docs implements Plugin
 
     private function getResult(Message $message): \Generator
     {
-        $response = yield from $this->chatClient->request(
-            'http://php.net/manual-lookup.php?scope=quickref&pattern=' . rawurlencode(implode(' ', $message->getParameters()))
-        );
+        $pattern = strtr(implode(' ', $message->getParameters()), '::', '.');
+        $url = 'http://php.net/manual-lookup.php?scope=quickref&pattern=' . rawurlencode($pattern);
+
+        $response = yield from $this->chatClient->request($url);
 
         if ($response->getPreviousResponse() !== null) {
             yield from $this->chatClient->postMessage(
