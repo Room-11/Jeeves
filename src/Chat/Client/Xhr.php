@@ -21,9 +21,9 @@ class Xhr
         $this->roomId     = $roomId;
     }
 
-    public function request(string $uri): \Generator
+    public function request($uriOrRequest): \Generator
     {
-        $response = yield $this->httpClient->request($uri);
+        $response = yield $this->httpClient->request($uriOrRequest);
 
         return $response;
     }
