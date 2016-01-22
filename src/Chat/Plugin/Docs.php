@@ -37,6 +37,13 @@ class Docs implements Plugin
     private function getResult(Message $message): \Generator
     {
         $pattern = strtr(implode(' ', $message->getParameters()), '::', '.');
+
+        if (substr($pattern, 0, 6) === "mysql_") {
+            yield from $this->chatClient->postMessage(
+                $this->getMysqlMessage()
+            );
+        }
+
         $url = 'http://php.net/manual-lookup.php?scope=quickref&pattern=' . rawurlencode($pattern);
 
         $response = yield from $this->chatClient->request($url);
@@ -50,6 +57,16 @@ class Docs implements Plugin
                 yield from $this->getMessageFromSearch($response)
             );
         }
+    }
+
+    private function getMysqlMessage(): string {
+        // See https://gist.github.com/MadaraUchiha/3881905
+        return "[**Please, don't use `mysql_*` functions in new code**](http://bit.ly/phpmsql). "
+             . "They are no longer maintained [and are officially deprecated](http://j.mp/XqV7Lp). "
+             . "See the [**red box**](http://j.mp/Te9zIL)? Learn about [*prepared statements*](http://j.mp/T9hLWi) instead, "
+             . "and use [PDO](http://php.net/pdo) or [MySQLi](http://php.net/mysqli) - "
+             . "[this article](http://j.mp/QEx8IB) will help you decide which. If you choose PDO, "
+             . "[here is a good tutorial](http://j.mp/PoWehJ).";
     }
 
     private function getMessageFromMatch(Response $response): string
