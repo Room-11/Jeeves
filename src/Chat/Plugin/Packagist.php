@@ -9,7 +9,7 @@ use Amp\Artax\Response;
 
 class Packagist implements Plugin
 {
-    const COMMAND = 'packagist';
+    const COMMANDS = ['packagist', 'package'];
 
     private $chatClient;
 
@@ -30,16 +30,21 @@ class Packagist implements Plugin
     private function validMessage(Message $message): bool
     {
         return $message instanceof Command
-        && $message->getCommand() === self::COMMAND
-        && $message->getParameters();
+        && in_array($message->getCommand(), self::COMMANDS, true);
     }
 
     private function getResult(Message $message): \Generator
     {
+        $reply = $message->getOrigin();
+
         /** @var Command $message */
         $info = explode('/', implode('/', $message->getParameters()), 2);
 
         if (count($info) !== 2) {
+            yield from $this->chatClient->postMessage(
+                ":$reply Usage: `!!packagist vendor package`"
+            );
+
             return;
         }
 
@@ -51,6 +56,10 @@ class Packagist implements Plugin
         $response = yield from $this->chatClient->request($url);
 
         if ($response->getStatus() !== 200) {
+            yield from $this->chatClient->postMessage(
+                ":$reply `$vendor/$package` does not exist."
+            );
+
             return;
         }
 

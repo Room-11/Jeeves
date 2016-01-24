@@ -31,8 +31,8 @@ class Client
     public function getWebSocketUri(int $roomId): string
     {
         $body = (new FormBody)
-            ->addField('roomid', $roomId) // @todo don't hardcode the room id although 11 is the best
-            ->addField('fkey', $this->fkeyRetriever->get('http://chat.stackoverflow.com/rooms/' . $roomId . '/php'))
+            ->addField('roomid', $roomId)
+            ->addField('fkey', $this->fkeyRetriever->get('http://chat.stackoverflow.com/rooms/' . $roomId))
         ;
 
         $request = (new Request)
