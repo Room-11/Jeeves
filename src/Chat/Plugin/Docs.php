@@ -42,6 +42,8 @@ class Docs implements Plugin
             yield from $this->chatClient->postMessage(
                 $this->getMysqlMessage()
             );
+
+            return;
         }
 
         $url = 'http://php.net/manual-lookup.php?scope=quickref&pattern=' . rawurlencode($pattern);
