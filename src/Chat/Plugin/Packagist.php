@@ -49,7 +49,12 @@ class Packagist implements Plugin
 
         /** @var Response $response */
         $response = yield from $this->chatClient->request($url);
-        $data = json_decode($response->getBody(), true);
+
+        if ($response->getStatus() !== 200) {
+            return;
+        }
+
+        $data = json_decode($response->getBody());
 
         yield from $this->chatClient->postMessage(sprintf(
             "[ [%s](%s) ] %s",
