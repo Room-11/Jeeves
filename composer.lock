@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "5a19cf159af350fc2b282d2aff9e2738",
-    "content-hash": "62cfeb25016e3e6cdfa11cf563d4accf",
+    "hash": "6a6de5dca03987e9a09c468e18181de9",
+    "content-hash": "bc911007970e3591dd87e113cf1f23fa",
     "packages": [
         {
             "name": "amphp/amp",
@@ -66,16 +66,16 @@
         },
         {
             "name": "amphp/artax",
-            "version": "2.x-dev",
+            "version": "v2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/artax.git",
-                "reference": "858802e9a2f0628e706be5f193df0a4970f0a116"
+                "reference": "1dab13194aa57f1f9b71ed39ceabdbba0041fdb5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/artax/zipball/858802e9a2f0628e706be5f193df0a4970f0a116",
-                "reference": "858802e9a2f0628e706be5f193df0a4970f0a116",
+                "url": "https://api.github.com/repos/amphp/artax/zipball/1dab13194aa57f1f9b71ed39ceabdbba0041fdb5",
+                "reference": "1dab13194aa57f1f9b71ed39ceabdbba0041fdb5",
                 "shasum": ""
             },
             "require": {
@@ -90,8 +90,8 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.0.x-dev",
-                    "dev-v2": "2.0.0-dev"
+                    "dev-master": "2.x-dev",
+                    "dev-1.x": "1.x-dev"
                 }
             },
             "autoload": {
@@ -120,7 +120,7 @@
                 "parallel",
                 "rest"
             ],
-            "time": "2016-01-09 19:46:13"
+            "time": "2016-01-23 18:35:00"
         },
         {
             "name": "amphp/cache",
@@ -443,13 +443,47 @@
                 "dns"
             ],
             "time": "2015-04-02 15:42:15"
+        },
+        {
+            "name": "sebastian/version",
+            "version": "1.0.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/sebastianbergmann/version.git",
+                "reference": "58b3a85e7999757d6ad81c787a1fbf5ff6c628c6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sebastianbergmann/version/zipball/58b3a85e7999757d6ad81c787a1fbf5ff6c628c6",
+                "reference": "58b3a85e7999757d6ad81c787a1fbf5ff6c628c6",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "src/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Sebastian Bergmann",
+                    "email": "sebastian@phpunit.de",
+                    "role": "lead"
+                }
+            ],
+            "description": "Library that helps with managing the version number of Git-hosted PHP projects",
+            "homepage": "https://github.com/sebastianbergmann/version",
+            "time": "2015-06-21 13:59:46"
         }
     ],
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "amphp/artax": 20,
         "amphp/websocket": 20
     },
     "prefer-stable": false,
