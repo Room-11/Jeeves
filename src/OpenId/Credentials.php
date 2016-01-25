@@ -1,35 +1,21 @@
-<?php declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace Room11\Jeeves\OpenId;
 
-class Credentials
-{
+class Credentials {
     private $emailAddress;
-
     private $password;
 
-    public function __construct(string $emailAddress, string $password)
-    {
-        $this->validateEmailAddress($emailAddress);
-
+    public function __construct(EmailAddress $emailAddress, Password $password) {
         $this->emailAddress = $emailAddress;
-        $this->password     = $password;
+        $this->password = $password;
     }
 
-    private function validateEmailAddress(string $emailAddress)
-    {
-        if (!filter_var($emailAddress, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidEmailAddressException();
-        }
-    }
-
-    public function getEmailAddress(): string
-    {
+    public function getEmailAddress(): EmailAddress {
         return $this->emailAddress;
     }
 
-    public function getPassword(): string
-    {
+    public function getPassword(): Password {
         return $this->password;
     }
 }

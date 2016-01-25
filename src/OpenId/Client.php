@@ -33,7 +33,7 @@ class Client {
 
         $body = (new FormBody)
             ->addField("roomid", $room->getId())
-            ->addField("fkey", $this->fkeyRetriever->get($origin . "/rooms/" . $room->getId()));
+            ->addField("fkey", (string) $this->fkeyRetriever->get($origin . "/rooms/" . $room->getId()));
 
         $request = (new Request)
             ->setUri($origin . "/ws-auth")
