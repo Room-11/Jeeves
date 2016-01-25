@@ -1,0 +1,12 @@
+# https://openid.stackexchange.com/account/login
+username: %username%
+password: %password%
+
+room:
+  hostname: chat.stackoverflow.com
+  secure: true
+  id: 100286
+
+logging:
+  level: ALL | DEBUG
+  handler: Room11\Jeeves\Log\StdOut

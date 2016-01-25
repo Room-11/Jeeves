@@ -13,13 +13,13 @@ class Retriever
         $this->httpClient = $httpClient;
     }
 
-    public function get(string $url): string
+    public function get(string $url): Fkey
     {
         $promise = $this->httpClient->request($url);
 
         $response = \Amp\wait($promise);
 
-        return $this->getFromHtml($response->getBody());
+        return new FKey($this->getFromHtml($response->getBody()));
     }
 
     private function getFromHtml(string $html): string
