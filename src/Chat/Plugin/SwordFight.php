@@ -11,6 +11,7 @@ class SwordFight implements Plugin
 
     private $chatClient;
 
+    // We only match on insults for now because comparing text is actually pretty hard and I'm lazy
     private $matches = [
         [
             'insult'   => [
@@ -97,11 +98,7 @@ class SwordFight implements Plugin
 
         foreach ($this->matches as $match) {
             if ($this->textDoesMatch($match['insult'], $text)) {
-                return $match['response']['text'] . 'first';
-            }
-
-            if ($this->textDoesMatch($match['response'], $text)) {
-                return $match['insult']['text'] . 'second';
+                return $match['response']['text'];
             }
         }
     }
