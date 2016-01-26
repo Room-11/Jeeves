@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
+use Room11\Jeeves\Chat\Client\ChatClient as ChatClient;
 use Room11\Jeeves\Chat\Command\Message;
 
 class Wikipedia implements Plugin
