@@ -99,8 +99,6 @@ class Docs implements Plugin
 
         libxml_use_internal_errors($internalErrors);
 
-        $xpath = new \DOMXPath($dom);
-
         $firstResult = $dom->getElementById('quickref_functions')->getElementsByTagName('li')->item(0);
 
         $response = yield from $this->chatClient->request(
