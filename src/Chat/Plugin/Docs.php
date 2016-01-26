@@ -109,27 +109,4 @@ class Docs implements Plugin
 
         return $this->getMessageFromMatch($response);
     }
-
-    private function getMessageFromSearch2(Response $response): string
-    {
-        $internalErrors = libxml_use_internal_errors(true);
-
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getBody());
-
-        libxml_use_internal_errors($internalErrors);
-
-        $xpath = new \DOMXPath($dom);
-
-        $firstResult = $dom->getElementById('quickref_functions')->getElementsByTagName('li')->item(0);
-
-        var_dump($firstResult);
-
-        return sprintf(
-            '[ [%s](%s) ] %s',
-            $firstResult->textContent,
-            'https://php.net' . $firstResult->getElementsByTagName('a')->item(0)->getAttribute('href'),
-            'foo'
-        );
-    }
 }
