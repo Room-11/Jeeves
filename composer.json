@@ -21,6 +21,7 @@
         "amphp/websocket": "dev-master",
         "sebastian/version": "^1.0",
         "symfony/yaml": "^3.0",
-        "rdlowrey/auryn": "^1.1"
+        "rdlowrey/auryn": "^1.1",
+        "sabre/uri": "^1.0"
     }
 }

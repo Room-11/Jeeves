@@ -10,6 +10,7 @@ use Room11\Jeeves\Chat\Plugin\Collection as PluginCollection;
 use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
 use Room11\Jeeves\Chat\Plugin\Imdb as ImdbPlugin;
 use Room11\Jeeves\Chat\Plugin\Packagist as PackagistPlugin;
+use Room11\Jeeves\Chat\Plugin\RFC as RfcPlugin;
 use Room11\Jeeves\Chat\Plugin\SwordFight as SwordFightPlugin;
 use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
 use Room11\Jeeves\Chat\Plugin\Version as VersionPlugin;
@@ -82,6 +83,7 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         DocsPlugin::class,
         ImdbPlugin::class,
         PackagistPlugin::class,
+        RfcPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {
