@@ -6,6 +6,7 @@ use Amp\Artax\Client as HttpClient;
 use Amp\Websocket\Handshake;
 use Auryn\Injector;
 use Room11\Jeeves\Chat\Command\Factory as CommandFactory;
+use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
 use Room11\Jeeves\Chat\Plugin\Collection as PluginCollection;
 use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
 use Room11\Jeeves\Chat\Plugin\Imdb as ImdbPlugin;
@@ -84,6 +85,7 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         ImdbPlugin::class,
         PackagistPlugin::class,
         RfcPlugin::class,
+        CodeFormatPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {
