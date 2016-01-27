@@ -42,7 +42,7 @@ class CodeFormat implements Plugin {
         }
 
         if (strpos($content, "&lt;?php") !== false
-            || preg_match("@(if|for|while|foreach)\\s*\\(@", $content)
+            || preg_match("@(if|for|while|foreach|switch)\\s*\\(@", $content)
             || preg_match("@\\$([a-zA-Z_0-9]+)\\s*=\\s*@", $content)
             || preg_match("@(print|echo)\\s+(&quot;|&#39;)@", $content)) {
             yield from $this->chatClient->postMessage(
