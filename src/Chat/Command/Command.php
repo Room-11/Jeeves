@@ -19,7 +19,7 @@ class Command implements CommandMessage
         return $this->message->getId();
     }
 
-    public function getMessage(): Message {
+    public function getMessage(): ChatMessage {
         return $this->message;
     }
 
