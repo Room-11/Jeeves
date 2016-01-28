@@ -36,7 +36,7 @@ class Docs implements Plugin
 
     private function getResult(Message $message): \Generator
     {
-        $pattern = strtr(implode(' ', $message->getParameters()), '::', '.');
+        $pattern = str_replace('::', '.', implode(' ', $message->getParameters()));
 
         if (substr($pattern, 0, 6) === "mysql_") {
             yield from $this->chatClient->postMessage(
@@ -81,12 +81,13 @@ class Docs implements Plugin
         libxml_use_internal_errors($internalErrors);
 
         $xpath = new \DOMXPath($dom);
-
+var_dump('STAAAAAAAAAAAAAAAAAAAAART');
+        var_dump($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent);
         return sprintf(
-            '[ [%s](%s) ] %s',
+            '[ [`%s`](%s) ] %s',
             $dom->getElementsByTagName('h1')->item(0)->textContent,
             $response->getRequest()->getUri(),
-            $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent
+            trim($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent)
         );
     }
 
