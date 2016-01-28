@@ -41,10 +41,28 @@ class CodeFormat implements Plugin {
             return;
         }
 
-        if (strpos($content, "&lt;?php") !== false
-            || preg_match("@(if|for|while|foreach|switch)\\s*\\(@", $content)
-            || preg_match("@\\$([a-zA-Z_0-9]+)\\s*=\\s*@", $content)
-            || preg_match("@(print|echo)\\s+(&quot;|&#39;)@", $content)) {
+        $lines = str_replace(["<div class='full'>", "</div>"], "", $content);
+        $lines = array_map("html_entity_decode", array_map("trim", explode("<br>", $lines)));
+
+        # First line is often text, just check other lines
+        array_shift($lines);
+
+        $linesOfCode = array_reduce($lines, function($carry, $line) {
+            if (preg_match("@^([A-Za-z]+ ){4,}@", $line)) {
+                return $carry;
+            }
+
+            if (strpos($line, "<?php") !== false
+                || preg_match("@(if|for|while|foreach|switch)\\s*\\(@", $line)
+                || preg_match("@\\$([a-zA-Z_0-9]+)@", $line)
+                || preg_match("@(print|echo)\\s+(\"|'|\\$)@", $line)) {
+                return $carry + 1;
+            }
+
+            return $carry;
+        }, 0);
+
+        if ($linesOfCode >= 3) {
             yield from $this->chatClient->postMessage(
                 ":{$origin} Please format your code - hit Ctrl+K before sending and have a look at the [FAQ](http://chat.stackoverflow.com/faq)."
             );
