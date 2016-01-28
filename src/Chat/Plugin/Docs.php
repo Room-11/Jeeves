@@ -81,8 +81,7 @@ class Docs implements Plugin
         libxml_use_internal_errors($internalErrors);
 
         $xpath = new \DOMXPath($dom);
-var_dump('STAAAAAAAAAAAAAAAAAAAAART');
-        var_dump($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent);
+
         return sprintf(
             '[ [`%s`](%s) ] %s',
             $dom->getElementsByTagName('h1')->item(0)->textContent,
