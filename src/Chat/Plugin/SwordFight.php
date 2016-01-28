@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
+use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Message;
 
 class SwordFight implements Plugin
@@ -11,6 +11,7 @@ class SwordFight implements Plugin
 
     private $chatClient;
 
+    // We only match on insults for now because comparing text is actually pretty hard and I'm lazy
     private $matches = [
         [
             'insult'   => [
@@ -97,11 +98,7 @@ class SwordFight implements Plugin
 
         foreach ($this->matches as $match) {
             if ($this->textDoesMatch($match['insult'], $text)) {
-                return $match['response']['text'] . 'first';
-            }
-
-            if ($this->textDoesMatch($match['response'], $text)) {
-                return $match['insult']['text'] . 'second';
+                return $match['response']['text'];
             }
         }
     }

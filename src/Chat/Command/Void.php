@@ -18,4 +18,8 @@ class Void implements CommandMessage
     {
         return $this->message->getId();
     }
+
+    public function getMessage(): Message {
+        return $this->message;
+    }
 }

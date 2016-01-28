@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
+use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
 use Room11\Jeeves\Chat\Command\Message;
 use Amp\Artax\Response;
@@ -36,7 +36,16 @@ class Docs implements Plugin
 
     private function getResult(Message $message): \Generator
     {
-        $pattern = strtr(implode(' ', $message->getParameters()), '::', '.');
+        $pattern = str_replace('::', '.', implode(' ', $message->getParameters()));
+
+        if (substr($pattern, 0, 6) === "mysql_") {
+            yield from $this->chatClient->postMessage(
+                $this->getMysqlMessage()
+            );
+
+            return;
+        }
+
         $url = 'http://php.net/manual-lookup.php?scope=quickref&pattern=' . rawurlencode($pattern);
 
         $response = yield from $this->chatClient->request($url);
@@ -52,6 +61,16 @@ class Docs implements Plugin
         }
     }
 
+    private function getMysqlMessage(): string {
+        // See https://gist.github.com/MadaraUchiha/3881905
+        return "[**Please, don't use `mysql_*` functions in new code**](http://bit.ly/phpmsql). "
+             . "They are no longer maintained [and are officially deprecated](http://j.mp/XqV7Lp). "
+             . "See the [**red box**](http://j.mp/Te9zIL)? Learn about [*prepared statements*](http://j.mp/T9hLWi) instead, "
+             . "and use [PDO](http://php.net/pdo) or [MySQLi](http://php.net/mysqli) - "
+             . "[this article](http://j.mp/QEx8IB) will help you decide which. If you choose PDO, "
+             . "[here is a good tutorial](http://j.mp/PoWehJ).";
+    }
+
     private function getMessageFromMatch(Response $response): string
     {
         $internalErrors = libxml_use_internal_errors(true);
@@ -64,10 +83,10 @@ class Docs implements Plugin
         $xpath = new \DOMXPath($dom);
 
         return sprintf(
-            '[ [%s](%s) ] %s',
+            '[ [`%s`](%s) ] %s',
             $dom->getElementsByTagName('h1')->item(0)->textContent,
             $response->getRequest()->getUri(),
-            $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent
+            trim($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent)
         );
     }
 
@@ -80,8 +99,6 @@ class Docs implements Plugin
 
         libxml_use_internal_errors($internalErrors);
 
-        $xpath = new \DOMXPath($dom);
-
         $firstResult = $dom->getElementById('quickref_functions')->getElementsByTagName('li')->item(0);
 
         $response = yield from $this->chatClient->request(
@@ -89,28 +106,5 @@ class Docs implements Plugin
         );
 
         return $this->getMessageFromMatch($response);
-    }
-
-    private function getMessageFromSearch2(Response $response): string
-    {
-        $internalErrors = libxml_use_internal_errors(true);
-
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getBody());
-
-        libxml_use_internal_errors($internalErrors);
-
-        $xpath = new \DOMXPath($dom);
-
-        $firstResult = $dom->getElementById('quickref_functions')->getElementsByTagName('li')->item(0);
-
-        var_dump($firstResult);
-
-        return sprintf(
-            '[ [%s](%s) ] %s',
-            $firstResult->textContent,
-            'https://php.net' . $firstResult->getElementsByTagName('a')->item(0)->getAttribute('href'),
-            'foo'
-        );
     }
 }

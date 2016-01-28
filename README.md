@@ -5,11 +5,10 @@ Chat bot for StackOverflow. Playground for [amphp](https://github.com/amphp) lib
 
 ## Installation
 
-1. Clone the project
-1. Copy init.example.php to init.whatever.php
-1. Set your openid credentials in init.whatever.php
-1. Change the init include in init.deployment.php
-1. Run the bot using `php ./cli/run.php`
+1. Clone the project.
+1. Copy `config/config.sample.yml` to `config/config.yml`.
+1. Replace all configuration variables with your values.
+1. Run the bot using `php ./cli/run.php`.
 
 ## Request flow for chat
 

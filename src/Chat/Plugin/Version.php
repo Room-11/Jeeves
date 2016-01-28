@@ -2,8 +2,10 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Client\Xhr as ChatClient;
+use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Command\Command;
 use Room11\Jeeves\Chat\Command\Message;
+use SebastianBergmann\Version as SebastianVersion;
 
 class Version implements Plugin
 {
@@ -27,11 +29,23 @@ class Version implements Plugin
 
     private function validMessage(Message $message): bool
     {
-        return get_class($message) === 'Room11\Jeeves\Chat\Command\Command' && $message->getCommand() === self::COMMAND;
+        return $message instanceof Command
+        && $message->getCommand() === self::COMMAND;
     }
 
     private function getVersion(): \Generator
     {
-        yield from $this->chatClient->postMessage('v0.0.3');
+        $version = new SebastianVersion(VERSION, dirname(dirname(dirname(__DIR__))));
+
+        $version = preg_replace_callback("@(v([0-9.]+)-(\d+))-g([0-9a-f]+)@", function($match) {
+            return sprintf(
+                "[%s-g%s](%s)",
+                $match[1],
+                $match[4],
+                "https://github.com/Room-11/Jeeves/commit/" . $match[4]
+            );
+        }, $version->getVersion());
+
+        yield from $this->chatClient->postMessage($version);
     }
 }
