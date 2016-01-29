@@ -41,7 +41,7 @@ class EvalCode implements Plugin
 
     private function getResult(Message $message): \Generator
     {
-        $code = html_entity_decode(implode(' ', $message->getParameters()), ENT_QUOTES);
+        $code = $this->normalizeCode(implode(' ', $message->getParameters()));
 
         if (strpos($code, '<?php') === false) {
             $code = '<?php ' . $code;
@@ -68,6 +68,22 @@ class EvalCode implements Plugin
         yield from $this->chatClient->postMessage(
             $this->getMessage($result, $response->getPreviousResponse()->getHeader('Location')[0])
         );
+    }
+
+    private function normalizeCode($code)
+    {
+        $code = html_entity_decode($code, ENT_QUOTES);
+
+        $useInternalErrors = libxml_use_internal_errors(true);
+
+        $dom = new \DOMDocument();
+        $dom->loadHTML($code, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+        libxml_use_internal_errors($useInternalErrors);
+
+        $code = $dom->textContent;
+
+        return $code;
     }
 
     /**
