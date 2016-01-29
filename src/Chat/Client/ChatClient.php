@@ -42,6 +42,9 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
-        yield $this->httpClient->request($request);
+        $response = yield $this->httpClient->request($request);
+        $response = json_decode($response->getBody(), true);
+
+        return new Response($response["id"], $response["time"]);
     }
 }
