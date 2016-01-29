@@ -18,13 +18,11 @@ class EvalCode implements Plugin
 
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient)
-    {
+    public function __construct(ChatClient $chatClient) {
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator
-    {
+    public function handle(Message $message): \Generator {
         if (!$this->validMessage($message)) {
             return;
         }
@@ -32,29 +30,27 @@ class EvalCode implements Plugin
         yield from $this->getResult($message);
     }
 
-    private function validMessage(Message $message): bool
-    {
+    private function validMessage(Message $message): bool {
         return $message instanceof Command
             && in_array($message->getCommand(), self::COMMANDS, true)
             && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator
-    {
+    private function getResult(Message $message): \Generator {
         $code = $this->normalizeCode(implode(' ', $message->getParameters()));
 
-        if (strpos($code, '<?php') === false) {
-            $code = '<?php ' . $code;
+        if (strpos($code, "<?php") === false) {
+            $code = "<?php " . $code;
         }
 
         $body = (new FormBody)
-            ->addField('title', '')
-            ->addField('code', $code)
+            ->addField("title", "")
+            ->addField("code", $code)
         ;
 
         $request = (new Request)
-            ->setUri('https://3v4l.org/new')
-            ->setMethod('POST')
+            ->setUri("https://3v4l.org/new")
+            ->setMethod("POST")
             ->setBody($body)
         ;
 
@@ -62,16 +58,15 @@ class EvalCode implements Plugin
 
         // 3v4l uses only paths for redirects
         $result = yield from $this->pollUntilDone(
-            'https://3v4l.org' . $response->getPreviousResponse()->getHeader('Location')[0]
+            "https://3v4l.org" . $response->getPreviousResponse()->getHeader("Location")[0]
         );
 
         yield from $this->chatClient->postMessage(
-            $this->getMessage($result, $response->getPreviousResponse()->getHeader('Location')[0])
+            $this->getMessage($result, $response->getPreviousResponse()->getHeader("Location")[0])
         );
     }
 
-    private function normalizeCode($code)
-    {
+    private function normalizeCode($code) {
         $code = html_entity_decode($code, ENT_QUOTES);
 
         $useInternalErrors = libxml_use_internal_errors(true);
@@ -92,8 +87,7 @@ class EvalCode implements Plugin
      * It seems like there is a class `busy` when the result is not complete yet and a class `done` when it is finished
      * somewhere in the html. inb4 this method breaks when you look at it the wrong way or Jon changes something
      */
-    private function pollUntilDone(string $snippetUrl): \Generator
-    {
+    private function pollUntilDone(string $snippetUrl): \Generator {
         $requests = 0;
 
         while (true && $requests <= self::REQUEST_LIMIT) {
@@ -120,8 +114,7 @@ class EvalCode implements Plugin
         }
     }
 
-    private function parseResponse(string $body): array
-    {
+    private function parseResponse(string $body): array {
         $useInternalErrors = libxml_use_internal_errors(true);
 
         $dom = new \DOMDocument();
@@ -129,21 +122,20 @@ class EvalCode implements Plugin
 
         libxml_use_internal_errors($useInternalErrors);
 
-        $resultPane = $dom->getElementById('tab')->getElementsByTagName('dl')->item(0);
+        $resultPane = $dom->getElementById("tab")->getElementsByTagName("dl")->item(0);
 
         return [
-            'title'  => $resultPane->getElementsByTagName('dt')->item(0)->textContent,
-            'result' => $resultPane->getElementsByTagName('dd')->item(0)->textContent,
+            "title"  => $resultPane->getElementsByTagName("dt")->item(0)->textContent,
+            "result" => $resultPane->getElementsByTagName("dd")->item(0)->textContent,
         ];
     }
 
-    private function getMessage(array $result, string $url): string
-    {
+    private function getMessage(array $result, string $url): string {
         return sprintf(
-            '[ [%s](%s) ] %s',
-            $result['title'],
-            'https://3v4l.org' . $url,
-            $result['result']
+            "[ [%s](%s) ] %s",
+            $result["title"],
+            "https://3v4l.org" . $url,
+            $result["result"]
         );
     }
 }
