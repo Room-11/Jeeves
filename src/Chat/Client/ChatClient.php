@@ -47,4 +47,24 @@ class ChatClient {
 
         return new Response($response["id"], $response["time"]);
     }
+
+    public function editMessage(int $id, string $text): \Generator {
+        $body = (new FormBody)
+            ->addField("text", $text)
+            ->addField("fkey", $this->fkey);
+
+        $uri = sprintf(
+            "%s://%s/messages/%s",
+            $this->room->getHost()->isSecure() ? "https" : "http",
+            $this->room->getHost()->getHostname(),
+            $id
+        );
+
+        $request = (new Request)
+            ->setUri($uri)
+            ->setMethod("POST")
+            ->setBody($body);
+
+        yield $this->httpClient->request($request);
+    }
 }
