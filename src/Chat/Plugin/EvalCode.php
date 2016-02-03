@@ -39,10 +39,6 @@ class EvalCode implements Plugin
     private function getResult(Message $message): \Generator {
         $code = $this->normalizeCode(implode(' ', $message->getParameters()));
 
-        if (strpos($code, "<?php") === false) {
-            $code = "<?php " . $code;
-        }
-
         $body = (new FormBody)
             ->addField("title", "")
             ->addField("code", $code)
@@ -51,18 +47,22 @@ class EvalCode implements Plugin
         $request = (new Request)
             ->setUri("https://3v4l.org/new")
             ->setMethod("POST")
+            ->setHeader("Accept", "application/json")
             ->setBody($body)
         ;
 
         $response = yield from $this->chatClient->request($request);
 
-        // 3v4l uses only paths for redirects
-        $result = yield from $this->pollUntilDone(
-            "https://3v4l.org" . $response->getPreviousResponse()->getHeader("Location")[0]
+        $chatMessage = yield from $this->chatClient->postMessage(
+            $this->getMessage(
+                "Waiting for results",
+                "",
+                $response->getPreviousResponse()->getHeader("Location")[0])
         );
 
-        yield from $this->chatClient->postMessage(
-            $this->getMessage($result, $response->getPreviousResponse()->getHeader("Location")[0])
+        yield from $this->pollUntilDone(
+            $response->getPreviousResponse()->getHeader("Location")[0],
+            $chatMessage->getMessageId()
         );
     }
 
@@ -78,64 +78,68 @@ class EvalCode implements Plugin
 
         $code = $dom->textContent;
 
+        if (strpos($code, "<?php") === false) {
+            $code = "<?php " . $code;
+        }
+
         return $code;
     }
 
-    /**
-     * 3v4l responds with full HTML pages while polling #idonteven
-     *
-     * It seems like there is a class `busy` when the result is not complete yet and a class `done` when it is finished
-     * somewhere in the html. inb4 this method breaks when you look at it the wrong way or Jon changes something
-     */
-    private function pollUntilDone(string $snippetUrl): \Generator {
+    private function pollUntilDone(string $snippetId, int $messageId): \Generator {
         $requests = 0;
+
+        yield new Pause(3500);
+
+        $request = (new Request)
+            ->setUri("https://3v4l.org" . $snippetId)
+            ->setHeader("Accept", "application/json")
+        ;
 
         while (true && $requests <= self::REQUEST_LIMIT) {
             $requests++;
 
-            $result = yield from $this->chatClient->request($snippetUrl);
+            $result = yield from $this->chatClient->request($request);
 
-            $useInternalErrors = libxml_use_internal_errors(true);
+            $parsedResult = json_decode($result->getBody(), true);
 
-            $dom = new \DOMDocument();
-            $dom->loadHTML($result->getBody());
+            yield from $this->chatClient->editMessage(
+                $messageId,
+                $this->getMessage(
+                    $parsedResult["output"][0][0]["versions"],
+                    $parsedResult["output"][0][0]["output"],
+                    $snippetId
+                )
+            );
 
-            libxml_use_internal_errors($useInternalErrors);
+            if ($parsedResult["script"]["state"] !== "busy") {
+                yield new Pause(2500);
 
-            $xpath = new \DOMXPath($dom);
+                for ($i = 1; $i < count($parsedResult["output"][0]) && $i < 4; $i++) {
+                    yield new Pause(3500);
 
-            $nodes = $xpath->query("//*[contains(concat(\" \", normalize-space(@class), \" \"), \" busy \")]");
+                    yield from $this->chatClient->postMessage(
+                        $this->getMessage(
+                            $parsedResult["output"][0][$i]["versions"],
+                            $parsedResult["output"][0][$i]["output"],
+                            $snippetId
+                        )
+                    );
+                }
 
-            if (!$nodes->length) {
-                return $this->parseResponse($result->getBody());
+                return;
             }
 
-            yield new Pause(2500);
+            yield new Pause(3500);
         }
     }
 
-    private function parseResponse(string $body): array {
-        $useInternalErrors = libxml_use_internal_errors(true);
 
-        $dom = new \DOMDocument();
-        $dom->loadHTML($body);
-
-        libxml_use_internal_errors($useInternalErrors);
-
-        $resultPane = $dom->getElementById("tab")->getElementsByTagName("dl")->item(0);
-
-        return [
-            "title"  => $resultPane->getElementsByTagName("dt")->item(0)->textContent,
-            "result" => $resultPane->getElementsByTagName("dd")->item(0)->textContent,
-        ];
-    }
-
-    private function getMessage(array $result, string $url): string {
+    private function getMessage(string $title, string $output, string $url): string {
         return sprintf(
             "[ [%s](%s) ] %s",
-            $result["title"],
+            $title,
             "https://3v4l.org" . $url,
-            $result["result"]
+            str_replace(["\r", "\n"], " ", $output)
         );
     }
 }
