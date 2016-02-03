@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Client;
 use Amp\Artax\Client;
 use Amp\Artax\FormBody;
 use Amp\Artax\Request;
+use Amp\Pause;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
 
@@ -43,9 +44,20 @@ class ChatClient {
             ->setBody($body);
 
         $response = yield $this->httpClient->request($request);
-        $response = json_decode($response->getBody(), true);
 
-        return new Response($response["id"], $response["time"]);
+        if ($this->fuckOff($response->getBody())) {
+            yield new Pause($this->fuckOff($response->getBody()));
+
+            $response = yield $this->httpClient->request($request);
+
+            $response = json_decode($response->getBody(), true);
+
+            return new Response($response["id"], $response["time"]);
+        } else {
+            $response = json_decode($response->getBody(), true);
+
+            return new Response($response["id"], $response["time"]);
+        }
     }
 
     public function editMessage(int $id, string $text): \Generator {
@@ -66,5 +78,14 @@ class ChatClient {
             ->setBody($body);
 
         yield $this->httpClient->request($request);
+    }
+
+    private function fuckOff(string $body): int
+    {
+        if (preg_match('/You can perform this action again in (\d+) seconds/', $body, $matches)) {
+            return ($matches[1] + 1) * 1000;
+        }
+
+        return 0;
     }
 }
