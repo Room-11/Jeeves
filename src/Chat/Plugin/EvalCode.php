@@ -133,13 +133,12 @@ class EvalCode implements Plugin
         }
     }
 
-
     private function getMessage(string $title, string $output, string $url): string {
         return sprintf(
             "[ [%s](%s) ] %s",
             $title,
             "https://3v4l.org" . $url,
-            str_replace(["\r", "\n"], " ", $output)
+            str_replace(["\r", "\n", "@"], [" ", " ", "@\u{200b}"], $output)
         );
     }
 }
