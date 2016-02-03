@@ -87,7 +87,7 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         ImdbPlugin::class,
         PackagistPlugin::class,
         RfcPlugin::class,
-        CodeFormatPlugin::class,
+        //CodeFormatPlugin::class,
         EvalPlugin::class,
     ];
 
