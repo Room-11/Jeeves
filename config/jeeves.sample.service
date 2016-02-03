@@ -1,0 +1,26 @@
+[Unit]
+Description=Jeeves as a service (JAAS)
+
+[Service]
+Type=simple
+ExecStart=/path/to/project/cli/run.php
+Restart=always
+RestartSec=1
+TimeoutSec=1
+Nice=19
+IOSchedulingClass=3
+PrivateTmp=true
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_KILL
+ReadOnlyDirectories=/etc
+ReadOnlyDirectories=/usr
+ReadOnlyDirectories=/proc
+ReadOnlyDirectories=/sys
+InaccessibleDirectories=/boot
+InaccessibleDirectories=/home
+InaccessibleDirectories=/var/lib/rpm
+InaccessibleDirectories=/var/lib/yum
+InaccessibleDirectories=/var/spool
+
+[Install]
+WantedBy=multi-user.target
