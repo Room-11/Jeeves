@@ -138,7 +138,14 @@ class EvalCode implements Plugin
             "[ [%s](%s) ] %s",
             $title,
             "https://3v4l.org" . $url,
-            str_replace(["\r", "\n", "@"], [" ", " ", "@\u{200b}"], $output)
+            $this->formatResult($output)
         );
+    }
+
+    private function formatResult(string $result): string {
+        $result = str_replace(["\r\n", "\r", "\n"], " ", $result);
+        $result = str_replace("@", "@\u{200b}", $result);
+
+        return $result;
     }
 }
