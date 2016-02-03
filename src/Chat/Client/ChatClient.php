@@ -77,7 +77,13 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
-        yield $this->httpClient->request($request);
+        $response = yield $this->httpClient->request($request);
+
+        if ($this->fuckOff($response->getBody())) {
+            yield new Pause($this->fuckOff($response->getBody()));
+
+            yield $this->httpClient->request($request);
+        }
     }
 
     private function fuckOff(string $body): int
