@@ -11,7 +11,7 @@ use Amp\Pause;
 
 class EvalCode implements Plugin
 {
-    const COMMAND = 'eval';
+    const COMMANDS = ['eval', '>'];
 
     // limit the number of requests while polling for results
     const REQUEST_LIMIT = 20;
@@ -35,7 +35,7 @@ class EvalCode implements Plugin
     private function validMessage(Message $message): bool
     {
         return $message instanceof Command
-            && $message->getCommand() === self::COMMAND
+            && in_array($message->getCommand(), self::COMMANDS, true)
             && $message->getParameters();
     }
 
