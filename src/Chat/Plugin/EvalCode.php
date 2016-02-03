@@ -11,7 +11,7 @@ use Amp\Pause;
 
 class EvalCode implements Plugin
 {
-    const COMMANDS = ['eval', '>'];
+    const COMMANDS = ['eval', '&gt;'];
 
     // limit the number of requests while polling for results
     const REQUEST_LIMIT = 20;
