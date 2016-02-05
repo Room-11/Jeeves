@@ -13,13 +13,11 @@ class Docs implements Plugin
 
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient)
-    {
+    public function __construct(ChatClient $chatClient) {
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator
-    {
+    public function handle(Message $message): \Generator {
         if (!$this->validMessage($message)) {
             return;
         }
@@ -27,15 +25,13 @@ class Docs implements Plugin
         yield from $this->getResult($message);
     }
 
-    private function validMessage(Message $message): bool
-    {
+    private function validMessage(Message $message): bool {
         return $message instanceof Command
             && $message->getCommand() === self::COMMAND
             && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator
-    {
+    private function getResult(Message $message): \Generator {
         $pattern = str_replace('::', '.', implode(' ', $message->getParameters()));
 
         if (substr($pattern, 0, 6) === "mysql_") {
@@ -46,7 +42,7 @@ class Docs implements Plugin
             return;
         }
 
-        $url = 'http://php.net/manual-lookup.php?scope=quickref&pattern=' . rawurlencode($pattern);
+        $url = "http://php.net/manual-lookup.php?scope=quickref&pattern=" . rawurlencode($pattern);
 
         $response = yield from $this->chatClient->request($url);
 
@@ -71,8 +67,7 @@ class Docs implements Plugin
              . "[here is a good tutorial](http://j.mp/PoWehJ).";
     }
 
-    private function getMessageFromMatch(Response $response): string
-    {
+    private function getMessageFromMatch(Response $response): string {
         $internalErrors = libxml_use_internal_errors(true);
 
         $dom = new \DOMDocument();
@@ -82,16 +77,26 @@ class Docs implements Plugin
 
         $xpath = new \DOMXPath($dom);
 
+        // we might hit a .book page (e.g. http://php.net/manual/en/book.mail.php) instead of a manual page proper
+        var_dump($response->getPreviousResponse()->getHeader("Location")[0]);
+        if (preg_match("#^.*/book\.[^.]+\.php$#", $response->getPreviousResponse()->getHeader("Location")[0])) {
+            return sprintf(
+                "[ [`%s`](%s) ] %s",
+                $dom->getElementsByTagName("h1")->item(0)->textContent,
+                $response->getRequest()->getUri(),
+                trim($dom->getElementsByTagName("h1")->item(0)->textContent) . " book"
+            );
+        }
+
         return sprintf(
-            '[ [`%s`](%s) ] %s',
-            $dom->getElementsByTagName('h1')->item(0)->textContent,
+            "[ [`%s`](%s) ] %s",
+            $dom->getElementsByTagName("h1")->item(0)->textContent,
             $response->getRequest()->getUri(),
             trim($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent)
         );
     }
 
-    private function getMessageFromSearch(Response $response): \Generator
-    {
+    private function getMessageFromSearch(Response $response): \Generator {
         $internalErrors = libxml_use_internal_errors(true);
 
         $dom = new \DOMDocument();
@@ -99,10 +104,10 @@ class Docs implements Plugin
 
         libxml_use_internal_errors($internalErrors);
 
-        $firstResult = $dom->getElementById('quickref_functions')->getElementsByTagName('li')->item(0);
+        $firstResult = $dom->getElementById("quickref_functions")->getElementsByTagName("li")->item(0);
 
         $response = yield from $this->chatClient->request(
-            'https://php.net' . $firstResult->getElementsByTagName('a')->item(0)->getAttribute('href')
+            "https://php.net" . $firstResult->getElementsByTagName("a")->item(0)->getAttribute("href")
         );
 
         return $this->getMessageFromMatch($response);
