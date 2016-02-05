@@ -106,7 +106,7 @@ class EvalCode implements Plugin
                 $messageId,
                 $this->getMessage(
                     $parsedResult["output"][0][0]["versions"],
-                    $parsedResult["output"][0][0]["output"],
+                    htmlspecialchars_decode($parsedResult["output"][0][0]["output"]),
                     $snippetId
                 )
             );
@@ -120,7 +120,7 @@ class EvalCode implements Plugin
                     yield from $this->chatClient->postMessage(
                         $this->getMessage(
                             $parsedResult["output"][0][$i]["versions"],
-                            $parsedResult["output"][0][$i]["output"],
+                            htmlspecialchars_decode($parsedResult["output"][0][$i]["output"]),
                             $snippetId
                         )
                     );
