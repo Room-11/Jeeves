@@ -41,12 +41,12 @@ class Regex implements Plugin
 
             return;
         }
-        
+
         if ($this->zalgo($dom)) {
             yield from $this->chatClient->postMessage(
                 "H̸̡̪̯ͨ͊̽̅̾̎Ȩ̬̩̾͛ͪ̈́̀́͘ ̶̧̨̱̹̭̯ͧ̾ͬC̷̙̲̝͖ͭ̏ͥͮ͟Oͮ͏̮̪̝͍M̲̖͊̒ͪͩͬ̚̚͜Ȇ̴̟̟͙̞ͩ͌͝S̨̥̫͎̭ͯ̿̔̀ͅ"
             );
-            
+
             return;
         }
 
@@ -74,9 +74,9 @@ class Regex implements Plugin
     private function hasPattern(\DOMDocument $dom): bool {
         return (bool) $dom->getElementsByTagName('code')->length;
     }
-    
+
     private function zalgo(\DOMDocument $dom): bool {
-        return (bool) @preg_match($dom->getElementsByTagName('code')->item(0)->textContent, '/<[^>]*\\[\\^[^\\]]*>.*\\]/');
+        return (bool) @preg_match('/<[^>]*\[\^[^\]]*>.*\\]/', $dom->getElementsByTagName('code')->item(0)->textContent);
     }
 
     private function doesMatch(\DOMDocument $dom): bool {
