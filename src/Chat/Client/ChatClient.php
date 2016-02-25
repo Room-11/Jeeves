@@ -26,6 +26,12 @@ class ChatClient {
         return $response;
     }
 
+    public function requestMulti(array $urisAndRequests): array {
+        $response = $this->httpClient->requestMulti($urisAndRequests);
+
+        return $response;
+    }
+
     public function postMessage(string $text): \Generator {
         $body = (new FormBody)
             ->addField("text", $text)

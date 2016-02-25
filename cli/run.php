@@ -7,6 +7,7 @@ use Amp\Artax\Client as HttpClient;
 use Amp\Websocket\Handshake;
 use Auryn\Injector;
 use Room11\Jeeves\Chat\Command\Factory as CommandFactory;
+use Room11\Jeeves\Chat\Plugin\Admin as AdminPlugin;
 use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
 use Room11\Jeeves\Chat\Plugin\Collection as PluginCollection;
 use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
@@ -78,6 +79,8 @@ $injector->delegate(FKey::class, function (Retriever $retriever, Room $room) {
     return $key;
 });
 
+$injector->alias("Room11\Jeeves\Storage\Admin", $config["storage"]["admin"]);
+$injector->define("Room11\Jeeves\Storage\Admin", [":dataFile" => __DIR__ . "/../data/admins.json"]);
 $injector->delegate(PluginCollection::class, function () use ($injector) {
     $collection = new PluginCollection($injector->make(CommandFactory::class));
 
@@ -95,6 +98,7 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         CanonPlugin::class,
         ManPlugin::class,
         RegexPlugin::class,
+        AdminPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {

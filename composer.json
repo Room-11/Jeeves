@@ -19,6 +19,7 @@
         "php": ">=7",
         "amphp/artax": "^2",
         "amphp/websocket": "dev-master",
+        "amphp/file": "0.1.*",
         "sebastian/version": "^1.0",
         "symfony/yaml": "^3.0",
         "rdlowrey/auryn": "^1.1",
