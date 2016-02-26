@@ -100,7 +100,9 @@ class Admin implements Plugin
         foreach ($userProfiles as $profile) {
             $dom = new \DOMDocument();
 
-            $dom->loadHTML($profile->getBody());
+            // load data in the correct encoding
+            // http://chat.stackoverflow.com/transcript/11?m=28980409#28980409
+            $dom->loadHTML('<?xml encoding="UTF-8">' . $profile->getBody());
 
             $xpath = new \DOMXPath($dom);
 
