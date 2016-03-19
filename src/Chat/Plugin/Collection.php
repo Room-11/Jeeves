@@ -34,7 +34,6 @@ class Collection
 
         if ($message instanceof UserMessage) {
             if (yield from $this->banList->isBanned($message->getUserId())) {
-                var_dump('user is banned');
                 return;
             }
         }
