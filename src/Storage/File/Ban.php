@@ -28,7 +28,7 @@ class Ban implements BanList
     public function isBanned(int $userId): \Generator {
         // inb4 people "testing" banning me
         if ($userId === 508666) {
-            //return false;
+            return false;
         }
 
         $banned = yield from $this->getAll();
