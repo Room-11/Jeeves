@@ -3,17 +3,22 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Command\Factory as CommandFactory;
+use Room11\Jeeves\Storage\Ban as BanList;
 use Room11\Jeeves\Chat\Message\Message;
+use Room11\Jeeves\Chat\Message\UserMessage;
 
 class Collection
 {
     private $commandFactory;
 
+    private $banList;
+
     private $plugins = [];
 
-    public function __construct(CommandFactory $commandFactory)
+    public function __construct(CommandFactory $commandFactory, BanList $banList)
     {
         $this->commandFactory = $commandFactory;
+        $this->banList        = $banList;
     }
 
     public function register(Plugin $plugin): Collection
@@ -26,6 +31,13 @@ class Collection
     public function handle(Message $message): \Generator
     {
         $command = $this->commandFactory->build($message);
+
+        if ($message instanceof UserMessage) {
+            if (yield from $this->banList->isBanned($message->getUserId())) {
+                var_dump('user is banned');
+                return;
+            }
+        }
 
         foreach ($this->plugins as $plugin) {
             yield from $plugin->handle($command);

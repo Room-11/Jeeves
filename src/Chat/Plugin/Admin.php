@@ -63,11 +63,14 @@ class Admin implements Plugin
             return;
         }
 
-        $userData = yield from $this->getUserData($userIds);
+        $list = implode(", ", array_map(function($profile) {
+            return $profile["username"];
+        }, yield from $this->getUserData($userIds)));
 
-        yield from $this->chatClient->postMessage(implode(", ", array_map(function($profile) {
-            return sprintf("[%s](%s)", $profile["username"], $profile["profile"]);
-        }, $userData)));
+        yield from $this->chatClient->postMessage($list);
+
+        // max length is 500
+        //yield new Pause(2000);
     }
 
     private function add(int $userId): \Generator {

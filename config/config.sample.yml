@@ -13,3 +13,4 @@ logging:
 
 storage:
   admin: Room11\Jeeves\Storage\File\Admin
+  ban: Room11\Jeeves\Storage\File\Ban

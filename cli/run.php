@@ -8,6 +8,7 @@ use Amp\Websocket\Handshake;
 use Auryn\Injector;
 use Room11\Jeeves\Chat\Command\Factory as CommandFactory;
 use Room11\Jeeves\Chat\Plugin\Admin as AdminPlugin;
+use Room11\Jeeves\Chat\Plugin\Ban as BanPlugin;
 use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
 use Room11\Jeeves\Chat\Plugin\Collection as PluginCollection;
 use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
@@ -32,6 +33,7 @@ use Room11\Jeeves\Log\StdOut;
 use Room11\Jeeves\OpenId\Client;
 use Room11\Jeeves\OpenId\EmailAddress;
 use Room11\Jeeves\OpenId\Password;
+use Room11\Jeeves\Storage\Ban;
 use Room11\Jeeves\WebSocket\Handler;
 use Symfony\Component\Yaml\Yaml;
 
@@ -80,11 +82,16 @@ $injector->delegate(FKey::class, function (Retriever $retriever, Room $room) {
 });
 
 $injector->alias("Room11\Jeeves\Storage\Admin", $config["storage"]["admin"]);
+$injector->alias("Room11\Jeeves\Storage\Ban", $config["storage"]["ban"]);
+//$injector->share($config["storage"]["admin"]);
 $injector->define("Room11\Jeeves\Storage\Admin", [":dataFile" => __DIR__ . "/../data/admins.json"]);
+$injector->define("Room11\Jeeves\Storage\Ban", [":dataFile" => __DIR__ . "/../data/bans.json"]);
 $injector->delegate(PluginCollection::class, function () use ($injector) {
-    $collection = new PluginCollection($injector->make(CommandFactory::class));
+    $collection = new PluginCollection($injector->make(CommandFactory::class), $injector->make(Ban::class));
 
     $plugins = [
+        AdminPlugin::class,
+        BanPlugin::class,
         VersionPlugin::class,
         UrbanPlugin::class,
         WikipediaPlugin::class,
@@ -98,7 +105,6 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         CanonPlugin::class,
         ManPlugin::class,
         RegexPlugin::class,
-        AdminPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {

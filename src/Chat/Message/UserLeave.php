@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Message;
 
-class UserLeave implements Message
+class UserLeave implements Message, UserMessage
 {
     private $actionId;
 

@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Message;
 
-class NewMessage implements Message
+class NewMessage implements Message, UserMessage
 {
     private $id;
 
