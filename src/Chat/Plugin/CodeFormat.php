@@ -19,6 +19,7 @@ class CodeFormat implements Plugin {
             return;
         }
 
+        /** @var Void $message */
         yield from $this->getResult($message->getMessage());
     }
 

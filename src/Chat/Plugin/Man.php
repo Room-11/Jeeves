@@ -21,6 +21,7 @@ class Man implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->getResult($message);
     }
 
@@ -30,7 +31,7 @@ class Man implements Plugin
         && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator {
+    private function getResult(Command $message): \Generator {
         $response = yield from $this->chatClient->request(
             "https://man.freebsd.org/" . rawurlencode(implode("%20", $message->getParameters()))
         );

@@ -27,6 +27,7 @@ class EvalCode implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->getResult($message);
     }
 
@@ -36,7 +37,7 @@ class EvalCode implements Plugin
             && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator {
+    private function getResult(Command $message): \Generator {
         $code = $this->normalizeCode(implode(' ', $message->getParameters()));
 
         $body = (new FormBody)

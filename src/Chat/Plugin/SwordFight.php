@@ -47,6 +47,7 @@ class SwordFight implements Plugin
             return;
         }
 
+        /** @var Conversation $message */
         yield from $this->getResult($message);
     }
 
@@ -85,7 +86,7 @@ class SwordFight implements Plugin
         return trim(preg_replace('/\s+/', ' ', $text));
     }
 
-    private function getResult(Message $message): \Generator
+    private function getResult(Conversation $message): \Generator
     {
         yield from $this->chatClient->postMessage(
             sprintf(':%s %s', $message->getOrigin(), $this->getResponse($message))

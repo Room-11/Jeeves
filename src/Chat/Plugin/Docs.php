@@ -22,6 +22,7 @@ class Docs implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->getResult($message);
     }
 
@@ -31,7 +32,7 @@ class Docs implements Plugin
             && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator {
+    private function getResult(Command $message): \Generator {
         $pattern = str_replace('::', '.', implode(' ', $message->getParameters()));
 
         if (substr($pattern, 0, 6) === "mysql_") {

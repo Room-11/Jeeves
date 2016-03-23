@@ -28,6 +28,7 @@ class Admin implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->execute($message);
     }
 
@@ -38,7 +39,7 @@ class Admin implements Plugin
             && in_array($message->getParameters()[0], self::ACTIONS, true);
     }
 
-    private function execute(Message $message): \Generator {
+    private function execute(Command $message): \Generator {
         if (!yield from $this->storage->isAdmin($message->getMessage()->getUserId())) {
             yield from $this->chatClient->postMessage(
                 sprintf(":%d I'm sorry Dave, I'm afraid I can't do that", $message->getOrigin())

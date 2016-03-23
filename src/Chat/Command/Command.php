@@ -4,9 +4,15 @@ namespace Room11\Jeeves\Chat\Command;
 
 use Room11\Jeeves\Chat\Command\Message as CommandMessage;
 use Room11\Jeeves\Chat\Message\Message as ChatMessage;
+use Room11\Jeeves\Chat\Message\NewMessage;
+use Room11\Jeeves\Chat\Message\EditMessage;
+use Room11\Jeeves\Chat\Message\MentionMessage;
 
 class Command implements CommandMessage
 {
+    /**
+     * @var NewMessage|EditMessage|MentionMessage
+     */
     private $message;
 
     public function __construct(ChatMessage $message)

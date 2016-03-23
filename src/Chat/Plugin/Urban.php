@@ -23,6 +23,7 @@ class Urban implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->getResult($message);
     }
 
@@ -33,7 +34,7 @@ class Urban implements Plugin
             && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator
+    private function getResult(Command $message): \Generator
     {
         $response = yield from $this->chatClient->request(
             'http://api.urbandictionary.com/v0/define?term=' . rawurlencode(implode('%20', $message->getParameters()))
