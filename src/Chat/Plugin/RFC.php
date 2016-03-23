@@ -21,7 +21,7 @@ class RFC implements Plugin {
             return;
         }
 
-        yield from $this->getResult($message);
+        yield from $this->getResult();
     }
 
     private function validMessage(Message $message): bool {
@@ -29,7 +29,7 @@ class RFC implements Plugin {
         && $message->getCommand() === self::COMMAND;
     }
 
-    private function getResult(Message $message): \Generator {
+    private function getResult(): \Generator {
         $uri = "https://wiki.php.net/rfc";
 
         /** @var Response $response */
