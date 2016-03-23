@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Command\Conversation;
 use Room11\Jeeves\Chat\Command\Message;
 
 class SwordFight implements Plugin
@@ -51,8 +52,7 @@ class SwordFight implements Plugin
 
     private function validMessage(Message $message): bool
     {
-        return get_class($message) === 'Room11\Jeeves\Chat\Command\Conversation'
-            && $this->isMatch($message);
+        return $message instanceof Conversation && $this->isMatch($message);
     }
 
     private function isMatch(Message $message): bool

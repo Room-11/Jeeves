@@ -3,7 +3,10 @@
 namespace Room11\Jeeves\Chat\Command;
 
 use Room11\Jeeves\Chat\Command\Message as CommandMessage;
+use Room11\Jeeves\Chat\Message\EditMessage;
+use Room11\Jeeves\Chat\Message\MentionMessage;
 use Room11\Jeeves\Chat\Message\Message;
+use Room11\Jeeves\Chat\Message\NewMessage;
 
 class Factory
 {
@@ -24,9 +27,9 @@ class Factory
     private function isCommand(Message $message): bool
     {
         $postMessages = [
-            'Room11\Jeeves\Chat\Message\NewMessage',
-            'Room11\Jeeves\Chat\Message\EditMessage',
-            'Room11\Jeeves\Chat\Message\MentionMessage',
+            NewMessage::class,
+            EditMessage::class,
+            MentionMessage::class,
         ];
 
         return in_array(get_class($message), $postMessages, true) && strpos($message->getContent(), '!!') === 0;
@@ -35,6 +38,6 @@ class Factory
     // Conversations are messages in which the bot is pinged / mentioned
     private function isConversation(Message $message): bool
     {
-        return get_class($message) === 'Room11\Jeeves\Chat\Message\MentionMessage';
+        return $message instanceof MentionMessage;
     }
 }
