@@ -101,5 +101,7 @@ class SwordFight implements Plugin
                 return $match['response']['text'];
             }
         }
+
+        return null;
     }
 }
