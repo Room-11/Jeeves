@@ -21,6 +21,7 @@ class Regex implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->getResult($message);
     }
 
@@ -30,7 +31,7 @@ class Regex implements Plugin
         && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator {
+    private function getResult(Command $message): \Generator {
         $dom = new \DOMDocument();
         $dom->loadHTML(implode(" ", $message->getParameters()));
 

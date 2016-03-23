@@ -24,6 +24,7 @@ class Imdb implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->getResult($message);
     }
 
@@ -34,7 +35,7 @@ class Imdb implements Plugin
             && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator
+    private function getResult(Command $message): \Generator
     {
         $response = yield from $this->chatClient->request(
             'http://www.imdb.com/xml/find?xml=1&nr=1&tt=on&q=' . rawurlencode(implode(' ', $message->getParameters()))

@@ -49,6 +49,7 @@ class Canon implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->getResult($message);
     }
 
@@ -58,7 +59,7 @@ class Canon implements Plugin
             && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator {
+    private function getResult(Command $message): \Generator {
         if ($message->getParameters()[0] === "list") {
             yield from $this->chatClient->postMessage(
                 $this->getSupportedCanonicalsMessage()

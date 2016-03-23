@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Command\Conversation;
 use Room11\Jeeves\Chat\Command\Message;
 
 class SwordFight implements Plugin
@@ -46,13 +47,13 @@ class SwordFight implements Plugin
             return;
         }
 
+        /** @var Conversation $message */
         yield from $this->getResult($message);
     }
 
     private function validMessage(Message $message): bool
     {
-        return get_class($message) === 'Room11\Jeeves\Chat\Command\Conversation'
-            && $this->isMatch($message);
+        return $message instanceof Conversation && $this->isMatch($message);
     }
 
     private function isMatch(Message $message): bool
@@ -85,7 +86,7 @@ class SwordFight implements Plugin
         return trim(preg_replace('/\s+/', ' ', $text));
     }
 
-    private function getResult(Message $message): \Generator
+    private function getResult(Conversation $message): \Generator
     {
         yield from $this->chatClient->postMessage(
             sprintf(':%s %s', $message->getOrigin(), $this->getResponse($message))
@@ -101,5 +102,7 @@ class SwordFight implements Plugin
                 return $match['response']['text'];
             }
         }
+
+        return null;
     }
 }

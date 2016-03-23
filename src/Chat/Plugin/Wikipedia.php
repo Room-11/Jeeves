@@ -23,6 +23,7 @@ class Wikipedia implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->getResult($message);
     }
 
@@ -33,7 +34,7 @@ class Wikipedia implements Plugin
         && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator
+    private function getResult(Command $message): \Generator
     {
         $response = yield from $this->chatClient->request(
             'https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . rawurlencode(implode('%20', $message->getParameters()))

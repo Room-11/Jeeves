@@ -13,6 +13,9 @@ class Collection
 
     private $banList;
 
+    /**
+     * @var Plugin[]
+     */
     private $plugins = [];
 
     public function __construct(CommandFactory $commandFactory, BanList $banList)

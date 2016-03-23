@@ -24,6 +24,7 @@ class Packagist implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->getResult($message);
     }
 
@@ -33,11 +34,10 @@ class Packagist implements Plugin
         && in_array($message->getCommand(), self::COMMANDS, true);
     }
 
-    private function getResult(Message $message): \Generator
+    private function getResult(Command $message): \Generator
     {
         $reply = $message->getOrigin();
 
-        /** @var Command $message */
         $info = explode('/', implode('/', $message->getParameters()), 2);
 
         if (count($info) !== 2) {
