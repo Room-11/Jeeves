@@ -87,12 +87,23 @@ class Docs implements Plugin
             );
         }
 
-        return sprintf(
-            "[ [`%s`](%s) ] %s",
-            $dom->getElementsByTagName("h1")->item(0)->textContent,
-            $response->getRequest()->getUri(),
-            trim($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent)
-        );
+        if ($dom->getElementsByTagName("h1")->length > 0) {
+            // Pages like http://php.net/manual/de/function.strtr.php
+            return sprintf(
+                "[ [`%s`](%s) ] %s",
+                $dom->getElementsByTagName("h1")->item(0)->textContent,
+                $response->getRequest()->getUri(),
+                trim($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent)
+            );
+        } else if ($dom->getElementsByTagName("h2")->length > 0) {
+            // Pages like http://php.net/manual/en/control-structures.foreach.php
+            return sprintf(
+                "[ [`%s`](%s) ] %s",
+                $dom->getElementsByTagName("h2")->item(0)->textContent,
+                $response->getRequest()->getUri(),
+                trim($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]")->item(0)->textContent)
+            );
+        }
     }
 
     private function getMessageFromSearch(Response $response): \Generator {
