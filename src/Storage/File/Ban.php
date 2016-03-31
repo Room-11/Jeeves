@@ -64,12 +64,6 @@ class Ban implements BanList
         }
 
         if (!empty($matches['hours'])) {
-            $dateInterval .= $timeDelimiter . $matches['hours'] . 'D';
-
-            $timeDelimiter = '';
-        }
-
-        if (!empty($matches['hours'])) {
             $dateInterval .= $timeDelimiter . $matches['hours'] . 'H';
 
             $timeDelimiter = '';
