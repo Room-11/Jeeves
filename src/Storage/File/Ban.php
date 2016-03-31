@@ -22,7 +22,7 @@ class Ban implements BanList
 
         $banned = yield get($this->dataFile);
 
-        yield from $this->clearExpiredBans($banned);
+        yield from $this->clearExpiredBans(json_decode($banned, true));
 
         $banned = yield get($this->dataFile);
 
