@@ -102,10 +102,10 @@ class Ban implements BanList
     {
         $banned = yield from $this->getAll();
 
-        foreach ($banned as $userId => $expiration) {
-            if (new \DateTimeImmutable($expiration) < new \DateTimeImmutable()) {
-                yield from $this->remove($userId);
-            }
-        }
+        $nonExpiredBans = array_filter($banned, function($expiration) {
+            return new \DateTimeImmutable($expiration) > new \DateTimeImmutable();
+        });
+
+        yield put($this->dataFile, json_encode($nonExpiredBans));
     }
 }
