@@ -20,6 +20,8 @@ class Ban implements BanList
             return [];
         }
 
+        yield from $this->clearExpiredBans();
+
         $banned = yield get($this->dataFile);
 
         return json_decode($banned, true);
@@ -33,7 +35,7 @@ class Ban implements BanList
 
         $banned = yield from $this->getAll();
 
-        return array_key_exists($userId, $banned) && $banned[$userId] > (new \DateTime())->format('Y-m-d H:i:s');
+        return array_key_exists($userId, $banned) && new \DateTimeImmutable($banned[$userId]) > new \DateTimeImmutable();
     }
 
     public function add(int $userId, string $duration): \Generator {
@@ -94,5 +96,16 @@ class Ban implements BanList
         unset($banned[$userId]);
 
         yield put($this->dataFile, json_encode($banned));
+    }
+
+    private function clearExpiredBans(): \Generator
+    {
+        $banned = yield from $this->getAll();
+
+        foreach ($banned as $userId => $expiration) {
+            if (new \DateTimeImmutable($expiration) < new \DateTimeImmutable()) {
+                yield from $this->remove($userId);
+            }
+        }
     }
 }
