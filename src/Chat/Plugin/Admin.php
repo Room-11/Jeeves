@@ -68,9 +68,6 @@ class Admin implements Plugin
         }, yield from $this->getUserData($userIds)));
 
         yield from $this->chatClient->postMessage($list);
-
-        // max length is 500
-        //yield new Pause(2000);
     }
 
     private function add(int $userId): \Generator {
