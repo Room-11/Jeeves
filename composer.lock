@@ -9,16 +9,16 @@
     "packages": [
         {
             "name": "amphp/amp",
-            "version": "v1.0.8",
+            "version": "v1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/amp.git",
-                "reference": "4b667478f4b70a62e0f3abe7cfb8250e5a11ce0f"
+                "reference": "093d33c36c72c0b4bf505000eb53b97351939279"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/amp/zipball/4b667478f4b70a62e0f3abe7cfb8250e5a11ce0f",
-                "reference": "4b667478f4b70a62e0f3abe7cfb8250e5a11ce0f",
+                "url": "https://api.github.com/repos/amphp/amp/zipball/093d33c36c72c0b4bf505000eb53b97351939279",
+                "reference": "093d33c36c72c0b4bf505000eb53b97351939279",
                 "shasum": ""
             },
             "require": {
@@ -62,20 +62,20 @@
                 "non-blocking",
                 "promise"
             ],
-            "time": "2016-02-22 22:17:50"
+            "time": "2016-03-09 13:10:31"
         },
         {
             "name": "amphp/artax",
-            "version": "2.0.2",
+            "version": "v2.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/artax.git",
-                "reference": "6679833f65b055533e8777a2a2cb248b8e573877"
+                "reference": "cc665ac890322188bad8b80722d64af6207b770d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/artax/zipball/6679833f65b055533e8777a2a2cb248b8e573877",
-                "reference": "6679833f65b055533e8777a2a2cb248b8e573877",
+                "url": "https://api.github.com/repos/amphp/artax/zipball/cc665ac890322188bad8b80722d64af6207b770d",
+                "reference": "cc665ac890322188bad8b80722d64af6207b770d",
                 "shasum": ""
             },
             "require": {
@@ -120,7 +120,7 @@
                 "parallel",
                 "rest"
             ],
-            "time": "2016-02-04 23:58:31"
+            "time": "2016-03-09 11:33:42"
         },
         {
             "name": "amphp/cache",
@@ -172,16 +172,16 @@
         },
         {
             "name": "amphp/dns",
-            "version": "v0.8.5",
+            "version": "v0.8.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/dns.git",
-                "reference": "2f8103f1738fe48553b80733076c987234d8f49e"
+                "reference": "9f12b2264f74e0cbad67565308f9e106fb6a5bec"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/dns/zipball/2f8103f1738fe48553b80733076c987234d8f49e",
-                "reference": "2f8103f1738fe48553b80733076c987234d8f49e",
+                "url": "https://api.github.com/repos/amphp/dns/zipball/9f12b2264f74e0cbad67565308f9e106fb6a5bec",
+                "reference": "9f12b2264f74e0cbad67565308f9e106fb6a5bec",
                 "shasum": ""
             },
             "require": {
@@ -236,20 +236,20 @@
                 "dns",
                 "resolve"
             ],
-            "time": "2015-12-23 13:56:14"
+            "time": "2016-03-26 20:35:44"
         },
         {
             "name": "amphp/file",
-            "version": "v0.1.1",
+            "version": "v0.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/file.git",
-                "reference": "cb3b8e536b744727f7cd78645fc879f787b24e96"
+                "reference": "7e04d6badea1f904cb1b894771f9c7e073799874"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/file/zipball/cb3b8e536b744727f7cd78645fc879f787b24e96",
-                "reference": "cb3b8e536b744727f7cd78645fc879f787b24e96",
+                "url": "https://api.github.com/repos/amphp/file/zipball/7e04d6badea1f904cb1b894771f9c7e073799874",
+                "reference": "7e04d6badea1f904cb1b894771f9c7e073799874",
                 "shasum": ""
             },
             "require": {
@@ -295,25 +295,25 @@
                 "non-blocking",
                 "static"
             ],
-            "time": "2016-02-08 01:02:23"
+            "time": "2016-03-24 17:31:44"
         },
         {
             "name": "amphp/socket",
-            "version": "v0.9.4",
+            "version": "v0.9.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/socket.git",
-                "reference": "e30103523cd65072814dc5f9b44b5fc05d38c2e3"
+                "reference": "ade7e97b2d6aa56a74b7e64ac502e03c07a37533"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/socket/zipball/e30103523cd65072814dc5f9b44b5fc05d38c2e3",
-                "reference": "e30103523cd65072814dc5f9b44b5fc05d38c2e3",
+                "url": "https://api.github.com/repos/amphp/socket/zipball/ade7e97b2d6aa56a74b7e64ac502e03c07a37533",
+                "reference": "ade7e97b2d6aa56a74b7e64ac502e03c07a37533",
                 "shasum": ""
             },
             "require": {
                 "amphp/amp": "^1",
-                "amphp/dns": "~0.8.0",
+                "amphp/dns": "^0.8",
                 "php": ">=5.5"
             },
             "require-dev": {
@@ -350,7 +350,7 @@
                 "tcp",
                 "tls"
             ],
-            "time": "2016-02-09 23:47:29"
+            "time": "2016-03-25 14:11:46"
         },
         {
             "name": "amphp/websocket",
@@ -446,16 +446,16 @@
         },
         {
             "name": "rdlowrey/auryn",
-            "version": "1.2",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rdlowrey/auryn.git",
-                "reference": "d6e03a7026a1724965c921f4fbd8351ab8f0a9f1"
+                "reference": "2e4240791162dfe073d59654d8dc06df0eb0b73f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rdlowrey/auryn/zipball/d6e03a7026a1724965c921f4fbd8351ab8f0a9f1",
-                "reference": "d6e03a7026a1724965c921f4fbd8351ab8f0a9f1",
+                "url": "https://api.github.com/repos/rdlowrey/auryn/zipball/2e4240791162dfe073d59654d8dc06df0eb0b73f",
+                "reference": "2e4240791162dfe073d59654d8dc06df0eb0b73f",
                 "shasum": ""
             },
             "require": {
@@ -503,20 +503,20 @@
                 "dic",
                 "ioc"
             ],
-            "time": "2015-12-09 16:44:14"
+            "time": "2016-03-14 20:10:19"
         },
         {
             "name": "sabre/uri",
-            "version": "1.0.1",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/fruux/sabre-uri.git",
-                "reference": "6bae7efdd9dfcfdb3edfc4362741e59ce4b64f42"
+                "reference": "9012116434d84ef6e5e37a89dfdbfbe2204a8704"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/fruux/sabre-uri/zipball/6bae7efdd9dfcfdb3edfc4362741e59ce4b64f42",
-                "reference": "6bae7efdd9dfcfdb3edfc4362741e59ce4b64f42",
+                "url": "https://api.github.com/repos/fruux/sabre-uri/zipball/9012116434d84ef6e5e37a89dfdbfbe2204a8704",
+                "reference": "9012116434d84ef6e5e37a89dfdbfbe2204a8704",
                 "shasum": ""
             },
             "require": {
@@ -554,7 +554,7 @@
                 "uri",
                 "url"
             ],
-            "time": "2015-04-29 03:47:26"
+            "time": "2016-03-08 02:29:27"
         },
         {
             "name": "sebastian/version",
@@ -593,16 +593,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.0.2",
+            "version": "v3.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "3cf0709d7fe936e97bee9e954382e449003f1d9a"
+                "reference": "0047c8366744a16de7516622c5b7355336afae96"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/3cf0709d7fe936e97bee9e954382e449003f1d9a",
-                "reference": "3cf0709d7fe936e97bee9e954382e449003f1d9a",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/0047c8366744a16de7516622c5b7355336afae96",
+                "reference": "0047c8366744a16de7516622c5b7355336afae96",
                 "shasum": ""
             },
             "require": {
@@ -638,7 +638,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2016-02-02 13:44:19"
+            "time": "2016-03-04 07:55:57"
         }
     ],
     "packages-dev": [],
