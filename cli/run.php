@@ -15,6 +15,7 @@ use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
 use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
 use Room11\Jeeves\Chat\Plugin\EvalCode as EvalPlugin;
 use Room11\Jeeves\Chat\Plugin\Imdb as ImdbPlugin;
+use Room11\Jeeves\Chat\Plugin\Lick as LickPlugin;
 use Room11\Jeeves\Chat\Plugin\Man as ManPlugin;
 use Room11\Jeeves\Chat\Plugin\Packagist as PackagistPlugin;
 use Room11\Jeeves\Chat\Plugin\Regex as RegexPlugin;
@@ -105,6 +106,7 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         CanonPlugin::class,
         ManPlugin::class,
         RegexPlugin::class,
+        LickPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {
