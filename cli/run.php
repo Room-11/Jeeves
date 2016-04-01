@@ -24,6 +24,7 @@ use Room11\Jeeves\Chat\Plugin\SwordFight as SwordFightPlugin;
 use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
 use Room11\Jeeves\Chat\Plugin\Version as VersionPlugin;
 use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
+use Room11\Jeeves\Chat\Plugin\Xkcd as XkcdPlugin;
 use Room11\Jeeves\Chat\Room\Host;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
@@ -107,6 +108,7 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         ManPlugin::class,
         RegexPlugin::class,
         LickPlugin::class,
+        XkcdPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {
