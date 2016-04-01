@@ -93,7 +93,7 @@ class Docs implements Plugin
                 "[ [`%s`](%s) ] %s",
                 $dom->getElementsByTagName("h1")->item(0)->textContent,
                 $response->getRequest()->getUri(),
-                trim($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent)
+                $this->normalizeMessage($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent)
             );
         } else if ($dom->getElementsByTagName("h2")->length > 0) {
             // Pages like http://php.net/manual/en/control-structures.foreach.php
@@ -101,9 +101,15 @@ class Docs implements Plugin
                 "[ [`%s`](%s) ] %s",
                 $dom->getElementsByTagName("h2")->item(0)->textContent,
                 $response->getRequest()->getUri(),
-                trim($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]")->item(0)->textContent)
+                $this->normalizeMessage($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]")->item(0)->textContent)
             );
         }
+    }
+
+    // Handle broken SO's chat MD
+    private function normalizeMessage(string $message): string
+    {
+        return trim(str_replace(["\r\n", "\r", "\n"], ' ', $message));
     }
 
     private function getMessageFromSearch(Response $response): \Generator {
