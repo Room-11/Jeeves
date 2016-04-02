@@ -1,5 +1,11 @@
-<?php declare(strict_types=1); namespace Room11\Jeeves\Chat\Plugin; use Room11\Jeeves\Chat\Client\ChatClient; use Room11\Jeeves\Chat\Command\Command; use 
-Room11\Jeeves\Chat\Command\Message; class Mdn implements Plugin {
+<?php declare(strict_types=1); 
+namespace Room11\Jeeves\Chat\Plugin;
+
+use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Command\Command; 
+use Room11\Jeeves\Chat\Command\Message;
+
+class Mdn implements Plugin {
     const COMMAND = 'mdn';
     private $chatClient;
     public function __construct(ChatClient $chatClient)
