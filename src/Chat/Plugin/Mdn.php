@@ -47,7 +47,7 @@ class Mdn implements Plugin {
     private function postNoResult(Message $message): \Generator
     {
         yield from $this->chatClient->postMessage(
-            sprintf(':%s %s', $message->getOrigin(), 'Sorry I couldn\'t find a page concerning that topic on MDN.')
+            sprintf(':%s %s', $message->getOrigin(), 'Sorry, I couldn\'t find a page concerning that topic on MDN.')
         );
     }
 }
