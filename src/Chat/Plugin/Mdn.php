@@ -1,4 +1,5 @@
 <?php declare(strict_types=1); 
+
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
@@ -41,7 +42,7 @@ class Mdn implements Plugin {
     private function postResult(object $result): \Generator
     {
         $message = sprintf("[ [%s](%s) ] %s", $result->title, $result->url, $result->excerpt);
-        $this->chatClient->postMessage($message);
+        yield from $this->chatClient->postMessage($message);
     }
     private function postNoResult(Message $message): \Generator
     {
@@ -50,3 +51,4 @@ class Mdn implements Plugin {
         );
     }
 }
+
