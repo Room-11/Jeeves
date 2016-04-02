@@ -87,7 +87,6 @@ $injector->delegate(FKey::class, function (Retriever $retriever, Room $room) {
 
 $injector->alias("Room11\Jeeves\Storage\Admin", $config["storage"]["admin"]);
 $injector->alias("Room11\Jeeves\Storage\Ban", $config["storage"]["ban"]);
-//$injector->share($config["storage"]["admin"]);
 $injector->define("Room11\Jeeves\Storage\Admin", [":dataFile" => __DIR__ . "/../data/admins.json"]);
 $injector->define("Room11\Jeeves\Storage\Ban", [":dataFile" => __DIR__ . "/../data/bans.json"]);
 $injector->define(TwitterCredentials::class, [
