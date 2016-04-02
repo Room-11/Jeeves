@@ -105,15 +105,16 @@ class Tweet implements Plugin
             ])
         ;
 
-        yield from $this->chatClient->request($request);
+        $result    = yield from $this->chatClient->request($request);
+        $tweetInfo = json_decode($result->getBody(), true);
+        $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
         yield from $this->chatClient->postMessage(
-            sprintf(":%d Message tweeted.", $message->getOrigin())
+            sprintf(":%d [Message tweeted.](%s)", $message->getOrigin(), $tweetUri)
         );
     }
 
-    private function getNonce(): string
-    {
+    private function getNonce(): string {
         return bin2hex(random_bytes(16));
     }
 
