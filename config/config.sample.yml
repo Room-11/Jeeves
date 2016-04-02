@@ -14,3 +14,9 @@ logging:
 storage:
   admin: Room11\Jeeves\Storage\File\Admin
   ban: Room11\Jeeves\Storage\File\Ban
+
+twitter:
+  consumerKey: YourConsumerKey
+  consumerSecret: YourConsumerSecret
+  accessToken: YourAccessToken
+  accessTokenSecret: YourTokenSecret

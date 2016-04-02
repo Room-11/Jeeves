@@ -21,6 +21,7 @@ use Room11\Jeeves\Chat\Plugin\Packagist as PackagistPlugin;
 use Room11\Jeeves\Chat\Plugin\Regex as RegexPlugin;
 use Room11\Jeeves\Chat\Plugin\RFC as RfcPlugin;
 use Room11\Jeeves\Chat\Plugin\SwordFight as SwordFightPlugin;
+use Room11\Jeeves\Chat\Plugin\Tweet as TweetPlugin;
 use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
 use Room11\Jeeves\Chat\Plugin\Version as VersionPlugin;
 use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
@@ -35,6 +36,7 @@ use Room11\Jeeves\Log\StdOut;
 use Room11\Jeeves\OpenId\Client;
 use Room11\Jeeves\OpenId\EmailAddress;
 use Room11\Jeeves\OpenId\Password;
+use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
 use Room11\Jeeves\Storage\Ban;
 use Room11\Jeeves\WebSocket\Handler;
 use Symfony\Component\Yaml\Yaml;
@@ -88,6 +90,12 @@ $injector->alias("Room11\Jeeves\Storage\Ban", $config["storage"]["ban"]);
 //$injector->share($config["storage"]["admin"]);
 $injector->define("Room11\Jeeves\Storage\Admin", [":dataFile" => __DIR__ . "/../data/admins.json"]);
 $injector->define("Room11\Jeeves\Storage\Ban", [":dataFile" => __DIR__ . "/../data/bans.json"]);
+$injector->define(TwitterCredentials::class, [
+    ":consumerKey" => $config["twitter"]["consumerKey"],
+    ":consumerSecret" => $config["twitter"]["consumerSecret"],
+    ":accessToken" => $config["twitter"]["accessToken"],
+    ":accessTokenSecret" => $config["twitter"]["accessTokenSecret"],
+]);
 $injector->delegate(PluginCollection::class, function () use ($injector) {
     $collection = new PluginCollection($injector->make(CommandFactory::class), $injector->make(Ban::class));
 
@@ -109,6 +117,7 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         RegexPlugin::class,
         LickPlugin::class,
         XkcdPlugin::class,
+        TweetPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {

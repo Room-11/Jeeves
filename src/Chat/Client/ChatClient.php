@@ -32,6 +32,17 @@ class ChatClient {
         return $response;
     }
 
+    public function getMessage(int $id): \Generator {
+        $uri = sprintf(
+            "%s://%s/message/%d",
+            $this->room->getHost()->isSecure() ? "https" : "http",
+            $this->room->getHost()->getHostname(),
+            $id
+        );
+
+        return yield $this->httpClient->request($uri);
+    }
+
     public function postMessage(string $text): \Generator {
         $body = (new FormBody)
             ->addField("text", $text)
