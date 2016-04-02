@@ -299,16 +299,16 @@
         },
         {
             "name": "amphp/socket",
-            "version": "v0.9.5",
+            "version": "v0.9.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/socket.git",
-                "reference": "ade7e97b2d6aa56a74b7e64ac502e03c07a37533"
+                "reference": "df744e08957cc7023bd9a1401d2a42bd5e9f771a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/socket/zipball/ade7e97b2d6aa56a74b7e64ac502e03c07a37533",
-                "reference": "ade7e97b2d6aa56a74b7e64ac502e03c07a37533",
+                "url": "https://api.github.com/repos/amphp/socket/zipball/df744e08957cc7023bd9a1401d2a42bd5e9f771a",
+                "reference": "df744e08957cc7023bd9a1401d2a42bd5e9f771a",
                 "shasum": ""
             },
             "require": {
@@ -350,7 +350,7 @@
                 "tcp",
                 "tls"
             ],
-            "time": "2016-03-25 14:11:46"
+            "time": "2016-04-01 18:49:05"
         },
         {
             "name": "amphp/websocket",
