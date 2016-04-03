@@ -56,11 +56,7 @@ class Packagist implements Plugin
         $response = yield from $this->chatClient->request($url);
 
         if ($response->getStatus() !== 200) {
-            yield from $this->chatClient->postMessage(
-                ":$reply `$vendor/$package` does not exist."
-            );
-
-            return;
+            $response = yield from $this->getResultFromSearchFallback($vendor, $package);
         }
 
         $data = json_decode($response->getBody());
@@ -71,5 +67,22 @@ class Packagist implements Plugin
             $data->package->repository,
             $data->package->description
         ));
+    }
+
+    private function getResultFromSearchFallback(string $vendor, string $package): \Generator {
+        $url = 'https://packagist.org/search/?q=' . urlencode($vendor) . '%2F' . urldecode($package);
+
+        /** @var Response $response */
+        $response = yield from $this->chatClient->request($url);
+
+        $internalErrors = libxml_use_internal_errors(true);
+        $dom = new \DOMDocument();
+        $dom->loadHTML($response->getBody());
+        libxml_use_internal_errors($internalErrors);
+
+        $xpath = new \DOMXPath($dom);
+        $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' packages ')]/li");
+
+        return yield from $this->chatClient->request('https://packagist.org' . $nodes->item(0)->getAttribute('data-url') . '.json');
     }
 }
