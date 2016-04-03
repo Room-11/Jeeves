@@ -39,6 +39,12 @@ class Admin implements Plugin
     }
 
     private function execute(Message $message): \Generator {
+        if ($message->getParameters()[0] === "list") {
+            yield from $this->getList();
+
+            return;
+        }
+
         if (!yield from $this->storage->isAdmin($message->getMessage()->getUserId())) {
             yield from $this->chatClient->postMessage(
                 sprintf(":%d I'm sorry Dave, I'm afraid I can't do that", $message->getOrigin())
@@ -47,9 +53,7 @@ class Admin implements Plugin
             return;
         }
 
-        if ($message->getParameters()[0] === "list") {
-            yield from $this->getList();
-        } elseif ($message->getParameters()[0] === "add") {
+        if ($message->getParameters()[0] === "add") {
             yield from $this->add((int) $message->getParameters()[1]);
         } elseif ($message->getParameters()[0] === "remove") {
             yield from $this->remove((int) $message->getParameters()[1]);
