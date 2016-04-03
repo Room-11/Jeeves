@@ -62,18 +62,37 @@ class ChatClient {
 
         $response = yield $this->httpClient->request($request);
 
-        if ($this->fuckOff($response->getBody())) {
-            yield new Pause($this->fuckOff($response->getBody()));
+        // @todo remove me once we found out what message this breaks on
+        try {
+            if ($this->fuckOff($response->getBody())) {
+                yield new Pause($this->fuckOff($response->getBody()));
 
-            $response = yield $this->httpClient->request($request);
+                $response = yield $this->httpClient->request($request);
 
-            $response = json_decode($response->getBody(), true);
+                $response = json_decode($response->getBody(), true);
 
-            return new Response($response["id"], $response["time"]);
-        } else {
-            $response = json_decode($response->getBody(), true);
+                return new Response($response["id"], $response["time"]);
+            } else {
+                $response = json_decode($response->getBody(), true);
 
-            return new Response($response["id"], $response["time"]);
+                return new Response($response["id"], $response["time"]);
+            }
+        } catch (\Throwable $e) {
+            if (is_array($response)) {
+                $errorInfo = json_encode($response);
+            } else {
+                $errorInfo = $response->getBody();
+            }
+
+            file_put_contents(
+                __DIR__ . '/../../../data/exceptions.txt',
+                (new \DateTimeImmutable())->format('Y-m-d H:i:s') . ' ' . $e->getMessage() . "\r\n" . $errorInfo . "\r\n\r\n",
+                FILE_APPEND
+            );
+
+            yield new Pause(2000);
+
+            yield from $this->postMessage("@PeeHaa error has been logged. Fix it fix it fix it fix it.");
         }
     }
 
@@ -106,7 +125,7 @@ class ChatClient {
     private function fuckOff(string $body): int
     {
         if (preg_match('/You can perform this action again in (\d+) seconds/', $body, $matches)) {
-            return ($matches[1] + 1) * 1000;
+            return ($matches[1] + 2) * 1000;
         }
 
         return 0;
