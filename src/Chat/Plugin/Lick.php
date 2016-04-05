@@ -43,6 +43,6 @@ class Lick implements Plugin
 
     private function getRandomReply(): string
     {
-        return self::RESPONSES[random_int(0, (count(self::RESPONSES - 1)))];
+        return self::RESPONSES[random_int(0, (count(self::RESPONSES) - 1))];
     }
 }
