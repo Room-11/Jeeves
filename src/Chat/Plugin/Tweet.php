@@ -61,10 +61,6 @@ class Tweet implements Plugin
             return;
         }
 
-        yield from $this->chatClient->postMessage($tweetText);
-
-        return;
-
         $oauthParameters = [
             "oauth_consumer_key"     => $this->credentials->getConsumerKey(),
             "oauth_token"            => $this->credentials->getAccessToken(),
