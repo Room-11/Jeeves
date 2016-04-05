@@ -134,6 +134,53 @@ class Tweet implements Plugin
 
         $messageInfo = yield from $this->chatClient->getMessage((int) $matches[1]);
 
-        return html_entity_decode($messageInfo->getBody(), ENT_QUOTES);
+        $messageBody = html_entity_decode($messageInfo->getBody(), ENT_QUOTES);
+
+        $dom = new \DOMDocument();
+
+        $internalErrors = libxml_use_internal_errors(true);
+        $dom->loadHTML($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_use_internal_errors($internalErrors);
+
+        $this->replaceEmphasizeTags($dom);
+        $this->replaceStrikeTags($dom);
+        $this->replaceHrefs($dom);
+
+        return $dom->textContent;
+    }
+
+    private function replaceEmphasizeTags(\DOMDocument $dom)
+    {
+        $xpath = new \DOMXPath($dom);
+
+        foreach ($xpath->evaluate("//i|//b") as $node) {
+            $formattedNode = $dom->createTextNode("*" . $node->textContent . "*");
+
+            $node->parentNode->replaceChild($formattedNode, $node);
+        }
+    }
+
+    private function replaceStrikeTags(\DOMDocument $dom)
+    {
+        foreach ($dom->getElementsByTagName('strike') as $node) {
+            $formattedNode = $dom->createTextNode("<strike>" . $node->textContent . "</strike>");
+
+            $node->parentNode->replaceChild($formattedNode, $node);
+        }
+    }
+
+    private function replaceHrefs(\DOMDocument $dom)
+    {
+        foreach ($dom->getElementsByTagName('a') as $node) {
+            $linkText = "";
+
+            if ($node->getAttribute('href') !== $node->textContent) {
+                $linkText = " (" . $node->textContent . ")";
+            }
+
+            $formattedNode = $dom->createTextNode($node->getAttribute('href') . $linkText);
+
+            $node->parentNode->replaceChild($formattedNode, $node);
+        }
     }
 }
