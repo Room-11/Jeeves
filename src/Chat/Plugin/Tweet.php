@@ -61,6 +61,10 @@ class Tweet implements Plugin
             return;
         }
 
+        yield from $this->chatClient->postMessage($tweetText);
+
+        return;
+
         $oauthParameters = [
             "oauth_consumer_key"     => $this->credentials->getConsumerKey(),
             "oauth_token"            => $this->credentials->getAccessToken(),
@@ -130,6 +134,6 @@ class Tweet implements Plugin
 
         $messageInfo = yield from $this->chatClient->getMessage((int) $matches[1]);
 
-        return html_entity_decode($messageInfo->getBody());
+        return html_entity_decode($messageInfo->getBody(), ENT_QUOTES);
     }
 }
