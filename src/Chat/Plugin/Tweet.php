@@ -128,7 +128,6 @@ class Tweet implements Plugin
 
     // @todo convert URLs to shortened URLs
     // @todo handle twitter's character limit. perhaps we can do some clever replacing when above the limit?
-    // @todo replace or remove pings
     private function getMessage(string $url): \Generator {
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
@@ -146,7 +145,7 @@ class Tweet implements Plugin
         $this->replaceStrikeTags($dom);
         $this->replaceHrefs($dom);
 
-        return $dom->textContent;
+        return $this->removePings($dom->textContent);
     }
 
     private function replaceEmphasizeTags(\DOMDocument $dom)
@@ -182,5 +181,10 @@ class Tweet implements Plugin
 
             $node->parentNode->replaceChild($formattedNode, $node);
         }
+    }
+
+    private function removePings(string $text)
+    {
+        return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
     }
 }
