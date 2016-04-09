@@ -60,7 +60,7 @@ class Chuck implements Plugin {
     }
 
     private function postError(Message $message): \Generator {
-        $errorMessage = sprintf(":%s %s", $message->getOrigin(), "Ugh, there was some wierd problem while getting the joke.");
+        $errorMessage = sprintf(":%s %s", $message->getOrigin(), "Ugh, there was some weird problem while getting the joke.");
 
         yield from $this->chatClient->postMessage($errorMessage);
     }
