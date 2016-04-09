@@ -21,6 +21,8 @@ class Tweet implements Plugin
 
     private $credentials;
 
+    private $twitterConfig = [];
+
     public function __construct(ChatClient $chatClient, AdminStorage $admin, Credentials $credentials) {
         $this->chatClient  = $chatClient;
         $this->admin       = $admin;
@@ -50,6 +52,8 @@ class Tweet implements Plugin
 
             return;
         }
+
+        yield from $this->updateConfigWhenNeeded();
 
         $tweetText = yield from $this->getMessage($message->getParameters()[0]);
 
@@ -144,8 +148,7 @@ class Tweet implements Plugin
         return $this->removePings($dom->textContent);
     }
 
-    private function replaceEmphasizeTags(\DOMDocument $dom)
-    {
+    private function replaceEmphasizeTags(\DOMDocument $dom) {
         $xpath = new \DOMXPath($dom);
 
         foreach ($xpath->evaluate("//i|//b") as $node) {
@@ -155,8 +158,7 @@ class Tweet implements Plugin
         }
     }
 
-    private function replaceStrikeTags(\DOMDocument $dom)
-    {
+    private function replaceStrikeTags(\DOMDocument $dom) {
         foreach ($dom->getElementsByTagName('strike') as $node) {
             $formattedNode = $dom->createTextNode("<strike>" . $node->textContent . "</strike>");
 
@@ -164,8 +166,7 @@ class Tweet implements Plugin
         }
     }
 
-    private function replaceHrefs(\DOMDocument $dom)
-    {
+    private function replaceHrefs(\DOMDocument $dom) {
         foreach ($dom->getElementsByTagName('a') as $node) {
             $linkText = "";
 
@@ -179,8 +180,63 @@ class Tweet implements Plugin
         }
     }
 
-    private function removePings(string $text)
-    {
+    private function removePings(string $text) {
         return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
+    }
+
+    // @todo move the oauth request making to a separate class to prevent code duplication and 110 responsibilities
+    private function updateConfigWhenNeeded(): \Generator {
+        if (array_key_exists("expiration", $this->twitterConfig) && $this->twitterConfig["expiration"] > new \DateTimeImmutable()) {
+            return;
+        }
+
+        $oauthParameters = [
+            "oauth_consumer_key"     => $this->credentials->getConsumerKey(),
+            "oauth_token"            => $this->credentials->getAccessToken(),
+            "oauth_nonce"            => $this->getNonce(),
+            "oauth_timestamp"        => (new \DateTimeImmutable())->format("U"),
+            "oauth_signature_method" => "HMAC-SHA1",
+            "oauth_version"          => "1.0",
+        ];
+
+        $oauthParameters = array_map("rawurlencode", $oauthParameters);
+
+        asort($oauthParameters);
+        ksort($oauthParameters);
+
+        $queryString = urldecode(http_build_query($oauthParameters, '', '&'));
+
+        $baseString = "GET&" . rawurlencode(self::BASE_URI . "/help/configuration.json") . "&" . rawurlencode($queryString);
+        $key        = $this->credentials->getConsumerSecret() . "&" . $this->credentials->getAccessTokenSecret();
+        $signature  = rawurlencode(base64_encode(hash_hmac('sha1', $baseString, $key, true)));
+
+        $oauthParameters["oauth_signature"] = $signature;
+        $oauthParameters = array_map(function($value){
+            return '"'. $value . '"';
+        }, $oauthParameters);
+
+        unset($oauthParameters["status"]);
+
+        asort($oauthParameters);
+        ksort($oauthParameters);
+
+        $authorizationHeader = $auth = "OAuth " . urldecode(http_build_query($oauthParameters, '', ', '));
+
+        $request = (new Request)
+            ->setUri(self::BASE_URI . "/help/configuration.json")
+            ->setProtocol('1.1')
+            ->setMethod('GET')
+            ->setAllHeaders([
+                'Authorization' => $authorizationHeader,
+                'Content-Type'  => 'application/x-www-form-urlencoded',
+            ])
+        ;
+
+        $result    = yield from $this->chatClient->request($request);
+
+        $this->twitterConfig = json_decode($result->getBody(), true);
+        $this->twitterConfig["expiration"] = (new \DateTimeImmutable())->add(new \DateInterval("P1D"));
+
+        var_dump($this->twitterConfig);
     }
 }
