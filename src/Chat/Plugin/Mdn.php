@@ -1,10 +1,5 @@
 <?php declare(strict_types=1);
 
-/**
- * Implements the MDN command.
- * Returns the search result based on the parameters given!
-*/
-
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
@@ -33,8 +28,8 @@ class Mdn implements Plugin {
     private function validMessage(Message $message): bool
     {
         return $message instanceof Command
-        && $message->getCommand() === self::COMMAND
-        && $message->getParameters();
+            && $message->getCommand() === self::COMMAND
+            && $message->getParameters();
     }
 
     private function getResult(Message $message): \Generator
@@ -42,10 +37,13 @@ class Mdn implements Plugin {
         $response = yield from $this->chatClient->request(
             'https://developer.mozilla.org/en-US/search.json?highlight=false&q=' . rawurlencode(implode('%20', $message->getParameters()))
         );
+
         $result = json_decode($response->getBody(), true);
+
         if(isset($result["documents"][0])) {
             $firstHit = $result["documents"][0];
         }
+
         if(isset($firstHit) && isset($firstHit["id"]) && isset($firstHit["url"])) {
             yield from $this->postResult($firstHit);
         } else {
@@ -56,6 +54,7 @@ class Mdn implements Plugin {
     private function postResult(array $result): \Generator
     {
         $message = sprintf("[ [%s](%s) ] %s", $result["title"], $result["url"], $result["excerpt"]);
+
         yield from $this->chatClient->postMessage($message);
     }
 
