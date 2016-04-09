@@ -26,6 +26,8 @@ use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
 use Room11\Jeeves\Chat\Plugin\Version as VersionPlugin;
 use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
 use Room11\Jeeves\Chat\Plugin\Xkcd as XkcdPlugin;
+use Room11\Jeeves\Chat\Plugin\Mdn as MdnPlugin;
+use Room11\Jeeves\Chat\Plugin\Chuck as ChuckPlugin;
 use Room11\Jeeves\Chat\Room\Host;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
@@ -117,6 +119,8 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         LickPlugin::class,
         XkcdPlugin::class,
         TweetPlugin::class,
+        MdnPlugin::class,
+        ChuckPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {
