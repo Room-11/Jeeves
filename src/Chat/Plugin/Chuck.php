@@ -49,7 +49,7 @@ class Chuck implements Plugin {
     }
 
     private function postMessage(array $result): \Generator {
-        $joke = $result["value"]["joke"];
+        $joke = htmlspecialchars_decode($result["value"]["joke"]);
         yield from $this->chatClient->postMessage($joke);
     }
 
