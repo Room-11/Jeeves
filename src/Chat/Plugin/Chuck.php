@@ -7,7 +7,7 @@ use Room11\Jeeves\Chat\Command\Command;
 use Room11\Jeeves\Chat\Command\Message;
 
 class Chuck implements Plugin {
-    const COMMAND = "chuck";
+    const COMMANDS = ["chuck", "skeet"];
 
     private $chatClient;
 
@@ -25,7 +25,7 @@ class Chuck implements Plugin {
 
     private function validMessage(Message $message): bool {
         return $message instanceof Command
-            && $message->getCommand() === self::COMMAND;
+            && in_array($message->getCommand(), self::COMMANDS, true);
     }
 
 
@@ -39,14 +39,22 @@ class Chuck implements Plugin {
         $this->chatClient->postMessage("not works :(");
 
         if(isset($result["type"]) && $result["type"] == "success") {
-            yield from $this->postMessage($result);
+            yield from $this->postMessage($this->skeetify($message, $result["value"]["joke"]));
         } else {
             yield from $this->postError($message);
         }
     }
 
-    private function postMessage(array $result): \Generator {
-        $joke = htmlspecialchars_decode($result["value"]["joke"]);
+    private function skeetify(Message $message, string $joke): string {
+        if ($message->getCommand() !== "skeet") {
+            return $joke;
+        }
+
+        return str_replace("Chuck Norris", "Jon Skeet", $joke);
+    }
+
+    private function postMessage(string $joke): \Generator {
+        $joke = htmlspecialchars_decode($joke);
 
         yield from $this->chatClient->postMessage($joke);
     }
