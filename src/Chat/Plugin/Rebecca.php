@@ -51,7 +51,22 @@ class Rebecca implements Plugin
             case 'Saturday':
                 return "Today is Saturday. And Sunday comes afterwards";
             default:
-                return "Dude, it's not Rebeccaday yet!";
+                $timeLeft = $this->getTimeUntilNextFriday();
+
+                return sprintf(
+                    'Only %d days, %d hours and %d minutes left until Rebeccaday, OMG!',
+                    $timeLeft->days,
+                    $timeLeft->h,
+                    $timeLeft->m
+                );
         }
+    }
+
+    private function getTimeUntilNextFriday(): \DateInterval
+    {
+        $now = new \DateTime('now', new \DateTimeZone('UTC'));
+        $friday = new \DateTime('next friday', new \DateTimeZone('UTC'));
+
+        return $now->diff($friday);
     }
 }
