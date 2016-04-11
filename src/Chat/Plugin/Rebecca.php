@@ -57,7 +57,7 @@ class Rebecca implements Plugin
                     'Only %d days, %d hours and %d minutes left until Rebeccaday, OMG!',
                     $timeLeft->days,
                     $timeLeft->h,
-                    $timeLeft->m
+                    $timeLeft->i
                 );
         }
     }
