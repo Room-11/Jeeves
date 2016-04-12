@@ -44,22 +44,28 @@ class Rebecca implements Plugin
     private function getRebeccaLinkIfFriday(): string
     {
         switch (date('l')) {
-            case 'Thursday':
-                return "Happy Prebeccaday!";
-            case 'Friday':
-                return self::VIDEO_URL;
-            case 'Saturday':
-                return "Today is Saturday. And Sunday comes afterwards";
-            default:
-                $timeLeft = $this->getTimeUntilNextFriday();
-
-                return sprintf(
-                    'Only %d days, %d hours and %d minutes left until Rebeccaday, OMG!',
-                    $timeLeft->days,
-                    $timeLeft->h,
-                    $timeLeft->i
-                );
+        case 'Thursday':
+            return "Happy Prebeccaday!";
+        case 'Friday':
+            return self::VIDEO_URL;
+        case 'Saturday':
+            return "Today is Saturday. And Sunday comes afterwards";
+        default:
+            return $this->getCountdown();
         }
+    }
+
+    private function getCountdown(): string
+    {
+        $timeLeft = $this->getTimeUntilNextFriday();
+
+        return sprintf(
+            'Only %d days, %d hours and %d minutes left until Rebeccaday, OMG!',
+            $timeLeft->days,
+            $timeLeft->h,
+            $timeLeft->i
+        );
+
     }
 
     private function getTimeUntilNextFriday(): \DateInterval
@@ -69,4 +75,4 @@ class Rebecca implements Plugin
 
         return $now->diff($friday);
     }
-}
+
