@@ -4,13 +4,16 @@ namespace Room11\Jeeves\Tests\Chat;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 
-abstract class ChatTest extends \PHPUnit_Framework_TestCase
+abstract class AbstractChatTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var ChatClient
      */
     protected $client;
 
+    /**
+     * @inheritdoc
+     */
     protected function setUp()
     {
         parent::setUp();

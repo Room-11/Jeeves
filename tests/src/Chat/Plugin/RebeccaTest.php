@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Tests\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Plugin\Rebecca;
 
-class RebeccaTest extends PluginTest
+class RebeccaTest extends AbstractPluginTest
 {
     /**
      * @inheritdoc

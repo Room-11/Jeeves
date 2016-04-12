@@ -16,7 +16,7 @@
         "psr-4": {"Room11\\Jeeves\\": "src/"}
     },
     "autoload-dev": {
-        "psr-4": {"Room11\\Jeeves\\Tests\\": "tests/"}
+        "psr-4": {"Room11\\Jeeves\\Tests\\": "tests/src/"}
     },
     "require": {
         "php": ">=7",

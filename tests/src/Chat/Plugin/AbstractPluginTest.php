@@ -3,9 +3,9 @@
 namespace Room11\Jeeves\Tests\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Plugin\Plugin;
-use Room11\Jeeves\Tests\Chat\ChatTest;
+use Room11\Jeeves\Tests\Chat\AbstractChatTest;
 
-abstract class PluginTest extends ChatTest
+abstract class AbstractPluginTest extends AbstractChatTest
 {
     /**
      * @var Plugin

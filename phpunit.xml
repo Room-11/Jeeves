@@ -8,7 +8,7 @@
 >
     <testsuites>
         <testsuite name="Jeeves Test Suite">
-            <directory>./tests</directory>
+            <directory>./tests/src</directory>
         </testsuite>
     </testsuites>
 
