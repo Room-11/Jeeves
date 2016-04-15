@@ -75,4 +75,4 @@ class Rebecca implements Plugin
 
         return $now->diff($friday);
     }
-
+}
