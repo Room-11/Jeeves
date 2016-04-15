@@ -3,6 +3,8 @@ Jeeves
 
 Chat bot for StackOverflow. Playground for [amphp](https://github.com/amphp) libraries and just maybe some actual working bot will come out of it.
 
+[![Build Status](https://travis-ci.org/Room-11/Jeeves.svg?branch=master)](https://travis-ci.org/Room-11/Jeeves)
+
 ## Installation
 
 1. Clone the project.
