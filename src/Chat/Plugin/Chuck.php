@@ -36,8 +36,6 @@ class Chuck implements Plugin {
 
         $result = json_decode($response->getBody(), true);
 
-        $this->chatClient->postMessage("not works :(");
-
         if(isset($result["type"]) && $result["type"] == "success") {
             yield from $this->postMessage($this->skeetify($message, $result["value"]["joke"]));
         } else {
