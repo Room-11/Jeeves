@@ -50,6 +50,7 @@ class Wotd implements Plugin
 
         $dom = new \DOMDocument();
         $dom->loadHTML($response->getBody());
+
         libxml_use_internal_errors($internalErrors);
 
         if ($dom->getElementsByTagName('description')->length === 0) {
