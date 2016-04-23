@@ -20,3 +20,6 @@ twitter:
   consumerSecret: YourConsumerSecret
   accessToken: YourAccessToken
   accessTokenSecret: YourTokenSecret
+  
+bitly:
+  accessToken: BitlyAccessToken
