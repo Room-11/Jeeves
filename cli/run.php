@@ -29,6 +29,7 @@ use Room11\Jeeves\Chat\Plugin\Xkcd as XkcdPlugin;
 use Room11\Jeeves\Chat\Plugin\Mdn as MdnPlugin;
 use Room11\Jeeves\Chat\Plugin\Chuck as ChuckPlugin;
 use Room11\Jeeves\Chat\Plugin\Rebecca as RebeccaPlugin;
+use Room11\Jeeves\Chat\Plugin\Wotd as WotdPlugin;
 use Room11\Jeeves\Chat\Room\Host;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
@@ -123,6 +124,7 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         MdnPlugin::class,
         ChuckPlugin::class,
         RebeccaPlugin::class,
+        WotdPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {
