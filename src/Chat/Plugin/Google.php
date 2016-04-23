@@ -38,7 +38,7 @@ class Google implements Plugin {
 
         if ($response->getStatus() !== 200) {
             yield from $this->chatClient->postMessage(
-                "It was google's fault, not mine."
+                "It was Google's fault, not mine."
             );
 
             return;
