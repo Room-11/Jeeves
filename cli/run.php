@@ -99,6 +99,9 @@ $injector->define(TwitterCredentials::class, [
     ":accessToken" => $config["twitter"]["accessToken"],
     ":accessTokenSecret" => $config["twitter"]["accessTokenSecret"],
 ]);
+$injector->define(GooglePlugin::class, [
+    ":bitlyAccessToken" => $config["bitly"]["accessToken"],
+]);
 $injector->delegate(PluginCollection::class, function () use ($injector) {
     $collection = new PluginCollection($injector->make(CommandFactory::class), $injector->make(Ban::class));
 
