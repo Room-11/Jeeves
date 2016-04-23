@@ -60,25 +60,22 @@ class Google implements Plugin {
             ));
             return;
         }
-        $length = 3;
-        if($nodes->length < $length) {
-            $length = $nodes->length;
-        }
+        $length = min(3, $nodes->length);
 
-        $to_post_message = "";
+        $toPostMessage = "";
         for($i = 0; $i < $length; $i++) {
             start_of_loop:
-            $current_node = $nodes[$i];
-            $node_link = $xpath->query("//h3/a", $current_node);
-            $node_link_text = $node_link->item($i)->textContent;
-            $node_link = $node_link->item($i)->getAttribute("href");
-            $node_description = substr(strip_tags(nl2br($xpath->query('//span[@class="st"]', $current_node)->item($i)->textContent)), 0, 55);
-            if(preg_match('~^/url\?q=([^&]*)~', $node_link, $matches) == false) {
+            $currentNode = $nodes[$i];
+            $nodeLink= $xpath->query("//h3/a", $currenNode);
+            $nodeLinkText = $nodeLink->item($i)->textContent;
+            $nodeLink = $nodLink->item($i)->getAttribute("href");
+            $nodeDescription = substr(strip_tags(nl2br($xpath->query('//span[@class="st"]', $currentNode)->item($i)->textContent)), 0, 55);
+            if(preg_match('~^/url\?q=([^&]*)~', $nodeLink, $matches) == false) {
                 ++$i;
                 goto start_of_loop;
             }
             $link = $matches[1];
-            $api_uri = sprintf(
+            $apiUri = sprintf(
                 "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
                 "5c8c24601d7c44563e56378dc81300cfd27f0cd3",
                 $link
@@ -86,17 +83,17 @@ class Google implements Plugin {
             $shortener = yield from $this->chatClient->request($api_uri);
             $shortened = json_decode($shortener->getBody(), true);
             $shortenedLink = $shortened["data"]["url"];
-            $to_post_message .= sprintf(
+            $toPostMessage .= sprintf(
                 "  **[%s](%s)** %s...  |",
                 utf8_encode($node_link_text),
                 $shortenedLink,
-                $node_description
+                $nodeDescription
             );
         }
-        $to_post_message .= "  **[Google Search Url]($uri)**";
+        $toPostMessage .= "  **[Google Search Url]($uri)**";
 
-        $to_post_message = str_replace("\r", " ", $to_post_message);
-        $to_post_message = str_replace("\r\n", " ", $to_post_message);
-        yield from $this->chatClient->postMessage(str_replace("\n", " ", $to_post_message));
+        $toPostMessage = str_replace("\r", " ", $toPostMessage);
+        $toPostMessage = str_replace("\r\n", " ", $toPostMessage);
+        yield from $this->chatClient->postMessage(str_replace("\n", " ", $toPostMessage));
     }
 }
