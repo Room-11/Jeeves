@@ -97,10 +97,6 @@ class Google implements Plugin {
 
         $to_post_message = str_replace("\r", " ", $to_post_message);
         $to_post_message = str_replace("\r\n", " ", $to_post_message);
-        try {
-            yield from $this->chatClient->postMessage(str_replace("\n", " ", $to_post_message));
-        } catch(Exception $ex) {
-            yield from $this->chatClient->postMessage("*cough, cough* uhm, we faced a problem here... Could you take a look?");
-        }
+        yield from $this->chatClient->postMessage(str_replace("\n", " ", $to_post_message));
     }
 }
