@@ -30,8 +30,7 @@ class Wotd implements Plugin
     private function validMessage(Message $message): bool
     {
         return $message instanceof Command
-            && $message->getCommand() === self::COMMAND
-            && $message->getParameters();
+            && $message->getCommand() === self::COMMAND;
     }
 
     private function getResult(Message $message): \Generator
@@ -51,16 +50,15 @@ class Wotd implements Plugin
 
         $dom = new \DOMDocument();
         $dom->loadHTML($response->getBody());
-
-        print_r($dom);
-        print_r($response->getBody());
-
         libxml_use_internal_errors($internalErrors);
 
         if ($dom->getElementsByTagName('description')->length === 0) {
             return 'I dun goofed';
         }
 
-        return $dom->getElementsByTagName('description')->item(2)->textContent;
+        preg_match("/([^:]+)/", $dom->getElementsByTagName('description')->item(2)->textContent, $before);
+        preg_match("/\:(.*)/", $dom->getElementsByTagName('description')->item(2)->textContent, $after);
+
+        return '**['.$before[0].'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $before[0]).')**' . $after[0];
     }
 }
