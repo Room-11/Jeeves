@@ -7,8 +7,11 @@ use Room11\Jeeves\Chat\Command\Message;
 class Google implements Plugin {
     const COMMAND = "google";
     private $chatClient;
-    public function __construct(ChatClient $chatClient) {
+    private $bitlyAccessToken;
+
+    public function __construct(ChatClient $chatClient, string $bitlyAccessToken) {
         $this->chatClient = $chatClient;
+        $this->bitlyAccessToken = $bitlyAccessToken;
     }
     public function handle(Message $message): \Generator {
         if (!$this->validMessage($message)) {
@@ -61,7 +64,7 @@ class Google implements Plugin {
             $link = $matches[1];
             $apiUri = sprintf(
                 "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
-                "5c8c24601d7c44563e56378dc81300cfd27f0cd3",
+                $this->bitlyAccessToken,
                 $link
             );
             $shortener = yield from $this->chatClient->request($apiUri);
