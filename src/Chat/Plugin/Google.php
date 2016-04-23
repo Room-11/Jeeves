@@ -71,8 +71,7 @@ class Google implements Plugin {
             $nodeLink = $nodLink->item($i)->getAttribute("href");
             $nodeDescription = substr(strip_tags(nl2br($xpath->query('//span[@class="st"]', $currentNode)->item($i)->textContent)), 0, 55);
             if(preg_match('~^/url\?q=([^&]*)~', $nodeLink, $matches) == false) {
-                ++$i;
-                goto start_of_loop;
+                continue;
             }
             $link = $matches[1];
             $apiUri = sprintf(
