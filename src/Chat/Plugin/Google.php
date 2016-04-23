@@ -47,7 +47,6 @@ class Google implements Plugin {
         $internalErrors = libxml_use_internal_errors(true);
         $dom = new \DOMDocument();
         $google = $response->getBody();
-        mb_convert_encoding($google, 'utf-8', mb_detect_encoding($google));
         $dom->loadHTML($google);
         libxml_use_internal_errors($internalErrors);
 
