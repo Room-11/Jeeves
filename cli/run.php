@@ -124,7 +124,7 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
         MdnPlugin::class,
         ChuckPlugin::class,
         RebeccaPlugin::class,
-        WotdPlugin::class
+        WotdPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {
