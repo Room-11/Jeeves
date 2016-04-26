@@ -53,7 +53,7 @@ class Google implements Plugin {
 
         if($nodes->length === 0) {
             yield from $this->chatClient->postMessage(sprintf(
-                ":%s Did you know? That `%s...` dosen't exist in the world! Cuz' GOOGLE can't find it :P",
+                ":%s Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P",
                 $message->getOrigin(),
                 substr(implode(" ", $message->getParameters()), 0, 60)
             ));
@@ -64,7 +64,6 @@ class Google implements Plugin {
         $toPostMessage = "";
 
         for($i = 0; $i < $length; $i++) {
-            var_dump($toPostMessage);
 
             $currentNode = $nodes[$i];
             $nodeLink= $xpath->query("//h3/a", $currentNode);
@@ -111,7 +110,6 @@ class Google implements Plugin {
         $toPostMessage .= "  **[Search Url]($googleSearchBitlyLink)**";
         $toPostMessage = str_replace("\r", " ", $toPostMessage);
         $toPostMessage = str_replace("\r\n", " ", $toPostMessage);
-        var_dump($toPostMessage);
         yield from $this->chatClient->postMessage(str_replace("\n", " ", $toPostMessage));
     }
 }
