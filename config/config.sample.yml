@@ -20,3 +20,5 @@ twitter:
   consumerSecret: YourConsumerSecret
   accessToken: YourAccessToken
   accessTokenSecret: YourTokenSecret
+bilty:
+  accessToken: YourBitlyAccessToken
