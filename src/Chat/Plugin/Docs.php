@@ -177,12 +177,16 @@ class Docs implements Plugin
             throw new NoComprendeException('No h1 elements in HTML');
         }
 
-        $name = $this->normalizeMessageContent($h1Elements->item(0)->textContent);
+        $title = $this->normalizeMessageContent($h1Elements->item(0)->textContent);
+
+        $symbol = preg_match('/^\s*the\s+(\S+)\s+class\s*$/i', $title, $matches)
+            ? $matches[1]
+            : $title;
         $description = $descriptionElements->length > 0
             ? $this->normalizeMessageContent($descriptionElements->item(0)->textContent)
-            : $name . ' class';
+            : $title;
 
-        return [$name, $description];
+        return [$symbol, $description];
     }
 
     // Handle broken SO's chat MD
