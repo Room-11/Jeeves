@@ -7,6 +7,8 @@ use Room11\Jeeves\Chat\Command\Command;
 use Room11\Jeeves\Chat\Command\Message;
 use Amp\Artax\Response;
 
+class NoComprendeException extends \RuntimeException {}
+
 class Docs implements Plugin
 {
     const COMMAND = 'docs';
@@ -69,60 +71,138 @@ class Docs implements Plugin
              . "[here is a good tutorial](http://j.mp/PoWehJ).";
     }
 
+    /**
+     * @uses getFunctionDetails()
+     * @uses getClassDetails()
+     * @uses getBookDetails()
+     * @uses getPageDetailsFromH2()
+     * @param Response $response
+     * @return string
+     */
     private function getMessageFromMatch(Response $response): string {
-        $internalErrors = libxml_use_internal_errors(true);
-
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getBody());
-
-        libxml_use_internal_errors($internalErrors);
-
+        $dom = $this->getHTMLDocFromResponse($response);
         $xpath = new \DOMXPath($dom);
 
-        // we might hit a .book page (e.g. http://php.net/manual/en/book.mail.php) instead of a manual page proper
-        if (preg_match('#^.*/book\.[^.]+\.php$#', $response->getPreviousResponse()->getHeader("Location")[0])) {
-            return sprintf(
-                "[ [`%s`](%s) ] %s",
-                $dom->getElementsByTagName("h1")->item(0)->textContent,
-                $response->getRequest()->getUri(),
-                trim($dom->getElementsByTagName("h1")->item(0)->textContent) . " book"
-            );
+        $url = $response->getRequest()->getUri();
+
+        try {
+            $details = preg_match('#/(book|class|function)\.[^.]+\.php$#', $url, $matches)
+                ? $this->{"get{$matches[1]}Details"}($dom, $xpath)
+                : $this->getPageDetailsFromH2($dom, $xpath);
+            return sprintf("[ [`%s`](%s) ] %s", $details[0], $url, $details[1]);
+        } catch (NoComprendeException $e) {
+            return sprintf("That [manual page](%s) seems to be in a format I don't understand", $url);
+        } catch (\Exception $e) {
+            return 'Something went badly wrong with that lookup... ' . $e->getMessage();
+        }
+    }
+
+    /**
+     * Get details for pages like http://php.net/manual/en/control-structures.foreach.php
+     *
+     * @used-by getMessageFromMatch()
+     * @param \DOMDocument $doc
+     * @param \DOMXPath $xpath
+     * @return array
+     */
+    private function getPageDetailsFromH2(\DOMDocument $doc, \DOMXPath $xpath) : array
+    {
+        $h2Elements = $doc->getElementsByTagName("h2");
+        if ($h2Elements->length < 1) {
+            throw new NoComprendeException('No h2 elements in HTML');
         }
 
-        if ($dom->getElementsByTagName("h1")->length > 0) {
-            // Pages like http://php.net/manual/de/function.strtr.php
-            return sprintf(
-                "[ [`%s`](%s) ] %s",
-                $dom->getElementsByTagName("h1")->item(0)->textContent,
-                $response->getRequest()->getUri(),
-                $this->normalizeMessage($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]")->item(0)->textContent)
-            );
-        } else if ($dom->getElementsByTagName("h2")->length > 0) {
-            // Pages like http://php.net/manual/en/control-structures.foreach.php
-            return sprintf(
-                "[ [`%s`](%s) ] %s",
-                $dom->getElementsByTagName("h2")->item(0)->textContent,
-                $response->getRequest()->getUri(),
-                $this->normalizeMessage($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]")->item(0)->textContent)
-            );
+        $descriptionElements = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]");
+
+        $symbol = $this->normalizeMessageContent($h2Elements->item(0)->textContent);
+        $description = $descriptionElements->length > 0
+            ? $this->normalizeMessageContent($descriptionElements->item(0)->textContent)
+            : $symbol;
+
+        return [$symbol, $description];
+    }
+
+    /**
+     * @used-by getMessageFromMatch()
+     * @param \DOMDocument $doc
+     * @param \DOMXPath $xpath
+     * @return array
+     */
+    private function getFunctionDetails(\DOMDocument $doc, \DOMXPath $xpath) : array
+    {
+        $h1Elements = $doc->getElementsByTagName("h1");
+        if ($h1Elements->length < 1) {
+            throw new NoComprendeException('No h1 elements in HTML');
         }
 
-        return null;
+        $descriptionElements = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]");
+
+        $name = $this->normalizeMessageContent($h1Elements->item(0)->textContent) . '()';
+        $description = $descriptionElements->length > 0
+            ? $this->normalizeMessageContent($descriptionElements->item(0)->textContent)
+            : $name . ' function';
+
+        return [$name, $description];
+    }
+
+    /**
+     * @used-by getMessageFromMatch()
+     * @param \DOMDocument $doc
+     * @return array
+     * @throws NoComprendeException
+     */
+    private function getBookDetails(\DOMDocument $doc) : array
+    {
+        $h1Elements = $doc->getElementsByTagName("h1");
+        if ($h1Elements->length < 1) {
+            throw new NoComprendeException('No h1 elements in HTML');
+        }
+
+        $title = $this->normalizeMessageContent($h1Elements->item(0)->textContent);
+        return [$title, $title . ' book'];
+    }
+
+    /**
+     * @used-by getMessageFromMatch()
+     * @param \DOMDocument $doc
+     * @param \DOMXPath $xpath
+     * @return array
+     */
+    private function getClassDetails(\DOMDocument $doc, \DOMXPath $xpath) : array
+    {
+        $h1Elements = $doc->getElementsByTagName("h1");
+        $descriptionElements = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]");
+
+        if ($h1Elements->length < 1) {
+            throw new NoComprendeException('No h1 elements in HTML');
+        }
+
+        $name = $this->normalizeMessageContent($h1Elements->item(0)->textContent);
+        $description = $descriptionElements->length > 0
+            ? $this->normalizeMessageContent($descriptionElements->item(0)->textContent)
+            : $name . ' class';
+
+        return [$name, $description];
     }
 
     // Handle broken SO's chat MD
-    private function normalizeMessage(string $message): string
+    private function normalizeMessageContent(string $message): string
     {
         return trim(preg_replace('/\s+/', ' ', $message));
     }
 
-    private function getMessageFromSearch(Response $response): \Generator {
+    private function getHTMLDocFromResponse(Response $response) : \DOMDocument
+    {
         $internalErrors = libxml_use_internal_errors(true);
 
         $dom = new \DOMDocument();
         $dom->loadHTML($response->getBody());
 
         libxml_use_internal_errors($internalErrors);
+    }
+
+    private function getMessageFromSearch(Response $response): \Generator {
+        $dom = $this->getHTMLDocFromResponse($response);
 
         /** @var \DOMElement $firstResult */
         $firstResult = $dom->getElementById("quickref_functions")->getElementsByTagName("li")->item(0);
