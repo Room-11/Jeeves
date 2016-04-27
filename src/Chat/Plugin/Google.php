@@ -9,11 +9,13 @@ use Room11\Jeeves\Chat\Command\Message;
 
 class Google implements Plugin {
     const COMMAND = "google";
+
     private $chatClient;
+
     private $bitlyAccessToken;
 
     public function __construct(ChatClient $chatClient, string $bitlyAccessToken) {
-        $this->chatClient = $chatClient;
+        $this->chatClient       = $chatClient;
         $this->bitlyAccessToken = $bitlyAccessToken;
     }
 
@@ -21,6 +23,7 @@ class Google implements Plugin {
         if (!$this->validMessage($message)) {
             return;
         }
+
         yield from $this->getResult($message);
     }
 
@@ -32,6 +35,7 @@ class Google implements Plugin {
 
     private function getResult(Message $message): \Generator {
         $uri = "https://www.google.com/search?q=" . urlencode(implode(' ', $message->getParameters()));
+
         /** @var Response $response */
         $response = yield from $this->chatClient->request($uri);
 
@@ -39,14 +43,18 @@ class Google implements Plugin {
             yield from $this->chatClient->postMessage(
                 "It was Google's fault, not mine."
             );
+
             return;
         }
 
         $internalErrors = libxml_use_internal_errors(true);
-        $dom = new \DOMDocument();
-        $google = utf8_encode($response->getBody());
+        $dom            = new \DOMDocument();
+        $google         = utf8_encode($response->getBody());
+
         $dom->loadHTML($google);
+
         libxml_use_internal_errors($internalErrors);
+
         $xpath = new \DOMXPath($dom);
 
         $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]");
@@ -57,22 +65,24 @@ class Google implements Plugin {
                 $message->getOrigin(),
                 substr(implode(" ", $message->getParameters()), 0, 60)
             ));
+
             return;
         }
 
-        $length = min(3, $nodes->length);
+        $length        = min(3, $nodes->length);
         $toPostMessage = "";
 
         for($i = 0; $i < $length; $i++) {
-
-            $currentNode = $nodes[$i];
-            $nodeLink= $xpath->query("//h3/a", $currentNode);
-            $nodeLinkText = $nodeLink->item($i)->textContent;
-            $nodeLink = $nodeLink->item($i)->getAttribute("href");
+            $currentNode     = $nodes[$i];
+            $nodeLink        = $xpath->query("//h3/a", $currentNode);
+            $nodeLinkText    = $nodeLink->item($i)->textContent;
+            $nodeLink        = $nodeLink->item($i)->getAttribute("href");
             $nodeDescription = substr(strip_tags(nl2br($xpath->query('//span[@class="st"]', $currentNode)->item($i)->textContent)), 0, 55);
+
             if(preg_match('~^/url\?q=([^&]*)~', $nodeLink, $matches) == false) {
                 continue;
             }
+
             $link = $matches[1];
 
             $apiUri = sprintf(
@@ -81,18 +91,20 @@ class Google implements Plugin {
                 $link
             );
 
-            $shortener = yield from $this->chatClient->request($apiUri);
-            $shortened = json_decode($shortener->getBody(), true);
-            $shortenedLink = $shortened["data"]["url"];
+            $shortener       = yield from $this->chatClient->request($apiUri);
+            $shortened       = json_decode($shortener->getBody(), true);
+            $shortenedLink   = $shortened["data"]["url"];
             $toAppendMessage = sprintf(
                 "  **[%s](%s)** %s...  |",
                 $nodeLinkText,
                 $shortenedLink,
                 $nodeDescription
             );
+
             if(strlen($toPostMessage) + strlen($toAppendMessage) > 500) {
                 continue;
             }
+
             $toPostMessage .= $toAppendMessage;
         }
 
@@ -101,15 +113,19 @@ class Google implements Plugin {
             $this->bitlyAccessToken,
             $uri
         );
+
         $googleSearchBitlyLink = yield from $this->chatClient->request($apiUri);
         $googleSearchBitlyLink = json_decode($googleSearchBitlyLink->getBody(), true)["data"]["url"];
+
         if(strlen($toPostMessage) + strlen("  **[Search Url]($googleSearchBitlyLink)**") > 500) {
             $toPostMessage = substr($toPostMessage, 0, 500 - (strlen("  **[Search Url]($googleSearchBitlyLink)**") + 1));
             $toPostMessage .= "|";
         }
+
         $toPostMessage .= "  **[Search Url]($googleSearchBitlyLink)**";
         $toPostMessage = str_replace("\r", " ", $toPostMessage);
         $toPostMessage = str_replace("\r\n", " ", $toPostMessage);
+
         yield from $this->chatClient->postMessage(str_replace("\n", " ", $toPostMessage));
     }
 }
