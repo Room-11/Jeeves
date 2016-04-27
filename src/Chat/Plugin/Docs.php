@@ -22,6 +22,7 @@ class Docs implements Plugin
             return;
         }
 
+        /** @var Command $message */
         yield from $this->getResult($message);
     }
 
@@ -31,7 +32,7 @@ class Docs implements Plugin
             && $message->getParameters();
     }
 
-    private function getResult(Message $message): \Generator {
+    private function getResult(Command $message): \Generator {
         $pattern = str_replace('::', '.', implode(' ', $message->getParameters()));
 
         if (substr($pattern, 0, 6) === "mysql_") {
@@ -44,6 +45,7 @@ class Docs implements Plugin
 
         $url = "http://php.net/manual-lookup.php?scope=quickref&pattern=" . rawurlencode($pattern);
 
+        /** @var Response $response */
         $response = yield from $this->chatClient->request($url);
 
         if ($response->getPreviousResponse() !== null) {
@@ -104,12 +106,14 @@ class Docs implements Plugin
                 $this->normalizeMessage($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]")->item(0)->textContent)
             );
         }
+
+        return null;
     }
 
     // Handle broken SO's chat MD
     private function normalizeMessage(string $message): string
     {
-        return trim(str_replace(["\r\n", "\r", "\n"], ' ', $message));
+        return trim(preg_replace('/\s+/', ' ', $message));
     }
 
     private function getMessageFromSearch(Response $response): \Generator {
@@ -120,10 +124,13 @@ class Docs implements Plugin
 
         libxml_use_internal_errors($internalErrors);
 
+        /** @var \DOMElement $firstResult */
         $firstResult = $dom->getElementById("quickref_functions")->getElementsByTagName("li")->item(0);
+        /** @var \DOMElement $anchor */
+        $anchor = $firstResult->getElementsByTagName("a")->item(0);
 
         $response = yield from $this->chatClient->request(
-            "https://php.net" . $firstResult->getElementsByTagName("a")->item(0)->getAttribute("href")
+            "https://php.net" . $anchor->getAttribute("href")
         );
 
         return $this->getMessageFromMatch($response);
