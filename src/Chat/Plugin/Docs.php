@@ -13,6 +13,10 @@ class Docs implements Plugin
 {
     const COMMAND = 'docs';
 
+    const URL_BASE = 'http://php.net';
+    const LOOKUP_URL_BASE = self::URL_BASE . '/manual-lookup.php?scope=quickref&pattern=';
+    const MANUAL_URL_BASE = self::URL_BASE . '/manual/en';
+
     private $chatClient;
 
     public function __construct(ChatClient $chatClient) {
@@ -45,18 +49,18 @@ class Docs implements Plugin
             return;
         }
 
-        $url = "http://php.net/manual-lookup.php?scope=quickref&pattern=" . rawurlencode($pattern);
+        $url = self::LOOKUP_URL_BASE . rawurlencode($pattern);
 
         /** @var Response $response */
         $response = yield from $this->chatClient->request($url);
 
         if ($response->getPreviousResponse() !== null) {
             yield from $this->chatClient->postMessage(
-                $this->getMessageFromMatch($response)
+                $this->getMessageFromMatch($response, $pattern)
             );
         } else {
             yield from $this->chatClient->postMessage(
-                yield from $this->getMessageFromSearch($response)
+                yield from $this->getMessageFromSearch($response, $pattern)
             );
         }
     }
@@ -77,22 +81,21 @@ class Docs implements Plugin
      * @uses getBookDetails()
      * @uses getPageDetailsFromH2()
      * @param Response $response
+     * @param string $pattern
      * @return string
      */
-    private function getMessageFromMatch(Response $response): string {
-        $dom = $this->getHTMLDocFromResponse($response);
-        $xpath = new \DOMXPath($dom);
-
+    private function getMessageFromMatch(Response $response, string $pattern): string {
+        $doc = $this->getHTMLDocFromResponse($response);
         $url = $response->getRequest()->getUri();
 
         try {
             $details = preg_match('#/(book|class|function)\.[^.]+\.php$#', $url, $matches)
-                ? $this->{"get{$matches[1]}Details"}($dom, $xpath)
-                : $this->getPageDetailsFromH2($dom, $xpath);
+                ? $this->{"get{$matches[1]}Details"}($doc, $pattern)
+                : $this->getPageDetailsFromH2($doc);
             return sprintf("[ [`%s`](%s) ] %s", $details[0], $url, $details[1]);
         } catch (NoComprendeException $e) {
             return sprintf("That [manual page](%s) seems to be in a format I don't understand", $url);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return 'Something went badly wrong with that lookup... ' . $e->getMessage();
         }
     }
@@ -102,17 +105,16 @@ class Docs implements Plugin
      *
      * @used-by getMessageFromMatch()
      * @param \DOMDocument $doc
-     * @param \DOMXPath $xpath
      * @return array
      */
-    private function getPageDetailsFromH2(\DOMDocument $doc, \DOMXPath $xpath) : array
+    private function getPageDetailsFromH2(\DOMDocument $doc) : array
     {
         $h2Elements = $doc->getElementsByTagName("h2");
         if ($h2Elements->length < 1) {
             throw new NoComprendeException('No h2 elements in HTML');
         }
 
-        $descriptionElements = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]");
+        $descriptionElements = (new \DOMXPath($doc))->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]");
 
         $symbol = $this->normalizeMessageContent($h2Elements->item(0)->textContent);
         $description = $descriptionElements->length > 0
@@ -125,17 +127,16 @@ class Docs implements Plugin
     /**
      * @used-by getMessageFromMatch()
      * @param \DOMDocument $doc
-     * @param \DOMXPath $xpath
      * @return array
      */
-    private function getFunctionDetails(\DOMDocument $doc, \DOMXPath $xpath) : array
+    private function getFunctionDetails(\DOMDocument $doc) : array
     {
         $h1Elements = $doc->getElementsByTagName("h1");
         if ($h1Elements->length < 1) {
             throw new NoComprendeException('No h1 elements in HTML');
         }
 
-        $descriptionElements = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]");
+        $descriptionElements = (new \DOMXPath($doc))->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]");
 
         $name = $this->normalizeMessageContent($h1Elements->item(0)->textContent) . '()';
         $description = $descriptionElements->length > 0
@@ -148,11 +149,17 @@ class Docs implements Plugin
     /**
      * @used-by getMessageFromMatch()
      * @param \DOMDocument $doc
+     * @param string $pattern
      * @return array
-     * @throws NoComprendeException
      */
-    private function getBookDetails(\DOMDocument $doc) : array
+    private function getBookDetails(\DOMDocument $doc, string $pattern) : array
     {
+        /** @var Response $response */
+        $response = yield from $this->chatClient->request(self::MANUAL_URL_BASE . '/class.' . rawurlencode($pattern) . '.php');
+        if ($response->getStatus() != 404) {
+            return $this->getMessageFromMatch($response, $pattern);
+        }
+
         $h1Elements = $doc->getElementsByTagName("h1");
         if ($h1Elements->length < 1) {
             throw new NoComprendeException('No h1 elements in HTML');
@@ -165,20 +172,18 @@ class Docs implements Plugin
     /**
      * @used-by getMessageFromMatch()
      * @param \DOMDocument $doc
-     * @param \DOMXPath $xpath
      * @return array
      */
-    private function getClassDetails(\DOMDocument $doc, \DOMXPath $xpath) : array
+    private function getClassDetails(\DOMDocument $doc) : array
     {
         $h1Elements = $doc->getElementsByTagName("h1");
-        $descriptionElements = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]");
-
         if ($h1Elements->length < 1) {
             throw new NoComprendeException('No h1 elements in HTML');
         }
 
-        $title = $this->normalizeMessageContent($h1Elements->item(0)->textContent);
+        $descriptionElements = (new \DOMXPath($doc))->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]");
 
+        $title = $this->normalizeMessageContent($h1Elements->item(0)->textContent);
         $symbol = preg_match('/^\s*the\s+(\S+)\s+class\s*$/i', $title, $matches)
             ? $matches[1]
             : $title;
@@ -207,18 +212,22 @@ class Docs implements Plugin
         return $dom;
     }
 
-    private function getMessageFromSearch(Response $response): \Generator {
-        $dom = $this->getHTMLDocFromResponse($response);
+    private function getMessageFromSearch(Response $response, string $pattern): \Generator {
+        try {
+            $dom = $this->getHTMLDocFromResponse($response);
 
-        /** @var \DOMElement $firstResult */
-        $firstResult = $dom->getElementById("quickref_functions")->getElementsByTagName("li")->item(0);
-        /** @var \DOMElement $anchor */
-        $anchor = $firstResult->getElementsByTagName("a")->item(0);
+            /** @var \DOMElement $firstResult */
+            $firstResult = $dom->getElementById("quickref_functions")->getElementsByTagName("li")->item(0);
+            /** @var \DOMElement $anchor */
+            $anchor = $firstResult->getElementsByTagName("a")->item(0);
 
-        $response = yield from $this->chatClient->request(
-            "https://php.net" . $anchor->getAttribute("href")
-        );
+            $response = yield from $this->chatClient->request(
+                self::URL_BASE . $anchor->getAttribute("href")
+            );
 
-        return $this->getMessageFromMatch($response);
+            return $this->getMessageFromMatch($response, $pattern);
+        } catch (\Throwable $e) {
+            return 'Something went badly wrong with that lookup... ' . $e->getMessage();
+        }
     }
 }
