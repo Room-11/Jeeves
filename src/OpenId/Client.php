@@ -14,8 +14,8 @@ class Client {
     private $fkeyRetriever;
 
     public function __construct(Credentials $credentials, HttpClient $httpClient, FkeyRetriever $fkeyRetriever) {
-        $this->credentials = $credentials;
-        $this->httpClient = $httpClient;
+        $this->credentials   = $credentials;
+        $this->httpClient    = $httpClient;
         $this->fkeyRetriever = $fkeyRetriever;
     }
 
