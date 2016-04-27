@@ -137,7 +137,7 @@ class Google implements Plugin {
 
         foreach ($searchResults as $index => $result) {
             $newMessage = sprintf(
-                " **[%s](%s)** %s...  |",
+                " **[%s](%s)** %s  |",
                 $result["title"],
                 $urls[$index],
                 $result["description"]
