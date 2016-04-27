@@ -78,7 +78,7 @@ class Docs implements Plugin
         $xpath = new \DOMXPath($dom);
 
         // we might hit a .book page (e.g. http://php.net/manual/en/book.mail.php) instead of a manual page proper
-        if (preg_match("#^.*/book\.[^.]+\.php$#", $response->getPreviousResponse()->getHeader("Location")[0])) {
+        if (preg_match('#^.*/book\.[^.]+\.php$#', $response->getPreviousResponse()->getHeader("Location")[0])) {
             return sprintf(
                 "[ [`%s`](%s) ] %s",
                 $dom->getElementsByTagName("h1")->item(0)->textContent,
