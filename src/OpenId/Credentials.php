@@ -8,7 +8,7 @@ class Credentials {
 
     public function __construct(EmailAddress $emailAddress, Password $password) {
         $this->emailAddress = $emailAddress;
-        $this->password = $password;
+        $this->password     = $password;
     }
 
     public function getEmailAddress(): EmailAddress {
