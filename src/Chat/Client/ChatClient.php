@@ -26,10 +26,18 @@ class ChatClient {
         return $response;
     }
 
-    public function requestMulti(array $urisAndRequests): array {
-        $response = $this->httpClient->requestMulti($urisAndRequests);
+    public function requestMulti(array $urisAndRequests): \Generator {
+        $promises = array_map(function($uriOrRequest) {
+            return $this->httpClient->request($uriOrRequest);
+        }, $urisAndRequests);
 
-        return $response;
+        $responses = [];
+
+        foreach ($promises as $promise) {
+            $responses[] = yield $promise;
+        }
+
+        return $responses;
     }
 
     public function getMessage(int $id): \Generator {
