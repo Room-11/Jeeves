@@ -40,31 +40,17 @@ class Google implements Plugin {
         $response = yield from $this->chatClient->request($uri);
 
         if ($response->getStatus() !== 200) {
-            yield from $this->chatClient->postMessage(
-                "It was Google's fault, not mine."
-            );
+            yield from $this->postErrorMessage();
 
             return;
         }
 
-        $internalErrors = libxml_use_internal_errors(true);
-        $dom            = new \DOMDocument();
-        $google         = utf8_encode($response->getBody());
-
-        $dom->loadHTML($google);
-
-        libxml_use_internal_errors($internalErrors);
-
+        $dom   = $this->buildDom($response->getBody());
         $xpath = new \DOMXPath($dom);
-
-        $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]");
+        $nodes = $this->getResultNodes($xpath);
 
         if($nodes->length === 0) {
-            yield from $this->chatClient->postMessage(sprintf(
-                ":%s Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P",
-                $message->getOrigin(),
-                substr(implode(" ", $message->getParameters()), 0, 60)
-            ));
+            yield from $this->postNoResultsMessage($message);
 
             return;
         }
@@ -127,5 +113,35 @@ class Google implements Plugin {
         $toPostMessage = str_replace("\r\n", " ", $toPostMessage);
 
         yield from $this->chatClient->postMessage(str_replace("\n", " ", $toPostMessage));
+    }
+
+    private function postErrorMessage(): \Generator {
+        yield from $this->chatClient->postMessage(
+            "It was Google's fault, not mine."
+        );
+    }
+
+    private function postNoResultsMessage(Message $message): \Generator {
+        yield from $this->chatClient->postMessage(sprintf(
+            ":%s Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P",
+            $message->getOrigin(),
+            substr(implode(" ", $message->getParameters()), 0, 60)
+        ));
+    }
+
+    private function buildDom($body): \DOMDocument {
+        $internalErrors = libxml_use_internal_errors(true);
+        $dom            = new \DOMDocument();
+        $google         = utf8_encode($body);
+
+        $dom->loadHTML($google);
+
+        libxml_use_internal_errors($internalErrors);
+
+        return $dom;
+    }
+
+    private function getResultNodes(\DOMXPath $xpath): \DOMNodeList {
+        return $xpath->evaluate("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]");
     }
 }
