@@ -199,6 +199,8 @@ class Docs implements Plugin
         $dom->loadHTML($response->getBody());
 
         libxml_use_internal_errors($internalErrors);
+
+        return $dom;
     }
 
     private function getMessageFromSearch(Response $response): \Generator {
