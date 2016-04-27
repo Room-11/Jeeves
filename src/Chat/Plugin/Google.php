@@ -171,7 +171,7 @@ class Google implements Plugin {
         $urls[] = sprintf(
             "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
             $this->bitlyAccessToken,
-            "https://www.google.nl/search?q=" . urlencode(implode(' ', $message->getParameters()))
+            "https://www.google.com/search?q=" . urlencode(implode(' ', $message->getParameters()))
         );
 
         $responses = yield from $this->chatClient->requestMulti($urls);
