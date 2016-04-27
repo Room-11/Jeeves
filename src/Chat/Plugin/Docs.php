@@ -56,13 +56,26 @@ class Docs implements Plugin
 
         if ($response->getPreviousResponse() !== null) {
             yield from $this->chatClient->postMessage(
-                $this->getMessageFromMatch($response, $pattern)
+                $this->getMessageFromMatch(yield from $this->preProcessMatch($response, $pattern))
             );
         } else {
             yield from $this->chatClient->postMessage(
-                yield from $this->getMessageFromSearch($response, $pattern)
+                yield from $this->getMessageFromSearch($response)
             );
         }
+    }
+
+    private function preProcessMatch(Response $response, string $pattern) : \Generator
+    {
+        if (preg_match('#/book\.[^.]+\.php$#', $response->getRequest()->getUri(), $matches)) {
+            /** @var Response $classResponse */
+            $classResponse = yield from $this->chatClient->request(self::MANUAL_URL_BASE . '/class.' . rawurlencode($pattern) . '.php');
+            if ($classResponse->getStatus() != 404) {
+                return $classResponse;
+            }
+        }
+
+        return $response;
     }
 
     private function getMysqlMessage(): string {
@@ -81,16 +94,16 @@ class Docs implements Plugin
      * @uses getBookDetails()
      * @uses getPageDetailsFromH2()
      * @param Response $response
-     * @param string $pattern
      * @return string
+     * @internal param string $pattern
      */
-    private function getMessageFromMatch(Response $response, string $pattern): string {
+    private function getMessageFromMatch(Response $response): string {
         $doc = $this->getHTMLDocFromResponse($response);
         $url = $response->getRequest()->getUri();
 
         try {
             $details = preg_match('#/(book|class|function)\.[^.]+\.php$#', $url, $matches)
-                ? $this->{"get{$matches[1]}Details"}($doc, $pattern)
+                ? $this->{"get{$matches[1]}Details"}($doc)
                 : $this->getPageDetailsFromH2($doc);
             return sprintf("[ [`%s`](%s) ] %s", $details[0], $url, $details[1]);
         } catch (NoComprendeException $e) {
@@ -149,17 +162,11 @@ class Docs implements Plugin
     /**
      * @used-by getMessageFromMatch()
      * @param \DOMDocument $doc
-     * @param string $pattern
      * @return array
+     * @internal param string $pattern
      */
-    private function getBookDetails(\DOMDocument $doc, string $pattern) : array
+    private function getBookDetails(\DOMDocument $doc) : array
     {
-        /** @var Response $response */
-        $response = yield from $this->chatClient->request(self::MANUAL_URL_BASE . '/class.' . rawurlencode($pattern) . '.php');
-        if ($response->getStatus() != 404) {
-            return $this->getMessageFromMatch($response, $pattern);
-        }
-
         $h1Elements = $doc->getElementsByTagName("h1");
         if ($h1Elements->length < 1) {
             throw new NoComprendeException('No h1 elements in HTML');
@@ -212,7 +219,7 @@ class Docs implements Plugin
         return $dom;
     }
 
-    private function getMessageFromSearch(Response $response, string $pattern): \Generator {
+    private function getMessageFromSearch(Response $response): \Generator {
         try {
             $dom = $this->getHTMLDocFromResponse($response);
 
@@ -225,7 +232,7 @@ class Docs implements Plugin
                 self::URL_BASE . $anchor->getAttribute("href")
             );
 
-            return $this->getMessageFromMatch($response, $pattern);
+            return $this->getMessageFromMatch($response);
         } catch (\Throwable $e) {
             return 'Something went badly wrong with that lookup... ' . $e->getMessage();
         }
