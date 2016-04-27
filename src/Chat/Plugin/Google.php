@@ -55,64 +55,10 @@ class Google implements Plugin {
             return;
         }
 
-        $length        = min(3, $nodes->length);
-        $toPostMessage = "";
+        $searchResults = $this->getSearchResults($nodes, $xpath);
+        $postMessage   = yield from $this->getPostMessage($searchResults, $message);
 
-        for($i = 0; $i < $length; $i++) {
-            $currentNode     = $nodes[$i];
-            $nodeLink        = $xpath->query("//h3/a", $currentNode);
-            $nodeLinkText    = $nodeLink->item($i)->textContent;
-            $nodeLink        = $nodeLink->item($i)->getAttribute("href");
-            $nodeDescription = substr(strip_tags(nl2br($xpath->query('//span[@class="st"]', $currentNode)->item($i)->textContent)), 0, 55);
-
-            if(preg_match('~^/url\?q=([^&]*)~', $nodeLink, $matches) == false) {
-                continue;
-            }
-
-            $link = $matches[1];
-
-            $apiUri = sprintf(
-                "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
-                $this->bitlyAccessToken,
-                $link
-            );
-
-            $shortener       = yield from $this->chatClient->request($apiUri);
-            $shortened       = json_decode($shortener->getBody(), true);
-            $shortenedLink   = $shortened["data"]["url"];
-            $toAppendMessage = sprintf(
-                "  **[%s](%s)** %s...  |",
-                $nodeLinkText,
-                $shortenedLink,
-                $nodeDescription
-            );
-
-            if(strlen($toPostMessage) + strlen($toAppendMessage) > 500) {
-                continue;
-            }
-
-            $toPostMessage .= $toAppendMessage;
-        }
-
-        $apiUri = sprintf(
-            "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
-            $this->bitlyAccessToken,
-            $uri
-        );
-
-        $googleSearchBitlyLink = yield from $this->chatClient->request($apiUri);
-        $googleSearchBitlyLink = json_decode($googleSearchBitlyLink->getBody(), true)["data"]["url"];
-
-        if(strlen($toPostMessage) + strlen("  **[Search Url]($googleSearchBitlyLink)**") > 500) {
-            $toPostMessage = substr($toPostMessage, 0, 500 - (strlen("  **[Search Url]($googleSearchBitlyLink)**") + 1));
-            $toPostMessage .= "|";
-        }
-
-        $toPostMessage .= "  **[Search Url]($googleSearchBitlyLink)**";
-        $toPostMessage = str_replace("\r", " ", $toPostMessage);
-        $toPostMessage = str_replace("\r\n", " ", $toPostMessage);
-
-        yield from $this->chatClient->postMessage(str_replace("\n", " ", $toPostMessage));
+        yield from $this->chatClient->postMessage($postMessage);
     }
 
     private function postErrorMessage(): \Generator {
@@ -132,9 +78,9 @@ class Google implements Plugin {
     private function buildDom($body): \DOMDocument {
         $internalErrors = libxml_use_internal_errors(true);
         $dom            = new \DOMDocument();
-        $google         = utf8_encode($body);
+        $body           = utf8_encode($body);
 
-        $dom->loadHTML($google);
+        $dom->loadHTML($body);
 
         libxml_use_internal_errors($internalErrors);
 
@@ -143,5 +89,95 @@ class Google implements Plugin {
 
     private function getResultNodes(\DOMXPath $xpath): \DOMNodeList {
         return $xpath->evaluate("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]");
+    }
+
+    private function getSearchResults(\DOMNodeList $nodes, \DOMXPath $xpath): array {
+        $nodesInformation = [];
+
+        foreach ($nodes as $node) {
+            $linkNodes = $xpath->evaluate(".//h3/a", $node);
+
+            if (!$linkNodes->length) {
+                continue;
+            }
+
+            $linkNode = $linkNodes->item(0);
+
+            if(preg_match('~^/url\?q=([^&]*)~', $linkNode->getAttribute("href"), $matches) == false) {
+                continue;
+            }
+
+            $nodesInformation[] = [
+                "url"         => $matches[1],
+                "title"       => $linkNode->textContent,
+                "description" => $this->formatDescription($xpath->query('.//span[@class="st"]', $node)->item(0)->textContent),
+            ];
+
+            if (count($nodesInformation) === 3) {
+                break;
+            }
+        }
+
+        return $nodesInformation;
+    }
+
+    private function formatDescription(string $description): string {
+        $cleanedDescription = str_replace(["\r\n", "\r", "\n"], " ", $description);
+        $cleanedDescription = strip_tags($cleanedDescription);
+
+        $ellipsis = mb_strlen($cleanedDescription, "UTF-8") > 55 ? "…" : "";
+
+        return mb_substr($cleanedDescription, 0, 55, "UTF-8") . $ellipsis;
+    }
+
+    private function getPostMessage(array $searchResults, Message $message): \Generator {
+        $postMessage = "";
+
+        $urls = yield from $this->getShortenedUrls($searchResults, $message);
+
+        foreach ($searchResults as $index => $result) {
+            $newMessage = sprintf(
+                " **[%s](%s)** %s...  |",
+                $result["title"],
+                $urls[$index],
+                $result["description"]
+            );
+
+            if (mb_strlen($postMessage . $newMessage, "UTF-8") > 500) {
+                return $postMessage;
+            }
+
+            $postMessage .= $newMessage;
+        }
+
+        $googleLinkMessage = " **[Search Url]($urls[3])**";
+
+        if (mb_strlen($postMessage . $googleLinkMessage, "UTF-8") <= 500) {
+            $postMessage .= $googleLinkMessage;
+        }
+
+        return $postMessage;
+    }
+
+    private function getShortenedUrls(array $searchResults, Message $message): \Generator {
+        $urls = array_map(function($result) {
+            return sprintf(
+                "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
+                $this->bitlyAccessToken,
+                $result["url"]
+            );
+        }, $searchResults);
+
+        $urls[] = sprintf(
+            "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
+            $this->bitlyAccessToken,
+            "https://www.google.nl/search?q=" . urlencode(implode(' ', $message->getParameters()))
+        );
+
+        $responses = yield from $this->chatClient->requestMulti($urls);
+
+        return array_map(function($response) {
+            return json_decode($response->getBody(), true)["data"]["url"];
+        }, $responses);
     }
 }
