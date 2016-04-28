@@ -135,7 +135,7 @@ class Docs implements Plugin
             . ' from other parts of the code.',
         'generators' => '[Generators](' . self::MANUAL_URL_BASE . '/language.generators.php) provide an easy way to implement'
             . ' simple iterators without the overhead or complexity of creating a class that implements the `Iterator` interface.',
-        'hints' => '[Type hinting](' . self::MANUAL_URL_BASE . '/language.oop5.typehinting.php) can be used to specify the'
+        'hints' => '[Type hinting](' . self::MANUAL_URL_BASE . '/functions.arguments.php#functions.arguments.type-declaration) can be used to specify the'
             . ' type of a function or method argument.',
         'inheritance' => 'In PHP object-oriented programming, [inheritance](' . self::MANUAL_URL_BASE . '/language.oop5.inheritance.php)'
             . ' enables a class to build on the functionality of another class.',
@@ -194,6 +194,8 @@ class Docs implements Plugin
         'callbacks' => '@callables',
         'casts' => '@casting',
         'classes' => '@class',
+        'decls' => '@hints',
+        'declaration' => '@hints',
         'implements' => '@interfaces',
         'integers' => '@ints',
         'private' => '@visibility',
@@ -201,6 +203,8 @@ class Docs implements Plugin
         'protected' => '@visibility',
         'public' => '@visibility',
         'references' => '@refs',
+        'type decls' => '@hints',
+        'type declaration' => '@hints',
         'variables' => '@vars',
         'yeild' => '@yield',
     ];
