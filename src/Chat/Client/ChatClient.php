@@ -8,6 +8,7 @@ use Amp\Artax\Request;
 use Amp\Pause;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
+use Room11\Jeeves\Chat\Message\Message as ChatMessage;
 
 class ChatClient {
     private $httpClient;
@@ -111,6 +112,11 @@ class ChatClient {
 
             yield from $this->postMessage("@PeeHaa error has been logged. Fix it fix it fix it fix it.");
         }
+    }
+
+    public function postReply(ChatMessage $origin, string $text): \Generator
+    {
+        yield from $this->postMessage(":{$origin->getId()} {$text}");
     }
 
     public function editMessage(int $id, string $text): \Generator {

@@ -4,12 +4,11 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 use Amp\Artax\Response;
 
 class Imdb implements Plugin
 {
-    const COMMAND = 'imdb';
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -18,26 +17,10 @@ class Imdb implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator
-    {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool
-    {
-        return $message instanceof Command
-            && $message->getCommand() === self::COMMAND
-            && $message->getParameters();
-    }
-
-    private function getResult(Message $message): \Generator
+    private function getResult(Command $command): \Generator
     {
         $response = yield from $this->chatClient->request(
-            'http://www.imdb.com/xml/find?xml=1&nr=1&tt=on&q=' . rawurlencode(implode(' ', $message->getParameters()))
+            'http://www.imdb.com/xml/find?xml=1&nr=1&tt=on&q=' . rawurlencode(implode(' ', $command->getParameters()))
         );
 
         yield from $this->chatClient->postMessage(
@@ -66,5 +49,30 @@ class Imdb implements Plugin
             'http://www.imdb.com/title/' . $result->getAttribute('id'),
             $result->getElementsByTagName('description')->item(0)->textContent
         );
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$command->getParameters()) {
+            return;
+        }
+
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['imdb'];
     }
 }

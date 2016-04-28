@@ -8,13 +8,15 @@ use Room11\Jeeves\Chat\Command\Void;
 use Room11\Jeeves\Chat\Message\NewMessage;
 
 class CodeFormat implements Plugin {
+    use MessageOnlyPlugin;
+
     private $chatClient;
 
     public function __construct(ChatClient $chatClient) {
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator {
+    public function handleMessage(Message $message): \Generator {
         if (!$this->validMessage($message)) {
             return;
         }

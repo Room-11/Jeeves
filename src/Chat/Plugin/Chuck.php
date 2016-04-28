@@ -4,10 +4,9 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 
 class Chuck implements Plugin {
-    const COMMANDS = ["chuck", "skeet"];
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -15,21 +14,7 @@ class Chuck implements Plugin {
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-            && in_array($message->getCommand(), self::COMMANDS, true);
-    }
-
-
-    private function getResult(Message $message): \Generator {
+    private function getResult(Command $command): \Generator {
         $response = yield from $this->chatClient->request(
             "http://api.icndb.com/jokes/random/"
         );
@@ -39,14 +24,14 @@ class Chuck implements Plugin {
         $this->chatClient->postMessage("not works :(");
 
         if(isset($result["type"]) && $result["type"] == "success") {
-            yield from $this->postMessage($this->skeetify($message, $result["value"]["joke"]));
+            yield from $this->postMessage($this->skeetify($command, $result["value"]["joke"]));
         } else {
-            yield from $this->postError($message);
+            yield from $this->postError($command);
         }
     }
 
-    private function skeetify(Message $message, string $joke): string {
-        if ($message->getCommand() !== "skeet") {
+    private function skeetify(Command $command, string $joke): string {
+        if ($command->getCommand() !== "skeet") {
             return $joke;
         }
 
@@ -59,9 +44,30 @@ class Chuck implements Plugin {
         yield from $this->chatClient->postMessage($joke);
     }
 
-    private function postError(Message $message): \Generator {
-        $errorMessage = sprintf(":%s %s", $message->getOrigin(), "Ugh, there was some weird problem while getting the joke.");
+    private function postError(Command $command): \Generator {
+        yield from $this->chatClient->postReply(
+            $command->getMessage(), "Ugh, there was some weird problem while getting the joke."
+        );
+    }
 
-        yield from $this->chatClient->postMessage($errorMessage);
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ["chuck", "skeet"];
     }
 }

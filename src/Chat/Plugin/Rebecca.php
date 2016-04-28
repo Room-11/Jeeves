@@ -8,7 +8,7 @@ use Room11\Jeeves\Chat\Command\Message;
 
 class Rebecca implements Plugin
 {
-    const COMMAND = 'rebecca';
+    use CommandOnlyPlugin;
 
     const VIDEO_URL = 'https://www.youtube.com/watch?v=kfVsfOSbJY0';
 
@@ -18,27 +18,8 @@ class Rebecca implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-            && $message->getCommand() === self::COMMAND;
-    }
-
-    private function getResult(Message $message): \Generator {
-        yield from $this->chatClient->postMessage(
-            sprintf(
-                ':%s %s',
-                $message->getOrigin(),
-                $this->getRebeccaLinkIfFriday()
-            )
-        );
+    private function getResult(Command $command): \Generator {
+        yield from $this->chatClient->postReply($command->getMessage(), $this->getRebeccaLinkIfFriday());
     }
 
     private function getRebeccaLinkIfFriday(): string
@@ -74,5 +55,26 @@ class Rebecca implements Plugin
         $friday = new \DateTime('next friday', new \DateTimeZone('UTC'));
 
         return $now->diff($friday);
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['rebecca'];
     }
 }

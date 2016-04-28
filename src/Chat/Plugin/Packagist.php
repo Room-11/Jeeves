@@ -4,12 +4,11 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 use Amp\Artax\Response;
 
 class Packagist implements Plugin
 {
-    const COMMANDS = ['packagist', 'package'];
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -18,33 +17,12 @@ class Packagist implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator
+    private function getResult(Command $command): \Generator
     {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool
-    {
-        return $message instanceof Command
-        && in_array($message->getCommand(), self::COMMANDS, true);
-    }
-
-    private function getResult(Message $message): \Generator
-    {
-        $reply = $message->getOrigin();
-
-        /** @var Command $message */
-        $info = explode('/', implode('/', $message->getParameters()), 2);
+        $info = explode('/', implode('/', $command->getParameters()), 2);
 
         if (count($info) !== 2) {
-            yield from $this->chatClient->postMessage(
-                ":$reply Usage: `!!packagist vendor package`"
-            );
-
+            yield from $this->chatClient->postReply($command->getMessage(), "Usage: `!!packagist vendor package`");
             return;
         }
 
@@ -84,5 +62,26 @@ class Packagist implements Plugin
         $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' packages ')]/li");
 
         return yield from $this->chatClient->request('https://packagist.org' . $nodes->item(0)->getAttribute('data-url') . '.json');
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['packagist', 'package'];
     }
 }

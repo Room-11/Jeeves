@@ -4,11 +4,10 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 
 class Canon implements Plugin
 {
-    const COMMAND = "canon";
+    use CommandOnlyPlugin;
 
     // we need shortened links because otherwise we will hit the chat message length
     const CANONS = [
@@ -44,28 +43,14 @@ class Canon implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-            && $message->getCommand() === self::COMMAND
-            && $message->getParameters();
-    }
-
-    private function getResult(Message $message): \Generator {
-        if ($message->getParameters()[0] === "list") {
+    private function getResult(Command $command): \Generator {
+        if ($command->getParameters()[0] === "list") {
             yield from $this->chatClient->postMessage(
                 $this->getSupportedCanonicalsMessage()
             );
         } else {
             yield from $this->chatClient->postMessage(
-                $this->getMessage(implode(" ", $message->getParameters()))
+                $this->getMessage(implode(" ", $command->getParameters()))
             );
         }
     }
@@ -89,5 +74,30 @@ class Canon implements Plugin
         }
 
         return self::CANONS[strtolower($keyword)]["stackoverflow"];
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$command->getParameters()) {
+            return;
+        }
+
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ["canon"];
     }
 }

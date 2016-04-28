@@ -5,12 +5,11 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Storage\Admin as Storage;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 use function Amp\all;
 
 class Admin implements Plugin
 {
-    const COMMAND = "admin";
+    use CommandOnlyPlugin;
 
     const ACTIONS = ["add", "remove", "list"];
 
@@ -23,40 +22,31 @@ class Admin implements Plugin
         $this->storage    = $storage;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->execute($message);
+    private function validCommand(Command $command): bool {
+        return $command->getParameters()
+            && in_array($command->getParameters()[0], self::ACTIONS, true);
     }
 
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-            && $message->getCommand() === self::COMMAND
-            && $message->getParameters()
-            && in_array($message->getParameters()[0], self::ACTIONS, true);
-    }
-
-    private function execute(Message $message): \Generator {
-        if ($message->getParameters()[0] === "list") {
+    private function execute(Command $command): \Generator {
+        if ($command->getParameters()[0] === "list") {
             yield from $this->getList();
 
             return;
         }
 
-        if (!yield from $this->storage->isAdmin($message->getMessage()->getUserId())) {
-            yield from $this->chatClient->postMessage(
-                sprintf(":%d I'm sorry Dave, I'm afraid I can't do that", $message->getOrigin())
+        $message = $command->getMessage();
+        if (!yield from $this->storage->isAdmin($message->getUserId())) {
+            yield from $this->chatClient->postReply(
+                $message, "I'm sorry Dave, I'm afraid I can't do that"
             );
 
             return;
         }
 
-        if ($message->getParameters()[0] === "add") {
-            yield from $this->add((int) $message->getParameters()[1]);
-        } elseif ($message->getParameters()[0] === "remove") {
-            yield from $this->remove((int) $message->getParameters()[1]);
+        if ($command->getParameters()[0] === "add") {
+            yield from $this->add((int) $command->getParameters()[1]);
+        } elseif ($command->getParameters()[0] === "remove") {
+            yield from $this->remove((int) $command->getParameters()[1]);
         }
     }
 
@@ -119,5 +109,30 @@ class Admin implements Plugin
         libxml_use_internal_errors($errorState);
 
         return $userData;
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$this->validCommand($command)) {
+            return;
+        }
+
+        yield from $this->execute($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['admin'];
     }
 }

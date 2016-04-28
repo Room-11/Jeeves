@@ -4,11 +4,10 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 
 class Regex implements Plugin
 {
-    const COMMANDS = ["regex", "re", "pcre"];
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -16,23 +15,9 @@ class Regex implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-        && in_array($message->getCommand(), self::COMMANDS, true)
-        && $message->getParameters();
-    }
-
-    private function getResult(Message $message): \Generator {
+    private function getResult(Command $command): \Generator {
         $dom = new \DOMDocument();
-        $dom->loadHTML(implode(" ", $message->getParameters()));
+        $dom->loadHTML(implode(" ", $command->getParameters()));
 
         if (!$this->hasPattern($dom)) {
             yield from $this->chatClient->postMessage(
@@ -110,5 +95,30 @@ class Regex implements Plugin
         }
 
         return $subject;
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$command->getParameters()) {
+            return;
+        }
+
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ["regex", "re", "pcre"];
     }
 }
