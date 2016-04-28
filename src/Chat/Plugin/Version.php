@@ -35,7 +35,7 @@ class Version implements Plugin
 
     private function getVersion(): \Generator
     {
-        $version = new SebastianVersion(VERSION, dirname(dirname(dirname(__DIR__))));
+        $version = (new SebastianVersion(VERSION, dirname(dirname(dirname(__DIR__)))))->getVersion();
 
         $version = preg_replace_callback("@(v([0-9.]+)-(\d+))-g([0-9a-f]+)@", function($match) {
             return sprintf(
@@ -44,7 +44,15 @@ class Version implements Plugin
                 $match[4],
                 "https://github.com/Room-11/Jeeves/commit/" . $match[4]
             );
-        }, $version->getVersion());
+        }, $version);
+
+        $version = preg_replace_callback("@(v[0-9.]+)@", function($match) {
+            return sprintf(
+                "[%s](%s)",
+                $match[1],
+                "https://github.com/Room-11/Jeeves/tree/" . $match[1]
+            );
+        }, $version);
 
         yield from $this->chatClient->postMessage($version);
     }
