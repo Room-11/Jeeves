@@ -18,7 +18,7 @@ class Docs implements Plugin
     const MANUAL_URL_BASE = self::URL_BASE . '/manual/en';
 
     private $chatClient;
-//0161 941 1208
+
     private $specialCases = [
         /* operators */
         'arithmetic' => 'Remember basic arithmetic from school? [Arithmetic operators](' . self::MANUAL_URL_BASE . '/language.operators.arithmetic.php)'
@@ -229,7 +229,7 @@ class Docs implements Plugin
 
         foreach ([$pattern, '$' . $pattern, $pattern . 's', $pattern . 'ing'] as $candidate) {
             if (isset($this->specialCases[$candidate])) {
-                $result = $this->specialCases[$candidate][0] === '@'
+                $result = $this->specialCases[$candidate][0] === '@' && isset($this->specialCases[substr($this->specialCases[$candidate], 1)])
                     ? $this->specialCases[substr($this->specialCases[$candidate], 1)]
                     : $this->specialCases[$candidate];
 
