@@ -273,6 +273,7 @@ class Docs implements Plugin
         if (preg_match('#/book\.[^.]+\.php$#', $response->getRequest()->getUri(), $matches)) {
             /** @var Response $classResponse */
             $classResponse = yield from $this->chatClient->request(self::MANUAL_URL_BASE . '/class.' . rawurlencode($pattern) . '.php');
+
             if ($classResponse->getStatus() != 404) {
                 return $classResponse;
             }
@@ -298,7 +299,6 @@ class Docs implements Plugin
      * @uses getPageDetailsFromH2()
      * @param Response $response
      * @return string
-     * @internal param string $pattern
      */
     private function getMessageFromMatch(Response $response): string {
         $doc = $this->getHTMLDocFromResponse($response);
@@ -307,7 +307,8 @@ class Docs implements Plugin
         try {
             $details = preg_match('#/(book|class|function)\.[^.]+\.php$#', $url, $matches)
                 ? $this->{"get{$matches[1]}Details"}($doc)
-                : $this->getPageDetailsFromH2($doc);
+                : $this->getPageDetailsFromPageContent($doc);
+
             return sprintf("[ [`%s`](%s) ] %s", $details[0], $url, $details[1]);
         } catch (NoComprendeException $e) {
             return sprintf("That [manual page](%s) seems to be in a format I don't understand", $url);
@@ -317,9 +318,23 @@ class Docs implements Plugin
     }
 
     /**
+     * Get details from the page content when the URL doesn't contain enough info to work out what type of symbol it is.
+     *
+     * @param \DOMDocument $doc
+     * @return array
+     */
+    private function getPageDetailsFromPageContent(\DOMDocument $doc) : array
+    {
+        try {
+            return $this->getMethodDetails($doc);
+        } catch (NoComprendeException $e) {
+            return $this->getPageDetailsFromH2($doc);
+        }
+    }
+
+    /**
      * Get details for pages like http://php.net/manual/en/control-structures.foreach.php
      *
-     * @used-by getMessageFromMatch()
      * @param \DOMDocument $doc
      * @return array
      */
@@ -341,6 +356,37 @@ class Docs implements Plugin
     }
 
     /**
+     * Get details for class methods
+     *
+     * @param \DOMDocument $doc
+     * @return array
+     */
+    private function getMethodDetails(\DOMDocument $doc)
+    {
+        $h1Elements = $doc->getElementsByTagName("h1");
+        if ($h1Elements->length < 1) {
+            throw new NoComprendeException('No h1 elements in HTML');
+        }
+
+        /** @var \DOMElement $h1Element */
+        $h1Element = $h1Elements->item(0);
+        if (!preg_match('#(^|\s)refname(\s|$)#', $h1Element->getAttribute('class'))) {
+            throw new NoComprendeException('h1 element does not have refname class');
+        }
+
+        $descriptionElements = (new \DOMXPath($doc))->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]");
+
+        $symbol = $this->normalizeMessageContent($h1Element->textContent);
+        $description = $descriptionElements->length > 0
+            ? $this->normalizeMessageContent($descriptionElements->item(0)->textContent)
+            : $symbol;
+
+        return [$symbol, $description];
+    }
+
+    /**
+     * Get details for regular functions
+     *
      * @used-by getMessageFromMatch()
      * @param \DOMDocument $doc
      * @return array
@@ -354,19 +400,20 @@ class Docs implements Plugin
 
         $descriptionElements = (new \DOMXPath($doc))->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' dc-title ')]");
 
-        $name = $this->normalizeMessageContent($h1Elements->item(0)->textContent) . '()';
+        $symbol = $this->normalizeMessageContent($h1Elements->item(0)->textContent) . '()';
         $description = $descriptionElements->length > 0
             ? $this->normalizeMessageContent($descriptionElements->item(0)->textContent)
-            : $name . ' function';
+            : $symbol . ' function';
 
-        return [$name, $description];
+        return [$symbol, $description];
     }
 
     /**
+     * Get details for book pages
+     *
      * @used-by getMessageFromMatch()
      * @param \DOMDocument $doc
      * @return array
-     * @internal param string $pattern
      */
     private function getBookDetails(\DOMDocument $doc) : array
     {
@@ -380,6 +427,8 @@ class Docs implements Plugin
     }
 
     /**
+     * Get details for book pages
+     *
      * @used-by getMessageFromMatch()
      * @param \DOMDocument $doc
      * @return array

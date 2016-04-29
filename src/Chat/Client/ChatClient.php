@@ -68,10 +68,22 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
-        $response = yield $this->httpClient->request($request);
-
         // @todo remove me once we found out what message this breaks on
         try {
+            $response = yield $this->httpClient->request($request);
+
+            $decoded = json_decode($response->getBody(), true);
+            $decodeError = json_last_error();
+            $decodeErrorStr = json_last_error();
+
+            if ($decodeError === JSON_ERROR_NONE) {
+                if (!isset($decoded["id"], $decoded["time"])) {
+                    throw new \RuntimeException('Got a JSON response but it doesn\'t contain the expected data');
+                }
+
+                return new Response($decoded["id"], $decoded["time"]);
+            }
+
             if ($this->fuckOff($response->getBody())) {
                 yield new Pause($this->fuckOff($response->getBody()));
 
@@ -80,17 +92,14 @@ class ChatClient {
                 $response = json_decode($response->getBody(), true);
 
                 return new Response($response["id"], $response["time"]);
-            } else {
-                $response = json_decode($response->getBody(), true);
+            }
 
-                return new Response($response["id"], $response["time"]);
-            }
+            throw new \RuntimeException(
+                'A response that could not be decoded as JSON or otherwise handled was received'
+                . ' (JSON decode error: ' . $decodeErrorStr . ')'
+            );
         } catch (\Throwable $e) {
-            if (is_array($response)) {
-                $errorInfo = json_encode($response);
-            } else {
-                $errorInfo = $response->getBody();
-            }
+            $errorInfo = isset($response) ? $response->getBody() : 'No response data';
 
             file_put_contents(
                 __DIR__ . '/../../../data/exceptions.txt',
