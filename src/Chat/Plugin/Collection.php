@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Room11\Jeeves\Chat\Command\Command;
 use Room11\Jeeves\Chat\Command\Factory as CommandFactory;
 use Room11\Jeeves\Storage\Ban as BanList;
 use Room11\Jeeves\Chat\Message\Message;
@@ -13,7 +14,15 @@ class Collection
 
     private $banList;
 
-    private $plugins = [];
+    /**
+     * @var Plugin[]
+     */
+    private $messagePlugins = [];
+
+    /**
+     * @var Plugin[][]
+     */
+    private $commandPlugins = [];
 
     public function __construct(CommandFactory $commandFactory, BanList $banList)
     {
@@ -23,7 +32,13 @@ class Collection
 
     public function register(Plugin $plugin): Collection
     {
-        $this->plugins[] = $plugin;
+        if ($plugin->handlesAllMessages()) {
+            $this->messagePlugins[] = $plugin;
+        }
+
+        foreach ($plugin->getHandledCommands() as $commandName) {
+            $this->commandPlugins[$commandName][] = $plugin;
+        }
 
         return $this;
     }
@@ -38,8 +53,14 @@ class Collection
             }
         }
 
-        foreach ($this->plugins as $plugin) {
-            yield from $plugin->handle($command);
+        foreach ($this->messagePlugins as $plugin) {
+            yield from $plugin->handleMessage($command);
+        }
+
+        if ($command instanceof Command && isset($this->commandPlugins[$command->getCommand()])) {
+            foreach ($this->commandPlugins[$command->getCommand()] as $plugin) {
+                yield from $plugin->handleCommand($command);
+            }
         }
     }
 }

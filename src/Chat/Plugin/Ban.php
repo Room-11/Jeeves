@@ -6,11 +6,10 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as Storage;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 
 class Ban implements Plugin
 {
-    const COMMANDS = ["ban", "unban"];
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -24,35 +23,22 @@ class Ban implements Plugin
         $this->storage    = $storage;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->execute($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-            && in_array($message->getCommand(), self::COMMANDS, true)
-            && $message->getParameters();
-    }
-
-    private function execute(Message $message): \Generator {
-        if (!yield from $this->admin->isAdmin($message->getMessage()->getUserId())) {
-            yield from $this->chatClient->postMessage(
-                sprintf(":%d I'm sorry Dave, I'm afraid I can't do that", $message->getOrigin())
+    private function execute(Command $command): \Generator {
+        $message = $command->getMessage();
+        if (!yield from $this->admin->isAdmin($message->getUserId())) {
+            yield from $this->chatClient->postReply(
+                $message, "I'm sorry Dave, I'm afraid I can't do that"
             );
 
             return;
         }
 
-        if ($message->getCommand() === "ban" && $message->getParameters()[0] === 'list') {
+        if ($command->getCommand() === "ban" && $command->getParameters()[0] === 'list') {
             yield from $this->list();
-        } elseif ($message->getCommand() === "ban") {
-            yield from $this->add((int)$message->getParameters()[0], $message->getParameters()[1]);
-        } elseif ($message->getCommand() === "unban") {
-            yield from $this->remove((int) $message->getParameters()[0]);
+        } elseif ($command->getCommand() === "ban") {
+            yield from $this->add((int)$command->getParameters()[0], $command->getParameters()[1]);
+        } elseif ($command->getCommand() === "unban") {
+            yield from $this->remove((int) $command->getParameters()[0]);
         }
     }
 
@@ -82,5 +68,30 @@ class Ban implements Plugin
         yield from $this->storage->remove($userId);
 
         yield from $this->chatClient->postMessage("User is unbanned.");
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$command->getParameters()) {
+            return;
+        }
+
+        yield from $this->execute($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ["ban", "unban"];
     }
 }

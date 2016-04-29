@@ -4,14 +4,13 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 use Amp\Artax\Response;
 
 class NoComprendeException extends \RuntimeException {}
 
 class Docs implements Plugin
 {
-    const COMMAND = 'docs';
+    use CommandOnlyPlugin;
 
     const URL_BASE = 'http://php.net';
     const LOOKUP_URL_BASE = self::URL_BASE . '/manual-lookup.php?scope=quickref&pattern=';
@@ -213,21 +212,6 @@ class Docs implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        /** @var Command $message */
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-            && $message->getCommand() === self::COMMAND
-            && $message->getParameters();
-    }
-
     private function getResult(Command $message): \Generator {
         $pattern = strtolower(implode(' ', $message->getParameters()));
 
@@ -251,7 +235,7 @@ class Docs implements Plugin
             return;
         }
 
-        $pattern = str_replace('::', '.', $pattern);
+        $pattern = str_replace(['::', '->'], '.', $pattern);
         $url = self::LOOKUP_URL_BASE . rawurlencode($pattern);
 
         /** @var Response $response */
@@ -488,5 +472,30 @@ class Docs implements Plugin
         } catch (\Throwable $e) {
             return 'Something went badly wrong with that lookup... ' . $e->getMessage();
         }
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$command->getParameters()) {
+            return;
+        }
+
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['docs'];
     }
 }

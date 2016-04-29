@@ -4,12 +4,11 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 use Amp\Artax\Response;
 
 class Wotd implements Plugin
 {
-    const COMMAND = 'wotd';
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -18,22 +17,7 @@ class Wotd implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator
-    {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool
-    {
-        return $message instanceof Command
-            && $message->getCommand() === self::COMMAND;
-    }
-
-    private function getResult(Message $message): \Generator
+    private function getResult(): \Generator
     {
         $response = yield from $this->chatClient->request(
             'http://www.dictionary.com/wordoftheday/wotd.rss'
@@ -61,5 +45,26 @@ class Wotd implements Plugin
         preg_match("/\:(.*)/", $dom->getElementsByTagName('description')->item(2)->textContent, $after);
 
         return '**['.$before[0].'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $before[0]).')**' . $after[0];
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        yield from $this->getResult();
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['wotd'];
     }
 }

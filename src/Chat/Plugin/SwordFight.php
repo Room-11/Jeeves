@@ -3,10 +3,13 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Command\Conversation;
 use Room11\Jeeves\Chat\Command\Message;
 
 class SwordFight implements Plugin
 {
+    use MessageOnlyPlugin;
+
     const COMMAND = 'swordfight';
 
     private $chatClient;
@@ -40,24 +43,9 @@ class SwordFight implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator
+    private function isMatch(Conversation $conversation): bool
     {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool
-    {
-        return get_class($message) === 'Room11\Jeeves\Chat\Command\Conversation'
-            && $this->isMatch($message);
-    }
-
-    private function isMatch(Message $message): bool
-    {
-        $text = $this->normalize($message->getText());
+        $text = $this->normalize($conversation->getText());
 
         foreach ($this->matches as $match) {
             if ($this->textDoesMatch($match['insult'], $text)) {
@@ -85,21 +73,36 @@ class SwordFight implements Plugin
         return trim(preg_replace('/\s+/', ' ', $text));
     }
 
-    private function getResult(Message $message): \Generator
+    private function getResult(Conversation $conversation): \Generator
     {
-        yield from $this->chatClient->postMessage(
-            sprintf(':%s %s', $message->getOrigin(), $this->getResponse($message))
-        );
+        yield from $this->chatClient->postReply($conversation->getMessage(), $this->getResponse($conversation));
     }
 
-    private function getResponse(Message $message): string
+    private function getResponse(Conversation $conversation): string
     {
-        $text = $this->normalize($message->getText());
+        $text = $this->normalize($conversation->getText());
 
         foreach ($this->matches as $match) {
             if ($this->textDoesMatch($match['insult'], $text)) {
                 return $match['response']['text'];
             }
         }
+
+        return null;
+    }
+
+    /**
+     * Handle a general message
+     *
+     * @param Message $message
+     * @return \Generator
+     */
+    public function handleMessage(Message $message): \Generator
+    {
+        if (!($message instanceof Conversation) || !$this->isMatch($message)) {
+            return;
+        }
+
+        yield from $this->getResult($message);
     }
 }

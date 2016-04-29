@@ -4,11 +4,10 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 
 class Man implements Plugin
 {
-    const COMMAND = 'man';
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -16,23 +15,9 @@ class Man implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-        && $message->getCommand() === self::COMMAND
-        && $message->getParameters();
-    }
-
-    private function getResult(Message $message): \Generator {
+    private function getResult(Command $command): \Generator {
         $response = yield from $this->chatClient->request(
-            "https://man.freebsd.org/" . rawurlencode(implode("%20", $message->getParameters()))
+            "https://man.freebsd.org/" . rawurlencode(implode("%20", $command->getParameters()))
         );
 
         $result = $response->getBody();
@@ -50,7 +35,7 @@ class Man implements Plugin
         if ($this->isFound($xpath)) {
             yield from $this->postResult($xpath, $response->getRequest()->getUri());
         } else {
-            yield from $this->postNoResult($message);
+            yield from $this->postNoResult($command);
         }
     }
 
@@ -101,13 +86,34 @@ class Man implements Plugin
         );
     }
 
-    private function postNoResult(Message $message): \Generator {
-        yield from $this->chatClient->postMessage(
-            sprintf(
-                ":%s %s",
-                $message->getOrigin(),
-                "Command not found. Have you tried Windows instead? It's great and does all the things!"
-            )
+    private function postNoResult(Command $command): \Generator {
+        yield from $this->chatClient->postReply(
+            $command->getMessage(), "Command not found. Have you tried Windows instead? It's great and does all the things!"
         );
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$command->getParameters()) {
+            return;
+        }
+
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['man'];
     }
 }

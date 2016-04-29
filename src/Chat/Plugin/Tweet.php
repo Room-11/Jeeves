@@ -6,12 +6,11 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Twitter\Credentials;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 use Amp\Artax\Request;
 
 class Tweet implements Plugin
 {
-    const COMMAND = "tweet";
+    use CommandOnlyPlugin;
 
     const BASE_URI = "https://api.twitter.com/1.1";
 
@@ -29,25 +28,16 @@ class Tweet implements Plugin
         $this->credentials = $credentials;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->execute($message);
+    private function validMessage(Command $command): bool {
+        return count($command->getParameters()) === 1
+            && $this->isMessageValid($command->getParameters()[0]);
     }
 
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-            && $message->getCommand() === self::COMMAND
-            && count($message->getParameters()) === 1
-            && $this->isMessageValid($message->getParameters()[0]);
-    }
-
-    private function execute(Message $message): \Generator {
-        if (!yield from $this->admin->isAdmin($message->getMessage()->getUserId())) {
-            yield from $this->chatClient->postMessage(
-                sprintf(":%d I'm sorry Dave, I'm afraid I can't do that", $message->getOrigin())
+    private function execute(Command $command): \Generator {
+        $message = $command->getMessage();
+        if (!yield from $this->admin->isAdmin($message->getUserId())) {
+            yield from $this->chatClient->postReply(
+                $message, "I'm sorry Dave, I'm afraid I can't do that"
             );
 
             return;
@@ -55,12 +45,10 @@ class Tweet implements Plugin
 
         yield from $this->updateConfigWhenNeeded();
 
-        $tweetText = yield from $this->getMessage($message->getParameters()[0]);
+        $tweetText = yield from $this->getMessage($command->getParameters()[0]);
 
         if (mb_strlen($tweetText, "UTF-8") > 140) {
-            yield from $this->chatClient->postMessage(
-                sprintf(":%d Boo! The message exceeds the 140 character limit. :-(", $message->getOrigin())
-            );
+            yield from $this->chatClient->postReply($message, "Boo! The message exceeds the 140 character limit. :-(");
 
             return;
         }
@@ -113,9 +101,7 @@ class Tweet implements Plugin
         $tweetInfo = json_decode($result->getBody(), true);
         $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
-        yield from $this->chatClient->postMessage(
-            sprintf(":%d [Message tweeted.](%s)", $message->getOrigin(), $tweetUri)
-        );
+        yield from $this->chatClient->postReply($message, sprintf("[Message tweeted.](%s)", $tweetUri));
     }
 
     private function getNonce(): string {
@@ -238,5 +224,30 @@ class Tweet implements Plugin
         $this->twitterConfig["expiration"] = (new \DateTimeImmutable())->add(new \DateInterval("P1D"));
 
         var_dump($this->twitterConfig);
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$this->validMessage($command)) {
+            return;
+        }
+
+        yield from $this->execute($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ["tweet"];
     }
 }

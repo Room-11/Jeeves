@@ -18,6 +18,6 @@ class RebeccaTest extends AbstractPluginTest
 
     public function testCommandName()
     {
-        $this->assertSame('rebecca', Rebecca::COMMAND);
+        $this->assertSame(['rebecca'], $this->plugin->getHandledCommands());
     }
 }

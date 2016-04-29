@@ -4,11 +4,10 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 
 class Lick implements Plugin
 {
-    const COMMAND = "lick";
+    use CommandOnlyPlugin;
 
     const RESPONSES = [
         "Eeeeeeew",
@@ -22,27 +21,33 @@ class Lick implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-            && $message->getCommand() === self::COMMAND;
-    }
-
-    private function getResult(Message $message): \Generator {
-        $reply = $message->getOrigin();
-
-        yield from $this->chatClient->postMessage(":$reply " . $this->getRandomReply());
+    private function getResult(Command $command): \Generator {
+        yield from $this->chatClient->postReply($command->getMessage(), $this->getRandomReply());
     }
 
     private function getRandomReply(): string
     {
         return self::RESPONSES[random_int(0, (count(self::RESPONSES) - 1))];
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['lick'];
     }
 }

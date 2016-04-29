@@ -4,11 +4,10 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 
 class Wikipedia implements Plugin
 {
-    const COMMAND = 'wiki';
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -17,26 +16,10 @@ class Wikipedia implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator
-    {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool
-    {
-        return $message instanceof Command
-        && $message->getCommand() === self::COMMAND
-        && $message->getParameters();
-    }
-
-    private function getResult(Message $message): \Generator
+    private function getResult(Command $command): \Generator
     {
         $response = yield from $this->chatClient->request(
-            'https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . rawurlencode(implode('%20', $message->getParameters()))
+            'https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . rawurlencode(implode('%20', $command->getParameters()))
         );
 
         $result   = json_decode($response->getBody(), true);
@@ -45,7 +28,7 @@ class Wikipedia implements Plugin
         if (isset($firstHit['pageid'])) {
             yield from $this->postResult($firstHit);
         } else {
-            yield from $this->postNoResult($message);
+            yield from $this->postNoResult($command);
         }
     }
 
@@ -60,10 +43,33 @@ class Wikipedia implements Plugin
         yield from $this->chatClient->postMessage($page['query']['pages'][$result['pageid']]['canonicalurl']);
     }
 
-    private function postNoResult(Message $message): \Generator
+    private function postNoResult(Command $command): \Generator
     {
-        yield from $this->chatClient->postMessage(
-            sprintf(':%s %s', $message->getOrigin(), 'Sorry I couldn\'t find that page.')
-        );
+        yield from $this->chatClient->postReply($command->getMessage(), 'Sorry I couldn\'t find that page.');
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$command->getParameters()) {
+            return;
+        }
+
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['wiki'];
     }
 }

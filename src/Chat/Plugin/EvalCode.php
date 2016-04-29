@@ -4,14 +4,13 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 use Amp\Artax\FormBody;
 use Amp\Artax\Request;
 use Amp\Pause;
 
 class EvalCode implements Plugin
 {
-    const COMMANDS = ['eval', '&gt;'];
+    use CommandOnlyPlugin;
 
     // limit the number of requests while polling for results
     const REQUEST_LIMIT = 20;
@@ -22,22 +21,8 @@ class EvalCode implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-            && in_array($message->getCommand(), self::COMMANDS, true)
-            && $message->getParameters();
-    }
-
-    private function getResult(Message $message): \Generator {
-        $code = $this->normalizeCode(implode(' ', $message->getParameters()));
+    private function getResult(Command $command): \Generator {
+        $code = $this->normalizeCode(implode(' ', $command->getParameters()));
 
         $body = (new FormBody)
             ->addField("title", "")
@@ -147,5 +132,30 @@ class EvalCode implements Plugin
         $result = str_replace("@", "@\u{200b}", $result);
 
         return $result;
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$command->getParameters()) {
+            return;
+        }
+
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['eval', '&gt;'];
     }
 }

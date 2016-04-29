@@ -5,10 +5,9 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 
 class Google implements Plugin {
-    const COMMAND = "google";
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -19,22 +18,8 @@ class Google implements Plugin {
         $this->bitlyAccessToken = $bitlyAccessToken;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-            && $message->getCommand() === self::COMMAND
-            && $message->getParameters();
-    }
-
-    private function getResult(Message $message): \Generator {
-        $uri = "https://www.google.com/search?q=" . urlencode(implode(' ', $message->getParameters()));
+    private function getResult(Command $command): \Generator {
+        $uri = "https://www.google.com/search?q=" . urlencode(implode(' ', $command->getParameters()));
 
         /** @var Response $response */
         $response = yield from $this->chatClient->request($uri);
@@ -50,13 +35,13 @@ class Google implements Plugin {
         $nodes = $this->getResultNodes($xpath);
 
         if($nodes->length === 0) {
-            yield from $this->postNoResultsMessage($message);
+            yield from $this->postNoResultsMessage($command);
 
             return;
         }
 
         $searchResults = $this->getSearchResults($nodes, $xpath);
-        $postMessage   = yield from $this->getPostMessage($searchResults, $message);
+        $postMessage   = yield from $this->getPostMessage($searchResults, $command);
 
         yield from $this->chatClient->postMessage($postMessage);
     }
@@ -67,12 +52,10 @@ class Google implements Plugin {
         );
     }
 
-    private function postNoResultsMessage(Message $message): \Generator {
-        yield from $this->chatClient->postMessage(sprintf(
-            ":%s Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P",
-            $message->getOrigin(),
-            substr(implode(" ", $message->getParameters()), 0, 60)
-        ));
+    private function postNoResultsMessage(Command $command): \Generator {
+        yield from $this->chatClient->postReply(
+            $command->getMessage(), "Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P"
+        );
     }
 
     private function buildDom($body): \DOMDocument {
@@ -130,10 +113,10 @@ class Google implements Plugin {
         return mb_substr($cleanedDescription, 0, 55, "UTF-8") . $ellipsis;
     }
 
-    private function getPostMessage(array $searchResults, Message $message): \Generator {
+    private function getPostMessage(array $searchResults, Command $command): \Generator {
         $postMessage = "";
 
-        $urls = yield from $this->getShortenedUrls($searchResults, $message);
+        $urls = yield from $this->getShortenedUrls($searchResults, $command);
 
         foreach ($searchResults as $index => $result) {
             $newMessage = sprintf(
@@ -159,7 +142,7 @@ class Google implements Plugin {
         return $postMessage;
     }
 
-    private function getShortenedUrls(array $searchResults, Message $message): \Generator {
+    private function getShortenedUrls(array $searchResults, Command $command): \Generator {
         $urls = array_map(function($result) {
             return sprintf(
                 "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
@@ -171,7 +154,7 @@ class Google implements Plugin {
         $urls[] = sprintf(
             "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
             $this->bitlyAccessToken,
-            "https://www.google.com/search?q=" . urlencode(implode(' ', $message->getParameters()))
+            "https://www.google.com/search?q=" . urlencode(implode(' ', $command->getParameters()))
         );
 
         $responses = yield from $this->chatClient->requestMulti($urls);
@@ -179,5 +162,30 @@ class Google implements Plugin {
         return array_map(function($response) {
             return json_decode($response->getBody(), true)["data"]["url"];
         }, $responses);
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$command->getParameters()) {
+            return;
+        }
+
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ["google"];
     }
 }

@@ -5,10 +5,10 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 
-class RFC implements Plugin {
-    const COMMAND = "rfcs";
+class RFC implements Plugin
+{
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -16,20 +16,7 @@ class RFC implements Plugin {
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool {
-        return $message instanceof Command
-        && $message->getCommand() === self::COMMAND;
-    }
-
-    private function getResult(Message $message): \Generator {
+    private function getResult(): \Generator {
         $uri = "https://wiki.php.net/rfc";
 
         /** @var Response $response */
@@ -56,6 +43,7 @@ class RFC implements Plugin {
                 continue;
             }
 
+            /** @var \DOMElement $node */
             /** @var \DOMElement $href */
             $href = $node->getElementsByTagName("a")->item(0);
 
@@ -76,5 +64,26 @@ class RFC implements Plugin {
             "[tag:rfc-vote] %s",
             implode(" | ", $rfcsInVoting)
         ));
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        yield from $this->getResult();
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['rfcs'];
     }
 }

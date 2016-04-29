@@ -4,11 +4,10 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
 
 class Urban implements Plugin
 {
-    const COMMAND = 'urban';
+    use CommandOnlyPlugin;
 
     private $chatClient;
 
@@ -17,26 +16,10 @@ class Urban implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function handle(Message $message): \Generator
-    {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
-    private function validMessage(Message $message): bool
-    {
-        return $message instanceof Command
-            && $message->getCommand() === self::COMMAND
-            && $message->getParameters();
-    }
-
-    private function getResult(Message $message): \Generator
+    private function getResult(Command $command): \Generator
     {
         $response = yield from $this->chatClient->request(
-            'http://api.urbandictionary.com/v0/define?term=' . rawurlencode(implode('%20', $message->getParameters()))
+            'http://api.urbandictionary.com/v0/define?term=' . rawurlencode(implode('%20', $command->getParameters()))
         );
 
         $result = json_decode($response->getBody(), true);
@@ -57,5 +40,30 @@ class Urban implements Plugin
             $result['list'][0]['permalink'],
             str_replace("\r\n", ' ', $result['list'][0]['definition'])
         );
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param Command $command
+     * @return \Generator
+     */
+    public function handleCommand(Command $command): \Generator
+    {
+        if (!$command->getParameters()) {
+            return;
+        }
+
+        yield from $this->getResult($command);
+    }
+
+    /**
+     * Get a list of specific commands handled by this plugin
+     *
+     * @return string[]
+     */
+    public function getHandledCommands(): array
+    {
+        return ['urban'];
     }
 }
