@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Client;
 use Amp\Artax\Client;
 use Amp\Artax\FormBody;
 use Amp\Artax\Request;
+use Amp\Artax\Response as ArtaxResponse;
 use Amp\Pause;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
@@ -71,34 +72,45 @@ class ChatClient {
 
         // @todo remove me once we found out what message this breaks on
         try {
-            $response = yield $this->httpClient->request($request);
+            $attempts = 0;
 
-            $decoded = json_decode($response->getBody(), true);
-            $decodeError = json_last_error();
-            $decodeErrorStr = json_last_error();
-
-            if ($decodeError === JSON_ERROR_NONE) {
-                if (!isset($decoded["id"], $decoded["time"])) {
-                    throw new \RuntimeException('Got a JSON response but it doesn\'t contain the expected data');
+            do {
+                if (++$attempts > 5) {
+                    throw new \RuntimeException(
+                        'Sending the message failed after 5 attempts and I know when to quit'
+                    );
                 }
 
-                return new Response($decoded["id"], $decoded["time"]);
-            }
-
-            if ($this->fuckOff($response->getBody())) {
-                yield new Pause($this->fuckOff($response->getBody()));
-
+                /** @var ArtaxResponse $response */
                 $response = yield $this->httpClient->request($request);
 
-                $response = json_decode($response->getBody(), true);
+                $decoded = json_decode($response->getBody(), true);
+                $decodeError = json_last_error();
 
-                return new Response($response["id"], $response["time"]);
-            }
+                if ($decodeError !== JSON_ERROR_NONE) {
+                    $decodeErrorStr = json_last_error();
 
-            throw new \RuntimeException(
-                'A response that could not be decoded as JSON or otherwise handled was received'
-                . ' (JSON decode error: ' . $decodeErrorStr . ')'
-            );
+                    $waitTime = $this->fuckOff($response->getBody());
+                    if ($waitTime) {
+                        yield new Pause($waitTime);
+                        continue;
+                    }
+
+                    throw new \RuntimeException(
+                        'A response that could not be decoded as JSON or otherwise handled was received'
+                        . ' (JSON decode error: ' . $decodeErrorStr . ')'
+                    );
+                }
+
+                if (isset($decoded["id"], $decoded["time"])) {
+                    return new Response($decoded["id"], $decoded["time"]);
+                }
+
+                if (array_key_exists('id', $decoded)) { // sometimes we can get {"id":null,"time":null} ??
+                    yield new Pause($attempts * 1000);
+                    continue;
+                }
+            } while(false); // or goto. Take your pick of the horrible things to do.
         } catch (\Throwable $e) {
             $errorInfo = isset($response) ? $response->getBody() : 'No response data';
 
@@ -112,6 +124,8 @@ class ChatClient {
 
             yield from $this->postMessage("@PeeHaa error has been logged. Fix it fix it fix it fix it.");
         }
+
+        return null;
     }
 
     public function postReply(ChatMessage $origin, string $text): \Generator
@@ -136,6 +150,7 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
+        /** @var ArtaxResponse $response */
         $response = yield $this->httpClient->request($request);
 
         if ($this->fuckOff($response->getBody())) {
