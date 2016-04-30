@@ -4,15 +4,24 @@ namespace Room11\Jeeves\Chat\Message;
 
 class Factory
 {
-    public function build(array $data): Message
+    /**
+     * @param array $data
+     * @return Message[]
+     */
+    public function build(array $data): array
     {
         $message = reset($data);
-
+        $result = [];
+        
         if (isset($message['e'])) {
-            return $this->buildEventMessage(reset($message['e']));
+            foreach ($message['e'] as $event) {
+                $result[] = $this->buildEventMessage($event);
+            }
+
+            return $result;
         }
 
-        return new Heartbeat($message);
+        return [new Heartbeat($message)];
     }
 
     private function buildEventMessage(array $message): Message

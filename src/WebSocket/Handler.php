@@ -27,18 +27,18 @@ class Handler implements Websocket {
     public function onData(Websocket\Message $msg): \Generator {
         $rawMessage = yield $msg;
 
-        $message = $this->messageFactory->build(json_decode($rawMessage, true));
+        foreach ($this->messageFactory->build(json_decode($rawMessage, true)) as $message) {
+            $this->logger->log(Level::MESSAGE, "Message received", [
+                "rawMessage" => $rawMessage,
+                "message" => $message,
+            ]);
 
-        $this->logger->log(Level::MESSAGE, "Message received", [
-            "rawMessage" => $rawMessage,
-            "message" => $message,
-        ]);
+            if ($message instanceof Unknown) {
+                $this->logger->log(Level::UNKNOWN_MESSAGE, "Unknown message received", $rawMessage);
+            }
 
-        if ($message instanceof Unknown) {
-            $this->logger->log(Level::UNKNOWN_MESSAGE, "Unknown message received", $rawMessage);
+            yield from $this->plugins->handle($message);
         }
-
-        yield from $this->plugins->handle($message);
     }
 
     public function onClose($code, $reason) {

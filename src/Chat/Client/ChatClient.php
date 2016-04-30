@@ -16,10 +16,14 @@ class ChatClient {
     private $fkey;
     private $room;
 
+    private $postMutex;
+
     public function __construct(Client $httpClient, FKey $fkey, Room $room) {
         $this->httpClient = $httpClient;
         $this->fkey = $fkey;
         $this->room = $room;
+
+        $this->postMutex = new Mutex();
     }
 
     public function request($uriOrRequest): \Generator {
@@ -70,62 +74,59 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
-        // @todo remove me once we found out what message this breaks on
-        try {
-            $attempts = 0;
+        return yield from $this->postMutex->withLock(function() use($body, $uri, $request) {
+            // @todo remove me once we found out what message this breaks on
+            try {
+                $attempts = 0;
 
-            do {
-                if (++$attempts > 5) {
-                    throw new \RuntimeException(
-                        'Sending the message failed after 5 attempts and I know when to quit'
-                    );
-                }
+                while ($attempts++ < 5) {
+                    /** @var ArtaxResponse $response */
+                    $response = yield $this->httpClient->request($request);
 
-                /** @var ArtaxResponse $response */
-                $response = yield $this->httpClient->request($request);
+                    $decoded = json_decode($response->getBody(), true);
 
-                $decoded = json_decode($response->getBody(), true);
-                $decodeError = json_last_error();
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        $decodeErrorStr = json_last_error();
 
-                if ($decodeError !== JSON_ERROR_NONE) {
-                    $decodeErrorStr = json_last_error();
+                        if (0 !== $delay = $this->fuckOff($response->getBody())) {
+                            throw new \RuntimeException(
+                                'A response that could not be decoded as JSON or otherwise handled was received'
+                                . ' (JSON decode error: ' . $decodeErrorStr . ')'
+                            );
+                        }
 
-                    $waitTime = $this->fuckOff($response->getBody());
-                    if ($waitTime) {
-                        yield new Pause($waitTime);
+                        yield new Pause($delay);
                         continue;
                     }
 
-                    throw new \RuntimeException(
-                        'A response that could not be decoded as JSON or otherwise handled was received'
-                        . ' (JSON decode error: ' . $decodeErrorStr . ')'
-                    );
+                    if (isset($decoded["id"], $decoded["time"])) {
+                        return new Response($decoded["id"], $decoded["time"]);
+                    }
+
+                    if (array_key_exists('id', $decoded)) { // sometimes we can get {"id":null,"time":null} ??
+                        yield new Pause($attempts * 1000);
+                    }
                 }
 
-                if (isset($decoded["id"], $decoded["time"])) {
-                    return new Response($decoded["id"], $decoded["time"]);
-                }
+                throw new \RuntimeException(
+                    'Sending the message failed after 5 attempts and I know when to quit'
+                );
+            } catch (\Throwable $e) {
+                $errorInfo = isset($response) ? $response->getBody() : 'No response data';
 
-                if (array_key_exists('id', $decoded)) { // sometimes we can get {"id":null,"time":null} ??
-                    yield new Pause($attempts * 1000);
-                    continue;
-                }
-            } while(false); // or goto. Take your pick of the horrible things to do.
-        } catch (\Throwable $e) {
-            $errorInfo = isset($response) ? $response->getBody() : 'No response data';
+                file_put_contents(
+                    __DIR__ . '/../../../data/exceptions.txt',
+                    (new \DateTimeImmutable())->format('Y-m-d H:i:s') . ' ' . $e->getMessage() . "\r\n" . $errorInfo . "\r\n\r\n",
+                    FILE_APPEND
+                );
 
-            file_put_contents(
-                __DIR__ . '/../../../data/exceptions.txt',
-                (new \DateTimeImmutable())->format('Y-m-d H:i:s') . ' ' . $e->getMessage() . "\r\n" . $errorInfo . "\r\n\r\n",
-                FILE_APPEND
-            );
+                yield new Pause(2000);
 
-            yield new Pause(2000);
+                yield from $this->postMessage("@PeeHaa error has been logged. Fix it fix it fix it fix it.");
+            }
 
-            yield from $this->postMessage("@PeeHaa error has been logged. Fix it fix it fix it fix it.");
-        }
-
-        return null;
+            return null;
+        });
     }
 
     public function postReply(ChatMessage $origin, string $text): \Generator
@@ -150,22 +151,28 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
-        /** @var ArtaxResponse $response */
-        $response = yield $this->httpClient->request($request);
+        yield from $this->postMutex->withLock(function() use($body, $uri, $request) {
+            $attempts = 0;
 
-        if ($this->fuckOff($response->getBody())) {
-            yield new Pause($this->fuckOff($response->getBody()));
+            while ($attempts++ < 5) {
+                /** @var ArtaxResponse $response */
+                $response = yield $this->httpClient->request($request);
 
-            yield $this->httpClient->request($request);
-        }
+                if (0 === $delay = $this->fuckOff($response->getBody())) {
+                    break;
+                }
+
+                yield new Pause($delay);
+            }
+        });
     }
 
     private function fuckOff(string $body): int
     {
-        if (preg_match('/You can perform this action again in (\d+) seconds/', $body, $matches)) {
-            return ($matches[1] + 2) * 1000;
+        if (!preg_match('/You can perform this action again in (\d+) seconds/', $body, $matches)) {
+            return 0;
         }
 
-        return 0;
+        return (int)(($matches[1] + 2) * 1000);
     }
 }
