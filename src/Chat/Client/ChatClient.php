@@ -86,7 +86,7 @@ class ChatClient {
                     $decoded = json_decode($response->getBody(), true);
 
                     if (json_last_error() !== JSON_ERROR_NONE) {
-                        $decodeErrorStr = json_last_error();
+                        $decodeErrorStr = json_last_error_msg();
 
                         if (0 !== $delay = $this->fuckOff($response->getBody())) {
                             throw new \RuntimeException(
