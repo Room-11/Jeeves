@@ -21,21 +21,21 @@ class Version implements Plugin
     {
         $version = (new SebastianVersion(VERSION, dirname(dirname(dirname(__DIR__)))))->getVersion();
 
-        $version = preg_replace_callback("@(v([0-9.]+)-(\d+))-g([0-9a-f]+)@", function($match) {
-            return sprintf(
-                "[%s-g%s](%s)",
-                $match[1],
-                $match[4],
-                "https://github.com/Room-11/Jeeves/commit/" . $match[4]
-            );
-        }, $version);
-
-        $version = preg_replace_callback("@(v[0-9.]+)@", function($match) {
-            return sprintf(
-                "[%s](%s)",
-                $match[1],
-                "https://github.com/Room-11/Jeeves/tree/" . $match[1]
-            );
+        $version = preg_replace_callback('@(v([0-9.]+)(?:-(\d+))-g([0-9a-f]+))?@', function($match) {
+            if (empty($match[4])) {
+                return sprintf(
+                    "[%s](%s)",
+                    $match[1],
+                    "https://github.com/Room-11/Jeeves/tree/" . $match[1]
+                );
+            } else {
+                return sprintf(
+                    "[%s-g%s](%s)",
+                    $match[1],
+                    $match[4],
+                    "https://github.com/Room-11/Jeeves/commit/" . $match[4]
+                );
+            }
         }, $version);
 
         yield from $this->chatClient->postMessage($version);
