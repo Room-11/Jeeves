@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
 use Amp\Artax\Response;
 
 class Packagist implements Plugin
@@ -22,7 +22,7 @@ class Packagist implements Plugin
         $info = explode('/', implode('/', $command->getParameters()), 2);
 
         if (count($info) !== 2) {
-            yield from $this->chatClient->postReply($command->getMessage(), "Usage: `!!packagist vendor package`");
+            yield from $this->chatClient->postReply($command, "Usage: `!!packagist vendor package`");
             return;
         }
 

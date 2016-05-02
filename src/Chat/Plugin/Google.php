@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
 
 class Google implements Plugin {
     use CommandOnlyPlugin;
@@ -54,7 +54,7 @@ class Google implements Plugin {
 
     private function postNoResultsMessage(Command $command): \Generator {
         yield from $this->chatClient->postReply(
-            $command->getMessage(), "Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P"
+            $command, "Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P"
         );
     }
 
@@ -84,6 +84,7 @@ class Google implements Plugin {
                 continue;
             }
 
+            /** @var \DOMElement $linkNode */
             $linkNode = $linkNodes->item(0);
 
             if(preg_match('~^/url\?q=([^&]*)~', $linkNode->getAttribute("href"), $matches) == false) {
@@ -159,7 +160,7 @@ class Google implements Plugin {
 
         $responses = yield from $this->chatClient->requestMulti($urls);
 
-        return array_map(function($response) {
+        return array_map(function(Response $response) {
             return json_decode($response->getBody(), true)["data"]["url"];
         }, $responses);
     }

@@ -2,8 +2,9 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\Response as ArtaxResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
 
 class Chuck implements Plugin {
     use CommandOnlyPlugin;
@@ -15,6 +16,7 @@ class Chuck implements Plugin {
     }
 
     private function getResult(Command $command): \Generator {
+        /** @var ArtaxResponse $response */
         $response = yield from $this->chatClient->request(
             "http://api.icndb.com/jokes/random/"
         );
@@ -31,7 +33,7 @@ class Chuck implements Plugin {
     }
 
     private function skeetify(Command $command, string $joke): string {
-        if ($command->getCommand() !== "skeet") {
+        if ($command->getCommandName() !== "skeet") {
             return $joke;
         }
 
@@ -46,7 +48,7 @@ class Chuck implements Plugin {
 
     private function postError(Command $command): \Generator {
         yield from $this->chatClient->postReply(
-            $command->getMessage(), "Ugh, there was some weird problem while getting the joke."
+            $command, "Ugh, there was some weird problem while getting the joke."
         );
     }
 

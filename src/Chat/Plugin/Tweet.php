@@ -5,7 +5,8 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Twitter\Credentials;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
+use Amp\Artax\Response;
 use Amp\Artax\Request;
 
 class Tweet implements Plugin
@@ -34,10 +35,9 @@ class Tweet implements Plugin
     }
 
     private function execute(Command $command): \Generator {
-        $message = $command->getMessage();
-        if (!yield from $this->admin->isAdmin($message->getUserId())) {
+        if (!yield from $this->admin->isAdmin($command->getUserId())) {
             yield from $this->chatClient->postReply(
-                $message, "I'm sorry Dave, I'm afraid I can't do that"
+                $command, "I'm sorry Dave, I'm afraid I can't do that"
             );
 
             return;
@@ -48,7 +48,7 @@ class Tweet implements Plugin
         $tweetText = yield from $this->getMessage($command->getParameters()[0]);
 
         if (mb_strlen($tweetText, "UTF-8") > 140) {
-            yield from $this->chatClient->postReply($message, "Boo! The message exceeds the 140 character limit. :-(");
+            yield from $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
 
             return;
         }
@@ -97,11 +97,12 @@ class Tweet implements Plugin
             ])
         ;
 
+        /** @var Response $result */
         $result    = yield from $this->chatClient->request($request);
         $tweetInfo = json_decode($result->getBody(), true);
         $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
-        yield from $this->chatClient->postReply($message, sprintf("[Message tweeted.](%s)", $tweetUri));
+        yield from $this->chatClient->postReply($command, sprintf("[Message tweeted.](%s)", $tweetUri));
     }
 
     private function getNonce(): string {
@@ -117,6 +118,7 @@ class Tweet implements Plugin
     private function getMessage(string $url): \Generator {
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
+        /** @var Response $messageInfo */
         $messageInfo = yield from $this->chatClient->getMessage((int) $matches[1]);
 
         $messageBody = html_entity_decode($messageInfo->getBody(), ENT_QUOTES);
@@ -154,6 +156,7 @@ class Tweet implements Plugin
 
     private function replaceHrefs(\DOMDocument $dom) {
         foreach ($dom->getElementsByTagName('a') as $node) {
+            /** @var \DOMElement $node */
             $linkText = "";
 
             if ($node->getAttribute('href') !== $node->textContent) {
@@ -218,6 +221,7 @@ class Tweet implements Plugin
             ])
         ;
 
+        /** @var Response $result */
         $result    = yield from $this->chatClient->request($request);
 
         $this->twitterConfig = json_decode($result->getBody(), true);

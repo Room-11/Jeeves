@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\WebSocket;
 
 use Amp\Websocket;
-use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
-use Room11\Jeeves\Chat\Message\Unknown;
+use Room11\Jeeves\Chat\Event\Factory as MessageFactory;
+use Room11\Jeeves\Chat\Event\Unknown;
 use Room11\Jeeves\Chat\Plugin\Collection as PluginCollection;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;

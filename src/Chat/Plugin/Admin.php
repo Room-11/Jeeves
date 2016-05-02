@@ -2,9 +2,10 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Storage\Admin as Storage;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
 use function Amp\all;
 
 class Admin implements Plugin
@@ -34,10 +35,9 @@ class Admin implements Plugin
             return;
         }
 
-        $message = $command->getMessage();
-        if (!yield from $this->storage->isAdmin($message->getUserId())) {
+        if (!yield from $this->storage->isAdmin($command->getUserId())) {
             yield from $this->chatClient->postReply(
-                $message, "I'm sorry Dave, I'm afraid I can't do that"
+                $command, "I'm sorry Dave, I'm afraid I can't do that"
             );
 
             return;
@@ -77,6 +77,7 @@ class Admin implements Plugin
     }
 
     private function getUserData(array $userIds): \Generator {
+        /** @var Promise[] $promiseArray */
         $promiseArray = $this->chatClient->requestMulti(array_map(function($userId) {
             return "http://stackoverflow.com/users/$userId/dummy";
         }, $userIds));

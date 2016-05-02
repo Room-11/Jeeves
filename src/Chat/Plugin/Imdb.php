@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
 use Amp\Artax\Response;
 
 class Imdb implements Plugin
@@ -41,6 +41,7 @@ class Imdb implements Plugin
             return 'I cannot find that title.';
         }
 
+        /** @var \DOMElement $result */
         $result = $dom->getElementsByTagName('imdbentity')->item(0);
 
         return sprintf(

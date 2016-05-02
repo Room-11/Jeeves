@@ -3,9 +3,8 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Message;
-use Room11\Jeeves\Chat\Command\Void;
-use Room11\Jeeves\Chat\Message\NewMessage;
+use Room11\Jeeves\Chat\Message\Message;
+use Room11\Jeeves\Chat\Event\NewMessage;
 
 class CodeFormat implements Plugin {
     use MessageOnlyPlugin;
@@ -21,16 +20,16 @@ class CodeFormat implements Plugin {
             return;
         }
 
-        yield from $this->getResult($message->getMessage());
+        yield from $this->getResult($message);
     }
 
     private function validMessage(Message $message): bool {
-        return $message instanceof Void
-        && $message->getMessage() instanceof NewMessage;
+        return get_class($message) === Message::class
+        && $message->getEvent() instanceof NewMessage;
     }
 
-    private function getResult(NewMessage $message): \Generator {
-        $content = $message->getContent();
+    private function getResult(Message $message): \Generator {
+        $content = $message->getText();
         $origin = $message->getId();
 
         # Message is already formatted as code
