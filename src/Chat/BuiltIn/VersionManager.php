@@ -1,12 +1,14 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat\Plugin;
+namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Plugin\CommandOnlyPlugin;
+use Room11\Jeeves\Chat\Plugin\Plugin;
 use SebastianBergmann\Version as SebastianVersion;
 
-class Version implements Plugin
+class VersionManager implements Plugin
 {
     use CommandOnlyPlugin;
 

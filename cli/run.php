@@ -7,9 +7,10 @@ use Amp\Artax\Client as HttpClient;
 use Amp\Websocket\Handshake;
 use Auryn\Injector;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
-use Room11\Jeeves\Chat\Plugin\Admin as AdminPlugin;
-use Room11\Jeeves\Chat\Plugin\Ban as BanPlugin;
-use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
+use Room11\Jeeves\Chat\BuiltIn\AdminManager;
+use Room11\Jeeves\Chat\BuiltIn\BanManager;
+use Room11\Jeeves\Chat\BuiltIn\VersionManager;
+//use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
 use Room11\Jeeves\Chat\PluginManager as PluginCollection;
 use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
 use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
@@ -23,7 +24,6 @@ use Room11\Jeeves\Chat\Plugin\RFC as RfcPlugin;
 use Room11\Jeeves\Chat\Plugin\SwordFight as SwordFightPlugin;
 use Room11\Jeeves\Chat\Plugin\Tweet as TweetPlugin;
 use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
-use Room11\Jeeves\Chat\Plugin\Version as VersionPlugin;
 use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
 use Room11\Jeeves\Chat\Plugin\Xkcd as XkcdPlugin;
 use Room11\Jeeves\Chat\Plugin\Mdn as MdnPlugin;
@@ -42,7 +42,8 @@ use Room11\Jeeves\OpenId\Client;
 use Room11\Jeeves\OpenId\EmailAddress;
 use Room11\Jeeves\OpenId\Password;
 use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
-use Room11\Jeeves\Storage\Ban;
+use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\WebSocket\Handler;
 use Symfony\Component\Yaml\Yaml;
 
@@ -90,10 +91,10 @@ $injector->delegate(FKey::class, function (Retriever $retriever, Room $room) {
     return $key;
 });
 
-$injector->alias("Room11\Jeeves\Storage\Admin", $config["storage"]["admin"]);
-$injector->alias("Room11\Jeeves\Storage\Ban", $config["storage"]["ban"]);
-$injector->define("Room11\Jeeves\Storage\Admin", [":dataFile" => __DIR__ . "/../data/admins.json"]);
-$injector->define("Room11\Jeeves\Storage\Ban", [":dataFile" => __DIR__ . "/../data/bans.json"]);
+$injector->alias(AdminStorage::class, $config["storage"]["admin"]);
+$injector->alias(BanStorage::class, $config["storage"]["ban"]);
+$injector->define(AdminStorage::class, [":dataFile" => __DIR__ . "/../data/admins.json"]);
+$injector->define(BanStorage::class, [":dataFile" => __DIR__ . "/../data/bans.json"]);
 $injector->define(TwitterCredentials::class, [
     ":consumerKey" => $config["twitter"]["consumerKey"],
     ":consumerSecret" => $config["twitter"]["consumerSecret"],
@@ -104,12 +105,12 @@ $injector->define(GooglePlugin::class, [
     ":bitlyAccessToken" => $config["bitly"]["accessToken"],
 ]);
 $injector->delegate(PluginCollection::class, function () use ($injector) {
-    $collection = new PluginCollection($injector->make(MessageFactory::class), $injector->make(Ban::class));
+    $collection = new PluginCollection($injector->make(MessageFactory::class), $injector->make(BanStorage::class));
 
     $plugins = [
-        AdminPlugin::class,
-        BanPlugin::class,
-        VersionPlugin::class,
+        AdminManager::class,
+        BanManager::class,
+        VersionManager::class,
         UrbanPlugin::class,
         WikipediaPlugin::class,
         SwordFightPlugin::class,

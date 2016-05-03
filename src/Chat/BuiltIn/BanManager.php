@@ -1,13 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat\Plugin;
+namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Plugin\CommandOnlyPlugin;
+use Room11\Jeeves\Chat\Plugin\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
-use Room11\Jeeves\Storage\Ban as Storage;
+use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Chat\Message\Command;
 
-class Ban implements Plugin
+class BanManager implements Plugin
 {
     use CommandOnlyPlugin;
 
@@ -17,7 +19,7 @@ class Ban implements Plugin
 
     private $storage;
 
-    public function __construct(ChatClient $chatClient, AdminStorage $admin, Storage $storage) {
+    public function __construct(ChatClient $chatClient, AdminStorage $admin, BanStorage $storage) {
         $this->chatClient = $chatClient;
         $this->admin      = $admin;
         $this->storage    = $storage;

@@ -1,14 +1,16 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat\Plugin;
+namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Storage\Admin as Storage;
+use Room11\Jeeves\Chat\Plugin\CommandOnlyPlugin;
+use Room11\Jeeves\Chat\Plugin\Plugin;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Storage\Admin as Storage;
 use function Amp\all;
 
-class Admin implements Plugin
+class AdminManager implements Plugin
 {
     use CommandOnlyPlugin;
 
