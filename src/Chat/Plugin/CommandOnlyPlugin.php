@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Command\Message;
+use Room11\Jeeves\Chat\Message\Message;
 
 /**
  * Provides default interface method implementations for plugins which only handle commands

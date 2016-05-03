@@ -9,7 +9,7 @@ use Amp\Artax\Response as ArtaxResponse;
 use Amp\Pause;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
-use Room11\Jeeves\Chat\Message\Message as ChatMessage;
+use Room11\Jeeves\Chat\Message\Message;
 
 class ChatClient {
     private $httpClient;
@@ -129,9 +129,15 @@ class ChatClient {
         });
     }
 
-    public function postReply(ChatMessage $origin, string $text): \Generator
+    /**
+     * @param Message|int $origin
+     * @param string $text
+     * @return \Generator
+     */
+    public function postReply($origin, string $text): \Generator
     {
-        yield from $this->postMessage(":{$origin->getId()} {$text}");
+        $target = $origin instanceof Message ? $origin->getId() : (int)$origin;
+        yield from $this->postMessage(":{$target} {$text}");
     }
 
     public function editMessage(int $id, string $text): \Generator {

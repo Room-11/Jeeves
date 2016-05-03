@@ -3,8 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Message;
+use Room11\Jeeves\Chat\Message\Command;
 
 class Rebecca implements Plugin
 {
@@ -19,7 +18,7 @@ class Rebecca implements Plugin
     }
 
     private function getResult(Command $command): \Generator {
-        yield from $this->chatClient->postReply($command->getMessage(), $this->getRebeccaLinkIfFriday());
+        yield from $this->chatClient->postReply($command, $this->getRebeccaLinkIfFriday());
     }
 
     private function getRebeccaLinkIfFriday(): string

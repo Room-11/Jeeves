@@ -5,7 +5,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as Storage;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
 
 class Ban implements Plugin
 {
@@ -24,20 +24,19 @@ class Ban implements Plugin
     }
 
     private function execute(Command $command): \Generator {
-        $message = $command->getMessage();
-        if (!yield from $this->admin->isAdmin($message->getUserId())) {
+        if (!yield from $this->admin->isAdmin($command->getUserId())) {
             yield from $this->chatClient->postReply(
-                $message, "I'm sorry Dave, I'm afraid I can't do that"
+                $command, "I'm sorry Dave, I'm afraid I can't do that"
             );
 
             return;
         }
 
-        if ($command->getCommand() === "ban" && $command->getParameters()[0] === 'list') {
+        if ($command->getCommandName() === "ban" && $command->getParameters()[0] === 'list') {
             yield from $this->list();
-        } elseif ($command->getCommand() === "ban") {
+        } elseif ($command->getCommandName() === "ban") {
             yield from $this->add((int)$command->getParameters()[0], $command->getParameters()[1]);
-        } elseif ($command->getCommand() === "unban") {
+        } elseif ($command->getCommandName() === "unban") {
             yield from $this->remove((int) $command->getParameters()[0]);
         }
     }

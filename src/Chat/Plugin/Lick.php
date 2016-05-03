@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
 
 class Lick implements Plugin
 {
@@ -22,7 +22,7 @@ class Lick implements Plugin
     }
 
     private function getResult(Command $command): \Generator {
-        yield from $this->chatClient->postReply($command->getMessage(), $this->getRandomReply());
+        yield from $this->chatClient->postReply($command, $this->getRandomReply());
     }
 
     private function getRandomReply(): string

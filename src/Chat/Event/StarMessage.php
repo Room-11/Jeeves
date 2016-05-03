@@ -1,14 +1,14 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat\Message;
+namespace Room11\Jeeves\Chat\Event;
 
-class StarMessage implements Message
+use Room11\Jeeves\Chat\Event\Traits\RoomSource;
+
+class StarMessage extends Event implements RoomSourcedEvent
 {
-    private $id;
+    use RoomSource;
 
-    private $actionId;
-
-    private $roomId;
+    const EVENT_TYPE_ID = 6;
 
     private $messageId;
 
@@ -18,33 +18,16 @@ class StarMessage implements Message
 
     private $pinned;
 
-    private $timestamp;
-
     public function __construct(array $data)
     {
-        $this->id            = $data['message_id'];
-        $this->actionId      = $data['id'];
+        parent::__construct((int)$data['id'], (int)$data['time_stamp']);
+
         $this->roomId        = $data['room_id'];
-        $this->messageId     = $data['message_id'];
+
+        $this->messageId        = $data['message_id'];
         $this->content       = $data['content'];
         $this->numberOfStars = $data['message_stars'] ?? 0;
         $this->pinned        = isset($data['message_owner_stars']);
-        $this->timestamp     = new \DateTime('@' . $data['time_stamp']);
-    }
-
-    public function getId(): int
-    {
-        return $this->id;
-    }
-
-    public function getActionId(): int
-    {
-        return $this->actionId;
-    }
-
-    public function getRoomId(): int
-    {
-        return $this->roomId;
     }
 
     public function getMessageId(): int
@@ -65,10 +48,5 @@ class StarMessage implements Message
     public function isPinned(): bool
     {
         return $this->pinned;
-    }
-
-    public function getTimestamp(): \DateTime
-    {
-        return $this->timestamp;
     }
 }

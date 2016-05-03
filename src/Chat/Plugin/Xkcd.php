@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
 
 class Xkcd implements Plugin {
     use CommandOnlyPlugin;

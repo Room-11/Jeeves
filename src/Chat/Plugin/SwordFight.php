@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Conversation;
-use Room11\Jeeves\Chat\Command\Message;
+use Room11\Jeeves\Chat\Message\Conversation;
+use Room11\Jeeves\Chat\Message\Message;
 
 class SwordFight implements Plugin
 {
@@ -75,7 +75,7 @@ class SwordFight implements Plugin
 
     private function getResult(Conversation $conversation): \Generator
     {
-        yield from $this->chatClient->postReply($conversation->getMessage(), $this->getResponse($conversation));
+        yield from $this->chatClient->postReply($conversation, $this->getResponse($conversation));
     }
 
     private function getResponse(Conversation $conversation): string

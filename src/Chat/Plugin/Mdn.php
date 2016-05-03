@@ -2,8 +2,9 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\Response as ArtaxResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
 
 class Mdn implements Plugin {
     use CommandOnlyPlugin;
@@ -17,6 +18,7 @@ class Mdn implements Plugin {
 
     private function getResult(Command $command): \Generator
     {
+        /** @var ArtaxResponse $response */
         $response = yield from $this->chatClient->request(
             'https://developer.mozilla.org/en-US/search.json?highlight=false&q=' . rawurlencode(implode('%20', $command->getParameters()))
         );
@@ -44,7 +46,7 @@ class Mdn implements Plugin {
     private function postNoResult(Command $command): \Generator
     {
         yield from $this->chatClient->postReply(
-            $command->getMessage(), 'Sorry, I couldn\'t find a page concerning that topic on MDN.'
+            $command, 'Sorry, I couldn\'t find a page concerning that topic on MDN.'
         );
     }
 

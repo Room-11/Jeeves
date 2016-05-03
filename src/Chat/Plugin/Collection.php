@@ -2,15 +2,16 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Command\Command;
-use Room11\Jeeves\Chat\Command\Factory as CommandFactory;
+use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
+use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Storage\Ban as BanList;
-use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Chat\Message\UserMessage;
+use Room11\Jeeves\Chat\Event\Event;
+use Room11\Jeeves\Chat\Event\UserSourcedEvent;
 
 class Collection
 {
-    private $commandFactory;
+    private $messageFactory;
 
     private $banList;
 
@@ -24,9 +25,9 @@ class Collection
      */
     private $commandPlugins = [];
 
-    public function __construct(CommandFactory $commandFactory, BanList $banList)
+    public function __construct(MessageFactory $messageFactory, BanList $banList)
     {
-        $this->commandFactory = $commandFactory;
+        $this->messageFactory = $messageFactory;
         $this->banList        = $banList;
     }
 
@@ -43,23 +44,29 @@ class Collection
         return $this;
     }
 
-    public function handle(Message $message): \Generator
+    public function handle(Event $event): \Generator
     {
-        $command = $this->commandFactory->build($message);
+        if (!$event instanceof MessageEvent) {
+            /* todo: handle other event types. No plugins actually use other event types at the
+               moment so this is OK, fixing it requires more refactoring */
+            return;
+        }
 
-        if ($message instanceof UserMessage) {
-            if (yield from $this->banList->isBanned($message->getUserId())) {
+        if ($event instanceof UserSourcedEvent) {
+            if (yield from $this->banList->isBanned($event->getUserId())) {
                 return;
             }
         }
 
+        $message = $this->messageFactory->build($event);
+
         foreach ($this->messagePlugins as $plugin) {
-            yield from $plugin->handleMessage($command);
+            yield from $plugin->handleMessage($message);
         }
 
-        if ($command instanceof Command && isset($this->commandPlugins[$command->getCommand()])) {
-            foreach ($this->commandPlugins[$command->getCommand()] as $plugin) {
-                yield from $plugin->handleCommand($command);
+        if ($message instanceof Command && isset($this->commandPlugins[$message->getCommandName()])) {
+            foreach ($this->commandPlugins[$message->getCommandName()] as $plugin) {
+                yield from $plugin->handleCommand($message);
             }
         }
     }

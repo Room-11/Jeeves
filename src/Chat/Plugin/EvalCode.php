@@ -3,8 +3,10 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Client\Response as ChatResponse;
+use Room11\Jeeves\Chat\Message\Command;
 use Amp\Artax\FormBody;
+use Amp\Artax\Response as ArtaxResponse;
 use Amp\Artax\Request;
 use Amp\Pause;
 
@@ -36,8 +38,10 @@ class EvalCode implements Plugin
             ->setBody($body)
         ;
 
+        /** @var ArtaxResponse $response */
         $response = yield from $this->chatClient->request($request);
 
+        /** @var ChatResponse $chatMessage */
         $chatMessage = yield from $this->chatClient->postMessage(
             $this->getMessage(
                 "Waiting for results",
@@ -83,6 +87,7 @@ class EvalCode implements Plugin
         while (true && $requests <= self::REQUEST_LIMIT) {
             $requests++;
 
+            /** @var ArtaxResponse $result */
             $result = yield from $this->chatClient->request($request);
 
             $parsedResult = json_decode($result->getBody(), true);

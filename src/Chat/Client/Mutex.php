@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace Room11\Jeeves\Chat\Client;
 
@@ -13,7 +13,6 @@ class Mutex
 
     public function withLock(callable $callback): \Generator
     {
-        /** @var Lock $lock */
         $lock = yield from $this->getLock();
 
         try {

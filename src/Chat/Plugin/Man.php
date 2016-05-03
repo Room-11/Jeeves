@@ -2,8 +2,9 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\Response as ArtaxResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Command\Command;
+use Room11\Jeeves\Chat\Message\Command;
 
 class Man implements Plugin
 {
@@ -16,6 +17,7 @@ class Man implements Plugin
     }
 
     private function getResult(Command $command): \Generator {
+        /** @var ArtaxResponse $response */
         $response = yield from $this->chatClient->request(
             "https://man.freebsd.org/" . rawurlencode(implode("%20", $command->getParameters()))
         );
@@ -88,7 +90,7 @@ class Man implements Plugin
 
     private function postNoResult(Command $command): \Generator {
         yield from $this->chatClient->postReply(
-            $command->getMessage(), "Command not found. Have you tried Windows instead? It's great and does all the things!"
+            $command, "Command not found. Have you tried Windows instead? It's great and does all the things!"
         );
     }
 

@@ -6,7 +6,7 @@ namespace Room11\Jeeves;
 use Amp\Artax\Client as HttpClient;
 use Amp\Websocket\Handshake;
 use Auryn\Injector;
-use Room11\Jeeves\Chat\Command\Factory as CommandFactory;
+use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Plugin\Admin as AdminPlugin;
 use Room11\Jeeves\Chat\Plugin\Ban as BanPlugin;
 use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
@@ -104,7 +104,7 @@ $injector->define(GooglePlugin::class, [
     ":bitlyAccessToken" => $config["bitly"]["accessToken"],
 ]);
 $injector->delegate(PluginCollection::class, function () use ($injector) {
-    $collection = new PluginCollection($injector->make(CommandFactory::class), $injector->make(Ban::class));
+    $collection = new PluginCollection($injector->make(MessageFactory::class), $injector->make(Ban::class));
 
     $plugins = [
         AdminPlugin::class,
