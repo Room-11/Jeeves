@@ -10,7 +10,7 @@ use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Plugin\Admin as AdminPlugin;
 use Room11\Jeeves\Chat\Plugin\Ban as BanPlugin;
 use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
-use Room11\Jeeves\Chat\Plugin\Collection as PluginCollection;
+use Room11\Jeeves\Chat\PluginManager as PluginCollection;
 use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
 use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
 use Room11\Jeeves\Chat\Plugin\EvalCode as EvalPlugin;

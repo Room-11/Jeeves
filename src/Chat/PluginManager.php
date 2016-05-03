@@ -1,15 +1,16 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat\Plugin;
+namespace Room11\Jeeves\Chat;
 
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Event\MessageEvent;
+use Room11\Jeeves\Chat\Plugin\Plugin;
 use Room11\Jeeves\Storage\Ban as BanList;
 use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Event\UserSourcedEvent;
 
-class Collection
+class PluginManager
 {
     private $messageFactory;
 
@@ -31,7 +32,7 @@ class Collection
         $this->banList        = $banList;
     }
 
-    public function register(Plugin $plugin): Collection
+    public function register(Plugin $plugin): PluginManager
     {
         if ($plugin->handlesAllMessages()) {
             $this->messagePlugins[] = $plugin;
