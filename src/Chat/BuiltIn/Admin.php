@@ -2,36 +2,35 @@
 
 namespace Room11\Jeeves\Chat\BuiltIn;
 
+use Amp\Artax\Client as HttpClient;
 use Amp\Promise;
+use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Plugin\CommandOnlyPlugin;
-use Room11\Jeeves\Chat\Plugin\Plugin;
+use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Storage\Admin as Storage;
+use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\all;
 
-class AdminManager implements Plugin
+class Admin implements BuiltInCommand
 {
-    use CommandOnlyPlugin;
-
     const ACTIONS = ["add", "remove", "list"];
 
     private $chatClient;
 
     private $storage;
+    /**
+     * @var HttpClient
+     */
+    private $httpClient;
 
-    public function __construct(ChatClient $chatClient, Storage $storage) {
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $storage) {
         $this->chatClient = $chatClient;
         $this->storage    = $storage;
-    }
-
-    private function validCommand(Command $command): bool {
-        return $command->getParameters()
-            && in_array($command->getParameters()[0], self::ACTIONS, true);
+        $this->httpClient = $httpClient;
     }
 
     private function execute(Command $command): \Generator {
-        if ($command->getParameters()[0] === "list") {
+        if ($command->getParameter(0) === "list") {
             yield from $this->getList();
 
             return;
@@ -45,10 +44,10 @@ class AdminManager implements Plugin
             return;
         }
 
-        if ($command->getParameters()[0] === "add") {
-            yield from $this->add((int) $command->getParameters()[1]);
-        } elseif ($command->getParameters()[0] === "remove") {
-            yield from $this->remove((int) $command->getParameters()[1]);
+        if ($command->getParameter(0) === "add") {
+            yield from $this->add((int)$command->getParameter(1));
+        } elseif ($command->getParameter(0) === "remove") {
+            yield from $this->remove((int)$command->getParameter(1));
         }
     }
 
@@ -56,6 +55,7 @@ class AdminManager implements Plugin
         $userIds = yield from $this->storage->getAll();
 
         if (!$userIds) {
+            yield from $this->chatClient->postMessage("There are no registered admins");
             return;
         }
 
@@ -80,11 +80,9 @@ class AdminManager implements Plugin
 
     private function getUserData(array $userIds): \Generator {
         /** @var Promise[] $promiseArray */
-        $promiseArray = $this->chatClient->requestMulti(array_map(function($userId) {
-            return "http://stackoverflow.com/users/$userId/dummy";
-        }, $userIds));
-
-        $userProfiles = yield all($promiseArray);
+        $userProfiles = yield all($this->httpClient->requestMulti(array_map(function($userId) {
+            return "http://stackoverflow.com/users/$userId";
+        }, $userIds)));
 
         return $this->parseUserProfiles($userProfiles);
     }
@@ -122,11 +120,9 @@ class AdminManager implements Plugin
      */
     public function handleCommand(Command $command): \Generator
     {
-        if (!$this->validCommand($command)) {
-            return;
+        if (in_array($command->getParameter(0), self::ACTIONS, true)) {
+            yield from $this->execute($command);
         }
-
-        yield from $this->execute($command);
     }
 
     /**
@@ -134,7 +130,7 @@ class AdminManager implements Plugin
      *
      * @return string[]
      */
-    public function getHandledCommands(): array
+    public function getCommandNames(): array
     {
         return ['admin'];
     }

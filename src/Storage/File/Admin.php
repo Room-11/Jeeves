@@ -12,6 +12,7 @@ class Admin implements AdminList
     private $dataFile;
 
     public function __construct(string $dataFile) {
+        var_dump($dataFile);
         $this->dataFile = $dataFile;
     }
 
@@ -33,15 +34,15 @@ class Admin implements AdminList
 
         $administrators = yield from $this->getAll();
 
-        return in_array($userId, $administrators, true);
+        return $administrators === [] || in_array($userId, $administrators, true);
     }
 
     public function add(int $userId): \Generator {
-        if (yield from $this->isAdmin($userId)) {
+        $administrators = yield from $this->getAll();
+
+        if (in_array($userId, $administrators, true)) {
             return;
         }
-
-        $administrators = yield from $this->getAll();
 
         $administrators[] = $userId;
 

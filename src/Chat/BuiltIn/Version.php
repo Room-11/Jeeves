@@ -2,16 +2,14 @@
 
 namespace Room11\Jeeves\Chat\BuiltIn;
 
+use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Plugin\CommandOnlyPlugin;
-use Room11\Jeeves\Chat\Plugin\Plugin;
+use Room11\Jeeves\Chat\Plugin;
 use SebastianBergmann\Version as SebastianVersion;
 
-class VersionManager implements Plugin
+class Version implements BuiltInCommand
 {
-    use CommandOnlyPlugin;
-
     private $chatClient;
 
     public function __construct(ChatClient $chatClient)
@@ -52,7 +50,7 @@ class VersionManager implements Plugin
      *
      * @return string[]
      */
-    public function getHandledCommands(): array
+    public function getCommandNames(): array
     {
         return ['version'];
     }

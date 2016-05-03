@@ -33,13 +33,22 @@ class Command extends Message
         return $this->parameters;
     }
 
+    /**
+     * @param int $index
+     * @return string
+     */
+    public function getParameter(int $index)
+    {
+        return $this->parameters[$index] ?? null;
+    }
+
     public function hasParameter(string $parameter): bool
     {
         return in_array($parameter, $this->parameters, true);
     }
 
-    public function hasParameters(): bool
+    public function hasParameters(int $minCount = -1): bool
     {
-        return !empty($this->parameters);
+        return !empty($this->parameters) && ($minCount < 0 || count($this->parameters) >= $minCount);
     }
 }

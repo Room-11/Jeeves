@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat\Plugin;
+namespace Room11\Jeeves\Chat;
 
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Message\Command;

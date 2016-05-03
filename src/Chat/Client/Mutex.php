@@ -54,10 +54,7 @@ class Mutex
 
             public function release()
             {
-                if ($this->deferred !== null) {
-                    $this->deferred->succeed();
-                }
-
+                $this->deferred->succeed();
                 $this->released = true;
             }
         };

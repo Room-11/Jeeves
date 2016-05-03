@@ -10,20 +10,27 @@ use Amp\Pause;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
 use Room11\Jeeves\Chat\Message\Message;
+use Room11\Jeeves\Log\Level;
+use Room11\Jeeves\Log\Logger;
 
 class ChatClient {
+    const MAX_POST_ATTEMPTS = 5;
+
     private $httpClient;
     private $fkey;
     private $room;
 
     private $postMutex;
+    private $logger;
+    private $postRecursionDepth = 0;
 
-    public function __construct(Client $httpClient, FKey $fkey, Room $room) {
+    public function __construct(Client $httpClient, FKey $fkey, Room $room, Logger $logger) {
         $this->httpClient = $httpClient;
         $this->fkey = $fkey;
         $this->room = $room;
 
         $this->postMutex = new Mutex();
+        $this->logger = $logger;
     }
 
     public function request($uriOrRequest): \Generator {
@@ -75,54 +82,73 @@ class ChatClient {
             ->setBody($body);
 
         return yield from $this->postMutex->withLock(function() use($body, $uri, $request) {
-            // @todo remove me once we found out what message this breaks on
-            try {
-                $attempts = 0;
+            $attempt = 0;
 
-                while ($attempts++ < 5) {
+            try {
+                $this->postRecursionDepth++;
+
+                while ($attempt++ < self::MAX_POST_ATTEMPTS) {
                     /** @var ArtaxResponse $response */
+                    $this->logger->log(Level::DEBUG, 'Post attempt ' . $attempt);
                     $response = yield $this->httpClient->request($request);
+                    $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());
 
                     $decoded = json_decode($response->getBody(), true);
 
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        $decodeErrorStr = json_last_error_msg();
-
-                        if (0 !== $delay = $this->fuckOff($response->getBody())) {
-                            throw new \RuntimeException(
-                                'A response that could not be decoded as JSON or otherwise handled was received'
-                                . ' (JSON decode error: ' . $decodeErrorStr . ')'
-                            );
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        if (isset($decoded["id"], $decoded["time"])) {
+                            return new Response($decoded["id"], $decoded["time"]);
                         }
 
+                        if ($attempt >= self::MAX_POST_ATTEMPTS) {
+                            break;
+                        }
+
+                        if (array_key_exists('id', $decoded)) {
+                            // sometimes we can get {"id":null,"time":null}
+                            // I think this happens when we repeat ourselves too quickly
+                            $this->logger->log(Level::DEBUG, 'Got a null message post response, waiting for ' . ($attempt * 1000) . 'ms before trying again');
+                            yield new Pause($attempt * 1000);
+                            continue;
+                        }
+
+                        throw new \RuntimeException('A JSON response that I don\'t understand was received');
+                    }
+
+                    $decodeErrorStr = json_last_error_msg();
+
+                    if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
+                        throw new \RuntimeException(
+                            'A response that could not be decoded as JSON or otherwise handled was received'
+                            . ' (JSON decode error: ' . $decodeErrorStr . ')'
+                        );
+                    }
+
+                    if ($attempt < self::MAX_POST_ATTEMPTS) {
+                        $this->logger->log(Level::DEBUG, 'Backing off message posting for ' . $delay . 'ms');
                         yield new Pause($delay);
-                        continue;
-                    }
-
-                    if (isset($decoded["id"], $decoded["time"])) {
-                        return new Response($decoded["id"], $decoded["time"]);
-                    }
-
-                    if (array_key_exists('id', $decoded)) { // sometimes we can get {"id":null,"time":null} ??
-                        yield new Pause($attempts * 1000);
                     }
                 }
 
+                $attempt--;
                 throw new \RuntimeException(
-                    'Sending the message failed after 5 attempts and I know when to quit'
+                    'Sending the message failed after ' . self::MAX_POST_ATTEMPTS . ' attempts and I know when to quit'
                 );
             } catch (\Throwable $e) {
-                $errorInfo = isset($response) ? $response->getBody() : 'No response data';
+                $errorInfo = [
+                    'attempt' => $attempt,
+                    'postRecursionDepth' => $this->postRecursionDepth,
+                    'responseBody' => isset($response) ? $response->getBody() : 'No response data',
+                ];
 
-                file_put_contents(
-                    __DIR__ . '/../../../data/exceptions.txt',
-                    (new \DateTimeImmutable())->format('Y-m-d H:i:s') . ' ' . $e->getMessage() . "\r\n" . $errorInfo . "\r\n\r\n",
-                    FILE_APPEND
-                );
+                $this->logger->log(Level::DEBUG, 'Error while posting message: ' . $e->getMessage(), $errorInfo);
 
-                yield new Pause(2000);
-
-                yield from $this->postMessage("@PeeHaa error has been logged. Fix it fix it fix it fix it.");
+                if ($this->postRecursionDepth === 1) {
+                    yield new Pause(2000);
+                    yield from $this->postMessage("@PeeHaa error has been logged. Fix it fix it fix it fix it.");
+                }
+            } finally {
+                $this->postRecursionDepth--;
             }
 
             return null;
@@ -137,7 +163,7 @@ class ChatClient {
     public function postReply($origin, string $text): \Generator
     {
         $target = $origin instanceof Message ? $origin->getId() : (int)$origin;
-        yield from $this->postMessage(":{$target} {$text}");
+        return yield from $this->postMessage(":{$target} {$text}");
     }
 
     public function editMessage(int $id, string $text): \Generator {
@@ -158,24 +184,63 @@ class ChatClient {
             ->setBody($body);
 
         yield from $this->postMutex->withLock(function() use($body, $uri, $request) {
-            $attempts = 0;
+            $attempt = 0;
 
-            while ($attempts++ < 5) {
-                /** @var ArtaxResponse $response */
-                $response = yield $this->httpClient->request($request);
+            try {
+                $this->postRecursionDepth++;
 
-                if (0 === $delay = $this->fuckOff($response->getBody())) {
-                    break;
+                while ($attempt++ < self::MAX_POST_ATTEMPTS) {
+                    /** @var ArtaxResponse $response */
+                    $this->logger->log(Level::DEBUG, 'Edit attempt ' . $attempt);
+                    $response = yield $this->httpClient->request($request);
+                    $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());
+
+                    $decoded = json_decode($response->getBody(), true);
+
+                    if (json_last_error() === JSON_ERROR_NONE && $decoded === 'ok') {
+                        return true;
+                    }
+
+                    $decodeErrorStr = json_last_error_msg();
+
+                    if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
+                        throw new \RuntimeException(
+                            'A response that could not be decoded as JSON or otherwise handled was received'
+                            . ' (JSON decode error: ' . $decodeErrorStr . ')'
+                        );
+                    }
+
+                    if ($attempt < self::MAX_POST_ATTEMPTS) {
+                        $this->logger->log(Level::DEBUG, 'Backing off message posting for ' . $delay . 'ms');
+                        yield new Pause($delay);
+                    }
                 }
 
-                yield new Pause($delay);
+                $attempt--;
+                throw new \RuntimeException(
+                    'Editing the message failed after ' . self::MAX_POST_ATTEMPTS . ' attempts and I know when to quit'
+                );
+            } catch (\Throwable $e) {
+                $errorInfo = [
+                    'attempt' => $attempt,
+                    'responseBody' => isset($response) ? $response->getBody() : 'No response data',
+                ];
+
+                $this->logger->log(Level::ERROR, 'Error while editing message: ' . $e->getMessage(), $errorInfo);
+
+                yield new Pause(2000);
+                yield from $this->postMessage("@PeeHaa error has been logged. Fix it fix it fix it fix it.");
+            } finally {
+                $this->postRecursionDepth--;
             }
+
+            return false;
         });
     }
 
-    private function fuckOff(string $body): int
+    private function getBackOffDelay(string $body): int
     {
-        if (!preg_match('/You can perform this action again in (\d+) seconds/', $body, $matches)) {
+        if (!preg_match('/You can perform this action again in (\d+) seconds/i', $body, $matches)) {
             return 0;
         }
 

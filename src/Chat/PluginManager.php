@@ -3,18 +3,20 @@
 namespace Room11\Jeeves\Chat;
 
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Event\MessageEvent;
-use Room11\Jeeves\Chat\Plugin\Plugin;
-use Room11\Jeeves\Storage\Ban as BanList;
+use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Event\UserSourcedEvent;
+use function Amp\all;
+use function Amp\resolve;
 
 class PluginManager
 {
-    private $messageFactory;
+    private $adminStorage;
 
-    private $banList;
+    private $banStorage;
 
     /**
      * @var Plugin[]
@@ -26,10 +28,20 @@ class PluginManager
      */
     private $commandPlugins = [];
 
-    public function __construct(MessageFactory $messageFactory, BanList $banList)
+    public function __construct(AdminStorage $adminStorage, BanStorage $banStorage)
     {
-        $this->messageFactory = $messageFactory;
-        $this->banList        = $banList;
+        $this->adminStorage = $adminStorage;
+        $this->banStorage = $banStorage;
+    }
+
+    public function getAdminStorage(): AdminStorage
+    {
+        return $this->adminStorage;
+    }
+
+    public function getBanStorage(): BanStorage
+    {
+        return $this->adminStorage;
     }
 
     public function register(Plugin $plugin): PluginManager
@@ -54,21 +66,25 @@ class PluginManager
         }
 
         if ($event instanceof UserSourcedEvent) {
-            if (yield from $this->banList->isBanned($event->getUserId())) {
+            if (yield from $this->banStorage->isBanned($event->getUserId())) {
                 return;
             }
         }
 
-        $message = $this->messageFactory->build($event);
+        $message = $event->getMessage();
+
+        $promises = [];
 
         foreach ($this->messagePlugins as $plugin) {
-            yield from $plugin->handleMessage($message);
+            $promises[] = resolve($plugin->handleMessage($message));
         }
 
         if ($message instanceof Command && isset($this->commandPlugins[$message->getCommandName()])) {
             foreach ($this->commandPlugins[$message->getCommandName()] as $plugin) {
-                yield from $plugin->handleCommand($message);
+                $promises[] = resolve($plugin->handleCommand($message));
             }
         }
+
+        yield all($promises);
     }
 }

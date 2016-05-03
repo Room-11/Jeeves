@@ -2,17 +2,15 @@
 
 namespace Room11\Jeeves\Chat\BuiltIn;
 
+use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Plugin\CommandOnlyPlugin;
-use Room11\Jeeves\Chat\Plugin\Plugin;
+use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Chat\Message\Command;
 
-class BanManager implements Plugin
+class Ban implements BuiltInCommand
 {
-    use CommandOnlyPlugin;
-
     private $chatClient;
 
     private $admin;
@@ -34,12 +32,20 @@ class BanManager implements Plugin
             return;
         }
 
-        if ($command->getCommandName() === "ban" && $command->getParameters()[0] === 'list') {
+        if ($command->getCommandName() === "ban" && $command->getParameter(0) === 'list') {
             yield from $this->list();
         } elseif ($command->getCommandName() === "ban") {
-            yield from $this->add((int)$command->getParameters()[0], $command->getParameters()[1]);
+            if (!$command->hasParameters(2)) {
+                yield from $this->chatClient->postReply(
+                    $command, "Ban length must be specified"
+                );
+
+                return;
+            }
+
+            yield from $this->add((int)$command->getParameter(0), $command->getParameter(1));
         } elseif ($command->getCommandName() === "unban") {
-            yield from $this->remove((int) $command->getParameters()[0]);
+            yield from $this->remove((int)$command->getParameter(0));
         }
     }
 
@@ -79,7 +85,7 @@ class BanManager implements Plugin
      */
     public function handleCommand(Command $command): \Generator
     {
-        if (!$command->getParameters()) {
+        if (!$command->hasParameters()) {
             return;
         }
 
@@ -91,7 +97,7 @@ class BanManager implements Plugin
      *
      * @return string[]
      */
-    public function getHandledCommands(): array
+    public function getCommandNames(): array
     {
         return ["ban", "unban"];
     }

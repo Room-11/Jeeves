@@ -6,12 +6,13 @@ namespace Room11\Jeeves;
 use Amp\Artax\Client as HttpClient;
 use Amp\Websocket\Handshake;
 use Auryn\Injector;
-use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
-use Room11\Jeeves\Chat\BuiltIn\AdminManager;
-use Room11\Jeeves\Chat\BuiltIn\BanManager;
-use Room11\Jeeves\Chat\BuiltIn\VersionManager;
+use Room11\Jeeves\Chat\BuiltIn\Admin as AdminBuiltIn;
+use Room11\Jeeves\Chat\BuiltIn\Ban as BanBuiltIn;
+use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
+use Room11\Jeeves\Chat\BuiltInCommandManager;
+use Room11\Jeeves\Chat\Client\ChatClient;
 //use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
-use Room11\Jeeves\Chat\PluginManager as PluginCollection;
+use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
 use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
 use Room11\Jeeves\Chat\Plugin\EvalCode as EvalPlugin;
@@ -38,7 +39,7 @@ use Room11\Jeeves\Fkey\Retriever;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\StdOut;
-use Room11\Jeeves\OpenId\Client;
+use Room11\Jeeves\OpenId\Client as OpenIdClient;
 use Room11\Jeeves\OpenId\EmailAddress;
 use Room11\Jeeves\OpenId\Password;
 use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
@@ -64,7 +65,7 @@ $injector->define(Room::class, [
 ]);
 
 $injector->delegate(Logger::class, function () use ($config) {
-    $flags = array_map("trim", explode("|", $config["level"] ?? ""));
+    $flags = array_map("trim", explode("|", $config["logging"]["level"] ?? ""));
 
     if (empty($flags[0])) {
         $flags = Level::ALL;
@@ -95,6 +96,9 @@ $injector->alias(AdminStorage::class, $config["storage"]["admin"]);
 $injector->alias(BanStorage::class, $config["storage"]["ban"]);
 $injector->define(AdminStorage::class, [":dataFile" => __DIR__ . "/../data/admins.json"]);
 $injector->define(BanStorage::class, [":dataFile" => __DIR__ . "/../data/bans.json"]);
+$injector->share(AdminStorage::class);
+$injector->share(BanStorage::class);
+
 $injector->define(TwitterCredentials::class, [
     ":consumerKey" => $config["twitter"]["consumerKey"],
     ":consumerSecret" => $config["twitter"]["consumerSecret"],
@@ -104,13 +108,11 @@ $injector->define(TwitterCredentials::class, [
 $injector->define(GooglePlugin::class, [
     ":bitlyAccessToken" => $config["bitly"]["accessToken"],
 ]);
-$injector->delegate(PluginCollection::class, function () use ($injector) {
-    $collection = new PluginCollection($injector->make(MessageFactory::class), $injector->make(BanStorage::class));
+
+$injector->delegate(PluginManager::class, function () use ($injector) {
+    $pluginManager = new PluginManager($injector->make(AdminStorage::class), $injector->make(BanStorage::class));
 
     $plugins = [
-        AdminManager::class,
-        BanManager::class,
-        VersionManager::class,
         UrbanPlugin::class,
         WikipediaPlugin::class,
         SwordFightPlugin::class,
@@ -134,19 +136,32 @@ $injector->delegate(PluginCollection::class, function () use ($injector) {
     ];
 
     foreach ($plugins as $plugin) {
-        $collection->register($injector->make($plugin));
+        $pluginManager->register($injector->make($plugin));
     }
 
-    return $collection;
+    return $pluginManager;
 });
 
-$injector->share(Client::class);
+$injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
+    $builtInCommandManager = new BuiltInCommandManager($injector->make(BanStorage::class));
+
+    $commands = [AdminBuiltIn::class, BanBuiltIn::class, VersionBuiltIn::class];
+
+    foreach ($commands as $command) {
+        $builtInCommandManager->register($injector->make($command));
+    }
+
+    return $builtInCommandManager;
+});
+
+$injector->share(OpenIdClient::class);
 $injector->share(Logger::class);
 $injector->share(HttpClient::class);
+$injector->share(ChatClient::class);
 $injector->share(new EmailAddress($config["username"]));
 $injector->share(new Password($config["password"]));
 
-$openIdClient = $injector->make(Client::class);
+$openIdClient = $injector->make(OpenIdClient::class);
 $openIdClient->logIn();
 
 $room = $injector->make(Room::class);

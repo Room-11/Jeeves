@@ -4,11 +4,12 @@ namespace Room11\Jeeves\Log;
 
 class Level
 {
-    const ERROR           = 1;
-    const UNKNOWN_MESSAGE = 2;
-    const MESSAGE         = 4;
-    const DEBUG           = 8;
-    const EXTRA_DATA      = 16;
-    const ALL             = 23;
-    const NONE            = 0;
+    const ERROR         = 0x01;
+    const UNKNOWN_EVENT = 0x02;
+    const EVENT         = 0x04;
+    const DEBUG         = 0x08;
+    const EXTRA_DATA    = 0x10;
+
+    const ALL           = 0xffffffff & ~self::DEBUG;
+    const NONE          = 0;
 }

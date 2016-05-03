@@ -12,7 +12,9 @@ class StdOut extends BaseLogger
 
         echo sprintf("[%s] %s\n", (new \DateTime())->format('Y-m-d H:i:s'), $message);
 
-        $this->logExtraData($extraData);
+        if ($extraData !== null) {
+            $this->logExtraData($extraData);
+        }
     }
 
     private function logExtraData($extraData)

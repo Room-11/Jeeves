@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Plugin;
 
 class Canon implements Plugin
 {

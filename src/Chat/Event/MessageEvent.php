@@ -4,17 +4,30 @@ namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\Traits\RoomSource;
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
+use Room11\Jeeves\Chat\Message\Message;
+use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 
 abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourcedEvent
 {
     use RoomSource;
     use UserSource;
 
+    /**
+     * @var int
+     */
     private $messageId;
 
+    /**
+     * @var string
+     */
     private $messageContent;
 
-    protected function __construct(array $data)
+    /**
+     * @var Message
+     */
+    private $message;
+
+    protected function __construct(array $data, MessageFactory $messageFactory)
     {
         parent::__construct((int)$data['id'], (int)$data['time_stamp']);
 
@@ -24,7 +37,14 @@ abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourc
         $this->userName = (string)$data['user_name'];
 
         $this->messageId = (int)$data['message_id'];
-        $this->messageContent = $data['content'] ?? '';
+        $this->messageContent = (string)$data['content'] ?? '';
+
+        $this->message = $messageFactory->build($this);
+    }
+
+    public function getMessage(): Message
+    {
+        return $this->message;
     }
 
     public function getMessageId(): int

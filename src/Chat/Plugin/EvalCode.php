@@ -9,6 +9,7 @@ use Amp\Artax\FormBody;
 use Amp\Artax\Response as ArtaxResponse;
 use Amp\Artax\Request;
 use Amp\Pause;
+use Room11\Jeeves\Chat\Plugin;
 
 class EvalCode implements Plugin
 {

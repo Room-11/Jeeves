@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Conversation;
 use Room11\Jeeves\Chat\Message\Message;
+use Room11\Jeeves\Chat\Plugin;
 
 class SwordFight implements Plugin
 {

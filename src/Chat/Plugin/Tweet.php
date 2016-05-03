@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Twitter\Credentials;
 use Room11\Jeeves\Chat\Message\Command;

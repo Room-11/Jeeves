@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Plugin;
 
 class RFC implements Plugin
 {
