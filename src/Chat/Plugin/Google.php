@@ -2,28 +2,34 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use function Amp\all;
 
 class Google implements Plugin {
     use CommandOnlyPlugin;
 
     private $chatClient;
 
+    private $httpClient;
+
     private $bitlyAccessToken;
 
-    public function __construct(ChatClient $chatClient, string $bitlyAccessToken) {
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, string $bitlyAccessToken) {
         $this->chatClient       = $chatClient;
         $this->bitlyAccessToken = $bitlyAccessToken;
+        $this->httpClient       = $httpClient;
     }
 
     private function getResult(Command $command): \Generator {
-        $uri = "https://www.google.com/search?q=" . urlencode(implode(' ', $command->getParameters()));
+        $uri = "https://www.google.com/search?hl=en&q=" . urlencode(implode(' ', $command->getParameters()));
 
         /** @var Response $response */
-        $response = yield from $this->chatClient->request($uri);
+        $response = yield $this->httpClient->request($uri);
+        var_dump($response->getBody());
 
         if ($response->getStatus() !== 200) {
             yield from $this->postErrorMessage();
@@ -159,7 +165,7 @@ class Google implements Plugin {
             "https://www.google.com/search?q=" . urlencode(implode(' ', $command->getParameters()))
         );
 
-        $responses = yield from $this->chatClient->requestMulti($urls);
+        $responses = yield all($this->httpClient->requestMulti($urls));
 
         return array_map(function(Response $response) {
             return json_decode($response->getBody(), true)["data"]["url"];

@@ -163,7 +163,7 @@ class ChatClient {
     public function postReply($origin, string $text): \Generator
     {
         $target = $origin instanceof Message ? $origin->getId() : (int)$origin;
-        return yield from $this->postMessage(":{$target} {$text}");
+        return $this->postMessage(":{$target} {$text}");
     }
 
     public function editMessage(int $id, string $text): \Generator {
