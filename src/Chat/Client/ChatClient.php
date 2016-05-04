@@ -7,6 +7,7 @@ use Amp\Artax\FormBody;
 use Amp\Artax\Request;
 use Amp\Artax\Response as ArtaxResponse;
 use Amp\Pause;
+use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
 use Room11\Jeeves\Chat\Message\Message;
@@ -21,6 +22,7 @@ class ChatClient {
     private $room;
 
     private $postMutex;
+    private $editMutex;
     private $logger;
     private $postRecursionDepth = 0;
 
@@ -28,9 +30,10 @@ class ChatClient {
         $this->httpClient = $httpClient;
         $this->fkey = $fkey;
         $this->room = $room;
+        $this->logger = $logger;
 
         $this->postMutex = new Mutex();
-        $this->logger = $logger;
+        $this->editMutex = new Mutex();
     }
 
     public function request($uriOrRequest): \Generator {
@@ -93,9 +96,9 @@ class ChatClient {
                     $response = yield $this->httpClient->request($request);
                     $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());
 
-                    $decoded = json_decode($response->getBody(), true);
+                    try {
+                        $decoded = json_try_decode($response->getBody(), true);
 
-                    if (json_last_error() === JSON_ERROR_NONE) {
                         if (isset($decoded["id"], $decoded["time"])) {
                             return new Response($decoded["id"], $decoded["time"]);
                         }
@@ -104,30 +107,30 @@ class ChatClient {
                             break;
                         }
 
-                        if (array_key_exists('id', $decoded)) {
-                            // sometimes we can get {"id":null,"time":null}
-                            // I think this happens when we repeat ourselves too quickly
-                            $this->logger->log(Level::DEBUG, 'Got a null message post response, waiting for ' . ($attempt * 1000) . 'ms before trying again');
-                            yield new Pause($attempt * 1000);
-                            continue;
+                        if (!array_key_exists('id', $decoded)) {
+                            throw new \RuntimeException('A JSON response that I don\'t understand was received');
                         }
 
-                        throw new \RuntimeException('A JSON response that I don\'t understand was received');
+                        // sometimes we can get {"id":null,"time":null}
+                        // I think this happens when we repeat ourselves too quickly
+                        $delay = $attempt * 1000;
+                        $this->logger->log(Level::DEBUG, "Got a null message post response, waiting for {$delay}ms before trying again");
+                    } catch (JSONDecodeErrorException $e) {
+                        if ($attempt >= self::MAX_POST_ATTEMPTS) {
+                            break;
+                        }
+
+                        if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
+                            throw new \RuntimeException(
+                                'A response that could not be decoded as JSON or otherwise handled was received'
+                                . ' (JSON decode error: ' . $e->getMessage() . ')'
+                            );
+                        }
+
+                        $this->logger->log(Level::DEBUG, "Backing off message posting for {$delay}ms");
                     }
 
-                    $decodeErrorStr = json_last_error_msg();
-
-                    if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
-                        throw new \RuntimeException(
-                            'A response that could not be decoded as JSON or otherwise handled was received'
-                            . ' (JSON decode error: ' . $decodeErrorStr . ')'
-                        );
-                    }
-
-                    if ($attempt < self::MAX_POST_ATTEMPTS) {
-                        $this->logger->log(Level::DEBUG, 'Backing off message posting for ' . $delay . 'ms');
-                        yield new Pause($delay);
-                    }
+                    yield new Pause($delay);
                 }
 
                 $attempt--;
@@ -183,7 +186,7 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
-        yield from $this->postMutex->withLock(function() use($body, $uri, $request) {
+        yield from $this->editMutex->withLock(function() use($body, $uri, $request) {
             $attempt = 0;
 
             try {
@@ -195,23 +198,27 @@ class ChatClient {
                     $response = yield $this->httpClient->request($request);
                     $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());
 
-                    $decoded = json_decode($response->getBody(), true);
+                    try {
+                        $decoded = json_try_decode($response->getBody(), true);
 
-                    if (json_last_error() === JSON_ERROR_NONE && $decoded === 'ok') {
-                        return true;
-                    }
+                        if ($decoded === 'ok') {
+                            return true;
+                        }
 
-                    $decodeErrorStr = json_last_error_msg();
+                        throw new \RuntimeException('A JSON response that I don\'t understand was received');
+                    } catch (JSONDecodeErrorException $e) {
+                        if ($attempt >= self::MAX_POST_ATTEMPTS) {
+                            break;
+                        }
 
-                    if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
-                        throw new \RuntimeException(
-                            'A response that could not be decoded as JSON or otherwise handled was received'
-                            . ' (JSON decode error: ' . $decodeErrorStr . ')'
-                        );
-                    }
+                        if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
+                            throw new \RuntimeException(
+                                'A response that could not be decoded as JSON or otherwise handled was received'
+                                . ' (JSON decode error: ' . $e->getMessage() . ')'
+                            );
+                        }
 
-                    if ($attempt < self::MAX_POST_ATTEMPTS) {
-                        $this->logger->log(Level::DEBUG, 'Backing off message posting for ' . $delay . 'ms');
+                        $this->logger->log(Level::DEBUG, "Backing off message posting for {$delay}ms");
                         yield new Pause($delay);
                     }
                 }
