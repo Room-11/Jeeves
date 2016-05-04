@@ -103,7 +103,7 @@ class Tweet implements Plugin
         $tweetInfo = json_decode($result->getBody(), true);
         $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
-        yield from $this->chatClient->postReply($command, sprintf("[Message tweeted.](%s)", $tweetUri));
+        yield from $this->chatClient->postReply($command, $tweetUri);
     }
 
     private function getNonce(): string {
