@@ -252,6 +252,6 @@ class ChatClient {
             return 0;
         }
 
-        return (int)(($matches[1] + 2) * 1000);
+        return (int)(($matches[1] + 1.1) * 1000);
     }
 }
