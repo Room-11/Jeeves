@@ -11,6 +11,8 @@ use Room11\Jeeves\Chat\Plugin;
 class Xkcd implements Plugin {
     use CommandOnlyPlugin;
 
+    const NOT_FOUND_COMIC = 'https://xkcd.com/1334/';
+
     private $chatClient;
 
     private $httpClient;
@@ -42,9 +44,21 @@ class Xkcd implements Plugin {
         $xpath = new \DOMXPath($dom);
         $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]/h3/a");
 
-        preg_match('~^/url\?q=([^&]*)~', $nodes->item(0)->getAttribute('href'), $matches);
+        if (!$nodes->length) {
+            yield from $this->chatClient->postMessage(self::NOT_FOUND_COMIC);
 
-        yield from $this->chatClient->postMessage($matches[1]);
+            return;
+        }
+
+        foreach ($nodes as $node) {
+            if (preg_match('~^/url\?q=(https://xkcd\.com/\d+/)~', $node->getAttribute('href'), $matches)) {
+                yield from $this->chatClient->postMessage($matches[1]);
+
+                return;
+            }
+        }
+
+        yield from $this->chatClient->postMessage(self::NOT_FOUND_COMIC);
     }
 
     /**
