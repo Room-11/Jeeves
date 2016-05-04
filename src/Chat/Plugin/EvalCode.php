@@ -7,7 +7,7 @@ use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\Response as ChatResponse;
 use Room11\Jeeves\Chat\Message\Command;
-use Amp\Artax\Client as HttpClient;
+use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\FormBody;

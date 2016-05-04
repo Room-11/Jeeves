@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\OpenId;
 
-use Amp\Artax\Client as HttpClient;
+use Amp\Artax\HttpClient;
 use Amp\Artax\FormBody;
 use Amp\Artax\Request;
 use Amp\Artax\Response;

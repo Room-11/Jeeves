@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Amp\Artax\Client as HttpClient;
+use Amp\Artax\HttpClient;
 use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Plugin;
 

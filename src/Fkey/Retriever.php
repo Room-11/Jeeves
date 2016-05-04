@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Fkey;
 
-use Amp\Artax\Client as HttpClient;
+use Amp\Artax\HttpClient;
 
 class Retriever
 {

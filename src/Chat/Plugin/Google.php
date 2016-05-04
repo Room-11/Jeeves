@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Amp\Artax\Client as HttpClient;
+use Amp\Artax\HttpClient;
 use Amp\Artax\Response;
 use Room11\Jeeves\Bitly\Client as BitlyClient;
 use Room11\Jeeves\Chat\Client\ChatClient;

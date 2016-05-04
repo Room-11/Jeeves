@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Bitly;
 
-use Amp\Artax\Client as HttpClient;
+use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use function Amp\all;
 

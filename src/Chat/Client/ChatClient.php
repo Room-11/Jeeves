@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
-use Amp\Artax\Client;
+use Amp\Artax\HttpClient;
 use Amp\Artax\FormBody;
 use Amp\Artax\Request;
 use Amp\Artax\Response as ArtaxResponse;
@@ -27,7 +27,7 @@ class ChatClient {
     private $logger;
     private $postRecursionDepth = 0;
 
-    public function __construct(Client $httpClient, FKey $fkey, Room $room, Logger $logger) {
+    public function __construct(HttpClient $httpClient, FKey $fkey, Room $room, Logger $logger) {
         $this->httpClient = $httpClient;
         $this->fkey = $fkey;
         $this->room = $room;

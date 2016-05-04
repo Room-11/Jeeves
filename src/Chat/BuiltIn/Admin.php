@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\BuiltIn;
 
-use Amp\Artax\Client as HttpClient;
+use Amp\Artax\HttpClient;
 use Amp\Promise;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
