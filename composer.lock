@@ -413,16 +413,16 @@
         },
         {
             "name": "daverandom/exceptional-json",
-            "version": "v1.0.0",
+            "version": "v1.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/DaveRandom/ExceptionalJSON.git",
-                "reference": "9b1eab372f3ed1cf00e1508c3d7fc2cef42895ed"
+                "reference": "4998f41b4da90b3720ecb4f895ca488f0f2c83f7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/DaveRandom/ExceptionalJSON/zipball/9b1eab372f3ed1cf00e1508c3d7fc2cef42895ed",
-                "reference": "9b1eab372f3ed1cf00e1508c3d7fc2cef42895ed",
+                "url": "https://api.github.com/repos/DaveRandom/ExceptionalJSON/zipball/4998f41b4da90b3720ecb4f895ca488f0f2c83f7",
+                "reference": "4998f41b4da90b3720ecb4f895ca488f0f2c83f7",
                 "shasum": ""
             },
             "type": "library",
@@ -444,7 +444,7 @@
                 }
             ],
             "description": "JSON encoding and decoding that throws exceptions on failure",
-            "time": "2016-05-04 10:46:15"
+            "time": "2016-05-04 15:52:54"
         },
         {
             "name": "daverandom/libdns",
