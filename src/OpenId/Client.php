@@ -5,6 +5,7 @@ namespace Room11\Jeeves\OpenId;
 use Amp\Artax\Client as HttpClient;
 use Amp\Artax\FormBody;
 use Amp\Artax\Request;
+use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\Retriever as FkeyRetriever;
 
@@ -31,18 +32,43 @@ class Client {
             $room->getHost()->getHostname()
         );
 
-        $body = (new FormBody)
+        $fKey = (string)$this->fkeyRetriever->get($origin . "/rooms/" . $room->getId());
+
+        $authBody = (new FormBody)
             ->addField("roomid", $room->getId())
-            ->addField("fkey", (string) $this->fkeyRetriever->get($origin . "/rooms/" . $room->getId()));
+            ->addField("fkey", $fKey);
 
-        $request = (new Request)
-            ->setUri($origin . "/ws-auth")
-            ->setMethod("POST")
-            ->setBody($body);
+        $historyBody = (new FormBody)
+            ->addField('since', 0)
+            ->addField('mode', 'Messages')
+            ->addField("msgCount", 1)
+            ->addField("fkey", $fKey);
 
-        $promise = $this->httpClient->request($request);
-        $response = \Amp\wait($promise);
+        $requests = [
+            'auth' => (new Request)
+                ->setUri($origin . "/ws-auth")
+                ->setMethod("POST")
+                ->setBody($authBody),
+            'history' => (new Request)
+                ->setUri("{$origin}/chats/{$room->getId()}/events")
+                ->setMethod("POST")
+                ->setBody($historyBody),
+        ];
 
-        return json_decode($response->getBody(), true)["url"];
+        $promise = \Amp\all($this->httpClient->requestMulti($requests));
+        /** @var Response[] $responses */
+        $responses = \Amp\wait($promise);
+
+        $authInfo = json_try_decode($responses['auth']->getBody(), true);
+        $historyInfo = json_try_decode($responses['history']->getBody(), true);
+        
+        if (!isset($authInfo['url'])) {
+            throw new \RuntimeException("WebSocket auth did not return URL");
+        }
+        if (!isset($historyInfo['time'])) {
+            throw new \RuntimeException("Could not get time for WebSocket URL");
+        }
+
+        return $authInfo['url'] . '?l=' . $historyInfo['time'];
     }
 }

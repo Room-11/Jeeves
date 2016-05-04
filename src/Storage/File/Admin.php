@@ -12,7 +12,6 @@ class Admin implements AdminList
     private $dataFile;
 
     public function __construct(string $dataFile) {
-        var_dump($dataFile);
         $this->dataFile = $dataFile;
     }
 

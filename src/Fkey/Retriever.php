@@ -13,7 +13,7 @@ class Retriever
         $this->httpClient = $httpClient;
     }
 
-    public function get(string $url): Fkey
+    public function get(string $url): FKey
     {
         $promise = $this->httpClient->request($url);
 

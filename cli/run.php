@@ -165,7 +165,7 @@ $openIdClient = $injector->make(OpenIdClient::class);
 $openIdClient->logIn();
 
 $room = $injector->make(Room::class);
-$handshake = new Handshake($openIdClient->getWebSocketUri($room) . "?l=57365782");
+$handshake = new Handshake($openIdClient->getWebSocketUri($room));
 $handshake->setHeader("Origin", sprintf(
     "%s://%s",
     $room->getHost()->isSecure() ? "wss" : "ws",
