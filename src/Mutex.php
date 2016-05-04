@@ -1,8 +1,9 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\Chat\Client;
+namespace Room11\Jeeves;
 
 use Amp\Deferred;
+use Amp\Promise;
 
 class Mutex
 {
@@ -17,7 +18,16 @@ class Mutex
 
         try {
             $result = $callback();
-            return $result instanceof \Generator ? yield from $result : $result;
+
+            if ($result instanceof \Generator) {
+                return yield from $result;
+            }
+
+            if ($result instanceof Promise) {
+                return yield $result;
+            }
+
+            return $result;
         } finally {
             $lock->release();
         }

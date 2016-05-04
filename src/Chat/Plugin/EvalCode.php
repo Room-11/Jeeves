@@ -2,14 +2,16 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Room11\Jeeves\Mutex;
+use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\Response as ChatResponse;
 use Room11\Jeeves\Chat\Message\Command;
+use Amp\Artax\Client as HttpClient;
+use Amp\Artax\Response as HttpResponse;
+use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\FormBody;
-use Amp\Artax\Response as ArtaxResponse;
-use Amp\Artax\Request;
 use Amp\Pause;
-use Room11\Jeeves\Chat\Plugin;
 
 class EvalCode implements Plugin
 {
@@ -20,8 +22,15 @@ class EvalCode implements Plugin
 
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient) {
+    private $httpClient;
+
+    private $mutex;
+
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
         $this->chatClient = $chatClient;
+        $this->httpClient = $httpClient;
+
+        $this->mutex = new Mutex();
     }
 
     private function getResult(Command $command): \Generator {
@@ -32,28 +41,30 @@ class EvalCode implements Plugin
             ->addField("code", $code)
         ;
 
-        $request = (new Request)
+        $request = (new HttpRequest)
             ->setUri("https://3v4l.org/new")
             ->setMethod("POST")
             ->setHeader("Accept", "application/json")
             ->setBody($body)
         ;
 
-        /** @var ArtaxResponse $response */
-        $response = yield from $this->chatClient->request($request);
+        yield from $this->mutex->withLock(function() use($request) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($request);
 
-        /** @var ChatResponse $chatMessage */
-        $chatMessage = yield from $this->chatClient->postMessage(
-            $this->getMessage(
-                "Waiting for results",
-                "",
-                $response->getPreviousResponse()->getHeader("Location")[0])
-        );
+            /** @var ChatResponse $chatMessage */
+            $chatMessage = yield from $this->chatClient->postMessage(
+                $this->getMessage(
+                    "Waiting for results",
+                    "",
+                    $response->getPreviousResponse()->getHeader("Location")[0])
+            );
 
-        yield from $this->pollUntilDone(
-            $response->getPreviousResponse()->getHeader("Location")[0],
-            $chatMessage->getMessageId()
-        );
+            yield from $this->pollUntilDone(
+                $response->getPreviousResponse()->getHeader("Location")[0],
+                $chatMessage->getMessageId()
+            );
+        });
     }
 
     private function normalizeCode($code) {
@@ -66,30 +77,30 @@ class EvalCode implements Plugin
 
         $code = $dom->textContent;
 
-        if (strpos($code, "<?php") === false) {
-            $code = "<?php " . $code;
+        if (strpos($code, '<?php') === false && strpos($code, '<?=') === false) {
+            $code = "<?php {$code}";
         }
 
-        return $code;
+        return $code . ';';
     }
 
     private function pollUntilDone(string $snippetId, int $messageId): \Generator {
         $requests = 0;
+        $parsedResult = [];
 
         yield new Pause(3500);
 
-        $request = (new Request)
+        $request = (new HttpRequest)
             ->setUri("https://3v4l.org" . $snippetId)
             ->setHeader("Accept", "application/json")
         ;
 
-        while (true && $requests <= self::REQUEST_LIMIT) {
-            $requests++;
-
-            /** @var ArtaxResponse $result */
-            $result = yield from $this->chatClient->request($request);
-
+        while ($requests++ <= self::REQUEST_LIMIT) {
+            /** @var HttpResponse $result */
+            $result = yield $this->httpClient->request($request);
             $parsedResult = json_decode($result->getBody(), true);
+
+            $editStart = microtime(true);
 
             yield from $this->chatClient->editMessage(
                 $messageId,
@@ -101,24 +112,23 @@ class EvalCode implements Plugin
             );
 
             if ($parsedResult["script"]["state"] !== "busy") {
-                yield new Pause(2500);
-
-                for ($i = 1; $i < count($parsedResult["output"][0]) && $i < 4; $i++) {
-                    yield new Pause(3500);
-
-                    yield from $this->chatClient->postMessage(
-                        $this->getMessage(
-                            $parsedResult["output"][0][$i]["versions"],
-                            htmlspecialchars_decode($parsedResult["output"][0][$i]["output"]),
-                            $snippetId
-                        )
-                    );
-                }
-
-                return;
+                break;
             }
 
-            yield new Pause(3500);
+            $editDuration = (int)floor((microtime(true) - $editStart) * 1000);
+            if ($editDuration < 3500) {
+                yield new Pause(3500 - $editDuration);
+            }
+        }
+
+        for ($i = 1; isset($parsedResult["output"][0][$i]) && $i < 4; $i++) {
+            yield from $this->chatClient->postMessage(
+                $this->getMessage(
+                    $parsedResult["output"][0][$i]["versions"],
+                    htmlspecialchars_decode($parsedResult["output"][0][$i]["output"]),
+                    $snippetId
+                )
+            );
         }
     }
 

@@ -13,6 +13,7 @@ use Room11\Jeeves\Fkey\FKey;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\Mutex;
 
 class ChatClient {
     const MAX_POST_ATTEMPTS = 5;
