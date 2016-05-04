@@ -20,7 +20,7 @@ class Message
 
     public function getText(): string
     {
-        return $this->event->getMessageContent();
+        return html_entity_decode($this->event->getMessageContent(), ENT_QUOTES);
     }
 
     public function getId(): int

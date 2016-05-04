@@ -111,10 +111,15 @@ class Google implements Plugin {
                 continue;
             }
 
+            $descriptionNodes = $xpath->query('.//span[@class="st"]', $node);
+            $description = $descriptionNodes->length !== 0
+                ? $descriptionNodes->item(0)->textContent
+                : 'No description available';
+
             $nodesInformation[] = [
                 "url"         => urldecode($matches[1]), // we got it from a query string param
                 "title"       => $linkNode->textContent,
-                "description" => $this->formatDescription($xpath->query('.//span[@class="st"]', $node)->item(0)->textContent),
+                "description" => $this->formatDescription($description),
             ];
 
             if (count($nodesInformation) === 3) {
@@ -135,12 +140,14 @@ class Google implements Plugin {
     }
 
     private function formatDescription(string $description): string {
-        static $removeLineBreaksExpr = '#(?:\r?\n)+#u';
-        static $stripDataAndLeadingEllipsisExpr = '#^(?:[0-9]{2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+[0-9]{4}\s*)?...\s*#iu';
+        static $removeLineBreaksExpr = '#(?:\r?\n)+#';
+        static $stripDateExpr = '#^\s*[0-9]{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+[0-9]{4}\s*#iu';
+        static $stripLeadingSeparatorExpr = '#^\s*(\.\.\.|-)\s*#u';
 
         $description = preg_replace($removeLineBreaksExpr, ' ', $description);
         $description = strip_tags($description);
-        $description = preg_replace($stripDataAndLeadingEllipsisExpr, '', $description);
+        $description = preg_replace($stripDateExpr, '', $description);
+        $description = preg_replace($stripLeadingSeparatorExpr, '', $description);
         $description = str_replace('...', self::ELLIPSIS, $description);
 
         return $description;
@@ -150,6 +157,7 @@ class Google implements Plugin {
         $urls = yield from $this->getShortenedUrls($searchResults, $searchURL);
 
         $searchTerm = implode(' ', $command->getParameters());
+        var_dump($searchTerm);
 
         $length = 52; // this is how many chars there are in the template strings (incl bullets)
         $length += mb_strlen($searchTerm, self::ENCODING) + strlen($urls[$searchURL]);

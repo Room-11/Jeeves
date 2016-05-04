@@ -14,7 +14,7 @@ class Command extends Message
     {
         parent::__construct($event);
 
-        $commandParts = preg_split('#\s+#', trim($event->getMessageContent()), -1, PREG_SPLIT_NO_EMPTY);
+        $commandParts = preg_split('#\s+#', trim($this->getText()), -1, PREG_SPLIT_NO_EMPTY);
 
         $this->commandName = substr(array_shift($commandParts), 2);
         $this->parameters = $commandParts;

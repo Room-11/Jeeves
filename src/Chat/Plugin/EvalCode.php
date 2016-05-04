@@ -57,8 +57,6 @@ class EvalCode implements Plugin
     }
 
     private function normalizeCode($code) {
-        $code = html_entity_decode($code, ENT_QUOTES);
-
         $useInternalErrors = libxml_use_internal_errors(true);
 
         $dom = new \DOMDocument();
