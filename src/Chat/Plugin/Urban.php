@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Response as ArtaxResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
@@ -13,15 +14,18 @@ class Urban implements Plugin
 
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient)
+    private $httpClient;
+
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
+        $this->httpClient = $httpClient;
     }
 
     private function getResult(Command $command): \Generator
     {
         /** @var ArtaxResponse $response */
-        $response = yield from $this->chatClient->request(
+        $response = yield $this->httpClient->request(
             'http://api.urbandictionary.com/v0/define?term=' . rawurlencode(implode(' ', $command->getParameters()))
         );
 

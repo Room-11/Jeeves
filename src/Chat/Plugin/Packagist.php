@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Plugin;
 
@@ -12,10 +13,15 @@ class Packagist implements Plugin
     use CommandOnlyPlugin;
 
     private $chatClient;
+    /**
+     * @var HttpClient
+     */
+    private $httpClient;
 
-    public function __construct(ChatClient $chatClient)
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
+        $this->httpClient = $httpClient;
     }
 
     private function getResult(Command $command): \Generator
@@ -32,7 +38,7 @@ class Packagist implements Plugin
         $url = 'https://packagist.org/packages/' . urlencode($vendor) . '/' . urldecode($package) . '.json';
 
         /** @var Response $response */
-        $response = yield from $this->chatClient->request($url);
+        $response = yield $this->httpClient->request($url);
 
         if ($response->getStatus() !== 200) {
             $response = yield from $this->getResultFromSearchFallback($vendor, $package);
@@ -52,7 +58,7 @@ class Packagist implements Plugin
         $url = 'https://packagist.org/search/?q=' . urlencode($vendor) . '%2F' . urldecode($package);
 
         /** @var Response $response */
-        $response = yield from $this->chatClient->request($url);
+        $response = yield $this->httpClient->request($url);
 
         $internalErrors = libxml_use_internal_errors(true);
         $dom = new \DOMDocument();
@@ -62,7 +68,7 @@ class Packagist implements Plugin
         $xpath = new \DOMXPath($dom);
         $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' packages ')]/li");
 
-        return yield from $this->chatClient->request('https://packagist.org' . $nodes->item(0)->getAttribute('data-url') . '.json');
+        return yield $this->httpClient->request('https://packagist.org' . $nodes->item(0)->getAttribute('data-url') . '.json');
     }
 
     /**

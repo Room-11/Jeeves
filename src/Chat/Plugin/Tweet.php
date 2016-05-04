@@ -7,6 +7,7 @@ use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Twitter\Credentials;
 use Room11\Jeeves\Chat\Message\Command;
+use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Response;
 use Amp\Artax\Request;
 
@@ -24,10 +25,13 @@ class Tweet implements Plugin
 
     private $twitterConfig = [];
 
-    public function __construct(ChatClient $chatClient, AdminStorage $admin, Credentials $credentials) {
+    private $httpClient;
+
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $admin, Credentials $credentials) {
         $this->chatClient  = $chatClient;
         $this->admin       = $admin;
         $this->credentials = $credentials;
+        $this->httpClient = $httpClient;
     }
 
     private function validMessage(Command $command): bool {
@@ -99,7 +103,7 @@ class Tweet implements Plugin
         ;
 
         /** @var Response $result */
-        $result    = yield from $this->chatClient->request($request);
+        $result    = yield $this->httpClient->request($request);
         $tweetInfo = json_decode($result->getBody(), true);
         $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
@@ -223,7 +227,7 @@ class Tweet implements Plugin
         ;
 
         /** @var Response $result */
-        $result    = yield from $this->chatClient->request($request);
+        $result = yield $this->httpClient->request($request);
 
         $this->twitterConfig = json_decode($result->getBody(), true);
         $this->twitterConfig["expiration"] = (new \DateTimeImmutable())->add(new \DateInterval("P1D"));

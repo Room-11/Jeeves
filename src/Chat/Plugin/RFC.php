@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
@@ -13,15 +14,18 @@ class RFC implements Plugin
 
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient) {
+    private $httpClient;
+
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
         $this->chatClient = $chatClient;
+        $this->httpClient = $httpClient;
     }
 
     private function getResult(): \Generator {
         $uri = "https://wiki.php.net/rfc";
 
         /** @var Response $response */
-        $response = yield from $this->chatClient->request($uri);
+        $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
             yield from $this->chatClient->postMessage(

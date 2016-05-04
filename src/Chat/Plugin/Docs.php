@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\Client as HttpClient;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Amp\Artax\Response;
@@ -209,8 +210,11 @@ class Docs implements Plugin
         'yeild' => '@yield',
     ];
 
-    public function __construct(ChatClient $chatClient) {
+    private $httpClient;
+
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
         $this->chatClient = $chatClient;
+        $this->httpClient = $httpClient;
     }
 
     private function getResult(Command $message): \Generator {
@@ -240,7 +244,7 @@ class Docs implements Plugin
         $url = self::LOOKUP_URL_BASE . rawurlencode($pattern);
 
         /** @var Response $response */
-        $response = yield from $this->chatClient->request($url);
+        $response = yield $this->httpClient->request($url);
 
         if ($response->getPreviousResponse() !== null) {
             yield from $this->chatClient->postMessage(
@@ -257,7 +261,7 @@ class Docs implements Plugin
     {
         if (preg_match('#/book\.[^.]+\.php$#', $response->getRequest()->getUri(), $matches)) {
             /** @var Response $classResponse */
-            $classResponse = yield from $this->chatClient->request(self::MANUAL_URL_BASE . '/class.' . rawurlencode($pattern) . '.php');
+            $classResponse = yield $this->httpClient->request(self::MANUAL_URL_BASE . '/class.' . rawurlencode($pattern) . '.php');
 
             if ($classResponse->getStatus() != 404) {
                 return $classResponse;
@@ -465,7 +469,7 @@ class Docs implements Plugin
             /** @var \DOMElement $anchor */
             $anchor = $firstResult->getElementsByTagName("a")->item(0);
 
-            $response = yield from $this->chatClient->request(
+            $response = yield $this->httpClient->request(
                 self::URL_BASE . $anchor->getAttribute("href")
             );
 

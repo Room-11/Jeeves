@@ -37,26 +37,6 @@ class ChatClient {
         $this->editMutex = new Mutex();
     }
 
-    public function request($uriOrRequest): \Generator {
-        $response = yield $this->httpClient->request($uriOrRequest);
-
-        return $response;
-    }
-
-    public function requestMulti(array $urisAndRequests): \Generator {
-        $promises = array_map(function($uriOrRequest) {
-            return $this->httpClient->request($uriOrRequest);
-        }, $urisAndRequests);
-
-        $responses = [];
-
-        foreach ($promises as $promise) {
-            $responses[] = yield $promise;
-        }
-
-        return $responses;
-    }
-
     public function getMessage(int $id): \Generator {
         $uri = sprintf(
             "%s://%s/message/%d",
