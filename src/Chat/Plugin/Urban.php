@@ -22,7 +22,7 @@ class Urban implements Plugin
     {
         /** @var ArtaxResponse $response */
         $response = yield from $this->chatClient->request(
-            'http://api.urbandictionary.com/v0/define?term=' . rawurlencode(implode('%20', $command->getParameters()))
+            'http://api.urbandictionary.com/v0/define?term=' . rawurlencode(implode(' ', $command->getParameters()))
         );
 
         $result = json_decode($response->getBody(), true);
