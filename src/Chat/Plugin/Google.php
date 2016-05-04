@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Response;
+use Room11\Jeeves\Bitly\Client as BitlyClient;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -12,24 +13,37 @@ use function Amp\all;
 class Google implements Plugin {
     use CommandOnlyPlugin;
 
+    const ENCODING = "UTF-8";
+    const ELLIPSIS = "\xE2\x80\xA6";
+    const BULLET   = "\xE2\x80\xA2";
+
+    const BASE_URL = 'https://www.google.com/search';
+
     private $chatClient;
 
     private $httpClient;
 
-    private $bitlyAccessToken;
+    private $bitlyClient;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, string $bitlyAccessToken) {
-        $this->chatClient       = $chatClient;
-        $this->bitlyAccessToken = $bitlyAccessToken;
-        $this->httpClient       = $httpClient;
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, BitlyClient $bitlyClient) {
+        $this->chatClient  = $chatClient;
+        $this->httpClient  = $httpClient;
+        $this->bitlyClient = $bitlyClient;
+    }
+
+    private function getSearchURL(Command $command): string
+    {
+        return self::BASE_URL . '?' . http_build_query([
+            'q' => implode(' ', $command->getParameters()),
+            'lr' => 'lang_en',
+        ]);
     }
 
     private function getResult(Command $command): \Generator {
-        $uri = "https://www.google.com/search?hl=en&q=" . urlencode(implode(' ', $command->getParameters()));
+        $uri = $this->getSearchURL($command);
 
         /** @var Response $response */
         $response = yield $this->httpClient->request($uri);
-        var_dump($response->getBody());
 
         if ($response->getStatus() !== 200) {
             yield from $this->postErrorMessage();
@@ -48,7 +62,7 @@ class Google implements Plugin {
         }
 
         $searchResults = $this->getSearchResults($nodes, $xpath);
-        $postMessage   = yield from $this->getPostMessage($searchResults, $command);
+        $postMessage   = yield from $this->getPostMessage($searchResults, $uri, $command);
 
         yield from $this->chatClient->postMessage($postMessage);
     }
@@ -61,16 +75,15 @@ class Google implements Plugin {
 
     private function postNoResultsMessage(Command $command): \Generator {
         yield from $this->chatClient->postReply(
-            $command, "Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P"
+            $command, sprintf("Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P", implode(' ', $command->getParameters()))
         );
     }
 
     private function buildDom($body): \DOMDocument {
         $internalErrors = libxml_use_internal_errors(true);
-        $dom            = new \DOMDocument();
-        $body           = utf8_encode($body);
 
-        $dom->loadHTML($body);
+        $dom = new \DOMDocument();
+        $dom->loadHTML('<?xml encoding="utf-8" ?>' . $body);
 
         libxml_use_internal_errors($internalErrors);
 
@@ -94,12 +107,12 @@ class Google implements Plugin {
             /** @var \DOMElement $linkNode */
             $linkNode = $linkNodes->item(0);
 
-            if(preg_match('~^/url\?q=([^&]*)~', $linkNode->getAttribute("href"), $matches) == false) {
+            if (!preg_match('~^/url\?q=([^&]*)~', $linkNode->getAttribute("href"), $matches)) {
                 continue;
             }
 
             $nodesInformation[] = [
-                "url"         => $matches[1],
+                "url"         => urldecode($matches[1]), // we got it from a query string param
                 "title"       => $linkNode->textContent,
                 "description" => $this->formatDescription($xpath->query('.//span[@class="st"]', $node)->item(0)->textContent),
             ];
@@ -112,64 +125,59 @@ class Google implements Plugin {
         return $nodesInformation;
     }
 
+    private function ellipsise(string $string, int $length): string
+    {
+        if (mb_strlen($string, self::ENCODING) < $length) {
+            return $string;
+        }
+
+        return trim(mb_substr($string, 0, $length - 1, self::ENCODING)) . self::ELLIPSIS;
+    }
+
     private function formatDescription(string $description): string {
-        $cleanedDescription = str_replace(["\r\n", "\r", "\n"], " ", $description);
-        $cleanedDescription = strip_tags($cleanedDescription);
+        static $removeLineBreaksExpr = '#(?:\r?\n)+#u';
+        static $stripDataAndLeadingEllipsisExpr = '#^(?:[0-9]{2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+[0-9]{4}\s*)?...\s*#iu';
 
-        $ellipsis = mb_strlen($cleanedDescription, "UTF-8") > 55 ? "…" : "";
+        $description = preg_replace($removeLineBreaksExpr, ' ', $description);
+        $description = strip_tags($description);
+        $description = preg_replace($stripDataAndLeadingEllipsisExpr, '', $description);
+        $description = str_replace('...', self::ELLIPSIS, $description);
 
-        return mb_substr($cleanedDescription, 0, 55, "UTF-8") . $ellipsis;
+        return $description;
     }
 
-    private function getPostMessage(array $searchResults, Command $command): \Generator {
-        $postMessage = "";
+    private function getPostMessage(array $searchResults, string $searchURL, Command $command): \Generator {
+        $urls = yield from $this->getShortenedUrls($searchResults, $searchURL);
 
-        $urls = yield from $this->getShortenedUrls($searchResults, $command);
+        $searchTerm = implode(' ', $command->getParameters());
 
-        foreach ($searchResults as $index => $result) {
-            $newMessage = sprintf(
-                " **[%s](%s)** %s  |",
-                $result["title"],
-                $urls[$index],
-                $result["description"]
+        $length = 52; // this is how many chars there are in the template strings (incl bullets)
+        $length += mb_strlen($searchTerm, self::ENCODING) + strlen($urls[$searchURL]);
+        foreach ($searchResults as $result) {
+            $length += max(mb_strlen($result['title'], self::ENCODING), 30) + strlen($urls[$result['url']]);
+        }
+
+        $descriptionLength = (int)floor((499 - $length) / 3); // 499 chars is the max before "see full text"
+
+        $message = sprintf('Search for "%s" (%s)', $searchTerm, $urls[$searchURL]);
+
+        foreach ($searchResults as $result) {
+            $message .= sprintf(
+                "\n%s %s - %s (%s)",
+                self::BULLET,
+                $this->ellipsise($result['title'], 30),
+                $this->ellipsise($result['description'], $descriptionLength),
+                $urls[$result['url']]
             );
-
-            if (mb_strlen($postMessage . $newMessage, "UTF-8") > 500) {
-                return $postMessage;
-            }
-
-            $postMessage .= $newMessage;
         }
 
-        $googleLinkMessage = " **[Search Url]($urls[3])**";
-
-        if (mb_strlen($postMessage . $googleLinkMessage, "UTF-8") <= 500) {
-            $postMessage .= $googleLinkMessage;
-        }
-
-        return $postMessage;
+        return $message;
     }
 
-    private function getShortenedUrls(array $searchResults, Command $command): \Generator {
-        $urls = array_map(function($result) {
-            return sprintf(
-                "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
-                $this->bitlyAccessToken,
-                $result["url"]
-            );
-        }, $searchResults);
+    private function getShortenedUrls(array $searchResults, string $searchURL): \Generator {
+        $urls = array_merge(array_map(function($result) { return $result["url"]; }, $searchResults), [$searchURL]);
 
-        $urls[] = sprintf(
-            "https://api-ssl.bitly.com/v3/shorten?access_token=%s&longUrl=%s",
-            $this->bitlyAccessToken,
-            "https://www.google.com/search?q=" . urlencode(implode(' ', $command->getParameters()))
-        );
-
-        $responses = yield all($this->httpClient->requestMulti($urls));
-
-        return array_map(function(Response $response) {
-            return json_decode($response->getBody(), true)["data"]["url"];
-        }, $responses);
+        return yield from $this->bitlyClient->shortenMulti($urls);
     }
 
     /**

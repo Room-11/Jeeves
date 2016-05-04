@@ -6,6 +6,7 @@ namespace Room11\Jeeves;
 use Amp\Artax\Client as HttpClient;
 use Amp\Websocket\Handshake;
 use Auryn\Injector;
+use Room11\Jeeves\Bitly\Client as BitlyClient;
 use Room11\Jeeves\Chat\BuiltIn\Admin as AdminBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Ban as BanBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
@@ -105,8 +106,8 @@ $injector->define(TwitterCredentials::class, [
     ":accessToken" => $config["twitter"]["accessToken"],
     ":accessTokenSecret" => $config["twitter"]["accessTokenSecret"],
 ]);
-$injector->define(GooglePlugin::class, [
-    ":bitlyAccessToken" => $config["bitly"]["accessToken"],
+$injector->define(BitlyClient::class, [
+    ":accessToken" => $config["bitly"]["accessToken"],
 ]);
 
 $injector->delegate(PluginManager::class, function () use ($injector) {
@@ -156,6 +157,7 @@ $injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
 
 $injector->share(OpenIdClient::class);
 $injector->share(Logger::class);
+$injector->share(BitlyClient::class);
 $injector->share(HttpClient::class);
 $injector->share(ChatClient::class);
 $injector->share(new EmailAddress($config["username"]));
