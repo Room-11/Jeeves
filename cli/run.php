@@ -3,7 +3,8 @@
 
 namespace Room11\Jeeves;
 
-use Amp\Artax\Client as HttpClient;
+use Amp\Artax\HttpClient;
+use Amp\Artax\Client as ArtaxClient;
 use Amp\Websocket\Handshake;
 use Auryn\Injector;
 use Room11\Jeeves\Bitly\Client as BitlyClient;
@@ -93,6 +94,7 @@ $injector->delegate(FKey::class, function (Retriever $retriever, Room $room) {
     return $key;
 });
 
+$injector->alias(HttpClient::class, ArtaxClient::class);
 $injector->alias(AdminStorage::class, $config["storage"]["admin"]);
 $injector->alias(BanStorage::class, $config["storage"]["ban"]);
 $injector->define(AdminStorage::class, [":dataFile" => __DIR__ . "/../data/admins.json"]);
