@@ -23,7 +23,7 @@ class Xkcd implements Plugin {
     }
 
     private function getResult(Command $message): \Generator {
-        $uri = "https://www.google.com/search?q=site:xkcd.com+intitle%3A\"xkcd%3A+" . urlencode(implode(' ', $message->getParameters()));
+        $uri = "https://www.google.com/search?q=site:xkcd.com+intitle%3a%22xkcd%3a+%22+" . urlencode(implode(' ', $message->getParameters()));
 
         /** @var Response $response */
         $response = yield $this->httpClient->request($uri);
