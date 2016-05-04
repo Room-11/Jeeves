@@ -44,12 +44,6 @@ class Xkcd implements Plugin {
         $xpath = new \DOMXPath($dom);
         $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]/h3/a");
 
-        if (!$nodes->length) {
-            yield from $this->chatClient->postMessage(self::NOT_FOUND_COMIC);
-
-            return;
-        }
-
         foreach ($nodes as $node) {
             if (preg_match('~^/url\?q=(https://xkcd\.com/\d+/)~', $node->getAttribute('href'), $matches)) {
                 yield from $this->chatClient->postMessage($matches[1]);
