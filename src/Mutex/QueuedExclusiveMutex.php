@@ -1,11 +1,11 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves;
+namespace Room11\Jeeves\Mutex;
 
 use Amp\Deferred;
 use Amp\Promise;
 
-class Mutex
+class QueuedExclusiveMutex implements Mutex
 {
     /**
      * @var Deferred
@@ -44,7 +44,7 @@ class Mutex
             yield $last->promise();
         }
 
-        return new class($deferred)
+        return new class($deferred) implements Lock
         {
             private $deferred;
 

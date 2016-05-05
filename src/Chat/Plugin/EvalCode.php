@@ -11,7 +11,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostResponse;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
-use Room11\Jeeves\Mutex;
+use Room11\Jeeves\Mutex\QueuedExclusiveMutex;
 
 class EvalCode implements Plugin
 {
@@ -30,7 +30,7 @@ class EvalCode implements Plugin
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
 
-        $this->mutex = new Mutex();
+        $this->mutex = new QueuedExclusiveMutex();
     }
 
     private function getResult(Command $command): \Generator {

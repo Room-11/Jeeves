@@ -13,7 +13,7 @@ use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\Mutex;
+use Room11\Jeeves\Mutex\QueuedExclusiveMutex;
 
 class ChatClient {
     const MAX_POST_ATTEMPTS = 5;
@@ -33,8 +33,8 @@ class ChatClient {
         $this->room = $room;
         $this->logger = $logger;
 
-        $this->postMutex = new Mutex();
-        $this->editMutex = new Mutex();
+        $this->postMutex = new QueuedExclusiveMutex();
+        $this->editMutex = new QueuedExclusiveMutex();
     }
 
     public function getMessage(int $id): \Generator {
