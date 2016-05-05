@@ -33,7 +33,7 @@ class Ban implements BuiltInCommand
         }
 
         if ($command->getCommandName() === "ban" && $command->getParameter(0) === 'list') {
-            yield from $this->list();
+            yield from $this->list($command);
         } elseif ($command->getCommandName() === "ban") {
             if (!$command->hasParameters(2)) {
                 yield from $this->chatClient->postReply(
@@ -43,18 +43,18 @@ class Ban implements BuiltInCommand
                 return;
             }
 
-            yield from $this->add((int)$command->getParameter(0), $command->getParameter(1));
+            yield from $this->add($command, (int)$command->getParameter(0), $command->getParameter(1));
         } elseif ($command->getCommandName() === "unban") {
-            yield from $this->remove((int)$command->getParameter(0));
+            yield from $this->remove($command, (int)$command->getParameter(0));
         }
     }
 
-    private function list(): \Generator
+    private function list(Command $command): \Generator
     {
         $bans = yield from $this->storage->getAll();
 
         if (!$bans) {
-            yield from $this->chatClient->postMessage("No users are currently on the naughty list.");
+            yield from $this->chatClient->postMessage($command->getRoom(), "No users are currently on the naughty list.");
             return;
         }
 
@@ -62,19 +62,19 @@ class Ban implements BuiltInCommand
             return sprintf("%s (%s)", $userId, $expiration);
         }, $bans, array_keys($bans)));
 
-        yield from $this->chatClient->postMessage($list);
+        yield from $this->chatClient->postMessage($command->getRoom(), $list);
     }
 
-    private function add(int $userId, string $duration): \Generator {
+    private function add(Command $command, int $userId, string $duration): \Generator {
         yield from $this->storage->add($userId, $duration);
 
-        yield from $this->chatClient->postMessage("User is banned.");
+        yield from $this->chatClient->postMessage($command->getRoom(), "User is banned.");
     }
 
-    private function remove(int $userId): \Generator {
+    private function remove(Command $command, int $userId): \Generator {
         yield from $this->storage->remove($userId);
 
-        yield from $this->chatClient->postMessage("User is unbanned.");
+        yield from $this->chatClient->postMessage($command->getRoom(), "User is unbanned.");
     }
 
     /**

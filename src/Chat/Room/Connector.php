@@ -6,21 +6,21 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Fkey\FKey;
-use Room11\Jeeves\Fkey\Retriever as FKeyRetriever;
+use Room11\Jeeves\OpenId\Authenticator;
 use function Amp\all;
+use function Room11\Jeeves\domdocument_load_html;
 
 class Connector
 {
     private $httpClient;
-    private $fkeyRetriever;
     private $roomFactory;
+    private $authenticator;
 
-    public function __construct(HttpClient $httpClient, FKeyRetriever $fkeyRetriever, RoomFactory $roomFactory)
+    public function __construct(HttpClient $httpClient, RoomFactory $roomFactory, Authenticator $authenticator)
     {
         $this->httpClient = $httpClient;
-        $this->fkeyRetriever = $fkeyRetriever;
         $this->roomFactory = $roomFactory;
+        $this->authenticator = $authenticator;
     }
 
     public function connect(RoomIdentifier $identifier): \Generator
@@ -28,42 +28,89 @@ class Connector
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($identifier->getEndpointURL(Endpoint::UI));
 
-        $internalErrors = libxml_use_internal_errors(true);
-        $doc = new \DOMDocument();
-        $doc->loadHTML($response->getBody());
-        libxml_use_internal_errors($internalErrors);
+        $doc = domdocument_load_html($response->getBody());
+        $xpath = $this->isLoggedIn($doc)
+            ? new \DOMXPath($doc)
+            : yield from $this->logIn($doc);
 
-        $fkey = $this->fkeyRetriever->getFromDOMDocument($doc);
-        $mainSiteURL = $this->getMainSiteURL($doc);
+        $mainSiteURL = $this->getMainSiteURL($xpath);
+        $fkey = $this->getFKey($xpath);
 
         $webSocketURL = yield from $this->getWebSocketUri($identifier, $fkey);
 
         return $this->roomFactory->build($identifier, $fkey, $webSocketURL, $mainSiteURL);
     }
 
-    public function getMainSiteURL(\DOMDocument $doc): string
+    private function logIn(\DOMDocument $doc): \Generator
     {
-        $siteRefNodes = (new \DOMXPath($doc))->query("//td[@id='footer-logo']/a");
-        if ($siteRefNodes->length < 1) {
+        $url = $this->getLogInURL(new \DOMXPath($doc));
+
+        /** @var HttpResponse $response */
+        $response = yield from $this->authenticator->logIn($url);
+
+        $doc = domdocument_load_html($response->getBody());
+        if (!$this->isLoggedIn($doc)) {
+            throw new \RuntimeException('Still not logged in'); //todo
+        }
+
+        return new \DOMXPath($doc);
+    }
+
+    private function isLoggedIn(\DOMDocument $doc)
+    {
+        return $doc->getElementById('input') !== null;
+    }
+
+    private function getLogInURL(\DOMXPath $xpath): string
+    {
+        /** @var \DOMElement $node */
+
+        $nodes = $xpath->query("//div[@id='bubble']/a[text()='logged in']");
+        if ($nodes->length < 1) {
+            throw new \RuntimeException('Could not get login URL node'); //todo
+        }
+
+        $node = $nodes->item(0);
+        return $node->getAttribute('href');
+    }
+
+    private function getMainSiteURL(\DOMXPath $xpath): string
+    {
+        /** @var \DOMElement $node */
+
+        $nodes = $xpath->query("//td[@id='footer-logo']/a");
+        if ($nodes->length < 1) {
             throw new \RuntimeException('Could not find URL for the main site for this chat room');
         }
 
-        /** @var \DOMElement $siteRefNode */
-        $siteRefNode = $siteRefNodes->item(0);
-        return $siteRefNode->getAttribute('href');
+        $node = $nodes->item(0);
+        return $node->getAttribute('href');
     }
 
-    public function getWebSocketUri(RoomIdentifier $identifier, FKey $fKey): \Generator
+    private function getFKey(\DOMXPath $xpath): string
+    {
+        /** @var \DOMElement $node */
+
+        $nodes = $xpath->query("//input[@name='fkey']");
+        if ($nodes->length < 1) {
+            throw new \RuntimeException('Could not find fkey for chat room');
+        }
+
+        $node = $nodes->item(0);
+        return $node->getAttribute('value');
+    }
+
+    private function getWebSocketUri(RoomIdentifier $identifier, string $fKey): \Generator
     {
         $authBody = (new FormBody)
             ->addField("roomid", $identifier->getId())
-            ->addField("fkey", (string) $fKey);
+            ->addField("fkey", $fKey);
 
         $historyBody = (new FormBody)
             ->addField('since', 0)
             ->addField('mode', 'Messages')
             ->addField("msgCount", 1)
-            ->addField("fkey", (string) $fKey);
+            ->addField("fkey", $fKey);
 
         $requests = [
             'auth' => (new HttpRequest)

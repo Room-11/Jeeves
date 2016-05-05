@@ -7,6 +7,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use function Room11\Jeeves\domdocument_load_html;
 
 class RFC implements Plugin
 {
@@ -36,10 +37,7 @@ class RFC implements Plugin
             return;
         }
 
-        $internalErrors = libxml_use_internal_errors(true);
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getBody());
-        libxml_use_internal_errors($internalErrors);
+        $dom = domdocument_load_html($response->getBody());
 
         $list = $dom->getElementById("in_voting_phase")->nextSibling->nextSibling->getElementsByTagName("ul")->item(0);
         $rfcsInVoting = [];

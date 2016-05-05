@@ -12,7 +12,6 @@ use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
 use Room11\Jeeves\Chat\Plugin\Chuck as ChuckPlugin;
-//use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
 use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
 use Room11\Jeeves\Chat\Plugin\EvalCode as EvalPlugin;
 use Room11\Jeeves\Chat\Plugin\Google as GooglePlugin;
@@ -40,9 +39,7 @@ use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
 use Room11\Jeeves\OpenId\EmailAddress as OpenIdEmailAddress;
-use Room11\Jeeves\OpenId\OpenIdLogin;
 use Room11\Jeeves\OpenId\Password as OpenIdPassword;
-use Room11\Jeeves\OpenId\StackOverflowLogin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
@@ -52,6 +49,8 @@ use function Amp\resolve;
 use function Amp\run;
 use function Amp\wait;
 use function Amp\websocket;
+
+//use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../version.php';
@@ -79,8 +78,6 @@ $primaryRoomIdentifier = new ChatRoomIdentifier(
     $config['room']['hostname'] ?? 'chat.stackoverflow.com',
     $config['room']['secure'] ?? true
 );
-
-$injector->define(WebSocketHandler::class, [':host' => $primaryRoomIdentifier->getHost()]);
 
 $injector->delegate(Logger::class, function () use ($config) {
     $flags = array_map('trim', explode('|', $config['logging']['level'] ?? ''));
@@ -144,32 +141,33 @@ $injector->delegate(PluginManager::class, function () use ($injector) {
 });
 
 try {
-    /** @var OpenIdLogin $openIdLogin */
-    /** @var StackOverflowLogin $stackOverflowLogin */
-    /** @var ChatRoomConnector $chatRoomConnector */
-    /** @var ChatRoom $primaryRoom */
+    run(function () use ($injector, $primaryRoomIdentifier) {
+        /** @var ChatRoomIdentifier[] $roomIdentifiers */
+        /** @var ChatRoomConnector $chatRoomConnector */
+        /** @var ChatRoomCollection $chatRoomCollection */
 
-//    $openIdLogin = $injector->make(OpenIdLogin::class);
-//    wait(resolve($openIdLogin->logIn()));
+        $roomIdentifiers = [$primaryRoomIdentifier, new ChatRoomIdentifier(100286, 'chat.stackoverflow.com', true)];
 
-    $stackOverflowLogin = $injector->make(StackOverflowLogin::class);
-    wait(resolve($stackOverflowLogin->logIn()));
+        $chatRoomConnector = $injector->make(ChatRoomConnector::class);
+        $chatRoomCollection = $injector->make(ChatRoomCollection::class);
 
-    $chatRoomConnector = $injector->make(ChatRoomConnector::class);
-    $primaryRoom = wait(resolve($chatRoomConnector->connect($primaryRoomIdentifier)));
+        $sockets = [];
 
-    $room2 = wait(resolve($chatRoomConnector->connect(new ChatRoomIdentifier(100286, 'chat.stackoverflow.com', true))));
-    var_dump($primaryRoom, $room2);
+        foreach ($roomIdentifiers as $identifier) {
+            /** @var ChatRoom $room */
+            $room = yield from $chatRoomConnector->connect($identifier);
 
-    $injector->define(ChatRoomCollection::class, [':rooms' => [$primaryRoom, $room2]]);
+            $handshake = (new Handshake($room->getWebSocketURL()))
+                ->setHeader('Origin', $identifier->getOriginURL('http'));
+            $handler = $injector->make(WebSocketHandler::class, [':room' => $room]);
 
-    $handshake = new Handshake($primaryRoom->getWebSocketURL());
-    $handshake->setHeader('Origin', $primaryRoom->getIdentifier()->getOriginURL('http'));
+            $sockets[] = websocket($handler, $handshake);
+            $chatRoomCollection->add($room);
+        }
 
-    $webSocketHandler = $injector->make(WebSocketHandler::class);
-
-    run(function () use ($webSocketHandler, $handshake) {
-        yield websocket($webSocketHandler, $handshake);
+        while ($sockets) {
+            yield $sockets[0];
+        }
     });
 } catch (\Throwable $e) {
     fwrite(STDERR, "\nSomething went badly wrong:\n\n{$e}\n\n");

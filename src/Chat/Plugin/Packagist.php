@@ -7,6 +7,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use function Room11\Jeeves\domdocument_load_html;
 
 class Packagist implements Plugin
 {
@@ -67,13 +68,9 @@ class Packagist implements Plugin
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($url);
 
-        $internalErrors = libxml_use_internal_errors(true);
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getBody());
-        libxml_use_internal_errors($internalErrors);
-
-        $xpath = new \DOMXPath($dom);
-        $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' packages ')]/li");
+        $dom = domdocument_load_html($response->getBody());
+        $nodes = (new \DOMXPath($dom))
+            ->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' packages ')]/li");
 
         if ($nodes->length === 0) {
             throw new \RuntimeException('Search page contains no results');

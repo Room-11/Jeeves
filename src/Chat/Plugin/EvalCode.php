@@ -12,6 +12,7 @@ use Room11\Jeeves\Chat\Client\PostedMessage;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Mutex\QueuedExclusiveMutex;
+use function Room11\Jeeves\domdocument_load_html;
 
 class EvalCode implements Plugin
 {
@@ -69,14 +70,8 @@ class EvalCode implements Plugin
     }
 
     private function normalizeCode($code) {
-        $useInternalErrors = libxml_use_internal_errors(true);
-
-        $dom = new \DOMDocument();
-        $dom->loadHTML($code, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-
-        libxml_use_internal_errors($useInternalErrors);
-
-        $code = $dom->textContent;
+        $code = domdocument_load_html($code, 'UTF-8', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD)
+            ->textContent;
 
         if (strpos($code, '<?php') === false && strpos($code, '<?=') === false) {
             $code = "<?php {$code}";

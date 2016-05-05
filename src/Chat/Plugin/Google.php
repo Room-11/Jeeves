@@ -9,6 +9,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use function Amp\all;
+use function Room11\Jeeves\domdocument_load_html;
 
 class Google implements Plugin {
     use CommandOnlyPlugin;
@@ -53,7 +54,7 @@ class Google implements Plugin {
             return;
         }
 
-        $dom   = $this->buildDom($response->getBody());
+        $dom = domdocument_load_html($response->getBody());
         $xpath = new \DOMXPath($dom);
         $nodes = $this->getResultNodes($xpath);
 
@@ -73,17 +74,6 @@ class Google implements Plugin {
         yield from $this->chatClient->postReply(
             $command, sprintf("Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P", implode(' ', $command->getParameters()))
         );
-    }
-
-    private function buildDom($body): \DOMDocument {
-        $internalErrors = libxml_use_internal_errors(true);
-
-        $dom = new \DOMDocument();
-        $dom->loadHTML('<?xml encoding="utf-8" ?>' . $body);
-
-        libxml_use_internal_errors($internalErrors);
-
-        return $dom;
     }
 
     private function getResultNodes(\DOMXPath $xpath): \DOMNodeList {

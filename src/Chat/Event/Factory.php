@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\UnknownRoomException;
 
 class Factory
@@ -34,33 +35,31 @@ class Factory
 
     /**
      * @param array $data
-     * @param string $host
+     * @param ChatRoom $room
      * @return array|Event[]
      */
-    public function build(array $data, string $host): array
+    public function build(array $data, ChatRoom $room): array
     {
         $result = [];
 
-        foreach ($data as $room) {
-            foreach ($room['e'] ?? [] as $event) {
-                if (!isset($event['id'])) {
-                    continue;
-                }
+        foreach ($data['r' . $room->getIdentifier()->getId()]['e'] ?? [] as $event) {
+            if (!isset($event['id'])) {
+                continue;
+            }
 
-                $eventId = (int)$event['id'];
-                if (isset($result[$eventId])) {
-                    continue;
-                }
+            $eventId = (int)$event['id'];
+            if (isset($result[$eventId])) {
+                continue;
+            }
 
-                $eventType = (int)($event['event_type'] ?? 0);
+            $eventType = (int)($event['event_type'] ?? 0);
 
-                try {
-                    $result[$eventId] = isset($this->classes[$eventType])
-                        ? new $this->classes[$eventType]($event, $this->messageFactory, $host)
-                        : new Unknown($data);
-                } catch (UnknownRoomException $e) {
-                    continue;
-                }
+            try {
+                $result[$eventId] = isset($this->classes[$eventType])
+                    ? new $this->classes[$eventType]($event, $this->messageFactory, $room)
+                    : new Unknown($data);
+            } catch (UnknownRoomException $e) {
+                continue;
             }
         }
 

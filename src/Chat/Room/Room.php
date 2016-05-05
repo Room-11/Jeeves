@@ -2,8 +2,6 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
-use Room11\Jeeves\Fkey\FKey;
-
 class Room
 {
     private $identifier;
@@ -11,7 +9,7 @@ class Room
     private $mainSiteURL;
     private $webSocketURL;
 
-    public function __construct(RoomIdentifier $identifier, FKey $fKey, string $webSocketURL, string $mainSiteURL)
+    public function __construct(RoomIdentifier $identifier, string $fKey, string $webSocketURL, string $mainSiteURL)
     {
         $this->identifier = $identifier;
         $this->fKey = $fKey;
@@ -24,7 +22,7 @@ class Room
         return $this->identifier;
     }
 
-    public function getFKey(): FKey
+    public function getFKey(): string
     {
         return $this->fKey;
     }

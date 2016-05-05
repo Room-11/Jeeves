@@ -7,6 +7,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use function Room11\Jeeves\domdocument_load_html;
 
 class Imdb implements Plugin
 {
@@ -36,12 +37,7 @@ class Imdb implements Plugin
 
     private function getMessage(HttpResponse $response): string
     {
-        $internalErrors = libxml_use_internal_errors(true);
-
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getBody());
-
-        libxml_use_internal_errors($internalErrors);
+        $dom = domdocument_load_html($response->getBody());
 
         if ($dom->getElementsByTagName('resultset')->length === 0) {
             return 'I cannot find that title.';

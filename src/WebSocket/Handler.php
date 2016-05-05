@@ -9,6 +9,7 @@ use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\Unknown;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\PluginManager;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 
@@ -16,7 +17,7 @@ class Handler implements Websocket {
     private $eventFactory;
     private $builtInCommandManager;
     private $pluginManager;
-    private $host;
+    private $room;
     private $logger;
 
     public function __construct(
@@ -24,13 +25,13 @@ class Handler implements Websocket {
         BuiltInCommandManager $builtIns,
         PluginManager $plugins,
         Logger $logger,
-        string $host
+        ChatRoom $room
     ) {
         $this->eventFactory = $eventFactory;
         $this->pluginManager = $plugins;
         $this->builtInCommandManager = $builtIns;
         $this->logger = $logger;
-        $this->host = $host;
+        $this->room = $room;
     }
 
     public function onOpen(Websocket\Endpoint $endpoint, array $headers) {
@@ -40,7 +41,7 @@ class Handler implements Websocket {
     public function onData(Websocket\Message $msg): \Generator {
         $rawMessage = yield $msg;
 
-        foreach ($this->eventFactory->build(json_decode($rawMessage, true), $this->host) as $event) {
+        foreach ($this->eventFactory->build(json_decode($rawMessage, true), $this->room) as $event) {
             $this->logger->log(Level::EVENT, "Event received", [
                 "rawData" => $rawMessage,
                 "event" => $event,

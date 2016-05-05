@@ -7,6 +7,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use function Room11\Jeeves\domdocument_load_html;
 
 class NoComprendeException extends \RuntimeException {}
 
@@ -293,7 +294,7 @@ class Docs implements Plugin
      * @return string
      */
     private function getMessageFromMatch(HttpResponse $response): string {
-        $doc = $this->getHTMLDocFromResponse($response);
+        $doc = domdocument_load_html($response->getBody());
         $url = $response->getRequest()->getUri();
 
         try {
@@ -451,21 +452,9 @@ class Docs implements Plugin
         return trim(preg_replace('/\s+/', ' ', $message));
     }
 
-    private function getHTMLDocFromResponse(HttpResponse $response) : \DOMDocument
-    {
-        $internalErrors = libxml_use_internal_errors(true);
-
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getBody());
-
-        libxml_use_internal_errors($internalErrors);
-
-        return $dom;
-    }
-
     private function getMessageFromSearch(HttpResponse $response): \Generator {
         try {
-            $dom = $this->getHTMLDocFromResponse($response);
+            $dom = domdocument_load_html($response->getBody());
 
             /** @var \DOMElement $firstResult */
             $firstResult = $dom->getElementById("quickref_functions")->getElementsByTagName("li")->item(0);
