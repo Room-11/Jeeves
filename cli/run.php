@@ -145,12 +145,12 @@ $injector->delegate(PluginManager::class, function () use ($injector) {
 
 try {
     /** @var OpenIdLogin $openIdLogin */
-    /** @var StackOverflowLogin $openIdLogin */
+    /** @var StackOverflowLogin $stackOverflowLogin */
     /** @var ChatRoomConnector $chatRoomConnector */
     /** @var ChatRoom $primaryRoom */
 
-    $openIdLogin = $injector->make(OpenIdLogin::class);
-    wait(resolve($openIdLogin->logIn()));
+//    $openIdLogin = $injector->make(OpenIdLogin::class);
+//    wait(resolve($openIdLogin->logIn()));
 
     $stackOverflowLogin = $injector->make(StackOverflowLogin::class);
     wait(resolve($stackOverflowLogin->logIn()));
@@ -158,7 +158,10 @@ try {
     $chatRoomConnector = $injector->make(ChatRoomConnector::class);
     $primaryRoom = wait(resolve($chatRoomConnector->connect($primaryRoomIdentifier)));
 
-    $injector->define(ChatRoomCollection::class, [':rooms' => [$primaryRoom]]);
+    $room2 = wait(resolve($chatRoomConnector->connect(new ChatRoomIdentifier(100286, 'chat.stackoverflow.com', true))));
+    var_dump($primaryRoom, $room2);
+
+    $injector->define(ChatRoomCollection::class, [':rooms' => [$primaryRoom, $room2]]);
 
     $handshake = new Handshake($primaryRoom->getWebSocketURL());
     $handshake->setHeader('Origin', $primaryRoom->getIdentifier()->getOriginURL('http'));

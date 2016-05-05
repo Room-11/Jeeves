@@ -39,27 +39,28 @@ class Factory
      */
     public function build(array $data, string $host): array
     {
-        $message = reset($data);
         $result = [];
 
-        foreach ($message['e'] ?? [] as $event) {
-            if (!isset($event['id'])) {
-                continue;
-            }
+        foreach ($data as $room) {
+            foreach ($room['e'] ?? [] as $event) {
+                if (!isset($event['id'])) {
+                    continue;
+                }
 
-            $eventId = (int)$event['id'];
-            if (isset($result[$eventId])) {
-                continue;
-            }
+                $eventId = (int)$event['id'];
+                if (isset($result[$eventId])) {
+                    continue;
+                }
 
-            $eventType = (int)($event['event_type'] ?? 0);
+                $eventType = (int)($event['event_type'] ?? 0);
 
-            try {
-                $result[$eventId] = isset($this->classes[$eventType])
-                    ? new $this->classes[$eventType]($event, $this->messageFactory, $host)
-                    : new Unknown($data);
-            } catch(UnknownRoomException $e) {
-                // forget
+                try {
+                    $result[$eventId] = isset($this->classes[$eventType])
+                        ? new $this->classes[$eventType]($event, $this->messageFactory, $host)
+                        : new Unknown($data);
+                } catch (UnknownRoomException $e) {
+                    continue;
+                }
             }
         }
 
