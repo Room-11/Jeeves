@@ -34,6 +34,7 @@ use Room11\Jeeves\Chat\Plugin\Chuck as ChuckPlugin;
 use Room11\Jeeves\Chat\Plugin\Rebecca as RebeccaPlugin;
 use Room11\Jeeves\Chat\Plugin\Wotd as WotdPlugin;
 use Room11\Jeeves\Chat\Plugin\Google as GooglePlugin;
+use Room11\Jeeves\Chat\Plugin\HttpClient as HttpClientPlugin;
 use Room11\Jeeves\Chat\Room\Host;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
@@ -136,6 +137,7 @@ $injector->delegate(PluginManager::class, function () use ($injector) {
         RebeccaPlugin::class,
         WotdPlugin::class,
         GooglePlugin::class,
+        HttpClientPlugin::class,
     ];
 
     foreach ($plugins as $plugin) {
