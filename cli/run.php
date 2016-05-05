@@ -3,8 +3,6 @@
 
 namespace Room11\Jeeves;
 
-use Amp\Artax\HttpClient;
-use Amp\Artax\Client as ArtaxClient;
 use Amp\Websocket\Handshake;
 use Auryn\Injector;
 use Room11\Jeeves\Bitly\Client as BitlyClient;
@@ -12,106 +10,104 @@ use Room11\Jeeves\Chat\BuiltIn\Admin as AdminBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Ban as BanBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
-use Room11\Jeeves\Chat\Client\ChatClient;
-//use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
-use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
+use Room11\Jeeves\Chat\Plugin\Chuck as ChuckPlugin;
+//use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
 use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
 use Room11\Jeeves\Chat\Plugin\EvalCode as EvalPlugin;
+use Room11\Jeeves\Chat\Plugin\Google as GooglePlugin;
+use Room11\Jeeves\Chat\Plugin\HttpClient as HttpClientPlugin;
 use Room11\Jeeves\Chat\Plugin\Imdb as ImdbPlugin;
 use Room11\Jeeves\Chat\Plugin\Lick as LickPlugin;
 use Room11\Jeeves\Chat\Plugin\Man as ManPlugin;
+use Room11\Jeeves\Chat\Plugin\Mdn as MdnPlugin;
 use Room11\Jeeves\Chat\Plugin\Packagist as PackagistPlugin;
+use Room11\Jeeves\Chat\Plugin\Rebecca as RebeccaPlugin;
 use Room11\Jeeves\Chat\Plugin\Regex as RegexPlugin;
 use Room11\Jeeves\Chat\Plugin\RFC as RfcPlugin;
 use Room11\Jeeves\Chat\Plugin\SwordFight as SwordFightPlugin;
 use Room11\Jeeves\Chat\Plugin\Tweet as TweetPlugin;
 use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
 use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
-use Room11\Jeeves\Chat\Plugin\Xkcd as XkcdPlugin;
-use Room11\Jeeves\Chat\Plugin\Mdn as MdnPlugin;
-use Room11\Jeeves\Chat\Plugin\Chuck as ChuckPlugin;
-use Room11\Jeeves\Chat\Plugin\Rebecca as RebeccaPlugin;
 use Room11\Jeeves\Chat\Plugin\Wotd as WotdPlugin;
-use Room11\Jeeves\Chat\Plugin\Google as GooglePlugin;
-use Room11\Jeeves\Chat\Plugin\HttpClient as HttpClientPlugin;
-use Room11\Jeeves\Chat\Room\Host;
-use Room11\Jeeves\Chat\Room\Room;
-use Room11\Jeeves\Fkey\FKey;
-use Room11\Jeeves\Fkey\Retriever;
-use Room11\Jeeves\Log\Level;
+use Room11\Jeeves\Chat\Plugin\Xkcd as XkcdPlugin;
+use Room11\Jeeves\Chat\PluginManager;
+use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
+use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\Room\RoomIdentifier as ChatRoomIdentifier;
+use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\Log\StdOut;
-use Room11\Jeeves\OpenId\Client as OpenIdClient;
-use Room11\Jeeves\OpenId\EmailAddress;
-use Room11\Jeeves\OpenId\Password;
-use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
+use Room11\Jeeves\Log\StdOut as StdOutLogger;
+use Room11\Jeeves\OpenId\EmailAddress as OpenIdEmailAddress;
+use Room11\Jeeves\OpenId\OpenIdLogin;
+use Room11\Jeeves\OpenId\Password as OpenIdPassword;
+use Room11\Jeeves\OpenId\StackOverflowLogin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
-use Room11\Jeeves\WebSocket\Handler;
+use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
+use Room11\Jeeves\WebSocket\Handler as WebSocketHandler;
 use Symfony\Component\Yaml\Yaml;
+use function Amp\resolve;
+use function Amp\run;
+use function Amp\wait;
+use function Amp\websocket;
 
-require_once __DIR__ . "/../vendor/autoload.php";
-require_once __DIR__ . "/../version.php";
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../version.php';
 
-$config = Yaml::parse(file_get_contents(__DIR__ . "/../config/config.yml"));
+$config = Yaml::parse(file_get_contents(__DIR__ . '/../config/config.yml'));
 
 $injector = new Injector();
+require_once __DIR__ . '/setup-di.php';
 
-$injector->define(Host::class, [
-    ":hostname" => $config["room"]["hostname"] ?? "chat.stackoverflow.com",
-    ":secure" => $config["room"]["secure"] ?? true,
+$injector->alias(AdminStorage::class, $config['storage']['admin']);
+$injector->alias(BanStorage::class, $config['storage']['ban']);
+
+$injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);
+$injector->define(OpenIdEmailAddress::class, [':value' => $config['username']]);
+$injector->define(OpenIdPassword::class, [':value' => $config['password']]);
+$injector->define(TwitterCredentials::class, [
+    ':consumerKey' => $config['twitter']['consumerKey'],
+    ':consumerSecret' => $config['twitter']['consumerSecret'],
+    ':accessToken' => $config['twitter']['accessToken'],
+    ':accessTokenSecret' => $config['twitter']['accessTokenSecret'],
 ]);
 
-$injector->define(Room::class, [
-    ":id" => $config["room"]["id"],
-]);
+$primaryRoomIdentifier = new ChatRoomIdentifier(
+    $config['room']['id'],
+    $config['room']['hostname'] ?? 'chat.stackoverflow.com',
+    $config['room']['secure'] ?? true
+);
+
+$injector->define(WebSocketHandler::class, [':host' => $primaryRoomIdentifier->getHost()]);
 
 $injector->delegate(Logger::class, function () use ($config) {
-    $flags = array_map("trim", explode("|", $config["logging"]["level"] ?? ""));
+    $flags = array_map('trim', explode('|', $config['logging']['level'] ?? ''));
 
     if (empty($flags[0])) {
-        $flags = Level::ALL;
+        $flags = LogLevel::ALL;
     } else {
         $flags = array_reduce($flags, function ($carry, $flag) {
-            return $carry | constant(Level::class . "::$flag");
+            return $carry | constant(LogLevel::class . "::{$flag}");
         }, 0);
     }
 
-    $logger = $config["handler"] ?? StdOut::class;
+    $logger = $config['handler'] ?? StdOutLogger::class;
     return new $logger($flags);
 });
 
-$injector->delegate(FKey::class, function (Retriever $retriever, Room $room) {
-    $uri = sprintf(
-        "%s://%s/rooms/%d",
-        $room->getHost()->isSecure() ? "https" : "http",
-        $room->getHost()->getHostname(),
-        $room->getId()
-    );
+$injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
+    $builtInCommandManager = new BuiltInCommandManager($injector->make(BanStorage::class));
 
-    $key = $retriever->get($uri);
+    $commands = [AdminBuiltIn::class, BanBuiltIn::class, VersionBuiltIn::class];
 
-    return $key;
+    foreach ($commands as $command) {
+        $builtInCommandManager->register($injector->make($command));
+    }
+
+    return $builtInCommandManager;
 });
-
-$injector->alias(HttpClient::class, ArtaxClient::class);
-$injector->alias(AdminStorage::class, $config["storage"]["admin"]);
-$injector->alias(BanStorage::class, $config["storage"]["ban"]);
-$injector->define(AdminStorage::class, [":dataFile" => __DIR__ . "/../data/admins.json"]);
-$injector->define(BanStorage::class, [":dataFile" => __DIR__ . "/../data/bans.json"]);
-$injector->share(AdminStorage::class);
-$injector->share(BanStorage::class);
-
-$injector->define(TwitterCredentials::class, [
-    ":consumerKey" => $config["twitter"]["consumerKey"],
-    ":consumerSecret" => $config["twitter"]["consumerSecret"],
-    ":accessToken" => $config["twitter"]["accessToken"],
-    ":accessTokenSecret" => $config["twitter"]["accessTokenSecret"],
-]);
-$injector->define(BitlyClient::class, [
-    ":accessToken" => $config["bitly"]["accessToken"],
-]);
 
 $injector->delegate(PluginManager::class, function () use ($injector) {
     $pluginManager = new PluginManager($injector->make(AdminStorage::class), $injector->make(BanStorage::class));
@@ -147,39 +143,31 @@ $injector->delegate(PluginManager::class, function () use ($injector) {
     return $pluginManager;
 });
 
-$injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
-    $builtInCommandManager = new BuiltInCommandManager($injector->make(BanStorage::class));
+try {
+    /** @var OpenIdLogin $openIdLogin */
+    /** @var StackOverflowLogin $openIdLogin */
+    /** @var ChatRoomConnector $chatRoomConnector */
+    /** @var ChatRoom $primaryRoom */
 
-    $commands = [AdminBuiltIn::class, BanBuiltIn::class, VersionBuiltIn::class];
+    $openIdLogin = $injector->make(OpenIdLogin::class);
+    wait(resolve($openIdLogin->logIn()));
 
-    foreach ($commands as $command) {
-        $builtInCommandManager->register($injector->make($command));
-    }
+    $stackOverflowLogin = $injector->make(StackOverflowLogin::class);
+    wait(resolve($stackOverflowLogin->logIn()));
 
-    return $builtInCommandManager;
-});
+    $chatRoomConnector = $injector->make(ChatRoomConnector::class);
+    $primaryRoom = wait(resolve($chatRoomConnector->connect($primaryRoomIdentifier)));
 
-$injector->share(OpenIdClient::class);
-$injector->share(Logger::class);
-$injector->share(BitlyClient::class);
-$injector->share(HttpClient::class);
-$injector->share(ChatClient::class);
-$injector->share(new EmailAddress($config["username"]));
-$injector->share(new Password($config["password"]));
+    $injector->define(ChatRoomCollection::class, [':rooms' => [$primaryRoom]]);
 
-$openIdClient = $injector->make(OpenIdClient::class);
-$openIdClient->logIn();
+    $handshake = new Handshake($primaryRoom->getWebSocketURL());
+    $handshake->setHeader('Origin', $primaryRoom->getIdentifier()->getOriginURL('ws'));
 
-$room = $injector->make(Room::class);
-$handshake = new Handshake($openIdClient->getWebSocketUri($room));
-$handshake->setHeader("Origin", sprintf(
-    "%s://%s",
-    $room->getHost()->isSecure() ? "wss" : "ws",
-    $room->getHost()->getHostname()
-));
+    $webSocketHandler = $injector->make(WebSocketHandler::class);
 
-$webSocket = $injector->make(Handler::class);
-
-\Amp\run(function () use ($webSocket, $handshake) {
-    yield \Amp\websocket($webSocket, $handshake);
-});
+    run(function () use ($webSocketHandler, $handshake) {
+        yield websocket($webSocketHandler, $handshake);
+    });
+} catch (\Throwable $e) {
+    fwrite(STDERR, "\nSomething went badly wrong:\n\n{$e}\n\n");
+}

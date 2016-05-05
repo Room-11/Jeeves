@@ -3,14 +3,18 @@
 namespace Room11\Jeeves\Chat\Message;
 
 use Room11\Jeeves\Chat\Event\MessageEvent;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class Message
 {
     private $event;
 
-    public function __construct(MessageEvent $event)
+    private $room;
+
+    public function __construct(MessageEvent $event, ChatRoom $room)
     {
         $this->event = $event;
+        $this->room = $room;
     }
 
     public function getEvent(): MessageEvent
@@ -38,8 +42,8 @@ class Message
         return $this->event->getUserName();
     }
 
-    public function getRoomId(): int
+    public function getRoom(): ChatRoom
     {
-        return $this->event->getRoomId();
+        return $this->room;
     }
 }

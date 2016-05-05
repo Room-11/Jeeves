@@ -8,8 +8,8 @@ class DeleteMessage extends MessageEvent
 {
     const EVENT_TYPE_ID = 10;
 
-    public function __construct(array $data, MessageFactory $messageFactory)
+    public function __construct(array $data, MessageFactory $messageFactory, string $host)
     {
-        parent::__construct($data, $messageFactory);
+        parent::__construct($data, $messageFactory, $host);
     }
 }

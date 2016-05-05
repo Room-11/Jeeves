@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Message;
 
 use Room11\Jeeves\Chat\Event\MessageEvent;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class Command extends Message
 {
@@ -10,9 +11,9 @@ class Command extends Message
 
     private $parameters;
 
-    public function __construct(MessageEvent $event)
+    public function __construct(MessageEvent $event, ChatRoom $room)
     {
-        parent::__construct($event);
+        parent::__construct($event, $room);
 
         $commandParts = preg_split('#\s+#', trim($this->getText()), -1, PREG_SPLIT_NO_EMPTY);
 

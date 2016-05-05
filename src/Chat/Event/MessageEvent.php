@@ -27,7 +27,7 @@ abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourc
      */
     private $message;
 
-    protected function __construct(array $data, MessageFactory $messageFactory)
+    protected function __construct(array $data, MessageFactory $messageFactory, string $host)
     {
         parent::__construct((int)$data['id'], (int)$data['time_stamp']);
 
@@ -39,7 +39,7 @@ abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourc
         $this->messageId = (int)$data['message_id'];
         $this->messageContent = (string)$data['content'] ?? '';
 
-        $this->message = $messageFactory->build($this);
+        $this->message = $messageFactory->build($this, $host);
     }
 
     public function getMessage(): Message

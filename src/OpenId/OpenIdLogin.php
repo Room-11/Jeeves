@@ -22,21 +22,23 @@ class OpenIdLogin {
         $this->fkeyRetriever = $fkeyRetriever;
     }
 
-    public function logIn() {
+    public function logIn(): \Generator
+    {
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request(self::FKEY_URL);
+        $fkey = $this->fkeyRetriever->getFromHtml($response->getBody());
+
         $body = (new FormBody)
             ->addField("email", (string) $this->credentials->getEmailAddress())
             ->addField("password", (string) $this->credentials->getPassword())
-            ->addField("fkey", (string) $this->fkeyRetriever->get(self::FKEY_URL));
+            ->addField("fkey", (string) $fkey);
 
         $request = (new HttpRequest)
             ->setUri(self::LOGIN_URL)
             ->setMethod("POST")
             ->setBody($body);
 
-        $promise = $this->httpClient->request($request);
-
-        /** @var HttpResponse $response */
-        $response = \Amp\wait($promise);
+        $response = yield $this->httpClient->request($request);
 
         if ($response->getStatus() !== 200 || !$this->verifyLogin($response->getBody())) {
             throw new FailedAuthenticationException($response->getStatus() . " " . $response->getReason());

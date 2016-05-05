@@ -14,21 +14,23 @@ use Room11\Jeeves\Log\Logger;
 
 class Handler implements Websocket {
     private $eventFactory;
-    private $logger;
-
     private $builtInCommandManager;
     private $pluginManager;
+    private $host;
+    private $logger;
 
     public function __construct(
         EventFactory $eventFactory,
         BuiltInCommandManager $builtIns,
         PluginManager $plugins,
-        Logger $logger
+        Logger $logger,
+        string $host
     ) {
         $this->eventFactory = $eventFactory;
         $this->pluginManager = $plugins;
-        $this->logger = $logger;
         $this->builtInCommandManager = $builtIns;
+        $this->logger = $logger;
+        $this->host = $host;
     }
 
     public function onOpen(Websocket\Endpoint $endpoint, array $headers) {
@@ -38,7 +40,7 @@ class Handler implements Websocket {
     public function onData(Websocket\Message $msg): \Generator {
         $rawMessage = yield $msg;
 
-        foreach ($this->eventFactory->build(json_decode($rawMessage, true)) as $event) {
+        foreach ($this->eventFactory->build(json_decode($rawMessage, true), $this->host) as $event) {
             $this->logger->log(Level::EVENT, "Event received", [
                 "rawData" => $rawMessage,
                 "event" => $event,

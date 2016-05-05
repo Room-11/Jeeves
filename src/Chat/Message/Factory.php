@@ -4,19 +4,32 @@ namespace Room11\Jeeves\Chat\Message;
 
 use Room11\Jeeves\Chat\Event\MentionMessage;
 use Room11\Jeeves\Chat\Event\MessageEvent;
+use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
+use Room11\Jeeves\UnknownRoomException;
 
 class Factory
 {
-    public function build(MessageEvent $message): Message
+    private $chatRooms;
+
+    public function __construct(ChatRoomCollection $chatRooms)
     {
-        if (strpos($message->getMessageContent(), '!!') === 0) {
-            return new Command($message);
+        $this->chatRooms = $chatRooms;
+    }
+
+    public function build(MessageEvent $event, string $host): Message
+    {
+        if (!$room = $this->chatRooms->get($host, $event->getRoomId())) {
+            throw new UnknownRoomException("Unknown chat room {$host}#{$event->getRoomId()}");
         }
 
-        if ($message instanceof MentionMessage) {
-            return new Conversation($message);
+        if (strpos($event->getMessageContent(), '!!') === 0) {
+            return new Command($event, $room);
         }
 
-        return new Message($message);
+        if ($event instanceof MentionMessage) {
+            return new Conversation($event, $room);
+        }
+
+        return new Message($event, $room);
     }
 }

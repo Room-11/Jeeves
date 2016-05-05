@@ -10,9 +10,9 @@ class EditMessage extends MessageEvent
 
     private $numberOfEdits;
 
-    public function __construct(array $data, MessageFactory $messageFactory)
+    public function __construct(array $data, MessageFactory $messageFactory, string $host)
     {
-        parent::__construct($data, $messageFactory);
+        parent::__construct($data, $messageFactory, $host);
 
         $this->numberOfEdits = (int)$data['message_edits'];
     }
