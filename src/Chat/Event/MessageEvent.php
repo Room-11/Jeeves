@@ -28,11 +28,11 @@ abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourc
      */
     private $message;
 
-    protected function __construct(array $data, MessageFactory $messageFactory, ChatRoom $room)
+    protected function __construct(array $data, ChatRoom $room, MessageFactory $messageFactory)
     {
         parent::__construct((int)$data['id'], (int)$data['time_stamp']);
 
-        $this->roomId = (int)$data['room_id'];
+        $this->room = $room;
 
         $this->userId = (int)$data['user_id'];
         $this->userName = (string)$data['user_name'];
@@ -40,7 +40,7 @@ abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourc
         $this->messageId = (int)$data['message_id'];
         $this->messageContent = (string)$data['content'] ?? '';
 
-        $this->message = $messageFactory->build($this, $room);
+        $this->message = $messageFactory->build($this);
     }
 
     public function getMessage(): Message

@@ -56,7 +56,7 @@ class Factory
 
             try {
                 $result[$eventId] = isset($this->classes[$eventType])
-                    ? new $this->classes[$eventType]($event, $this->messageFactory, $room)
+                    ? new $this->classes[$eventType]($event, $room, $this->messageFactory)
                     : new Unknown($data);
             } catch (UnknownRoomException $e) {
                 continue;

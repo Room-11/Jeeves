@@ -4,28 +4,19 @@ namespace Room11\Jeeves\Chat\Message;
 
 use Room11\Jeeves\Chat\Event\MentionMessage;
 use Room11\Jeeves\Chat\Event\MessageEvent;
-use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class Factory
 {
-    private $chatRooms;
-
-    public function __construct(ChatRoomCollection $chatRooms)
-    {
-        $this->chatRooms = $chatRooms;
-    }
-
-    public function build(MessageEvent $event, ChatRoom $room): Message
+    public function build(MessageEvent $event): Message
     {
         if (strpos($event->getMessageContent(), '!!') === 0) {
-            return new Command($event, $room);
+            return new Command($event, $event->getRoom());
         }
 
         if ($event instanceof MentionMessage) {
-            return new Conversation($event, $room);
+            return new Conversation($event, $event->getRoom());
         }
 
-        return new Message($event, $room);
+        return new Message($event, $event->getRoom());
     }
 }
