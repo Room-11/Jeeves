@@ -3,36 +3,13 @@
 namespace Room11\Jeeves\Mutex;
 
 use Amp\Deferred;
-use Amp\Promise;
 
-class QueuedExclusiveMutex implements Mutex
+class QueuedExclusiveMutex extends Mutex
 {
     /**
      * @var Deferred
      */
     private $last;
-
-    public function withLock(callable $callback): \Generator
-    {
-        /** @var Lock $lock */
-        $lock = yield from $this->getLock();
-
-        try {
-            $result = $callback();
-
-            if ($result instanceof \Generator) {
-                return yield from $result;
-            }
-
-            if ($result instanceof Promise) {
-                return yield $result;
-            }
-
-            return $result;
-        } finally {
-            $lock->release();
-        }
-    }
 
     public function getLock(): \Generator
     {
@@ -51,7 +28,7 @@ class QueuedExclusiveMutex implements Mutex
 
             private $released;
 
-            public function __construct(Deferred $deferred = null)
+            public function __construct(Deferred $deferred)
             {
                 $this->deferred = $deferred;
             }
@@ -66,6 +43,7 @@ class QueuedExclusiveMutex implements Mutex
             public function release()
             {
                 $this->deferred->succeed();
+                $this->deferred = null; // remove our ref in case someone keeps their lock ref'd after they release
                 $this->released = true;
             }
         };
