@@ -2,10 +2,10 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\HttpClient;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Amp\Artax\HttpClient;
-use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Plugin;
 
 class Packagist implements Plugin
@@ -37,27 +37,31 @@ class Packagist implements Plugin
 
         $url = 'https://packagist.org/packages/' . urlencode($vendor) . '/' . urldecode($package) . '.json';
 
-        /** @var Response $response */
-        $response = yield $this->httpClient->request($url);
+        try {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($url);
 
-        if ($response->getStatus() !== 200) {
-            $response = yield from $this->getResultFromSearchFallback($vendor, $package);
+            if ($response->getStatus() !== 200) {
+                $response = yield from $this->getResultFromSearchFallback($vendor, $package);
+            }
+
+            $data = json_try_decode($response->getBody());
+
+            yield from $this->chatClient->postMessage(sprintf(
+                "[ [%s](%s) ] %s",
+                $data->package->name,
+                $data->package->repository,
+                $data->package->description
+            ));
+        } catch (\Throwable $e) {
+            yield from $this->chatClient->postReply($command, 'No matching packages found');
         }
-
-        $data = json_decode($response->getBody());
-
-        yield from $this->chatClient->postMessage(sprintf(
-            "[ [%s](%s) ] %s",
-            $data->package->name,
-            $data->package->repository,
-            $data->package->description
-        ));
     }
 
     private function getResultFromSearchFallback(string $vendor, string $package): \Generator {
         $url = 'https://packagist.org/search/?q=' . urlencode($vendor) . '%2F' . urldecode($package);
 
-        /** @var Response $response */
+        /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($url);
 
         $internalErrors = libxml_use_internal_errors(true);
@@ -68,7 +72,17 @@ class Packagist implements Plugin
         $xpath = new \DOMXPath($dom);
         $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' packages ')]/li");
 
-        return yield $this->httpClient->request('https://packagist.org' . $nodes->item(0)->getAttribute('data-url') . '.json');
+        if ($nodes->length === 0) {
+            throw new \RuntimeException('Search page contains no results');
+        }
+
+        /** @var \DOMElement $node */
+        $node = $nodes->item(0);
+        if (!$node->hasAttribute('data-url')) {
+            throw new \RuntimeException('First result has no URL');
+        }
+
+        return yield $this->httpClient->request('https://packagist.org' . $node->getAttribute('data-url') . '.json');
     }
 
     /**

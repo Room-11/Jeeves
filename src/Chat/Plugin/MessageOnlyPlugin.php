@@ -6,7 +6,7 @@ use Room11\Jeeves\Chat\Message\Command;
 
 trait MessageOnlyPlugin
 {
-    public function handleCommand(Command $command): \Generator { yield; }
+    public function handleCommand(/** @noinspection PhpUnusedParameterInspection */ Command $command): \Generator { yield; }
 
     public function getHandledCommands(): array { return []; }
 

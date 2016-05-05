@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
-use Amp\Artax\Response as ArtaxResponse;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -24,7 +24,7 @@ class Wikipedia implements Plugin
 
     private function getResult(Command $command): \Generator
     {
-        /** @var ArtaxResponse $response */
+        /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(
             'https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . rawurlencode(implode('%20', $command->getParameters()))
         );
@@ -41,7 +41,7 @@ class Wikipedia implements Plugin
 
     private function postResult(array $result): \Generator
     {
-        /** @var ArtaxResponse $response */
+        /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(
             'http://en.wikipedia.org/w/api.php?action=query&prop=info&pageids=' . $result['pageid'] . '&inprop=url&format=json'
         );

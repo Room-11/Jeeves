@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Event\NewMessage;
+use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Plugin;
 
 class CodeFormat implements Plugin {

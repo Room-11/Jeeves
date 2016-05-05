@@ -2,15 +2,15 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
-use Amp\Artax\HttpClient;
 use Amp\Artax\FormBody;
-use Amp\Artax\Request;
-use Amp\Artax\Response as ArtaxResponse;
+use Amp\Artax\HttpClient;
+use Amp\Artax\Request as HttpRequest;
+use Amp\Artax\Response as HttpResponse;
 use Amp\Pause;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
+use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\FKey;
-use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Mutex;
@@ -60,7 +60,7 @@ class ChatClient {
             $this->room->getId()
         );
 
-        $request = (new Request)
+        $request = (new HttpRequest)
             ->setUri($uri)
             ->setMethod("POST")
             ->setBody($body);
@@ -72,7 +72,7 @@ class ChatClient {
                 $this->postRecursionDepth++;
 
                 while ($attempt++ < self::MAX_POST_ATTEMPTS) {
-                    /** @var ArtaxResponse $response */
+                    /** @var HttpResponse $response */
                     $this->logger->log(Level::DEBUG, 'Post attempt ' . $attempt);
                     $response = yield $this->httpClient->request($request);
                     $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());
@@ -81,7 +81,7 @@ class ChatClient {
                         $decoded = json_try_decode($response->getBody(), true);
 
                         if (isset($decoded["id"], $decoded["time"])) {
-                            return new Response($decoded["id"], $decoded["time"]);
+                            return new PostResponse($decoded["id"], $decoded["time"]);
                         }
 
                         if ($attempt >= self::MAX_POST_ATTEMPTS) {
@@ -162,7 +162,7 @@ class ChatClient {
             $id
         );
 
-        $request = (new Request)
+        $request = (new HttpRequest)
             ->setUri($uri)
             ->setMethod("POST")
             ->setBody($body);
@@ -174,7 +174,7 @@ class ChatClient {
                 $this->postRecursionDepth++;
 
                 while ($attempt++ < self::MAX_POST_ATTEMPTS) {
-                    /** @var ArtaxResponse $response */
+                    /** @var HttpResponse $response */
                     $this->logger->log(Level::DEBUG, 'Edit attempt ' . $attempt);
                     $response = yield $this->httpClient->request($request);
                     $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());

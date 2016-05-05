@@ -2,16 +2,16 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Room11\Jeeves\Mutex;
-use Room11\Jeeves\Chat\Plugin;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\Response as ChatResponse;
-use Room11\Jeeves\Chat\Message\Command;
-use Amp\Artax\HttpClient;
-use Amp\Artax\Response as HttpResponse;
-use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\FormBody;
+use Amp\Artax\HttpClient;
+use Amp\Artax\Request as HttpRequest;
+use Amp\Artax\Response as HttpResponse;
 use Amp\Pause;
+use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PostResponse;
+use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Mutex;
 
 class EvalCode implements Plugin
 {
@@ -52,7 +52,7 @@ class EvalCode implements Plugin
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($request);
 
-            /** @var ChatResponse $chatMessage */
+            /** @var PostResponse $chatMessage */
             $chatMessage = yield from $this->chatClient->postMessage(
                 $this->getMessage(
                     "Waiting for results",

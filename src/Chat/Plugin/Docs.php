@@ -3,9 +3,9 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Plugin;
 
 class NoComprendeException extends \RuntimeException {}
@@ -243,7 +243,7 @@ class Docs implements Plugin
         $pattern = str_replace(['::', '->'], '.', $pattern);
         $url = self::LOOKUP_URL_BASE . rawurlencode($pattern);
 
-        /** @var Response $response */
+        /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($url);
 
         if ($response->getPreviousResponse() !== null) {
@@ -257,10 +257,10 @@ class Docs implements Plugin
         }
     }
 
-    private function preProcessMatch(Response $response, string $pattern) : \Generator
+    private function preProcessMatch(HttpResponse $response, string $pattern) : \Generator
     {
         if (preg_match('#/book\.[^.]+\.php$#', $response->getRequest()->getUri(), $matches)) {
-            /** @var Response $classResponse */
+            /** @var HttpResponse $classResponse */
             $classResponse = yield $this->httpClient->request(self::MANUAL_URL_BASE . '/class.' . rawurlencode($pattern) . '.php');
 
             if ($classResponse->getStatus() != 404) {
@@ -286,10 +286,10 @@ class Docs implements Plugin
      * @uses getClassDetails()
      * @uses getBookDetails()
      * @uses getPageDetailsFromH2()
-     * @param Response $response
+     * @param HttpResponse $response
      * @return string
      */
-    private function getMessageFromMatch(Response $response): string {
+    private function getMessageFromMatch(HttpResponse $response): string {
         $doc = $this->getHTMLDocFromResponse($response);
         $url = $response->getRequest()->getUri();
 
@@ -448,7 +448,7 @@ class Docs implements Plugin
         return trim(preg_replace('/\s+/', ' ', $message));
     }
 
-    private function getHTMLDocFromResponse(Response $response) : \DOMDocument
+    private function getHTMLDocFromResponse(HttpResponse $response) : \DOMDocument
     {
         $internalErrors = libxml_use_internal_errors(true);
 
@@ -460,7 +460,7 @@ class Docs implements Plugin
         return $dom;
     }
 
-    private function getMessageFromSearch(Response $response): \Generator {
+    private function getMessageFromSearch(HttpResponse $response): \Generator {
         try {
             $dom = $this->getHTMLDocFromResponse($response);
 

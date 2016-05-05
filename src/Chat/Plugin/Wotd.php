@@ -2,10 +2,10 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\HttpClient;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Amp\Artax\HttpClient;
-use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Plugin;
 
 class Wotd implements Plugin
@@ -33,7 +33,7 @@ class Wotd implements Plugin
         );
     }
 
-    private function getMessage(Response $response): string
+    private function getMessage(HttpResponse $response): string
     {
         $internalErrors = libxml_use_internal_errors(true);
 

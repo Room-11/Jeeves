@@ -4,10 +4,10 @@ namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
-use Room11\Jeeves\Chat\Message\Command;
 
 class Ban implements BuiltInCommand
 {

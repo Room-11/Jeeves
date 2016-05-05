@@ -2,10 +2,10 @@
 
 namespace Room11\Jeeves\OpenId;
 
-use Amp\Artax\HttpClient;
 use Amp\Artax\FormBody;
-use Amp\Artax\Request;
-use Amp\Artax\Response;
+use Amp\Artax\HttpClient;
+use Amp\Artax\Request as HttpRequest;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Fkey\Retriever as FkeyRetriever;
 
 class OpenIdLogin {
@@ -28,14 +28,14 @@ class OpenIdLogin {
             ->addField("password", (string) $this->credentials->getPassword())
             ->addField("fkey", (string) $this->fkeyRetriever->get(self::FKEY_URL));
 
-        $request = (new Request)
+        $request = (new HttpRequest)
             ->setUri(self::LOGIN_URL)
             ->setMethod("POST")
             ->setBody($body);
 
         $promise = $this->httpClient->request($request);
 
-        /** @var Response $response */
+        /** @var HttpResponse $response */
         $response = \Amp\wait($promise);
 
         if ($response->getStatus() !== 200 || !$this->verifyLogin($response->getBody())) {

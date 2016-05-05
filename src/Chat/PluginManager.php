@@ -2,13 +2,13 @@
 
 namespace Room11\Jeeves\Chat;
 
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Event\MessageEvent;
+use Room11\Jeeves\Chat\Event\UserSourcedEvent;
+use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
-use Room11\Jeeves\Chat\Event\Event;
-use Room11\Jeeves\Chat\Event\UserSourcedEvent;
 use function Amp\all;
 use function Amp\resolve;
 

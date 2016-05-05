@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
-use Amp\Artax\Response as ArtaxResponse;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -23,7 +23,7 @@ class Mdn implements Plugin {
 
     private function getResult(Command $command): \Generator
     {
-        /** @var ArtaxResponse $response */
+        /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(
             'https://developer.mozilla.org/en-US/search.json?highlight=false&q=' . rawurlencode(implode('%20', $command->getParameters()))
         );

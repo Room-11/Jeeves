@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Fkey;
 
 use Amp\Artax\HttpClient;
+use Amp\Artax\Response as HttpResponse;
 
 class Retriever
 {
@@ -15,9 +16,8 @@ class Retriever
 
     public function get(string $url): FKey
     {
-        $promise = $this->httpClient->request($url);
-
-        $response = \Amp\wait($promise);
+        /** @var HttpResponse $response */
+        $response = \Amp\wait($this->httpClient->request($url));
 
         return new FKey($this->getFromHtml($response->getBody()));
     }
@@ -29,6 +29,7 @@ class Retriever
         $dom->loadHTML($html);
         libxml_use_internal_errors($internalErrors);
 
+        /** @var \DOMElement $inputNode */
         foreach ($dom->getElementsByTagName('input') as $inputNode) {
             if (!$inputNode->hasAttribute('name') || $inputNode->getAttribute('name') !== 'fkey') {
                 continue;

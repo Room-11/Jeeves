@@ -9,7 +9,7 @@ use Room11\Jeeves\Chat\Message\Message;
  */
 trait CommandOnlyPlugin
 {
-    public function handleMessage(Message $message): \Generator { yield; }
+    public function handleMessage(/** @noinspection PhpUnusedParameterInspection */ Message $message): \Generator { yield; }
 
     public function handlesAllMessages(): bool { return false; }
 }

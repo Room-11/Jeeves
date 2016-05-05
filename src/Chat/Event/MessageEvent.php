@@ -4,8 +4,8 @@ namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\Traits\RoomSource;
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
-use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
+use Room11\Jeeves\Chat\Message\Message;
 
 abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourcedEvent
 {

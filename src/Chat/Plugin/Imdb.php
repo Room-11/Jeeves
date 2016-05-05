@@ -2,10 +2,10 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\HttpClient;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Amp\Artax\HttpClient;
-use Amp\Artax\Response;
 use Room11\Jeeves\Chat\Plugin;
 
 class Imdb implements Plugin
@@ -33,7 +33,7 @@ class Imdb implements Plugin
         );
     }
 
-    private function getMessage(Response $response): string
+    private function getMessage(HttpResponse $response): string
     {
         $internalErrors = libxml_use_internal_errors(true);
 
@@ -48,10 +48,12 @@ class Imdb implements Plugin
 
         /** @var \DOMElement $result */
         $result = $dom->getElementsByTagName('imdbentity')->item(0);
+        /** @var \DOMText $titleNode */
+        $titleNode = $result->firstChild;
 
         return sprintf(
             '[ [%s](%s) ] %s',
-            $result->firstChild->wholeText,
+            $titleNode->wholeText,
             'http://www.imdb.com/title/' . $result->getAttribute('id'),
             $result->getElementsByTagName('description')->item(0)->textContent
         );

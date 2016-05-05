@@ -3,11 +3,11 @@
 namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Amp\Artax\HttpClient;
-use Amp\Promise;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\all;
 
@@ -79,7 +79,6 @@ class Admin implements BuiltInCommand
     }
 
     private function getUserData(array $userIds): \Generator {
-        /** @var Promise[] $promiseArray */
         $userProfiles = yield all($this->httpClient->requestMulti(array_map(function($userId) {
             return "http://stackoverflow.com/users/$userId";
         }, $userIds)));
@@ -87,6 +86,10 @@ class Admin implements BuiltInCommand
         return $this->parseUserProfiles($userProfiles);
     }
 
+    /**
+     * @param HttpResponse[] $userProfiles
+     * @return array
+     */
     private function parseUserProfiles(array $userProfiles): array {
         $errorState = libxml_use_internal_errors(true);
 
@@ -100,11 +103,20 @@ class Admin implements BuiltInCommand
             $dom->loadHTML('<?xml encoding="UTF-8">' . $profile->getBody());
 
             $xpath = new \DOMXPath($dom);
+            $usernameNodes = $xpath->query("//h2[@class='user-card-name']/text()");
+            $profileNodes = $xpath->query("//link[@rel='canonical']");
 
-            $userData[] = [
-                'username' => trim($xpath->query("//h2[@class='user-card-name']/text()")->item(0)->textContent),
-                'profile'  => $xpath->query("//link[@rel='canonical']")->item(0)->getAttribute("href"),
-            ];
+            if ($usernameNodes->length > 0 && $profileNodes->length > 0) {
+                /** @var \DOMText $usernameNode */
+                $usernameNode = $usernameNodes->item(0);
+                /** @var \DOMElement $profileNode */
+                $profileNode = $profileNodes->item(0);
+
+                $userData[] = [
+                    'username' => trim($usernameNode->textContent),
+                    'profile'  => $profileNode->getAttribute("href"),
+                ];
+            }
         }
 
         libxml_use_internal_errors($errorState);

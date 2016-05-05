@@ -2,8 +2,8 @@
 
 namespace Room11\Jeeves\Chat;
 
-use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Message\Message;
 
 interface Plugin
 {

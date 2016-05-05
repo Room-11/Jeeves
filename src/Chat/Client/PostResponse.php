@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
-class Response {
+class PostResponse {
     private $messageId;
 
     private $timestamp;

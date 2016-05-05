@@ -2,14 +2,14 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\HttpClient;
+use Amp\Artax\Request as HttpRequest;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Twitter\Credentials;
-use Room11\Jeeves\Chat\Message\Command;
-use Amp\Artax\HttpClient;
-use Amp\Artax\Response;
-use Amp\Artax\Request;
 
 class Tweet implements Plugin
 {
@@ -91,10 +91,10 @@ class Tweet implements Plugin
 
         $authorizationHeader = $auth = "OAuth " . urldecode(http_build_query($oauthParameters, '', ', '));
 
-        $request = (new Request)
+        $request = (new HttpRequest)
             ->setUri(self::BASE_URI . "/statuses/update.json")
-            ->setProtocol('1.1')
             ->setMethod('POST')
+            ->setProtocol('1.1')
             ->setBody('status=' . urlencode($tweetText))
             ->setAllHeaders([
                 'Authorization' => $authorizationHeader,
@@ -102,7 +102,7 @@ class Tweet implements Plugin
             ])
         ;
 
-        /** @var Response $result */
+        /** @var HttpResponse $result */
         $result    = yield $this->httpClient->request($request);
         $tweetInfo = json_decode($result->getBody(), true);
         $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
@@ -123,7 +123,7 @@ class Tweet implements Plugin
     private function getMessage(string $url): \Generator {
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
-        /** @var Response $messageInfo */
+        /** @var HttpResponse $messageInfo */
         $messageInfo = yield from $this->chatClient->getMessage((int) $matches[1]);
 
         $messageBody = html_entity_decode($messageInfo->getBody(), ENT_QUOTES);
@@ -216,17 +216,17 @@ class Tweet implements Plugin
 
         $authorizationHeader = $auth = "OAuth " . urldecode(http_build_query($oauthParameters, '', ', '));
 
-        $request = (new Request)
+        $request = (new HttpRequest)
             ->setUri(self::BASE_URI . "/help/configuration.json")
-            ->setProtocol('1.1')
             ->setMethod('GET')
+            ->setProtocol('1.1')
             ->setAllHeaders([
                 'Authorization' => $authorizationHeader,
                 'Content-Type'  => 'application/x-www-form-urlencoded',
             ])
         ;
 
-        /** @var Response $result */
+        /** @var HttpResponse $result */
         $result = yield $this->httpClient->request($request);
 
         $this->twitterConfig = json_decode($result->getBody(), true);

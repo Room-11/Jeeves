@@ -2,12 +2,12 @@
 
 namespace Room11\Jeeves\Storage\File;
 
-use Room11\Jeeves\Storage\Admin as AdminList;
+use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\File\exists;
 use function Amp\File\get;
 use function Amp\File\put;
 
-class Admin implements AdminList
+class Admin implements AdminStorage
 {
     private $dataFile;
 

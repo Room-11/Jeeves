@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
-use Amp\Artax\Response;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -25,7 +25,7 @@ class Xkcd implements Plugin {
     private function getResult(Command $message): \Generator {
         $uri = "https://www.google.com/search?q=site:xkcd.com+intitle%3a%22xkcd%3a+%22+" . urlencode(implode(' ', $message->getParameters()));
 
-        /** @var Response $response */
+        /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
@@ -44,6 +44,7 @@ class Xkcd implements Plugin {
         $xpath = new \DOMXPath($dom);
         $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]/h3/a");
 
+        /** @var \DOMElement $node */
         foreach ($nodes as $node) {
             if (preg_match('~^/url\?q=(https://xkcd\.com/\d+/)~', $node->getAttribute('href'), $matches)) {
                 yield from $this->chatClient->postMessage($matches[1]);

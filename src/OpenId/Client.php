@@ -2,10 +2,10 @@
 
 namespace Room11\Jeeves\OpenId;
 
-use Amp\Artax\HttpClient;
 use Amp\Artax\FormBody;
-use Amp\Artax\Request;
-use Amp\Artax\Response;
+use Amp\Artax\HttpClient;
+use Amp\Artax\Request as HttpRequest;
+use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Fkey\Retriever as FkeyRetriever;
 
@@ -45,23 +45,23 @@ class Client {
             ->addField("fkey", $fKey);
 
         $requests = [
-            'auth' => (new Request)
+            'auth' => (new HttpRequest)
                 ->setUri($origin . "/ws-auth")
                 ->setMethod("POST")
                 ->setBody($authBody),
-            'history' => (new Request)
+            'history' => (new HttpRequest)
                 ->setUri("{$origin}/chats/{$room->getId()}/events")
                 ->setMethod("POST")
                 ->setBody($historyBody),
         ];
 
         $promise = \Amp\all($this->httpClient->requestMulti($requests));
-        /** @var Response[] $responses */
+        /** @var HttpResponse[] $responses */
         $responses = \Amp\wait($promise);
 
         $authInfo = json_try_decode($responses['auth']->getBody(), true);
         $historyInfo = json_try_decode($responses['history']->getBody(), true);
-        
+
         if (!isset($authInfo['url'])) {
             throw new \RuntimeException("WebSocket auth did not return URL");
         }

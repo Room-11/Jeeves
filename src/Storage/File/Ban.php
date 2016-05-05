@@ -2,12 +2,12 @@
 
 namespace Room11\Jeeves\Storage\File;
 
-use Room11\Jeeves\Storage\Ban as BanList;
+use Room11\Jeeves\Storage\Ban as BanStorage;
 use function Amp\File\exists;
 use function Amp\File\get;
 use function Amp\File\put;
 
-class Ban implements BanList
+class Ban implements BanStorage
 {
     private $dataFile;
 
