@@ -8,6 +8,7 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Fkey\FKey;
 use Room11\Jeeves\Fkey\Retriever as FKeyRetriever;
+use function Amp\all;
 
 class Connector
 {
@@ -37,7 +38,7 @@ class Connector
 
         $webSocketURL = yield from $this->getWebSocketUri($identifier, $fkey);
 
-        return $this->roomFactory->build($identifier, $fkey, $mainSiteURL, $webSocketURL);
+        return $this->roomFactory->build($identifier, $fkey, $webSocketURL, $mainSiteURL);
     }
 
     public function getMainSiteURL(\DOMDocument $doc): string
@@ -76,7 +77,7 @@ class Connector
         ];
 
         /** @var HttpResponse[] $responses */
-        $responses = yield $this->httpClient->requestMulti($requests);
+        $responses = yield all($this->httpClient->requestMulti($requests));
 
         $authInfo = json_try_decode($responses['auth']->getBody(), true);
         $historyInfo = json_try_decode($responses['history']->getBody(), true);

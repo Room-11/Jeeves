@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Amp\Artax\HttpClient as ArtaxClient;
+use Amp\Artax\Client as ArtaxClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
@@ -39,12 +39,12 @@ class HttpClient implements Plugin
             $response = yield $this->httpClient->request($this->getRequest($command));
 
             // there has to be a better way to revert to the current settings...
-            $this->httpClient->setOption($this->httpClient::OP_FOLLOW_LOCATION, true);
-            $this->httpClient->setOption($this->httpClient::OP_DEFAULT_USER_AGENT, $this->httpClient::USER_AGENT);
+            $this->httpClient->setOption(ArtaxClient::OP_FOLLOW_LOCATION, true);
+            $this->httpClient->setOption(ArtaxClient::OP_DEFAULT_USER_AGENT, ArtaxClient::USER_AGENT);
 
-            yield from $this->chatClient->postMessage($this->formatResult($response));
+            yield from $this->chatClient->postMessage($command->getRoom(), $this->formatResult($response));
         } catch (\RuntimeException $e) {
-            yield from $this->chatClient->postMessage($e->getMessage());
+            yield from $this->chatClient->postMessage($command->getRoom(), $e->getMessage());
         }
     }
 
@@ -56,7 +56,7 @@ class HttpClient implements Plugin
             }
 
             if ($parameter === 'nofollow') {
-                $this->httpClient->setOption($this->httpClient::OP_FOLLOW_LOCATION, false);
+                $this->httpClient->setOption(ArtaxClient::OP_FOLLOW_LOCATION, false);
 
                 continue;
             }
@@ -67,7 +67,7 @@ class HttpClient implements Plugin
 
     private function setUserAgent(string $userAgent)
     {
-        $this->httpClient->setOption($this->httpClient::OP_DEFAULT_USER_AGENT, self::USER_AGENTS[$userAgent]);
+        $this->httpClient->setOption(ArtaxClient::OP_DEFAULT_USER_AGENT, self::USER_AGENTS[$userAgent]);
     }
 
     private function getRequest(Command $command): HttpRequest
@@ -89,6 +89,8 @@ class HttpClient implements Plugin
                     ->setBody($this->getPostBody($command))
                 ;
         }
+
+        throw new \InvalidArgumentException('Invalid command routed to plugin: ' . $command->getCommandName());
     }
 
     private function getRequestUrl(Command $command): string

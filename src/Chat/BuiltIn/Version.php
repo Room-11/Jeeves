@@ -17,7 +17,7 @@ class Version implements BuiltInCommand
         $this->chatClient = $chatClient;
     }
 
-    private function getVersion(): \Generator
+    private function getVersion(Command $command): \Generator
     {
         $version = (new SebastianVersion(VERSION, dirname(dirname(dirname(__DIR__)))))->getVersion();
 
@@ -31,7 +31,7 @@ class Version implements BuiltInCommand
             );
         }, $version);
 
-        yield from $this->chatClient->postMessage($version);
+        yield from $this->chatClient->postMessage($command->getRoom(), $version);
     }
 
     /**
@@ -42,7 +42,7 @@ class Version implements BuiltInCommand
      */
     public function handleCommand(Command $command): \Generator
     {
-        yield from $this->getVersion();
+        yield from $this->getVersion($command);
     }
 
     /**

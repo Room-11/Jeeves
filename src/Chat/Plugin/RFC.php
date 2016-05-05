@@ -21,7 +21,7 @@ class RFC implements Plugin
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(): \Generator {
+    private function getResult(Command $command): \Generator {
         $uri = "https://wiki.php.net/rfc";
 
         /** @var HttpResponse $response */
@@ -29,6 +29,7 @@ class RFC implements Plugin
 
         if ($response->getStatus() !== 200) {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 "Nope, we can't have nice things."
             );
 
@@ -60,15 +61,18 @@ class RFC implements Plugin
         }
 
         if (empty($rfcsInVoting)) {
-            yield from $this->chatClient->postMessage("Sorry, but we can't have nice things.");
+            yield from $this->chatClient->postMessage($command->getRoom(), "Sorry, but we can't have nice things.");
 
             return;
         }
 
-        yield from $this->chatClient->postMessage(sprintf(
-            "[tag:rfc-vote] %s",
-            implode(" | ", $rfcsInVoting)
-        ));
+        yield from $this->chatClient->postMessage(
+            $command->getRoom(),
+            sprintf(
+                "[tag:rfc-vote] %s",
+                implode(" | ", $rfcsInVoting)
+            )
+        );
     }
 
     /**
@@ -79,7 +83,7 @@ class RFC implements Plugin
      */
     public function handleCommand(Command $command): \Generator
     {
-        yield from $this->getResult();
+        yield from $this->getResult($command);
     }
 
     /**

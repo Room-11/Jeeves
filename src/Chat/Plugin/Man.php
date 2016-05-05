@@ -40,7 +40,7 @@ class Man implements Plugin
         $xpath = new \DOMXPath($dom);
 
         if ($this->isFound($xpath)) {
-            yield from $this->postResult($xpath, $response->getRequest()->getUri());
+            yield from $this->postResult($command, $xpath, $response->getRequest()->getUri());
         } else {
             yield from $this->postNoResult($command);
         }
@@ -81,8 +81,9 @@ class Man implements Plugin
         ));
     }
 
-    private function postResult(\DOMXPath $xpath, string $url): \Generator {
+    private function postResult(Command $command, \DOMXPath $xpath, string $url): \Generator {
         yield from $this->chatClient->postMessage(
+            $command->getRoom(),
             sprintf(
                 "[ [`%s`%s](%s) ] `%s`",
                 $this->getName($xpath),

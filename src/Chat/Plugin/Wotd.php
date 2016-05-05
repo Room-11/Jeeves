@@ -22,13 +22,14 @@ class Wotd implements Plugin
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(): \Generator
+    private function getResult(Command $command): \Generator
     {
         $response = yield $this->httpClient->request(
             'http://www.dictionary.com/wordoftheday/wotd.rss'
         );
 
         yield from $this->chatClient->postMessage(
+            $command->getRoom(),
             $this->getMessage($response)
         );
     }
@@ -60,7 +61,7 @@ class Wotd implements Plugin
      */
     public function handleCommand(Command $command): \Generator
     {
-        yield from $this->getResult();
+        yield from $this->getResult($command);
     }
 
     /**

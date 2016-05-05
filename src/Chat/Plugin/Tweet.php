@@ -50,7 +50,7 @@ class Tweet implements Plugin
 
         yield from $this->updateConfigWhenNeeded();
 
-        $tweetText = yield from $this->getMessage($command->getParameters()[0]);
+        $tweetText = yield from $this->getMessage($command, $command->getParameters()[0]);
 
         if (mb_strlen($tweetText, "UTF-8") > 140) {
             yield from $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
@@ -120,11 +120,11 @@ class Tweet implements Plugin
 
     // @todo convert URLs to shortened URLs
     // @todo handle twitter's character limit. perhaps we can do some clever replacing when above the limit?
-    private function getMessage(string $url): \Generator {
+    private function getMessage(Command $command, string $url): \Generator {
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
         /** @var HttpResponse $messageInfo */
-        $messageInfo = yield from $this->chatClient->getMessage((int) $matches[1]);
+        $messageInfo = yield from $this->chatClient->getMessage($command->getRoom(), (int) $matches[1]);
 
         $messageBody = html_entity_decode($messageInfo->getBody(), ENT_QUOTES);
 

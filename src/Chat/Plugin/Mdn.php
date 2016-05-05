@@ -35,17 +35,17 @@ class Mdn implements Plugin {
         }
 
         if(isset($firstHit) && isset($firstHit["id"]) && isset($firstHit["url"])) {
-            yield from $this->postResult($firstHit);
+            yield from $this->postResult($command, $firstHit);
         } else {
             yield from $this->postNoResult($command);
         }
     }
 
-    private function postResult(array $result): \Generator
+    private function postResult(Command $command, array $result): \Generator
     {
         $message = sprintf("[ [%s](%s) ] %s", $result["title"], $result["url"], $result["excerpt"]);
 
-        yield from $this->chatClient->postMessage($message);
+        yield from $this->chatClient->postMessage($command->getRoom(), $message);
     }
 
     private function postNoResult(Command $command): \Generator

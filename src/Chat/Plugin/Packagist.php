@@ -47,12 +47,15 @@ class Packagist implements Plugin
 
             $data = json_try_decode($response->getBody());
 
-            yield from $this->chatClient->postMessage(sprintf(
-                "[ [%s](%s) ] %s",
-                $data->package->name,
-                $data->package->repository,
-                $data->package->description
-            ));
+            yield from $this->chatClient->postMessage(
+                $command->getRoom(),
+                sprintf(
+                    "[ [%s](%s) ] %s",
+                    $data->package->name,
+                    $data->package->repository,
+                    $data->package->description
+                )
+            );
         } catch (\Throwable $e) {
             yield from $this->chatClient->postReply($command, 'No matching packages found');
         }

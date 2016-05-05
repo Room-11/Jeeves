@@ -33,13 +33,13 @@ class Wikipedia implements Plugin
         $firstHit = reset($result['query']['pages']);
 
         if (isset($firstHit['pageid'])) {
-            yield from $this->postResult($firstHit);
+            yield from $this->postResult($command, $firstHit);
         } else {
             yield from $this->postNoResult($command);
         }
     }
 
-    private function postResult(array $result): \Generator
+    private function postResult(Command $command, array $result): \Generator
     {
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(
@@ -48,7 +48,7 @@ class Wikipedia implements Plugin
 
         $page = json_decode($response->getBody(), true);
 
-        yield from $this->chatClient->postMessage($page['query']['pages'][$result['pageid']]['canonicalurl']);
+        yield from $this->chatClient->postMessage($command->getRoom(), $page['query']['pages'][$result['pageid']]['canonicalurl']);
     }
 
     private function postNoResult(Command $command): \Generator

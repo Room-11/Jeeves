@@ -217,8 +217,8 @@ class Docs implements Plugin
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(Command $message): \Generator {
-        $pattern = strtolower(implode(' ', $message->getParameters()));
+    private function getResult(Command $command): \Generator {
+        $pattern = strtolower(implode(' ', $command->getParameters()));
 
         foreach ([$pattern, '$' . $pattern, $pattern . 's', $pattern . 'ing'] as $candidate) {
             if (isset($this->specialCases[$candidate])) {
@@ -226,7 +226,7 @@ class Docs implements Plugin
                     ? $this->specialCases[substr($this->specialCases[$candidate], 1)]
                     : $this->specialCases[$candidate];
 
-                yield from $this->chatClient->postMessage($result);
+                yield from $this->chatClient->postMessage($command->getRoom(), $result);
 
                 return;
             }
@@ -234,6 +234,7 @@ class Docs implements Plugin
 
         if (substr($pattern, 0, 6) === "mysql_") {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 $this->getMysqlMessage()
             );
 
@@ -248,10 +249,12 @@ class Docs implements Plugin
 
         if ($response->getPreviousResponse() !== null) {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 $this->getMessageFromMatch(yield from $this->preProcessMatch($response, $pattern))
             );
         } else {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 yield from $this->getMessageFromSearch($response)
             );
         }

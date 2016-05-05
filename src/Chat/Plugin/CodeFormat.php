@@ -66,6 +66,7 @@ class CodeFormat implements Plugin {
 
         if ($linesOfCode >= 3) {
             yield from $this->chatClient->postMessage(
+                $message->getRoom(),
                 ":{$origin} Please format your code - hit Ctrl+K before sending and have a look at the [FAQ](http://chat.stackoverflow.com/faq)."
             );
         }

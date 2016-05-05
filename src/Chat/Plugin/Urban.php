@@ -31,7 +31,7 @@ class Urban implements Plugin
 
         $result = json_decode($response->getBody(), true);
 
-        yield from $this->chatClient->postMessage($this->getMessage($result));
+        yield from $this->chatClient->postMessage($command->getRoom(), $this->getMessage($result));
     }
 
     private function getMessage(array $result): string

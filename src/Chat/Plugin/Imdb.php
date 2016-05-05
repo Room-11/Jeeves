@@ -29,6 +29,7 @@ class Imdb implements Plugin
         );
 
         yield from $this->chatClient->postMessage(
+            $command->getRoom(),
             $this->getMessage($response)
         );
     }

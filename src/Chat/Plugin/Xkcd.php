@@ -22,14 +22,15 @@ class Xkcd implements Plugin {
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(Command $message): \Generator {
-        $uri = "https://www.google.com/search?q=site:xkcd.com+intitle%3a%22xkcd%3a+%22+" . urlencode(implode(' ', $message->getParameters()));
+    private function getResult(Command $command): \Generator {
+        $uri = "https://www.google.com/search?q=site:xkcd.com+intitle%3a%22xkcd%3a+%22+" . urlencode(implode(' ', $command->getParameters()));
 
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 "Useless error message here so debugging this is harder than needed."
             );
 
@@ -47,13 +48,13 @@ class Xkcd implements Plugin {
         /** @var \DOMElement $node */
         foreach ($nodes as $node) {
             if (preg_match('~^/url\?q=(https://xkcd\.com/\d+/)~', $node->getAttribute('href'), $matches)) {
-                yield from $this->chatClient->postMessage($matches[1]);
+                yield from $this->chatClient->postMessage($command->getRoom(), $matches[1]);
 
                 return;
             }
         }
 
-        yield from $this->chatClient->postMessage(self::NOT_FOUND_COMIC);
+        yield from $this->chatClient->postMessage($command->getRoom(), self::NOT_FOUND_COMIC);
     }
 
     /**

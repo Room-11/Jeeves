@@ -161,7 +161,7 @@ try {
     $injector->define(ChatRoomCollection::class, [':rooms' => [$primaryRoom]]);
 
     $handshake = new Handshake($primaryRoom->getWebSocketURL());
-    $handshake->setHeader('Origin', $primaryRoom->getIdentifier()->getOriginURL('ws'));
+    $handshake->setHeader('Origin', $primaryRoom->getIdentifier()->getOriginURL('http'));
 
     $webSocketHandler = $injector->make(WebSocketHandler::class);
 

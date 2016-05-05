@@ -46,8 +46,10 @@ class Google implements Plugin {
         $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
-            yield from $this->postErrorMessage();
-
+            yield from $this->chatClient->postMessage(
+                $command->getRoom(),
+                "It was Google's fault, not mine."
+            );
             return;
         }
 
@@ -64,13 +66,7 @@ class Google implements Plugin {
         $searchResults = $this->getSearchResults($nodes, $xpath);
         $postMessage   = yield from $this->getPostMessage($searchResults, $uri, $command);
 
-        yield from $this->chatClient->postMessage($postMessage);
-    }
-
-    private function postErrorMessage(): \Generator {
-        yield from $this->chatClient->postMessage(
-            "It was Google's fault, not mine."
-        );
+        yield from $this->chatClient->postMessage($command->getRoom(),$postMessage);
     }
 
     private function postNoResultsMessage(Command $command): \Generator {

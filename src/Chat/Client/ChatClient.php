@@ -67,7 +67,7 @@ class ChatClient {
                         $decoded = json_try_decode($response->getBody(), true);
 
                         if (isset($decoded["id"], $decoded["time"])) {
-                            return new PostResponse($decoded["id"], $decoded["time"]);
+                            return new PostedMessage($room, $decoded["id"], $decoded["time"]);
                         }
 
                         if ($attempt >= self::MAX_POST_ATTEMPTS) {
@@ -135,19 +135,21 @@ class ChatClient {
         return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}");
     }
 
-    public function editMessage(ChatRoom $room, int $id, string $text): \Generator {
+    public function editMessage(PostedMessage $message, string $text): \Generator {
         $body = (new FormBody)
             ->addField("text", $text)
-            ->addField("fkey", (string) $room->getFKey());
+            ->addField("fkey", (string) $message->getRoom()->getFKey());
 
-        $url = $room->getIdentifier()->getEndpointURL(ChatRoomEndpoint::EDIT_MESSAGE, $id);
+        $url = $message->getRoom()
+            ->getIdentifier()
+            ->getEndpointURL(ChatRoomEndpoint::EDIT_MESSAGE, $message->getMessageId());
 
         $request = (new HttpRequest)
             ->setUri($url)
             ->setMethod("POST")
             ->setBody($body);
 
-        yield from $this->editMutex->withLock(function() use($request, $room) {
+        yield from $this->editMutex->withLock(function() use($request, $message) {
             $attempt = 0;
 
             try {
@@ -197,7 +199,7 @@ class ChatClient {
                 $this->logger->log(Level::ERROR, 'Error while editing message: ' . $e->getMessage(), $errorInfo);
 
                 yield new Pause(2000);
-                yield from $this->postMessage($room, "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
+                yield from $this->postMessage($message->getRoom(), "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
             } finally {
                 $this->postRecursionDepth--;
             }
