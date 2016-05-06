@@ -6,6 +6,7 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Mutex\QueuedExclusiveMutex;
 use Amp\Pause;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\Message\Message;
@@ -13,7 +14,6 @@ use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\Mutex\QueuedExclusiveMutex;
 
 class ChatClient {
     const MAX_POST_ATTEMPTS = 5;

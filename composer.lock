@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "d8d1831a3be2bab5acce587c2c51eaff",
-    "content-hash": "0ccf238091b5ba6260258cf7ebbe8034",
+    "hash": "39e04cf18206ac47f61101263bd16908",
+    "content-hash": "e15b4f9101585bc6301d5a0c5a66b6e7",
     "packages": [
         {
             "name": "amphp/amp",
@@ -480,6 +480,42 @@
             "time": "2016-04-29 20:47:45"
         },
         {
+            "name": "daverandom/mutex",
+            "version": "v0.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/DaveRandom/Mutex.git",
+                "reference": "e2d7d63aeadf2d217287cd3ec32f73c4aec4879c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DaveRandom/Mutex/zipball/e2d7d63aeadf2d217287cd3ec32f73c4aec4879c",
+                "reference": "e2d7d63aeadf2d217287cd3ec32f73c4aec4879c",
+                "shasum": ""
+            },
+            "require": {
+                "amphp/amp": "^1",
+                "php": ">=7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Amp\\Mutex\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Chris Wright"
+                }
+            ],
+            "description": "Basic common mutex framework for amp",
+            "time": "2016-05-06 13:48:53"
+        },
+        {
             "name": "rdlowrey/auryn",
             "version": "v1.4.0",
             "source": {
@@ -539,6 +575,80 @@
                 "ioc"
             ],
             "time": "2016-03-14 20:10:19"
+        },
+        {
+            "name": "room11/dom-utils",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Room-11/DOMUtils.git",
+                "reference": "cadfd74ad5f4962418e35043d21121212e63655b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/cadfd74ad5f4962418e35043d21121212e63655b",
+                "reference": "cadfd74ad5f4962418e35043d21121212e63655b",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Room11\\DOMUtils\\": "src/"
+                },
+                "files": [
+                    "src/functions.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Chris Wright"
+                }
+            ],
+            "description": "Utility functions for the PHP DOM extension",
+            "time": "2016-05-06 12:09:53"
+        },
+        {
+            "name": "room11/openid",
+            "version": "v0.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Room-11/OpenID.git",
+                "reference": "d340c8e9f2424a10f78ecbdeb27e6fc88ae32775"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Room-11/OpenID/zipball/d340c8e9f2424a10f78ecbdeb27e6fc88ae32775",
+                "reference": "d340c8e9f2424a10f78ecbdeb27e6fc88ae32775",
+                "shasum": ""
+            },
+            "require": {
+                "amphp/artax": "^2",
+                "room11/dom-utils": "~1.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Room11\\OpenID\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Chris Wright"
+                },
+                {
+                    "name": "Pieter Hordijk"
+                }
+            ],
+            "description": "OpenID consumer",
+            "time": "2016-05-06 12:46:20"
         },
         {
             "name": "sabre/uri",

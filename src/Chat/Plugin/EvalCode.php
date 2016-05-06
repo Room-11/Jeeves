@@ -6,12 +6,12 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Mutex\QueuedExclusiveMutex;
 use Amp\Pause;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostedMessage;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
-use Room11\Jeeves\Mutex\QueuedExclusiveMutex;
 use function Room11\Jeeves\domdocument_load_html;
 
 class EvalCode implements Plugin

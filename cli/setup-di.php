@@ -7,17 +7,17 @@ use Amp\Artax\HttpClient;
 use Auryn\Injector;
 use Room11\Jeeves\Bitly\Client as BitlyClient;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Room\Authenticator as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
-use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\OpenId\Authenticator;
-use Room11\Jeeves\OpenId\EmailAddress as OpenIdEmailAddress;
-use Room11\Jeeves\OpenId\Password as OpenIdPassword;
-use Room11\Jeeves\OpenId\StackExchangeAuthenticator;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\File\Admin as FileAdminStorage;
 use Room11\Jeeves\Storage\File\Ban as FileBanStorage;
+use Room11\OpenId\Authenticator;
+use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
+use Room11\OpenId\Password as OpenIdPassword;
+use Room11\OpenId\StackExchangeAuthenticator;
 
 /** @var Injector $injector */
 $injector->alias(HttpClient::class, ArtaxClient::class);

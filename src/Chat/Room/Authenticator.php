@@ -6,21 +6,24 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\OpenId\Authenticator;
+use Room11\OpenId\Authenticator as OpenIdAuthenticator;
+use Room11\OpenId\Credentials;
 use function Amp\all;
 use function Room11\Jeeves\domdocument_load_html;
 
-class Connector
+class Authenticator
 {
     private $httpClient;
     private $roomFactory;
     private $authenticator;
+    private $credentials;
 
-    public function __construct(HttpClient $httpClient, RoomFactory $roomFactory, Authenticator $authenticator)
+    public function __construct(HttpClient $httpClient, RoomFactory $roomFactory, OpenIdAuthenticator $authenticator, Credentials $credentials)
     {
         $this->httpClient = $httpClient;
         $this->roomFactory = $roomFactory;
         $this->authenticator = $authenticator;
+        $this->credentials = $credentials;
     }
 
     public function connect(RoomIdentifier $identifier): \Generator
@@ -46,7 +49,7 @@ class Connector
         $url = $this->getLogInURL(new \DOMXPath($doc));
 
         /** @var HttpResponse $response */
-        $response = yield from $this->authenticator->logIn($url);
+        $response = yield from $this->authenticator->logIn($url, $this->credentials);
 
         $doc = domdocument_load_html($response->getBody());
         if (!$this->isLoggedIn($doc)) {
