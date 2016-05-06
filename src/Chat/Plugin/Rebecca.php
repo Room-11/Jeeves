@@ -10,7 +10,8 @@ class Rebecca implements Plugin
 {
     use CommandOnlyPlugin;
 
-    const VIDEO_URL = 'https://www.youtube.com/watch?v=kfVsfOSbJY0';
+    const FRIDAY_VIDEO_URL = 'https://www.youtube.com/watch?v=kfVsfOSbJY0';
+    const SATURDAY_VIDEO_URL = 'https://www.youtube.com/watch?v=GVCzdpagXOQ';
 
     private $chatClient;
 
@@ -28,9 +29,9 @@ class Rebecca implements Plugin
         case 'Thursday':
             return "Happy Prebeccaday!";
         case 'Friday':
-            return self::VIDEO_URL;
+            return self::FRIDAY_VIDEO_URL;
         case 'Saturday':
-            return "Today is Saturday. And Sunday comes afterwards";
+            return self::SATURDAY_VIDEO_URL;
         default:
             return $this->getCountdown();
         }
