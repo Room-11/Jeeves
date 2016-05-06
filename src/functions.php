@@ -11,9 +11,11 @@ namespace Room11\Jeeves;
  */
 function domdocument_load_html(string $html, string $charSet = 'UTF-8', int $options = 0): \DOMDocument
 {
-    if (!preg_match('#\s*<\?xml#i', $html)) {
+    if (!preg_match('#^\s*<\?xml#i', $html)) {
         $html = '<?xml encoding="' . $charSet . '" ?>' . $html;
     }
+
+    $internalErrors = null;
 
     try {
         $internalErrors = libxml_use_internal_errors(true);
@@ -30,7 +32,9 @@ function domdocument_load_html(string $html, string $charSet = 'UTF-8', int $opt
 
         return $dom;
     } finally {
-        libxml_use_internal_errors($internalErrors);
+        if ($internalErrors !== null) {
+            libxml_use_internal_errors($internalErrors);
+        }
     }
 }
 
@@ -43,11 +47,13 @@ function domdocument_load_html(string $html, string $charSet = 'UTF-8', int $opt
  */
 function domdocument_process_html_docs(array $docs, callable $callback, string $charSet = 'UTF-8'): \DOMDocument
 {
+    $internalErrors = null;
+
     try {
         $internalErrors = libxml_use_internal_errors(true);
 
         foreach ($docs as $html) {
-            if (!preg_match('#\s*<\?xml#i', $html)) {
+            if (!preg_match('#^\s*<\?xml#i', $html)) {
                 $html = '<?xml encoding="' . $charSet . '" ?>' . $html;
             }
 
@@ -66,6 +72,8 @@ function domdocument_process_html_docs(array $docs, callable $callback, string $
             }
         }
     } finally {
-        libxml_use_internal_errors($internalErrors);
+        if ($internalErrors !== null) {
+            libxml_use_internal_errors($internalErrors);
+        }
     }
 }
