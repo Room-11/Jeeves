@@ -60,8 +60,11 @@ $injector->alias(AdminStorage::class, $config['storage']['admin']);
 $injector->alias(BanStorage::class, $config['storage']['ban']);
 
 $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);
-$injector->define(OpenIdEmailAddress::class, [':value' => $config['username']]);
-$injector->define(OpenIdPassword::class, [':value' => $config['password']]);
+
+//todo
+$injector->define(OpenIdEmailAddress::class, [':value' => $config['openids']['default']['username']]);
+$injector->define(OpenIdPassword::class, [':value' => $config['openids']['default']['password']]);
+
 $injector->define(TwitterCredentials::class, [
     ':consumerKey' => $config['twitter']['consumerKey'],
     ':consumerSecret' => $config['twitter']['consumerSecret'],
@@ -69,11 +72,13 @@ $injector->define(TwitterCredentials::class, [
     ':accessTokenSecret' => $config['twitter']['accessTokenSecret'],
 ]);
 
-$primaryRoomIdentifier = new ChatRoomIdentifier(
-    $config['room']['id'],
-    $config['room']['hostname'] ?? 'chat.stackoverflow.com',
-    $config['room']['secure'] ?? true
-);
+$roomIdentifiers = array_map(function($room) {
+    return new ChatRoomIdentifier(
+        $room['id'],
+        $room['hostname'] ?? 'chat.stackoverflow.com',
+        $room['secure'] ?? true
+    );
+}, $config['rooms']);
 
 $injector->delegate(Logger::class, function () use ($config) {
     $flags = array_map('trim', explode('|', $config['logging']['level'] ?? ''));
@@ -137,17 +142,14 @@ $injector->delegate(PluginManager::class, function () use ($injector) {
 });
 
 try {
-    run(function () use ($injector, $primaryRoomIdentifier) {
-        /** @var ChatRoomIdentifier[] $identifiers */
+    run(function () use ($injector, $roomIdentifiers) {
         /** @var ChatRoomConnector $connector */
         /** @var WebSocketCollection $sockets */
-
-        $identifiers = [$primaryRoomIdentifier, new ChatRoomIdentifier(100286, 'chat.stackoverflow.com', true)];
 
         $connector = $injector->make(ChatRoomConnector::class);
         $sockets = $injector->make(WebSocketCollection::class);
 
-        foreach ($identifiers as $identifier) {
+        foreach ($roomIdentifiers as $identifier) {
             yield from $connector->connect($identifier);
         }
 

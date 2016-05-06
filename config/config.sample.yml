@@ -1,6 +1,21 @@
 # https://openid.stackexchange.com/account/login
-username: %username%
-password: %password%
+openids:
+  default:
+    username: %username%
+    password: %password%
+  stackoverflow.com:
+    username: %username%
+    password: %password%
+
+rooms:
+  -
+    hostname: chat.stackoverflow.com
+    secure: true
+    id: 110670
+  -
+    hostname: chat.stackoverflow.com
+    secure: true
+    id: 100286
 
 room:
   hostname: chat.stackoverflow.com
