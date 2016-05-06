@@ -25,7 +25,10 @@ class BuiltInCommandManager
 
     public function register(BuiltInCommand $command): BuiltInCommandManager
     {
+        $className = get_class($command);
+
         foreach ($command->getCommandNames() as $commandName) {
+            $this->logger->log(Level::DEBUG, "Registering command name '{$commandName}' with built in command {$className}");
             $this->commands[$commandName] = $command;
         }
 

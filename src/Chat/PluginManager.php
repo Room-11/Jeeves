@@ -36,11 +36,15 @@ class PluginManager
 
     public function register(Plugin $plugin): PluginManager
     {
+        $className = get_class($plugin);
+
         if ($plugin->handlesAllMessages()) {
+            $this->logger->log(Level::DEBUG, "Registering plugin {$className} to handle all messages");
             $this->messagePlugins[] = $plugin;
         }
 
         foreach ($plugin->getHandledCommands() as $commandName) {
+            $this->logger->log(Level::DEBUG, "Registering plugin {$className} to handle command '{$commandName}'");
             $this->commandPlugins[$commandName][] = $plugin;
         }
 

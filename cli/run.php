@@ -9,27 +9,6 @@ use Room11\Jeeves\Chat\BuiltIn\Admin as AdminBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Ban as BanBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
-use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
-use Room11\Jeeves\Chat\Plugin\Chuck as ChuckPlugin;
-//use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
-use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
-use Room11\Jeeves\Chat\Plugin\EvalCode as EvalPlugin;
-use Room11\Jeeves\Chat\Plugin\Google as GooglePlugin;
-use Room11\Jeeves\Chat\Plugin\HttpClient as HttpClientPlugin;
-use Room11\Jeeves\Chat\Plugin\Imdb as ImdbPlugin;
-use Room11\Jeeves\Chat\Plugin\Lick as LickPlugin;
-use Room11\Jeeves\Chat\Plugin\Man as ManPlugin;
-use Room11\Jeeves\Chat\Plugin\Mdn as MdnPlugin;
-use Room11\Jeeves\Chat\Plugin\Packagist as PackagistPlugin;
-use Room11\Jeeves\Chat\Plugin\Rebecca as RebeccaPlugin;
-use Room11\Jeeves\Chat\Plugin\Regex as RegexPlugin;
-use Room11\Jeeves\Chat\Plugin\RFC as RfcPlugin;
-use Room11\Jeeves\Chat\Plugin\SwordFight as SwordFightPlugin;
-use Room11\Jeeves\Chat\Plugin\Tweet as TweetPlugin;
-use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
-use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
-use Room11\Jeeves\Chat\Plugin\Wotd as WotdPlugin;
-use Room11\Jeeves\Chat\Plugin\Xkcd as XkcdPlugin;
 use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\CredentialManager;
@@ -101,7 +80,7 @@ $injector->delegate(CredentialManager::class, function () use ($config) {
     foreach ($config['openids'] ?? [] as $domain => $details) {
         if (!isset($details['username'], $details['password'])) {
             throw new InvalidConfigurationException(
-                "OpenID domain '{$domain}' does not define both username and password"
+                "OpenID domain '{$domain}' does not define username and password"
             );
         }
 
@@ -137,34 +116,10 @@ $injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
     return $builtInCommandManager;
 });
 
-$injector->delegate(PluginManager::class, function () use ($injector) {
+$injector->delegate(PluginManager::class, function () use ($injector, $config) {
     $pluginManager = new PluginManager($injector->make(BanStorage::class), $injector->make(Logger::class));
 
-    $plugins = [
-        UrbanPlugin::class,
-        WikipediaPlugin::class,
-        SwordFightPlugin::class,
-        DocsPlugin::class,
-        ImdbPlugin::class,
-        PackagistPlugin::class,
-        RfcPlugin::class,
-        //CodeFormatPlugin::class,
-        EvalPlugin::class,
-        CanonPlugin::class,
-        ManPlugin::class,
-        RegexPlugin::class,
-        LickPlugin::class,
-        XkcdPlugin::class,
-        TweetPlugin::class,
-        MdnPlugin::class,
-        ChuckPlugin::class,
-        RebeccaPlugin::class,
-        WotdPlugin::class,
-        GooglePlugin::class,
-        HttpClientPlugin::class,
-    ];
-
-    foreach ($plugins as $plugin) {
+    foreach ($config['plugins'] ?? [] as $plugin) {
         $pluginManager->register($injector->make($plugin));
     }
 
