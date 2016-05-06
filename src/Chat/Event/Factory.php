@@ -4,7 +4,6 @@ namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\UnknownRoomException;
 
 class Factory
 {
@@ -54,13 +53,9 @@ class Factory
 
             $eventType = (int)($event['event_type'] ?? 0);
 
-            try {
-                $result[$eventId] = isset($this->classes[$eventType])
-                    ? new $this->classes[$eventType]($event, $room, $this->messageFactory)
-                    : new Unknown($data);
-            } catch (UnknownRoomException $e) {
-                continue;
-            }
+            $result[$eventId] = isset($this->classes[$eventType])
+                ? new $this->classes[$eventType]($event, $room, $this->messageFactory)
+                : new Unknown($event);
         }
 
         return $result;
