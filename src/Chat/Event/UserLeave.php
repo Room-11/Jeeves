@@ -11,7 +11,7 @@ class UserLeave extends Event implements RoomSourcedEvent, UserSourcedEvent
     use RoomSource;
     use UserSource;
 
-    const EVENT_TYPE_ID = 3;
+    const EVENT_TYPE_ID = 4;
 
     public function __construct(array $data, ChatRoom $room)
     {
