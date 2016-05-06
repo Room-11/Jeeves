@@ -32,6 +32,7 @@ use Room11\Jeeves\Chat\Plugin\Wotd as WotdPlugin;
 use Room11\Jeeves\Chat\Plugin\Xkcd as XkcdPlugin;
 use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
+use Room11\Jeeves\Chat\Room\CredentialManager;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\Logger;
@@ -40,6 +41,7 @@ use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
 use Room11\Jeeves\WebSocket\Collection as WebSocketCollection;
+use Room11\OpenId\Credentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
 use Symfony\Component\Yaml\Yaml;
@@ -60,10 +62,6 @@ $injector->alias(AdminStorage::class, $config['storage']['admin']);
 $injector->alias(BanStorage::class, $config['storage']['ban']);
 
 $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);
-
-//todo
-$injector->define(OpenIdEmailAddress::class, [':value' => $config['openids']['default']['username']]);
-$injector->define(OpenIdPassword::class, [':value' => $config['openids']['default']['password']]);
 
 $injector->define(TwitterCredentials::class, [
     ':consumerKey' => $config['twitter']['consumerKey'],
@@ -93,6 +91,38 @@ $injector->delegate(Logger::class, function () use ($config) {
 
     $logger = $config['handler'] ?? StdOutLogger::class;
     return new $logger($flags);
+});
+
+$injector->delegate(CredentialManager::class, function () use ($config) {
+    $manager = new CredentialManager;
+
+    $haveDefault = false;
+
+    foreach ($config['openids'] ?? [] as $domain => $details) {
+        if (!isset($details['username'], $details['password'])) {
+            throw new InvalidConfigurationException(
+                "OpenID domain '{$domain}' does not define both username and password"
+            );
+        }
+
+        $details = new Credentials(
+            new OpenIdEmailAddress($details['username']),
+            new OpenIdPassword($details['password'])
+        );
+
+        if ($domain === 'default') {
+            $haveDefault = true;
+            $manager->setDefaultCredentials($details);
+        } else {
+            $manager->setCredentialsForDomain($domain, $details);
+        }
+    }
+
+    if (!$haveDefault) {
+        throw new InvalidConfigurationException('Default OpenID credentials not defined');
+    }
+
+    return $manager;
 });
 
 $injector->delegate(BuiltInCommandManager::class, function () use ($injector) {

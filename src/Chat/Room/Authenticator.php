@@ -10,25 +10,32 @@ use Room11\OpenId\Authenticator as OpenIdAuthenticator;
 use Room11\OpenId\Credentials;
 use function Amp\all;
 use function Room11\Jeeves\domdocument_load_html;
+use Room11\OpenId\UriFactory;
 
 class Authenticator
 {
     private $httpClient;
     private $roomFactory;
     private $authenticator;
-    private $credentials;
+    private $credentialManager;
+    /**
+     * @var UriFactory
+     */
+    private $uriFactory;
 
     public function __construct(
         HttpClient $httpClient,
         RoomFactory $roomFactory,
         OpenIdAuthenticator $authenticator,
-        Credentials $credentials
+        UriFactory $uriFactory,
+        CredentialManager $credentialManager
     )
     {
         $this->httpClient = $httpClient;
         $this->roomFactory = $roomFactory;
         $this->authenticator = $authenticator;
-        $this->credentials = $credentials;
+        $this->uriFactory = $uriFactory;
+        $this->credentialManager = $credentialManager;
     }
 
     public function logIn(Identifier $identifier): \Generator
@@ -37,11 +44,14 @@ class Authenticator
         $response = yield $this->httpClient->request($identifier->getEndpointURL(Endpoint::UI));
 
         $doc = domdocument_load_html($response->getBody());
-        $xpath = $this->isLoggedInMainSite($doc)
-            ? new \DOMXPath($doc)
-            : yield from $this->logInMainSite($doc);
+        $xpath = new \DOMXPath($doc);
 
         $mainSiteURL = $this->getMainSiteUrl($xpath);
+
+        if (!$this->isLoggedInMainSite($doc)) {
+            $xpath = yield from $this->logInMainSite($doc, $this->getOpenIdCredentials($mainSiteURL));
+        }
+
         $fkey = $this->getFKey($xpath);
 
         $webSocketURL = yield from $this->getWebSocketUri($identifier, $fkey);
@@ -49,12 +59,12 @@ class Authenticator
         return $this->roomFactory->build($identifier, $fkey, $webSocketURL, $mainSiteURL);
     }
 
-    private function logInMainSite(\DOMDocument $doc): \Generator
+    private function logInMainSite(\DOMDocument $doc, Credentials $credentials): \Generator
     {
         $url = $this->getLogInURL(new \DOMXPath($doc));
 
         /** @var HttpResponse $response */
-        $response = yield from $this->authenticator->logIn($url, $this->credentials);
+        $response = yield from $this->authenticator->logIn($url, $credentials);
 
         $doc = domdocument_load_html($response->getBody());
         if (!$this->isLoggedInMainSite($doc)) {
@@ -62,6 +72,11 @@ class Authenticator
         }
 
         return new \DOMXPath($doc);
+    }
+
+    private function getOpenIdCredentials(string $url): Credentials
+    {
+        return $this->credentialManager->getCredentialsForDomain($this->uriFactory->build($url)->getHost());
     }
 
     private function isLoggedInMainSite(\DOMDocument $doc)
