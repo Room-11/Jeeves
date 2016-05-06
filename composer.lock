@@ -613,26 +613,29 @@
         },
         {
             "name": "room11/openid",
-            "version": "v0.0.1",
+            "version": "v0.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/OpenID.git",
-                "reference": "d340c8e9f2424a10f78ecbdeb27e6fc88ae32775"
+                "reference": "0e64643a5ce087c85a01a901cf82fb9136e562cd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/OpenID/zipball/d340c8e9f2424a10f78ecbdeb27e6fc88ae32775",
-                "reference": "d340c8e9f2424a10f78ecbdeb27e6fc88ae32775",
+                "url": "https://api.github.com/repos/Room-11/OpenID/zipball/0e64643a5ce087c85a01a901cf82fb9136e562cd",
+                "reference": "0e64643a5ce087c85a01a901cf82fb9136e562cd",
                 "shasum": ""
             },
             "require": {
                 "amphp/artax": "^2",
                 "room11/dom-utils": "~1.0"
             },
+            "require-dev": {
+                "phpunit/phpunit": "5.3.*"
+            },
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "Room11\\OpenID\\": "src/"
+                    "Room11\\OpenId\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -648,7 +651,7 @@
                 }
             ],
             "description": "OpenID consumer",
-            "time": "2016-05-06 12:46:20"
+            "time": "2016-05-06 14:11:00"
         },
         {
             "name": "sabre/uri",

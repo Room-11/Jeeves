@@ -51,7 +51,7 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
-        return yield from $this->postMutex->withLock(function() use($request, $room) {
+        return yield $this->postMutex->withLock(function() use($request, $room) {
             $attempt = 0;
 
             try {
@@ -149,7 +149,7 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
-        yield from $this->editMutex->withLock(function() use($request, $message) {
+        yield $this->editMutex->withLock(function() use($request, $message) {
             $attempt = 0;
 
             try {

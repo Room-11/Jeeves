@@ -9,7 +9,7 @@ class Room
     private $mainSiteURL;
     private $webSocketURL;
 
-    public function __construct(RoomIdentifier $identifier, string $fKey, string $webSocketURL, string $mainSiteURL)
+    public function __construct(Identifier $identifier, string $fKey, string $webSocketURL, string $mainSiteURL)
     {
         $this->identifier = $identifier;
         $this->fKey = $fKey;
@@ -17,7 +17,7 @@ class Room
         $this->webSocketURL = $webSocketURL;
     }
 
-    public function getIdentifier(): RoomIdentifier
+    public function getIdentifier(): Identifier
     {
         return $this->identifier;
     }

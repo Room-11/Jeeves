@@ -17,21 +17,28 @@ class Handler implements Websocket {
     private $eventFactory;
     private $builtInCommandManager;
     private $pluginManager;
-    private $room;
+    private $sockets;
     private $logger;
+
+    private $room;
+    private $socketId;
 
     public function __construct(
         EventFactory $eventFactory,
+        Collection $sockets,
+        Logger $logger,
         BuiltInCommandManager $builtIns,
         PluginManager $plugins,
-        Logger $logger,
-        ChatRoom $room
+        ChatRoom $room,
+        int $socketId
     ) {
         $this->eventFactory = $eventFactory;
         $this->pluginManager = $plugins;
         $this->builtInCommandManager = $builtIns;
         $this->logger = $logger;
+        $this->sockets = $sockets;
         $this->room = $room;
+        $this->socketId = $socketId;
     }
 
     public function onOpen(Websocket\Endpoint $endpoint, array $headers) {
@@ -62,7 +69,7 @@ class Handler implements Websocket {
     }
 
     public function onClose($code, $reason) {
-        // TODO: Log message and exit / reconnect
-        var_dump(yield $reason);
+        // todo
+        $this->sockets->remove($this->socketId);
     }
 }

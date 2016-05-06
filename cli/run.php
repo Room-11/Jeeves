@@ -3,7 +3,6 @@
 
 namespace Room11\Jeeves;
 
-use Amp\Websocket\Handshake;
 use Auryn\Injector;
 use Room11\Jeeves\Bitly\Client as BitlyClient;
 use Room11\Jeeves\Chat\BuiltIn\Admin as AdminBuiltIn;
@@ -12,6 +11,7 @@ use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
 use Room11\Jeeves\Chat\Plugin\Chuck as ChuckPlugin;
+//use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
 use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
 use Room11\Jeeves\Chat\Plugin\EvalCode as EvalPlugin;
 use Room11\Jeeves\Chat\Plugin\Google as GooglePlugin;
@@ -31,17 +31,15 @@ use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
 use Room11\Jeeves\Chat\Plugin\Wotd as WotdPlugin;
 use Room11\Jeeves\Chat\Plugin\Xkcd as XkcdPlugin;
 use Room11\Jeeves\Chat\PluginManager;
-use Room11\Jeeves\Chat\Room\Authenticator as ChatRoomConnector;
-use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\Chat\Room\RoomIdentifier as ChatRoomIdentifier;
+use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
+use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
-use Room11\Jeeves\WebSocket\Handler as WebSocketHandler;
+use Room11\Jeeves\WebSocket\Collection as WebSocketCollection;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
 use Symfony\Component\Yaml\Yaml;
@@ -49,8 +47,6 @@ use function Amp\resolve;
 use function Amp\run;
 use function Amp\wait;
 use function Amp\websocket;
-
-//use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../version.php';
@@ -95,7 +91,7 @@ $injector->delegate(Logger::class, function () use ($config) {
 });
 
 $injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
-    $builtInCommandManager = new BuiltInCommandManager($injector->make(BanStorage::class));
+    $builtInCommandManager = new BuiltInCommandManager($injector->make(BanStorage::class), $injector->make(Logger::class));
 
     $commands = [AdminBuiltIn::class, BanBuiltIn::class, VersionBuiltIn::class];
 
@@ -107,7 +103,7 @@ $injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
 });
 
 $injector->delegate(PluginManager::class, function () use ($injector) {
-    $pluginManager = new PluginManager($injector->make(AdminStorage::class), $injector->make(BanStorage::class));
+    $pluginManager = new PluginManager($injector->make(BanStorage::class), $injector->make(Logger::class));
 
     $plugins = [
         UrbanPlugin::class,
@@ -142,32 +138,20 @@ $injector->delegate(PluginManager::class, function () use ($injector) {
 
 try {
     run(function () use ($injector, $primaryRoomIdentifier) {
-        /** @var ChatRoomIdentifier[] $roomIdentifiers */
-        /** @var ChatRoomConnector $chatRoomConnector */
-        /** @var ChatRoomCollection $chatRoomCollection */
+        /** @var ChatRoomIdentifier[] $identifiers */
+        /** @var ChatRoomConnector $connector */
+        /** @var WebSocketCollection $sockets */
 
-        $roomIdentifiers = [$primaryRoomIdentifier, new ChatRoomIdentifier(100286, 'chat.stackoverflow.com', true)];
+        $identifiers = [$primaryRoomIdentifier, new ChatRoomIdentifier(100286, 'chat.stackoverflow.com', true)];
 
-        $chatRoomConnector = $injector->make(ChatRoomConnector::class);
-        $chatRoomCollection = $injector->make(ChatRoomCollection::class);
+        $connector = $injector->make(ChatRoomConnector::class);
+        $sockets = $injector->make(WebSocketCollection::class);
 
-        $sockets = [];
-
-        foreach ($roomIdentifiers as $identifier) {
-            /** @var ChatRoom $room */
-            $room = yield from $chatRoomConnector->connect($identifier);
-
-            $handshake = (new Handshake($room->getWebSocketURL()))
-                ->setHeader('Origin', $identifier->getOriginURL('http'));
-            $handler = $injector->make(WebSocketHandler::class, [':room' => $room]);
-
-            $sockets[] = websocket($handler, $handshake);
-            $chatRoomCollection->add($room);
+        foreach ($identifiers as $identifier) {
+            yield from $connector->connect($identifier);
         }
 
-        while ($sockets) {
-            yield $sockets[0];
-        }
+        yield from $sockets->yieldAll();
     });
 } catch (\Throwable $e) {
     fwrite(STDERR, "\nSomething went badly wrong:\n\n{$e}\n\n");

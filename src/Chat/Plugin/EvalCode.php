@@ -49,7 +49,7 @@ class EvalCode implements Plugin
             ->setBody($body)
         ;
 
-        yield from $this->mutex->withLock(function() use($request, $command) {
+        yield $this->mutex->withLock(function() use($request, $command) {
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($request);
 

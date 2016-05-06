@@ -38,10 +38,10 @@ class Collection
     }
 
     /**
-     * @param RoomIdentifier $identifier
+     * @param Identifier $identifier
      * @return Room|null
      */
-    public function getByIdentifier(RoomIdentifier $identifier)
+    public function getByIdentifier(Identifier $identifier)
     {
         return $this->rooms[$identifier->getHost()][$identifier->getId()] ?? null;
     }

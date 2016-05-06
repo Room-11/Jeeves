@@ -18,7 +18,12 @@ class Authenticator
     private $authenticator;
     private $credentials;
 
-    public function __construct(HttpClient $httpClient, RoomFactory $roomFactory, OpenIdAuthenticator $authenticator, Credentials $credentials)
+    public function __construct(
+        HttpClient $httpClient,
+        RoomFactory $roomFactory,
+        OpenIdAuthenticator $authenticator,
+        Credentials $credentials
+    )
     {
         $this->httpClient = $httpClient;
         $this->roomFactory = $roomFactory;
@@ -26,17 +31,17 @@ class Authenticator
         $this->credentials = $credentials;
     }
 
-    public function connect(RoomIdentifier $identifier): \Generator
+    public function logIn(Identifier $identifier): \Generator
     {
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($identifier->getEndpointURL(Endpoint::UI));
 
         $doc = domdocument_load_html($response->getBody());
-        $xpath = $this->isLoggedIn($doc)
+        $xpath = $this->isLoggedInMainSite($doc)
             ? new \DOMXPath($doc)
-            : yield from $this->logIn($doc);
+            : yield from $this->logInMainSite($doc);
 
-        $mainSiteURL = $this->getMainSiteURL($xpath);
+        $mainSiteURL = $this->getMainSiteUrl($xpath);
         $fkey = $this->getFKey($xpath);
 
         $webSocketURL = yield from $this->getWebSocketUri($identifier, $fkey);
@@ -44,7 +49,7 @@ class Authenticator
         return $this->roomFactory->build($identifier, $fkey, $webSocketURL, $mainSiteURL);
     }
 
-    private function logIn(\DOMDocument $doc): \Generator
+    private function logInMainSite(\DOMDocument $doc): \Generator
     {
         $url = $this->getLogInURL(new \DOMXPath($doc));
 
@@ -52,14 +57,14 @@ class Authenticator
         $response = yield from $this->authenticator->logIn($url, $this->credentials);
 
         $doc = domdocument_load_html($response->getBody());
-        if (!$this->isLoggedIn($doc)) {
+        if (!$this->isLoggedInMainSite($doc)) {
             throw new \RuntimeException('Still not logged in'); //todo
         }
 
         return new \DOMXPath($doc);
     }
 
-    private function isLoggedIn(\DOMDocument $doc)
+    private function isLoggedInMainSite(\DOMDocument $doc)
     {
         return $doc->getElementById('input') !== null;
     }
@@ -77,7 +82,7 @@ class Authenticator
         return $node->getAttribute('href');
     }
 
-    private function getMainSiteURL(\DOMXPath $xpath): string
+    private function getMainSiteUrl(\DOMXPath $xpath): string
     {
         /** @var \DOMElement $node */
 
@@ -103,7 +108,7 @@ class Authenticator
         return $node->getAttribute('value');
     }
 
-    private function getWebSocketUri(RoomIdentifier $identifier, string $fKey): \Generator
+    private function getWebSocketUri(Identifier $identifier, string $fKey): \Generator
     {
         $authBody = (new FormBody)
             ->addField("roomid", $identifier->getId())

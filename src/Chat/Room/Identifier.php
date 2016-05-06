@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
-class RoomIdentifier
+class Identifier
 {
     private $id;
     private $host;
