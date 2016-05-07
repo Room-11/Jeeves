@@ -10,4 +10,4 @@ before_script:
   - travis_retry composer install --no-interaction
 
 script:
-  - phpdbg -qrr vendor/bin/phpunit --coverage-text
+  - phpdbg -qrr -d 'xdebug.overload_var_dump=0' vendor/bin/phpunit --coverage-text
