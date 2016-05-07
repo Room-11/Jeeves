@@ -14,6 +14,7 @@ class QueuedExclusiveMutex implements Mutex
 
     public function withLock(callable $callback): \Generator
     {
+        /** @var Lock $lock */
         $lock = yield from $this->getLock();
 
         try {
