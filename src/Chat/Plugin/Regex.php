@@ -22,6 +22,7 @@ class Regex implements Plugin
 
         if (!$this->hasPattern($dom)) {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 "Pattern must be wrapped in a code block."
             );
 
@@ -30,6 +31,7 @@ class Regex implements Plugin
 
         if ($this->zalgo($dom)) {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 "H̸̡̪̯ͨ͊̽̅̾̎Ȩ̬̩̾͛ͪ̈́̀́͘ ̶̧̨̱̹̭̯ͧ̾ͬC̷̙̲̝͖ͭ̏ͥͮ͟Oͮ͏̮̪̝͍M̲̖͊̒ͪͩͬ̚̚͜Ȇ̴̟̟͙̞ͩ͌͝S̨̥̫͎̭ͯ̿̔̀ͅ"
             );
 
@@ -38,6 +40,7 @@ class Regex implements Plugin
 
         if (!$this->doesMatch($dom)) {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 "No match."
             );
 
@@ -46,6 +49,7 @@ class Regex implements Plugin
 
         if (!$this->hasCapturingGroups($dom)) {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 "Matches \\o/"
             );
 
@@ -53,6 +57,7 @@ class Regex implements Plugin
         }
 
         yield from $this->chatClient->postMessage(
+            $command->getRoom(),
             "Matches with the following captured groups: " . $this->getCapturingGroups($dom)
         );
     }

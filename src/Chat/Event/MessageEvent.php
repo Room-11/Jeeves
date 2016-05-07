@@ -6,6 +6,7 @@ use Room11\Jeeves\Chat\Event\Traits\RoomSource;
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Message\Message;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourcedEvent
 {
@@ -27,11 +28,11 @@ abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourc
      */
     private $message;
 
-    protected function __construct(array $data, MessageFactory $messageFactory)
+    protected function __construct(array $data, ChatRoom $room, MessageFactory $messageFactory)
     {
         parent::__construct((int)$data['id'], (int)$data['time_stamp']);
 
-        $this->roomId = (int)$data['room_id'];
+        $this->room = $room;
 
         $this->userId = (int)$data['user_id'];
         $this->userName = (string)$data['user_name'];

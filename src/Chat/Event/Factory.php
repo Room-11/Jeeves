@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class Factory
 {
@@ -33,14 +34,14 @@ class Factory
 
     /**
      * @param array $data
-     * @return Event[]
+     * @param ChatRoom $room
+     * @return array|Event[]
      */
-    public function build(array $data): array
+    public function build(array $data, ChatRoom $room): array
     {
-        $message = reset($data);
         $result = [];
 
-        foreach ($message['e'] ?? [] as $event) {
+        foreach ($data['r' . $room->getIdentifier()->getId()]['e'] ?? [] as $event) {
             if (!isset($event['id'])) {
                 continue;
             }
@@ -51,9 +52,10 @@ class Factory
             }
 
             $eventType = (int)($event['event_type'] ?? 0);
+
             $result[$eventId] = isset($this->classes[$eventType])
-                ? new $this->classes[$eventType]($event, $this->messageFactory)
-                : new Unknown($data);
+                ? new $this->classes[$eventType]($event, $room, $this->messageFactory)
+                : new Unknown($event);
         }
 
         return $result;

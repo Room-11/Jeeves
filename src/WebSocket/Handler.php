@@ -9,26 +9,36 @@ use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\Unknown;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\PluginManager;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 
 class Handler implements Websocket {
     private $eventFactory;
-    private $logger;
-
     private $builtInCommandManager;
     private $pluginManager;
+    private $sockets;
+    private $logger;
+
+    private $room;
+    private $socketId;
 
     public function __construct(
         EventFactory $eventFactory,
+        Collection $sockets,
+        Logger $logger,
         BuiltInCommandManager $builtIns,
         PluginManager $plugins,
-        Logger $logger
+        ChatRoom $room,
+        int $socketId
     ) {
         $this->eventFactory = $eventFactory;
         $this->pluginManager = $plugins;
-        $this->logger = $logger;
         $this->builtInCommandManager = $builtIns;
+        $this->logger = $logger;
+        $this->sockets = $sockets;
+        $this->room = $room;
+        $this->socketId = $socketId;
     }
 
     public function onOpen(Websocket\Endpoint $endpoint, array $headers) {
@@ -38,7 +48,7 @@ class Handler implements Websocket {
     public function onData(Websocket\Message $msg): \Generator {
         $rawMessage = yield $msg;
 
-        foreach ($this->eventFactory->build(json_decode($rawMessage, true)) as $event) {
+        foreach ($this->eventFactory->build(json_decode($rawMessage, true), $this->room) as $event) {
             $this->logger->log(Level::EVENT, "Event received", [
                 "rawData" => $rawMessage,
                 "event" => $event,
@@ -59,7 +69,7 @@ class Handler implements Websocket {
     }
 
     public function onClose($code, $reason) {
-        // TODO: Log message and exit / reconnect
-        var_dump(yield $reason);
+        // todo
+        $this->sockets->remove($this->socketId);
     }
 }

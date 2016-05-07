@@ -7,16 +7,16 @@ use Room11\Jeeves\Chat\Event\MessageEvent;
 
 class Factory
 {
-    public function build(MessageEvent $message): Message
+    public function build(MessageEvent $event): Message
     {
-        if (strpos($message->getMessageContent(), '!!') === 0) {
-            return new Command($message);
+        if (strpos($event->getMessageContent(), '!!') === 0) {
+            return new Command($event, $event->getRoom());
         }
 
-        if ($message instanceof MentionMessage) {
-            return new Conversation($message);
+        if ($event instanceof MentionMessage) {
+            return new Conversation($event, $event->getRoom());
         }
 
-        return new Message($message);
+        return new Message($event, $event->getRoom());
     }
 }

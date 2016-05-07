@@ -7,6 +7,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use function Room11\Jeeves\domdocument_load_html;
 
 class Xkcd implements Plugin {
     use CommandOnlyPlugin;
@@ -22,38 +23,35 @@ class Xkcd implements Plugin {
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(Command $message): \Generator {
-        $uri = "https://www.google.com/search?q=site:xkcd.com+intitle%3a%22xkcd%3a+%22+" . urlencode(implode(' ', $message->getParameters()));
+    private function getResult(Command $command): \Generator {
+        $uri = "https://www.google.com/search?q=site:xkcd.com+intitle%3a%22xkcd%3a+%22+" . urlencode(implode(' ', $command->getParameters()));
 
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 "Useless error message here so debugging this is harder than needed."
             );
 
             return;
         }
 
-        $internalErrors = libxml_use_internal_errors(true);
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getBody());
-        libxml_use_internal_errors($internalErrors);
-
-        $xpath = new \DOMXPath($dom);
-        $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]/h3/a");
+        $dom = domdocument_load_html($response->getBody());
+        $nodes = (new \DOMXPath($dom))
+            ->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]/h3/a");
 
         /** @var \DOMElement $node */
         foreach ($nodes as $node) {
             if (preg_match('~^/url\?q=(https://xkcd\.com/\d+/)~', $node->getAttribute('href'), $matches)) {
-                yield from $this->chatClient->postMessage($matches[1]);
+                yield from $this->chatClient->postMessage($command->getRoom(), $matches[1]);
 
                 return;
             }
         }
 
-        yield from $this->chatClient->postMessage(self::NOT_FOUND_COMIC);
+        yield from $this->chatClient->postMessage($command->getRoom(), self::NOT_FOUND_COMIC);
     }
 
     /**

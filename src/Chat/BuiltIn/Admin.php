@@ -10,6 +10,7 @@ use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\all;
+use function Room11\Jeeves\domdocument_process_html_docs;
 
 class Admin implements BuiltInCommand
 {
@@ -31,7 +32,7 @@ class Admin implements BuiltInCommand
 
     private function execute(Command $command): \Generator {
         if ($command->getParameter(0) === "list") {
-            yield from $this->getList();
+            yield from $this->getList($command);
 
             return;
         }
@@ -45,17 +46,17 @@ class Admin implements BuiltInCommand
         }
 
         if ($command->getParameter(0) === "add") {
-            yield from $this->add((int)$command->getParameter(1));
+            yield from $this->add($command, (int)$command->getParameter(1));
         } elseif ($command->getParameter(0) === "remove") {
-            yield from $this->remove((int)$command->getParameter(1));
+            yield from $this->remove($command, (int)$command->getParameter(1));
         }
     }
 
-    private function getList(): \Generator {
+    private function getList(Command $command): \Generator {
         $userIds = yield from $this->storage->getAll();
 
         if (!$userIds) {
-            yield from $this->chatClient->postMessage("There are no registered admins");
+            yield from $this->chatClient->postMessage($command->getRoom(), "There are no registered admins");
             return;
         }
 
@@ -63,19 +64,19 @@ class Admin implements BuiltInCommand
             return $profile["username"];
         }, yield from $this->getUserData($userIds)));
 
-        yield from $this->chatClient->postMessage($list);
+        yield from $this->chatClient->postMessage($command->getRoom(), $list);
     }
 
-    private function add(int $userId): \Generator {
+    private function add(Command $command, int $userId): \Generator {
         yield from $this->storage->add($userId);
 
-        yield from $this->chatClient->postMessage("User added to the admin list.");
+        yield from $this->chatClient->postMessage($command->getRoom(), "User added to the admin list.");
     }
 
-    private function remove(int $userId): \Generator {
+    private function remove(Command $command, int $userId): \Generator {
         yield from $this->storage->remove($userId);
 
-        yield from $this->chatClient->postMessage("User removed from the admin list.");
+        yield from $this->chatClient->postMessage($command->getRoom(), "User removed from the admin list.");
     }
 
     private function getUserData(array $userIds): \Generator {
@@ -91,25 +92,19 @@ class Admin implements BuiltInCommand
      * @return array
      */
     private function parseUserProfiles(array $userProfiles): array {
-        $errorState = libxml_use_internal_errors(true);
-
         $userData = [];
 
-        foreach ($userProfiles as $profile) {
-            $dom = new \DOMDocument();
-
-            // load data in the correct encoding
-            // http://chat.stackoverflow.com/transcript/11?m=28980409#28980409
-            $dom->loadHTML('<?xml encoding="UTF-8">' . $profile->getBody());
-
+        domdocument_process_html_docs($userProfiles, function(\DOMDocument $dom) use(&$userData) {
             $xpath = new \DOMXPath($dom);
+
             $usernameNodes = $xpath->query("//h2[@class='user-card-name']/text()");
             $profileNodes = $xpath->query("//link[@rel='canonical']");
 
             if ($usernameNodes->length > 0 && $profileNodes->length > 0) {
                 /** @var \DOMText $usernameNode */
-                $usernameNode = $usernameNodes->item(0);
                 /** @var \DOMElement $profileNode */
+
+                $usernameNode = $usernameNodes->item(0);
                 $profileNode = $profileNodes->item(0);
 
                 $userData[] = [
@@ -117,9 +112,7 @@ class Admin implements BuiltInCommand
                     'profile'  => $profileNode->getAttribute("href"),
                 ];
             }
-        }
-
-        libxml_use_internal_errors($errorState);
+        });
 
         return $userData;
     }

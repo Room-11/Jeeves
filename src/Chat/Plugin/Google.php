@@ -9,6 +9,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use function Amp\all;
+use function Room11\Jeeves\domdocument_load_html;
 
 class Google implements Plugin {
     use CommandOnlyPlugin;
@@ -46,12 +47,14 @@ class Google implements Plugin {
         $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
-            yield from $this->postErrorMessage();
-
+            yield from $this->chatClient->postMessage(
+                $command->getRoom(),
+                "It was Google's fault, not mine."
+            );
             return;
         }
 
-        $dom   = $this->buildDom($response->getBody());
+        $dom = domdocument_load_html($response->getBody());
         $xpath = new \DOMXPath($dom);
         $nodes = $this->getResultNodes($xpath);
 
@@ -64,30 +67,13 @@ class Google implements Plugin {
         $searchResults = $this->getSearchResults($nodes, $xpath);
         $postMessage   = yield from $this->getPostMessage($searchResults, $uri, $command);
 
-        yield from $this->chatClient->postMessage($postMessage);
-    }
-
-    private function postErrorMessage(): \Generator {
-        yield from $this->chatClient->postMessage(
-            "It was Google's fault, not mine."
-        );
+        yield from $this->chatClient->postMessage($command->getRoom(),$postMessage);
     }
 
     private function postNoResultsMessage(Command $command): \Generator {
         yield from $this->chatClient->postReply(
             $command, sprintf("Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P", implode(' ', $command->getParameters()))
         );
-    }
-
-    private function buildDom($body): \DOMDocument {
-        $internalErrors = libxml_use_internal_errors(true);
-
-        $dom = new \DOMDocument();
-        $dom->loadHTML('<?xml encoding="utf-8" ?>' . $body);
-
-        libxml_use_internal_errors($internalErrors);
-
-        return $dom;
     }
 
     private function getResultNodes(\DOMXPath $xpath): \DOMNodeList {

@@ -7,6 +7,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use function Room11\Jeeves\domdocument_load_html;
 
 class RFC implements Plugin
 {
@@ -21,7 +22,7 @@ class RFC implements Plugin
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(): \Generator {
+    private function getResult(Command $command): \Generator {
         $uri = "https://wiki.php.net/rfc";
 
         /** @var HttpResponse $response */
@@ -29,16 +30,14 @@ class RFC implements Plugin
 
         if ($response->getStatus() !== 200) {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 "Nope, we can't have nice things."
             );
 
             return;
         }
 
-        $internalErrors = libxml_use_internal_errors(true);
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getBody());
-        libxml_use_internal_errors($internalErrors);
+        $dom = domdocument_load_html($response->getBody());
 
         $list = $dom->getElementById("in_voting_phase")->nextSibling->nextSibling->getElementsByTagName("ul")->item(0);
         $rfcsInVoting = [];
@@ -60,15 +59,18 @@ class RFC implements Plugin
         }
 
         if (empty($rfcsInVoting)) {
-            yield from $this->chatClient->postMessage("Sorry, but we can't have nice things.");
+            yield from $this->chatClient->postMessage($command->getRoom(), "Sorry, but we can't have nice things.");
 
             return;
         }
 
-        yield from $this->chatClient->postMessage(sprintf(
-            "[tag:rfc-vote] %s",
-            implode(" | ", $rfcsInVoting)
-        ));
+        yield from $this->chatClient->postMessage(
+            $command->getRoom(),
+            sprintf(
+                "[tag:rfc-vote] %s",
+                implode(" | ", $rfcsInVoting)
+            )
+        );
     }
 
     /**
@@ -79,7 +81,7 @@ class RFC implements Plugin
      */
     public function handleCommand(Command $command): \Generator
     {
-        yield from $this->getResult();
+        yield from $this->getResult($command);
     }
 
     /**

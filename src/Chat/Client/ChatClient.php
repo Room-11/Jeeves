@@ -6,66 +6,52 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Mutex\QueuedExclusiveMutex;
 use Amp\Pause;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Chat\Room\Room;
-use Room11\Jeeves\Fkey\FKey;
+use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\Mutex\QueuedExclusiveMutex;
 
 class ChatClient {
     const MAX_POST_ATTEMPTS = 5;
 
     private $httpClient;
-    private $fkey;
-    private $room;
+    private $logger;
 
     private $postMutex;
     private $editMutex;
-    private $logger;
+
     private $postRecursionDepth = 0;
 
-    public function __construct(HttpClient $httpClient, FKey $fkey, Room $room, Logger $logger) {
+    public function __construct(HttpClient $httpClient, Logger $logger) {
         $this->httpClient = $httpClient;
-        $this->fkey = $fkey;
-        $this->room = $room;
         $this->logger = $logger;
 
         $this->postMutex = new QueuedExclusiveMutex();
         $this->editMutex = new QueuedExclusiveMutex();
     }
 
-    public function getMessage(int $id): \Generator {
-        $uri = sprintf(
-            "%s://%s/message/%d",
-            $this->room->getHost()->isSecure() ? "https" : "http",
-            $this->room->getHost()->getHostname(),
-            $id
-        );
-
-        return yield $this->httpClient->request($uri);
+    public function getMessage(ChatRoom $room, int $id): \Generator {
+        $url = $room->getIdentifier()->getEndpointURL(ChatRoomEndpoint::GET_MESSAGE, $id);
+        return yield $this->httpClient->request($url);
     }
 
-    public function postMessage(string $text): \Generator {
+    public function postMessage(ChatRoom $room, string $text): \Generator {
         $body = (new FormBody)
             ->addField("text", $text)
-            ->addField("fkey", $this->fkey);
+            ->addField("fkey", (string) $room->getFKey());
 
-        $uri = sprintf(
-            "%s://%s/chats/%d/messages/new",
-            $this->room->getHost()->isSecure() ? "https" : "http",
-            $this->room->getHost()->getHostname(),
-            $this->room->getId()
-        );
+        $url = $room->getIdentifier()->getEndpointURL(ChatRoomEndpoint::POST_MESSAGE);
 
         $request = (new HttpRequest)
-            ->setUri($uri)
+            ->setUri($url)
             ->setMethod("POST")
             ->setBody($body);
 
-        return yield from $this->postMutex->withLock(function() use($body, $uri, $request) {
+        return yield $this->postMutex->withLock(function() use($request, $room) {
             $attempt = 0;
 
             try {
@@ -81,7 +67,7 @@ class ChatClient {
                         $decoded = json_try_decode($response->getBody(), true);
 
                         if (isset($decoded["id"], $decoded["time"])) {
-                            return new PostResponse($decoded["id"], $decoded["time"]);
+                            return new PostedMessage($room, $decoded["id"], $decoded["time"]);
                         }
 
                         if ($attempt >= self::MAX_POST_ATTEMPTS) {
@@ -129,7 +115,7 @@ class ChatClient {
 
                 if ($this->postRecursionDepth === 1) {
                     yield new Pause(2000);
-                    yield from $this->postMessage("@PeeHaa error has been logged. Fix it fix it fix it fix it.");
+                    yield from $this->postMessage($room, "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
                 }
             } finally {
                 $this->postRecursionDepth--;
@@ -140,34 +126,30 @@ class ChatClient {
     }
 
     /**
-     * @param Message|int $origin
+     * @param Message $origin
      * @param string $text
      * @return \Generator
      */
-    public function postReply($origin, string $text): \Generator
+    public function postReply(Message $origin, string $text): \Generator
     {
-        $target = $origin instanceof Message ? $origin->getId() : (int)$origin;
-        return $this->postMessage(":{$target} {$text}");
+        return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}");
     }
 
-    public function editMessage(int $id, string $text): \Generator {
+    public function editMessage(PostedMessage $message, string $text): \Generator {
         $body = (new FormBody)
             ->addField("text", $text)
-            ->addField("fkey", $this->fkey);
+            ->addField("fkey", (string) $message->getRoom()->getFKey());
 
-        $uri = sprintf(
-            "%s://%s/messages/%s",
-            $this->room->getHost()->isSecure() ? "https" : "http",
-            $this->room->getHost()->getHostname(),
-            $id
-        );
+        $url = $message->getRoom()
+            ->getIdentifier()
+            ->getEndpointURL(ChatRoomEndpoint::EDIT_MESSAGE, $message->getMessageId());
 
         $request = (new HttpRequest)
-            ->setUri($uri)
+            ->setUri($url)
             ->setMethod("POST")
             ->setBody($body);
 
-        yield from $this->editMutex->withLock(function() use($body, $uri, $request) {
+        yield $this->editMutex->withLock(function() use($request, $message) {
             $attempt = 0;
 
             try {
@@ -217,7 +199,7 @@ class ChatClient {
                 $this->logger->log(Level::ERROR, 'Error while editing message: ' . $e->getMessage(), $errorInfo);
 
                 yield new Pause(2000);
-                yield from $this->postMessage("@PeeHaa error has been logged. Fix it fix it fix it fix it.");
+                yield from $this->postMessage($message->getRoom(), "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
             } finally {
                 $this->postRecursionDepth--;
             }

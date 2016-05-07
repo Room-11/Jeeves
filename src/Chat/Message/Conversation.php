@@ -3,12 +3,13 @@
 namespace Room11\Jeeves\Chat\Message;
 
 use Room11\Jeeves\Chat\Event\MentionMessage;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class Conversation extends Message
 {
-    public function __construct(MentionMessage $event)
+    public function __construct(MentionMessage $event, ChatRoom $room)
     {
-        parent::__construct($event);
+        parent::__construct($event, $room);
     }
 
     public function getParentMessageId()

@@ -47,10 +47,12 @@ class Canon implements Plugin
     private function getResult(Command $command): \Generator {
         if ($command->getParameters()[0] === "list") {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 $this->getSupportedCanonicalsMessage()
             );
         } else {
             yield from $this->chatClient->postMessage(
+                $command->getRoom(),
                 $this->getMessage(implode(" ", $command->getParameters()))
             );
         }

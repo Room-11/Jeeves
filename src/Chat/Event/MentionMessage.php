@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class MentionMessage extends MessageEvent
 {
@@ -10,9 +11,9 @@ class MentionMessage extends MessageEvent
 
     private $parentId;
 
-    public function __construct(array $data, MessageFactory $messageFactory)
+    public function __construct(array $data, ChatRoom $room, MessageFactory $messageFactory)
     {
-        parent::__construct($data, $messageFactory);
+        parent::__construct($data, $room, $messageFactory);
 
         $this->parentId = $data['parent_id'];
     }

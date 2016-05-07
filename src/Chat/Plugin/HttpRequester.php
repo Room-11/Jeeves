@@ -2,14 +2,14 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Amp\Artax\HttpClient as ArtaxClient;
+use Amp\Artax\Client as HttpClient; // interface does not have option constants :-(
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 
-class HttpClient implements Plugin
+class HttpRequester implements Plugin
 {
     use CommandOnlyPlugin;
 
@@ -25,49 +25,45 @@ class HttpClient implements Plugin
 
     private $httpClient;
 
-    public function __construct(ChatClient $chatClient, ArtaxClient $httpClient)
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
     }
 
     private function getResult(Command $command): \Generator {
-        $this->setClientOptions($command);
-
         try {
             /** @var HttpResponse $response */
-            $response = yield $this->httpClient->request($this->getRequest($command));
 
-            // there has to be a better way to revert to the current settings...
-            $this->httpClient->setOption($this->httpClient::OP_FOLLOW_LOCATION, true);
-            $this->httpClient->setOption($this->httpClient::OP_DEFAULT_USER_AGENT, $this->httpClient::USER_AGENT);
+            $request = $this->getRequest($command);
+            $options = $this->getClientOptions($command);
 
-            yield from $this->chatClient->postMessage($this->formatResult($response));
+            $response = yield $this->httpClient->request($request, $options);
+
+            yield from $this->chatClient->postMessage($command->getRoom(), $this->formatResult($response));
         } catch (\RuntimeException $e) {
-            yield from $this->chatClient->postMessage($e->getMessage());
+            yield from $this->chatClient->postMessage($command->getRoom(), $e->getMessage());
         }
     }
 
-    private function setClientOptions(Command $command)
+    private function getClientOptions(Command $command)
     {
+        $options = [];
+
         foreach($command->getParameters() as $parameter) {
             if (!in_array($parameter, self::FLAGS, true)) {
                 continue;
             }
 
             if ($parameter === 'nofollow') {
-                $this->httpClient->setOption($this->httpClient::OP_FOLLOW_LOCATION, false);
-
+                $options[HttpClient::OP_FOLLOW_LOCATION] = false;
                 continue;
             }
 
-            $this->setUserAgent($parameter);
+            $options[HttpClient::OP_DEFAULT_USER_AGENT] = self::USER_AGENTS[$parameter];
         }
-    }
 
-    private function setUserAgent(string $userAgent)
-    {
-        $this->httpClient->setOption($this->httpClient::OP_DEFAULT_USER_AGENT, self::USER_AGENTS[$userAgent]);
+        return $options;
     }
 
     private function getRequest(Command $command): HttpRequest
@@ -83,12 +79,14 @@ class HttpClient implements Plugin
                 ;
 
             case 'post':
-                return (new HttpRequest())
+                return (new HttpRequest)
                     ->setMethod('POST')
                     ->setUri($this->getRequestUrl($command))
                     ->setBody($this->getPostBody($command))
                 ;
         }
+
+        throw new \InvalidArgumentException('Invalid command routed to plugin: ' . $command->getCommandName());
     }
 
     private function getRequestUrl(Command $command): string

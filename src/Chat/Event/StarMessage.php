@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\Traits\RoomSource;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class StarMessage extends Event implements RoomSourcedEvent
 {
@@ -18,13 +19,13 @@ class StarMessage extends Event implements RoomSourcedEvent
 
     private $pinned;
 
-    public function __construct(array $data)
+    public function __construct(array $data, ChatRoom $room)
     {
         parent::__construct((int)$data['id'], (int)$data['time_stamp']);
 
-        $this->roomId        = $data['room_id'];
+        $this->room          = $room;
 
-        $this->messageId        = $data['message_id'];
+        $this->messageId     = $data['message_id'];
         $this->content       = $data['content'];
         $this->numberOfStars = $data['message_stars'] ?? 0;
         $this->pinned        = isset($data['message_owner_stars']);

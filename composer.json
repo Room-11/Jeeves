@@ -13,7 +13,8 @@
         }
     ],
     "autoload": {
-        "psr-4": {"Room11\\Jeeves\\": "src/"}
+        "psr-4": {"Room11\\Jeeves\\": "src/"},
+        "files": ["src/functions.php"]
     },
     "autoload-dev": {
         "psr-4": {"Room11\\Jeeves\\Tests\\": "tests/src/"}
@@ -23,11 +24,14 @@
         "amphp/artax": "^2",
         "amphp/websocket": "dev-master",
         "amphp/file": "0.1.*",
-        "sebastian/version": "^1.0",
-        "symfony/yaml": "^3.0",
+        "daverandom/exceptional-json": "^1.0",
+        "daverandom/mutex": "~0.0",
         "rdlowrey/auryn": "^1.1",
+        "room11/openid": "~0.0",
+        "room11/dom-utils": "~1.0",
         "sabre/uri": "^1.0",
-        "daverandom/exceptional-json": "^1.0"
+        "sebastian/version": "^1.0",
+        "symfony/yaml": "^3.0"
     },
     "require-dev": {
         "phpunit/phpunit": "5.3.*"

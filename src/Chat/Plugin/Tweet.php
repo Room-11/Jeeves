@@ -10,6 +10,7 @@ use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Twitter\Credentials;
+use function Room11\Jeeves\domdocument_load_html;
 
 class Tweet implements Plugin
 {
@@ -50,7 +51,7 @@ class Tweet implements Plugin
 
         yield from $this->updateConfigWhenNeeded();
 
-        $tweetText = yield from $this->getMessage($command->getParameters()[0]);
+        $tweetText = yield from $this->getMessage($command, $command->getParameters()[0]);
 
         if (mb_strlen($tweetText, "UTF-8") > 140) {
             yield from $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
@@ -120,19 +121,14 @@ class Tweet implements Plugin
 
     // @todo convert URLs to shortened URLs
     // @todo handle twitter's character limit. perhaps we can do some clever replacing when above the limit?
-    private function getMessage(string $url): \Generator {
+    private function getMessage(Command $command, string $url): \Generator {
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
         /** @var HttpResponse $messageInfo */
-        $messageInfo = yield from $this->chatClient->getMessage((int) $matches[1]);
+        $messageInfo = yield from $this->chatClient->getMessage($command->getRoom(), (int) $matches[1]);
 
         $messageBody = html_entity_decode($messageInfo->getBody(), ENT_QUOTES);
-
-        $dom = new \DOMDocument();
-
-        $internalErrors = libxml_use_internal_errors(true);
-        $dom->loadHTML($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-        libxml_use_internal_errors($internalErrors);
+        $dom = domdocument_load_html($messageBody, 'UTF-8', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
         $this->replaceEmphasizeTags($dom);
         $this->replaceStrikeTags($dom);

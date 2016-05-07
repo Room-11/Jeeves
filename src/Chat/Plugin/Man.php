@@ -7,6 +7,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use function Room11\Jeeves\domdocument_load_html;
 
 class Man implements Plugin
 {
@@ -27,20 +28,11 @@ class Man implements Plugin
             "https://man.freebsd.org/" . rawurlencode(implode("%20", $command->getParameters()))
         );
 
-        $result = $response->getBody();
-
-        $dom = new \DOMDocument();
-
-        $errorState = libxml_use_internal_errors(true);
-
-        $dom->loadHTML($result);
-
-        libxml_use_internal_errors($errorState);
-
+        $dom = domdocument_load_html($response->getBody());
         $xpath = new \DOMXPath($dom);
 
         if ($this->isFound($xpath)) {
-            yield from $this->postResult($xpath, $response->getRequest()->getUri());
+            yield from $this->postResult($command, $xpath, $response->getRequest()->getUri());
         } else {
             yield from $this->postNoResult($command);
         }
@@ -81,8 +73,9 @@ class Man implements Plugin
         ));
     }
 
-    private function postResult(\DOMXPath $xpath, string $url): \Generator {
+    private function postResult(Command $command, \DOMXPath $xpath, string $url): \Generator {
         yield from $this->chatClient->postMessage(
+            $command->getRoom(),
             sprintf(
                 "[ [`%s`%s](%s) ] `%s`",
                 $this->getName($xpath),

@@ -2,12 +2,14 @@
 
 namespace Room11\Jeeves\Chat\Event\Traits;
 
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+
 trait RoomSource
 {
-    private $roomId;
+    private $room;
 
-    public function getRoomId(): int
+    public function getRoom(): ChatRoom
     {
-        return $this->roomId;
+        return $this->room;
     }
 }

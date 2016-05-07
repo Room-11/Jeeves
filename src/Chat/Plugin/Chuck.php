@@ -30,9 +30,12 @@ class Chuck implements Plugin {
 
 
         if(isset($result["type"]) && $result["type"] == "success") {
-            yield from $this->postMessage($this->skeetify($command, $result["value"]["joke"]));
+            $joke = htmlspecialchars_decode($this->skeetify($command, $result["value"]["joke"]));
+            yield from $this->chatClient->postMessage($command->getRoom(), $joke);
         } else {
-            yield from $this->postError($command);
+            yield from $this->chatClient->postReply(
+                $command, "Ugh, there was some weird problem while getting the joke."
+            );
         }
     }
 
@@ -42,18 +45,6 @@ class Chuck implements Plugin {
         }
 
         return str_replace("Chuck Norris", "Jon Skeet", $joke);
-    }
-
-    private function postMessage(string $joke): \Generator {
-        $joke = htmlspecialchars_decode($joke);
-
-        yield from $this->chatClient->postMessage($joke);
-    }
-
-    private function postError(Command $command): \Generator {
-        yield from $this->chatClient->postReply(
-            $command, "Ugh, there was some weird problem while getting the joke."
-        );
     }
 
     /**

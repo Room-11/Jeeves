@@ -2,20 +2,38 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
-class Room {
-    private $id;
-    private $host;
+class Room
+{
+    private $identifier;
+    private $fKey;
+    private $mainSiteURL;
+    private $webSocketURL;
 
-    public function __construct(int $id, Host $host) {
-        $this->id = $id;
-        $this->host = $host;
+    public function __construct(Identifier $identifier, string $fKey, string $webSocketURL, string $mainSiteURL)
+    {
+        $this->identifier = $identifier;
+        $this->fKey = $fKey;
+        $this->mainSiteURL = $mainSiteURL;
+        $this->webSocketURL = $webSocketURL;
     }
 
-    public function getId(): int {
-        return $this->id;
+    public function getIdentifier(): Identifier
+    {
+        return $this->identifier;
     }
 
-    public function getHost(): Host {
-        return $this->host;
+    public function getFKey(): string
+    {
+        return $this->fKey;
+    }
+
+    public function getMainSiteURL(): string
+    {
+        return $this->mainSiteURL;
+    }
+
+    public function getWebSocketURL(): string
+    {
+        return $this->webSocketURL;
     }
 }
