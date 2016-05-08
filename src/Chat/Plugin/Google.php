@@ -143,7 +143,6 @@ class Google implements Plugin {
         $urls = yield from $this->getShortenedUrls($searchResults, $searchURL);
 
         $searchTerm = implode(' ', $command->getParameters());
-        var_dump($searchTerm);
 
         $length = 52; // this is how many chars there are in the template strings (incl bullets)
         $length += mb_strlen($searchTerm, self::ENCODING) + strlen($urls[$searchURL]);
