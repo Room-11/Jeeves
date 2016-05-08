@@ -8,6 +8,7 @@ use Room11\Jeeves\Chat\Event\Factory as EventFactory;
 use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\Unknown;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
@@ -22,23 +23,34 @@ class Handler implements Websocket {
 
     private $room;
     private $socketId;
+    /**
+     * @var MessageFactory
+     */
+    private $messageFactory;
 
     public function __construct(
         EventFactory $eventFactory,
+        MessageFactory $messageFactory,
         Collection $sockets,
         Logger $logger,
         BuiltInCommandManager $builtIns,
-        PluginManager $plugins,
+        PluginManager $pluginManager,
         ChatRoom $room,
         int $socketId
     ) {
         $this->eventFactory = $eventFactory;
-        $this->pluginManager = $plugins;
+        $this->messageFactory = $messageFactory;
+        $this->pluginManager = $pluginManager;
         $this->builtInCommandManager = $builtIns;
         $this->logger = $logger;
         $this->sockets = $sockets;
         $this->room = $room;
         $this->socketId = $socketId;
+
+        //todo persist this
+        foreach ($pluginManager->getRegisteredPlugins() as $plugin) {
+            $pluginManager->enablePluginForRoom($plugin, $room);
+        }
     }
 
     public function onOpen(Websocket\Endpoint $endpoint, array $headers) {
@@ -59,17 +71,21 @@ class Handler implements Websocket {
                 return;
             }
 
-            if ($event instanceof MessageEvent && ($message = $event->getMessage()) instanceof Command) {
-                /** @var Command $message */
-                yield from $this->builtInCommandManager->handle($message);
+            $message = null;
+            if ($event instanceof MessageEvent) {
+                $message = $this->messageFactory->build($event);
+
+                if ($message instanceof Command) {
+                    yield from $this->builtInCommandManager->handle($message);
+                }
             }
 
-            yield from $this->pluginManager->handle($event);
+            yield from $this->pluginManager->handleRoomEvent($event, $message);
         }
     }
 
     public function onClose($code, $reason) {
-        // todo
+        // todo: reconnect stuffz
         $this->sockets->remove($this->socketId);
     }
 }

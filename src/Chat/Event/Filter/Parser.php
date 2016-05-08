@@ -289,7 +289,9 @@ class Parser
 
         condition_end:
         {
-            $conditions[] = new Condition($fieldName, $valueType, $scalarValue, $setName, $setMembers);
+            if ($fieldName !== '') {
+                $conditions[] = new Condition($fieldName, $valueType, $scalarValue, $setName, $setMembers);
+            }
 
             if ($ptr < $length) {
                 goto boundary;

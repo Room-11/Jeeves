@@ -2,7 +2,6 @@
 
 namespace Room11\Jeeves\Chat\Event;
 
-use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class Factory
@@ -21,16 +20,6 @@ class Factory
         MentionMessage::EVENT_TYPE_ID => MentionMessage::class,
         DeleteMessage::EVENT_TYPE_ID => DeleteMessage::class,
     ];
-
-    /**
-     * @var MessageFactory
-     */
-    private $messageFactory;
-
-    public function __construct(MessageFactory $messageFactory)
-    {
-        $this->messageFactory = $messageFactory;
-    }
 
     /**
      * @param array $data
@@ -54,7 +43,7 @@ class Factory
             $eventType = (int)($eventData['event_type'] ?? 0);
 
             $event = isset($this->classes[$eventType])
-                ? new $this->classes[$eventType]($eventData, $room, $this->messageFactory)
+                ? new $this->classes[$eventType]($eventData, $room)
                 : new Unknown($eventData);
 
             if ($event instanceof RoomSourcedEvent && $eventData['room_id'] !== $room->getIdentifier()->getId()) {

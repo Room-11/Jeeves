@@ -6,7 +6,7 @@ use Room11\Jeeves\Chat\Event\Traits\RoomSource;
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
-class RoomEdit extends Event implements RoomSourcedEvent, UserSourcedEvent
+class RoomEdit extends BaseEvent implements RoomSourcedEvent, UserSourcedEvent
 {
     const EVENT_TYPE_ID = 5;
 

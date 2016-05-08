@@ -5,7 +5,7 @@ namespace Room11\Jeeves\Chat\Event;
 use Room11\Jeeves\Chat\Event\Traits\RoomSource;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
-class StarMessage extends Event implements RoomSourcedEvent
+class StarMessage extends BaseEvent implements RoomSourcedEvent
 {
     use RoomSource;
 

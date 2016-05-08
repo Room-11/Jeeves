@@ -6,7 +6,7 @@ use Room11\Jeeves\Chat\Event\Traits\RoomSource;
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
-class UserLeave extends Event implements RoomSourcedEvent, UserSourcedEvent
+class UserLeave extends BaseEvent implements RoomSourcedEvent, UserSourcedEvent
 {
     use RoomSource;
     use UserSource;

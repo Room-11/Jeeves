@@ -19,7 +19,7 @@ class Identifier
 
     public function __construct(int $id, string $host, bool $isSecure) {
         $this->id = $id;
-        $this->host = $host;
+        $this->host = strtolower($host);
         $this->isSecure = $isSecure;
     }
 
@@ -29,6 +29,10 @@ class Identifier
 
     public function getHost(): string {
         return $this->host;
+    }
+
+    public function getIdentString(): string {
+        return $this->host . '#' . $this->id;
     }
 
     public function isSecure(): bool {

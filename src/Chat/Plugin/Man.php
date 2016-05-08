@@ -43,7 +43,7 @@ class Man implements Plugin
         return (bool) $xpath->evaluate("//a[@name='SYNOPSIS']")->length;
     }
 
-    private function getName(\DOMXPath $xpath): string {
+    private function getSymbolName(\DOMXPath $xpath): string {
         return ltrim($xpath->evaluate("//a[@name='NAME']/following-sibling::b/text()")->item(0)->textContent);
     }
 
@@ -78,7 +78,7 @@ class Man implements Plugin
             $command->getRoom(),
             sprintf(
                 "[ [`%s`%s](%s) ] `%s`",
-                $this->getName($xpath),
+                $this->getSymbolName($xpath),
                 $this->getDescription($xpath),
                 $url,
                 $this->getSynopsis($xpath)

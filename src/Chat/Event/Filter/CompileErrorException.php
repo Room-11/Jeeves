@@ -2,4 +2,4 @@
 
 namespace Room11\Jeeves\Chat\Event\Filter;
 
-class ParseErrorException extends BuildErrorException {}
+class CompileErrorException extends BuildErrorException {}

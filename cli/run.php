@@ -9,6 +9,7 @@ use Room11\Jeeves\Chat\BuiltIn\Admin as AdminBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Ban as BanBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
+use Room11\Jeeves\Chat\Event\Filter\Builder as EventFilterBuilder;
 use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\CredentialManager;
@@ -117,10 +118,14 @@ $injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
 });
 
 $injector->delegate(PluginManager::class, function () use ($injector, $config) {
-    $pluginManager = new PluginManager($injector->make(BanStorage::class), $injector->make(Logger::class));
+    $pluginManager = new PluginManager(
+        $injector->make(BanStorage::class),
+        $injector->make(Logger::class),
+        $injector->make(EventFilterBuilder::class)
+    );
 
     foreach ($config['plugins'] ?? [] as $plugin) {
-        $pluginManager->register($injector->make($plugin));
+        $pluginManager->registerPlugin($injector->make($plugin));
     }
 
     return $pluginManager;
