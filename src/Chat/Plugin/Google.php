@@ -4,7 +4,6 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Bitly\Client as BitlyClient;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -24,12 +23,9 @@ class Google implements Plugin {
 
     private $httpClient;
 
-    private $bitlyClient;
-
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, BitlyClient $bitlyClient) {
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
         $this->chatClient  = $chatClient;
         $this->httpClient  = $httpClient;
-        $this->bitlyClient = $bitlyClient;
     }
 
     private function getSearchURL(Command $command): string
@@ -65,7 +61,7 @@ class Google implements Plugin {
         }
 
         $searchResults = $this->getSearchResults($nodes, $xpath);
-        $postMessage   = yield from $this->getPostMessage($searchResults, $uri, $command);
+        $postMessage   = $this->getPostMessage($searchResults, $uri, $command);
 
         yield from $this->chatClient->postMessage($command->getRoom(),$postMessage);
     }
@@ -139,38 +135,22 @@ class Google implements Plugin {
         return $description;
     }
 
-    private function getPostMessage(array $searchResults, string $searchURL, Command $command): \Generator {
-        $urls = yield from $this->getShortenedUrls($searchResults, $searchURL);
-
+    private function getPostMessage(array $searchResults, string $searchURL, Command $command): string {
         $searchTerm = implode(' ', $command->getParameters());
 
-        $length = 52; // this is how many chars there are in the template strings (incl bullets)
-        $length += mb_strlen($searchTerm, self::ENCODING) + strlen($urls[$searchURL]);
-        foreach ($searchResults as $result) {
-            $length += max(mb_strlen($result['title'], self::ENCODING), 30) + strlen($urls[$result['url']]);
-        }
-
-        $descriptionLength = (int)floor((499 - $length) / 3); // 499 chars is the max before "see full text"
-
-        $message = sprintf('Search for "%s" (%s)', $searchTerm, $urls[$searchURL]);
+        $message = sprintf('Search for "%s" (%s)', $searchTerm, $searchURL);
 
         foreach ($searchResults as $result) {
             $message .= sprintf(
                 "\n%s %s - %s (%s)",
                 self::BULLET,
-                $this->ellipsise($result['title'], 30),
-                $this->ellipsise($result['description'], $descriptionLength),
-                $urls[$result['url']]
+                $this->ellipsise($result['title'], 50),
+                $this->ellipsise($result['description'], 100),
+                $result['url']
             );
         }
 
         return $message;
-    }
-
-    private function getShortenedUrls(array $searchResults, string $searchURL): \Generator {
-        $urls = array_merge(array_map(function($result) { return $result["url"]; }, $searchResults), [$searchURL]);
-
-        return yield from $this->bitlyClient->shortenMulti($urls);
     }
 
     /**
