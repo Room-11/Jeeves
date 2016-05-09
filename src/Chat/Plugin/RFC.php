@@ -1,5 +1,4 @@
-<?php
-
+<?php  declare(strict_types=1);
 namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
@@ -7,7 +6,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
-use function Room11\Jeeves\domdocument_load_html;
+use function Room11\DOMUtils\domdocument_load_html;
 
 class RFC implements Plugin
 {

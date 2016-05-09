@@ -10,7 +10,7 @@ use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Twitter\Credentials;
-use function Room11\Jeeves\domdocument_load_html;
+use function Room11\DOMUtils\domdocument_load_html;
 
 class Tweet implements Plugin
 {

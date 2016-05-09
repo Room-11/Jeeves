@@ -9,7 +9,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\all;
-use function Room11\Jeeves\domdocument_process_html_docs;
+use function Room11\DOMUtils\domdocument_process_html_docs;
 
 class Admin implements BuiltInCommand
 {

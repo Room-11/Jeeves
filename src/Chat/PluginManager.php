@@ -90,6 +90,7 @@ class PluginManager
             /** @var Filter $filter */
             if (($room === null || $this->isPluginEnabledForRoom($plugin, $room))
                 && ($promise = $filter->executeForEvent($event))) {
+                // todo: uniqify
                 $promises[] = $promise;
             }
         }

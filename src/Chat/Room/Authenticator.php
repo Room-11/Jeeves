@@ -1,5 +1,4 @@
-<?php
-
+<?php  declare(strict_types=1);
 namespace Room11\Jeeves\Chat\Room;
 
 use Amp\Artax\FormBody;
@@ -9,7 +8,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\OpenId\Authenticator as OpenIdAuthenticator;
 use Room11\OpenId\Credentials;
 use function Amp\all;
-use function Room11\Jeeves\domdocument_load_html;
+use function Room11\DOMUtils\domdocument_load_html;
 use Room11\OpenId\UriFactory;
 
 class Authenticator
