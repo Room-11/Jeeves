@@ -7,6 +7,7 @@ use Auryn\Injector;
 use Room11\Jeeves\Bitly\Client as BitlyClient;
 use Room11\Jeeves\Chat\BuiltIn\Admin as AdminBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Ban as BanBuiltIn;
+use Room11\Jeeves\Chat\BuiltIn\Plugin AS PluginBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Event\Filter\Builder as EventFilterBuilder;
@@ -108,7 +109,7 @@ $injector->delegate(CredentialManager::class, function () use ($config) {
 $injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
     $builtInCommandManager = new BuiltInCommandManager($injector->make(BanStorage::class), $injector->make(Logger::class));
 
-    $commands = [AdminBuiltIn::class, BanBuiltIn::class, VersionBuiltIn::class];
+    $commands = [AdminBuiltIn::class, BanBuiltIn::class, PluginBuiltIn::class, VersionBuiltIn::class];
 
     foreach ($commands as $command) {
         $builtInCommandManager->register($injector->make($command));

@@ -32,7 +32,7 @@ class Message
     {
         $this->event = $event;
         $this->room = $room;
-        $this->type = self::$eventTypeMap[$event->getEventId()];
+        $this->type = self::$eventTypeMap[$event->getTypeId()];
     }
 
     public function getEvent(): MessageEvent

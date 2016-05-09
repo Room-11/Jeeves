@@ -5,7 +5,6 @@ namespace Room11\Jeeves\Chat\BuiltIn;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Plugin;
 use SebastianBergmann\Version as SebastianVersion;
 
 class Version implements BuiltInCommand

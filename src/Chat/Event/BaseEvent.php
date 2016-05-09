@@ -16,7 +16,7 @@ abstract class BaseEvent
         $this->timestamp = new \DateTime('@' . $timestamp);
     }
 
-    public function getEventTypeId(): int
+    public function getTypeId(): int
     {
         return static::EVENT_TYPE_ID;
     }

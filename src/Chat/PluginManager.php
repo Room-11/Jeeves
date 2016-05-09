@@ -107,7 +107,7 @@ class PluginManager
     public function registerPlugin(Plugin $plugin) /*: void*/
     {
         $pluginClassName = get_class($plugin);
-        $pluginName = $plugin->getName();
+        $pluginName = strtolower($plugin->getName());
 
         try {
             $this->logger->log(Level::DEBUG, "Registering plugin '{$pluginName}' ({$pluginClassName})");
@@ -197,7 +197,7 @@ class PluginManager
      */
     public function isPluginEnabledForRoom($plugin, $room): bool
     {
-        $pluginName = $plugin instanceof Plugin ? $plugin->getName() : (string)$plugin;
+        $pluginName = strtolower($plugin instanceof Plugin ? $plugin->getName() : (string)$plugin);
 
         if ($room instanceof ChatRoom) {
             $room = $room->getIdentifier();
@@ -214,7 +214,7 @@ class PluginManager
      */
     public function disablePluginForRoom($plugin, $room) /*: void*/
     {
-        $pluginName = $plugin instanceof Plugin ? $plugin->getName() : (string)$plugin;
+        $pluginName = strtolower($plugin instanceof Plugin ? $plugin->getName() : (string)$plugin);
 
         if ($room instanceof ChatRoom) {
             $room = $room->getIdentifier();
@@ -233,7 +233,7 @@ class PluginManager
      */
     public function enablePluginForRoom($plugin, $room) /*: void*/
     {
-        $pluginName = $plugin instanceof Plugin ? $plugin->getName() : (string)$plugin;
+        $pluginName = strtolower($plugin instanceof Plugin ? $plugin->getName() : (string)$plugin);
 
         if ($room instanceof ChatRoom) {
             $room = $room->getIdentifier();
@@ -265,6 +265,25 @@ class PluginManager
         return $this->registeredPlugins;
     }
 
+    /**
+     * @param Plugin|string $plugin
+     * @return bool
+     */
+    public function hasPluginRegistered($plugin): bool
+    {
+        $name = strtolower($plugin instanceof Plugin ? $plugin->getName() : (string)$plugin);
+        return isset($this->registeredPlugins[$name]);
+    }
+
+    public function getPluginByName(string $name): Plugin
+    {
+        if (!isset($this->registeredPlugins[$name = strtolower($name)])) {
+            throw new \LogicException("Cannot get unknown plugin {$name}");
+        }
+
+        return $this->registeredPlugins[$name];
+    }
+
     public function handleRoomEvent(RoomSourcedEvent $event, Message $message = null): \Generator
     {
         $eventId = $event->getEventId();
@@ -283,7 +302,12 @@ class PluginManager
             $room = $message->getRoom()->getIdentifier()->getIdentString();
             $command = $message->getCommandName();
 
-            if (!yield from $this->banStorage->isBanned($userId) && isset($this->commandMap[$room][$command])) {
+            if (yield from $this->banStorage->isBanned($userId)) {
+                $this->logger->log(Level::DEBUG,
+                    "User #{$userId} is banned, ignoring event #{$eventId} for plugin command endpoints"
+                    . " (command: {$command})"
+                );
+            } else if (isset($this->commandMap[$room][$command])) {
                 /** @var Plugin $plugin */
                 /** @var PluginCommandEndpoint $endpoint */
                 list($plugin, $endpoint) = $this->commandMap[$room][$command];
@@ -299,11 +323,6 @@ class PluginManager
                       . " is disabled! (endpoint: {$endpoint->getName()})"
                     );
                 }
-            } else {
-                $this->logger->log(Level::DEBUG,
-                    "User #{$userId} is banned, ignoring event #{$eventId} for plugins"
-                  . " (command: {$message->getCommandName()})"
-                );
             }
         }
 
