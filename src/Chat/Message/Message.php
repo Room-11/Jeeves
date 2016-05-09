@@ -2,19 +2,37 @@
 
 namespace Room11\Jeeves\Chat\Message;
 
+use Room11\Jeeves\Chat\Event\DeleteMessage;
+use Room11\Jeeves\Chat\Event\EditMessage;
+use Room11\Jeeves\Chat\Event\MentionMessage;
 use Room11\Jeeves\Chat\Event\MessageEvent;
+use Room11\Jeeves\Chat\Event\NewMessage;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class Message
 {
+    const TYPE_NEW = 1;
+    const TYPE_EDIT = 2;
+    const TYPE_DELETE = 3;
+
+    private static $eventTypeMap = [
+        NewMessage::EVENT_TYPE_ID => self::TYPE_NEW,
+        DeleteMessage::EVENT_TYPE_ID => self::TYPE_DELETE,
+        EditMessage::EVENT_TYPE_ID => self::TYPE_EDIT,
+        MentionMessage::EVENT_TYPE_ID => self::TYPE_NEW,
+    ];
+
     private $event;
 
     private $room;
+
+    private $type;
 
     public function __construct(MessageEvent $event, ChatRoom $room)
     {
         $this->event = $event;
         $this->room = $room;
+        $this->type = self::$eventTypeMap[$event->getEventId()];
     }
 
     public function getEvent(): MessageEvent
@@ -45,5 +63,10 @@ class Message
     public function getRoom(): ChatRoom
     {
         return $this->room;
+    }
+
+    public function getType(): int
+    {
+        return $this->type;
     }
 }
