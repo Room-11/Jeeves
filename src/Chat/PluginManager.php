@@ -149,7 +149,7 @@ class PluginManager
                     throw new \LogicException('Invalid endpoint descriptor at index ' . $i);
                 }
 
-                $endpoints[$endpoint->getName()] = $endpoint;
+                $endpoints[strtolower($endpoint->getName())] = $endpoint;
             }
             $this->logger->log(Level::DEBUG, "Found " . count($endpoints) . " command endpoints for plugin '{$pluginName}'");
 
@@ -253,6 +253,41 @@ class PluginManager
 
     /**
      * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @return array
+     */
+    public function getMappedCommandsForRoom($room): array
+    {
+        $roomId = $this->resolveRoomFromIdentOrObject($room);
+
+        $result = [];
+
+        /**
+         * @var Plugin $plugin
+         * @var PluginCommandEndpoint $endpoint
+         */
+        foreach ($this->commandMap[$roomId] as $command => list($plugin, $endpoint)) {
+            $result[$command] = [
+                'plugin_name' => $plugin->getName(),
+                'endpoint_name' => $endpoint->getName(),
+                'endpoint_description' => $endpoint->getDescription() ?? $plugin->getDescription(),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @param string $command
+     * @return bool
+     */
+    public function isCommandMappedForRoom($room, string $command): bool
+    {
+        return isset($this->commandMap[$this->resolveRoomFromIdentOrObject($room)][$command]);
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
      * @param Plugin|string $plugin
      * @param string $endpoint
      * @param string $command
@@ -262,10 +297,11 @@ class PluginManager
     {
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
 
-        if (!isset($this->commandEndpoints[$pluginName][$endpoint])) {
+        if (!isset($this->commandEndpoints[$pluginName][strtolower($endpoint)])) {
             throw new \LogicException("Endpoint '{$endpoint}' not found for plugin '{$pluginName}'");
         }
 
+        $endpoint = $this->commandEndpoints[$pluginName][strtolower($endpoint)];
         $roomId = $this->resolveRoomFromIdentOrObject($room);
 
         $this->commandMap[$roomId][$command] = [$plugin, $endpoint];
@@ -291,7 +327,6 @@ class PluginManager
      * @param Plugin|string $plugin
      * @param ChatRoom|ChatRoomIdentifier|string $room
      * @todo persist this
-     * @todo make mappable commands
      */
     public function enablePluginForRoom($plugin, $room) /*: void*/
     {
@@ -353,7 +388,6 @@ class PluginManager
             ];
 
             if ($roomId !== null) {
-                var_dump($roomId);
                 foreach ($this->commandMap[$roomId] ?? [] as $command => list($mappedPlugin, $mappedEndpoint)) {
                     if ($endpoint === $mappedEndpoint) {
                         $endpointData['mapped_commands'][] = $command;

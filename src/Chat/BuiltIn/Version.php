@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use SebastianBergmann\Version as SebastianVersion;
 
 class Version implements BuiltInCommand
@@ -16,7 +16,7 @@ class Version implements BuiltInCommand
         $this->chatClient = $chatClient;
     }
 
-    private function getVersion(Command $command): \Generator
+    private function getVersion(CommandMessage $command): \Generator
     {
         $version = (new SebastianVersion(VERSION, dirname(dirname(dirname(__DIR__)))))->getVersion();
 
@@ -36,10 +36,10 @@ class Version implements BuiltInCommand
     /**
      * Handle a command message
      *
-     * @param Command $command
+     * @param CommandMessage $command
      * @return \Generator
      */
-    public function handleCommand(Command $command): \Generator
+    public function handleCommand(CommandMessage $command): \Generator
     {
         yield from $this->getVersion($command);
     }

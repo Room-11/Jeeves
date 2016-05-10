@@ -6,7 +6,7 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\all;
 use function Room11\DOMUtils\domdocument_process_html_docs;
@@ -29,7 +29,7 @@ class Admin implements BuiltInCommand
         $this->httpClient = $httpClient;
     }
 
-    private function execute(Command $command): \Generator {
+    private function execute(CommandMessage $command): \Generator {
         if ($command->getParameter(0) === "list") {
             yield from $this->getList($command);
 
@@ -51,7 +51,7 @@ class Admin implements BuiltInCommand
         }
     }
 
-    private function getList(Command $command): \Generator {
+    private function getList(CommandMessage $command): \Generator {
         $userIds = yield from $this->storage->getAll();
 
         if (!$userIds) {
@@ -66,13 +66,13 @@ class Admin implements BuiltInCommand
         yield from $this->chatClient->postMessage($command->getRoom(), $list);
     }
 
-    private function add(Command $command, int $userId): \Generator {
+    private function add(CommandMessage $command, int $userId): \Generator {
         yield from $this->storage->add($userId);
 
         yield from $this->chatClient->postMessage($command->getRoom(), "User added to the admin list.");
     }
 
-    private function remove(Command $command, int $userId): \Generator {
+    private function remove(CommandMessage $command, int $userId): \Generator {
         yield from $this->storage->remove($userId);
 
         yield from $this->chatClient->postMessage($command->getRoom(), "User removed from the admin list.");
@@ -121,10 +121,10 @@ class Admin implements BuiltInCommand
     /**
      * Handle a command message
      *
-     * @param Command $command
+     * @param CommandMessage $command
      * @return \Generator
      */
-    public function handleCommand(Command $command): \Generator
+    public function handleCommand(CommandMessage $command): \Generator
     {
         if (in_array($command->getParameter(0), self::ACTIONS, true)) {
             yield from $this->execute($command);

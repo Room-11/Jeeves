@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 
@@ -22,7 +22,7 @@ class Ban implements BuiltInCommand
         $this->storage    = $storage;
     }
 
-    private function execute(Command $command): \Generator {
+    private function execute(CommandMessage $command): \Generator {
         if (!yield from $this->admin->isAdmin($command->getUserId())) {
             yield from $this->chatClient->postReply(
                 $command, "I'm sorry Dave, I'm afraid I can't do that"
@@ -48,7 +48,7 @@ class Ban implements BuiltInCommand
         }
     }
 
-    private function list(Command $command): \Generator
+    private function list(CommandMessage $command): \Generator
     {
         $bans = yield from $this->storage->getAll();
 
@@ -64,13 +64,13 @@ class Ban implements BuiltInCommand
         yield from $this->chatClient->postMessage($command->getRoom(), $list);
     }
 
-    private function add(Command $command, int $userId, string $duration): \Generator {
+    private function add(CommandMessage $command, int $userId, string $duration): \Generator {
         yield from $this->storage->add($userId, $duration);
 
         yield from $this->chatClient->postMessage($command->getRoom(), "User is banned.");
     }
 
-    private function remove(Command $command, int $userId): \Generator {
+    private function remove(CommandMessage $command, int $userId): \Generator {
         yield from $this->storage->remove($userId);
 
         yield from $this->chatClient->postMessage($command->getRoom(), "User is unbanned.");
@@ -79,10 +79,10 @@ class Ban implements BuiltInCommand
     /**
      * Handle a command message
      *
-     * @param Command $command
+     * @param CommandMessage $command
      * @return \Generator
      */
-    public function handleCommand(Command $command): \Generator
+    public function handleCommand(CommandMessage $command): \Generator
     {
         if (!$command->hasParameters()) {
             return;
