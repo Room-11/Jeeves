@@ -19,7 +19,7 @@ class Command implements BuiltInCommand
 
     private function map(CommandMessage $command): \Generator
     {
-        if (!$command->hasParameters(4)) {
+        if (!$command->hasParameters(3)) {
             yield from $this->showSyntax($command);
             return;
         }
@@ -36,21 +36,33 @@ class Command implements BuiltInCommand
             return;
         }
 
-        $endpoint = $command->getParameter(3);
-
         $plugin = $this->pluginManager->getPluginByName($command->getParameter(2));
         $endpoints = $this->pluginManager->getPluginCommandEndpoints($plugin);
 
-        $validEndpoint = false;
-        foreach ($endpoints as $name => $info) {
-            if (strtolower($name) === strtolower($endpoint)) {
-                $validEndpoint = true;
-            }
-        }
+        $endpoint = $command->getParameter(3);
 
-        if (!$validEndpoint) {
-            yield from $this->chatClient->postReply($command, "Invalid endpoint name: {$endpoint}");
-            return;
+        if ($endpoint === null) {
+            if (count($endpoints) > 1) {
+                yield from $this->chatClient->postReply(
+                    $command,
+                    "Plugin provides multiple endpoints, you must specify the endpoint to which the command maps"
+                );
+            }
+
+            reset($endpoints);
+            $endpoint = key($endpoints);
+        } else {
+            $validEndpoint = false;
+            foreach ($endpoints as $name => $info) {
+                if (strtolower($name) === strtolower($endpoint)) {
+                    $validEndpoint = true;
+                }
+            }
+
+            if (!$validEndpoint) {
+                yield from $this->chatClient->postReply($command, "Invalid endpoint name: {$endpoint}");
+                return;
+            }
         }
 
         $this->pluginManager->mapCommandForRoom($command->getRoom(), $plugin, $endpoint, $cmd);
