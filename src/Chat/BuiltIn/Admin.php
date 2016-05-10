@@ -83,7 +83,9 @@ class Admin implements BuiltInCommand
             return "http://stackoverflow.com/users/$userId";
         }, $userIds)));
 
-        return $this->parseUserProfiles($userProfiles);
+        return $this->parseUserProfiles(array_map(function(HttpResponse $response) {
+            return $response->getBody();
+        }, $userProfiles));
     }
 
     /**

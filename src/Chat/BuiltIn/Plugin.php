@@ -31,22 +31,56 @@ class Plugin implements BuiltInCommand
             case 'disable': return yield from $this->disable($command);
         }
 
-        return yield from $this->chatClient->postReply($command, "Syntax: plugin [list|disable|enable] [name]");
+        return yield from $this->chatClient->postReply($command, "Syntax: plugin [list|disable|enable] [plugin-name]");
     }
 
-    private function list(Command $command): \Generator
+    private function listPlugins(Command $command): \Generator
     {
         $result = 'Currently registered plugins:';
 
         foreach ($this->pluginManager->getRegisteredPlugins() as $plugin) {
-            $enabled = $this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())
-                ? 'enabled'
-                : 'disabled';
-
-            $result .= "\n  {$plugin->getName()} - {$plugin->getDescription()} ({$enabled})";
+            $check = $this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom()) ? 'X' : ' ';
+            $result .= "\n[{$check}] {$plugin->getName()} - {$plugin->getDescription()}";
         }
 
-        yield from $this->chatClient->postReply($command, $result);
+        yield from $this->chatClient->postMessage($command->getRoom(), $result, true);
+    }
+
+    private function listPluginEndpoints(string $plugin, Command $command): \Generator
+    {
+        if (!$this->pluginManager->isPluginRegistered($plugin)) {
+            return yield from $this->chatClient->postReply($command, "Invalid plugin name");
+        }
+
+        $plugin = $this->pluginManager->getPluginByName($plugin);
+        $enabled = $this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())
+            ? 'enabled'
+            : 'disabled';
+
+        $result = "Command endpoints for plugin '{$plugin->getName()}' ({$enabled}):";
+
+        foreach ($this->pluginManager->getPluginCommandEndpoints($plugin, $command->getRoom()) as $name => $endpoint) {
+            if ($endpoint['mapped_commands']) {
+                $check = 'X';
+                $map = 'Mapped commands: ' . implode(', ', $endpoint['mapped_commands']);
+            } else {
+                $check = ' ';
+                $map = 'No mapped commands';
+            }
+
+            $result .= "\n[{$check}] {$name} - {$endpoint['description']} (Default command: {$endpoint['default_command']}, {$map})";
+        }
+
+        return yield from $this->chatClient->postMessage($command->getRoom(), $result, true);
+    }
+
+    private function list(Command $command): \Generator
+    {
+        if (null !== $plugin = $command->getParameter(1)) {
+            yield from $this->listPluginEndpoints($plugin, $command);
+        } else {
+            yield from $this->listPlugins($command);
+        }
     }
 
     private function enable(Command $command): \Generator
@@ -55,7 +89,7 @@ class Plugin implements BuiltInCommand
             return yield from $this->chatClient->postReply($command, "No plugin name supplied");
         }
 
-        if (!$this->pluginManager->hasPluginRegistered($plugin)) {
+        if (!$this->pluginManager->isPluginRegistered($plugin)) {
             return yield from $this->chatClient->postReply($command, "Invalid plugin name");
         }
 
@@ -64,7 +98,7 @@ class Plugin implements BuiltInCommand
         }
 
         $this->pluginManager->enablePluginForRoom($plugin, $command->getRoom());
-        return yield from $this->chatClient->postReply($command, "Plugin '{$plugin}' is now enabled in this room");
+        return yield from $this->chatClient->postMessage($command->getRoom(), "Plugin '{$plugin}' is now enabled in this room");
     }
 
     private function disable(Command $command): \Generator
@@ -73,7 +107,7 @@ class Plugin implements BuiltInCommand
             return yield from $this->chatClient->postReply($command, "No plugin name supplied");
         }
 
-        if (!$this->pluginManager->hasPluginRegistered($plugin)) {
+        if (!$this->pluginManager->isPluginRegistered($plugin)) {
             return yield from $this->chatClient->postReply($command, "Invalid plugin name");
         }
 
@@ -82,7 +116,7 @@ class Plugin implements BuiltInCommand
         }
 
         $this->pluginManager->disablePluginForRoom($plugin, $command->getRoom());
-        return yield from $this->chatClient->postReply($command, "Plugin '{$plugin}' is now disabled in this room");
+        return yield from $this->chatClient->postMessage($command->getRoom(), "Plugin '{$plugin}' is now disabled in this room");
     }
 
     /**

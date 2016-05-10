@@ -6,10 +6,13 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Conversation;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\NoCommands;
+use Room11\Jeeves\Chat\Plugin\Traits\NoDisableEnable;
+use Room11\Jeeves\Chat\Plugin\Traits\NoEventHandlers;
 
 class SwordFight implements Plugin
 {
-    use MessageOnlyPlugin;
+    use NoCommands, NoEventHandlers, NoDisableEnable;
 
     const COMMAND = 'swordfight';
 
@@ -105,5 +108,28 @@ class SwordFight implements Plugin
         }
 
         yield from $this->getResult($message);
+    }
+
+    public function getName(): string
+    {
+        return 'SwordFight';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Trades insults in conversation';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
+    }
+
+    /**
+     * @return callable|null
+     */
+    public function getMessageHandler()
+    {
+        return [$this, 'handleMessage'];
     }
 }

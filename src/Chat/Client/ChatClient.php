@@ -39,9 +39,13 @@ class ChatClient {
         return yield $this->httpClient->request($url);
     }
 
-    public function postMessage(ChatRoom $room, string $text): \Generator {
+    public function postMessage(ChatRoom $room, string $text, bool $fixedFont = false): \Generator {
+        if ($fixedFont) {
+            $text = preg_replace('#(^|\r?\n)#', '$1    ', $text);
+        }
+
         $body = (new FormBody)
-            ->addField("text", $text)
+            ->addField("text", rtrim($text)) // only rtrim an not trim, leading space may be legit
             ->addField("fkey", (string) $room->getFKey());
 
         $url = $room->getIdentifier()->getEndpointURL(ChatRoomEndpoint::POST_MESSAGE);

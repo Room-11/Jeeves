@@ -7,9 +7,14 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\NoDisableEnable;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Chuck implements Plugin {
-    use CommandOnlyPlugin;
+    use CommandOnly, NoDisableEnable;
+
+    const API_URL = 'http://api.icndb.com/jokes/random/';
 
     private $chatClient;
 
@@ -20,42 +25,46 @@ class Chuck implements Plugin {
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(Command $command): \Generator {
+    private function getJoke(): \Generator
+    {
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(
-            "http://api.icndb.com/jokes/random/"
-        );
+        $response = yield $this->httpClient->request(self::API_URL);
 
-        $result = json_decode($response->getBody(), true);
+        $result = json_try_decode($response->getBody(), true);
 
+        if (!isset($result['type']) && $result['type'] !== 'success') {
+            throw new \RuntimeException('Invalid response format');
+        }
 
-        if(isset($result["type"]) && $result["type"] == "success") {
-            $joke = htmlspecialchars_decode($this->skeetify($command, $result["value"]["joke"]));
-            yield from $this->chatClient->postMessage($command->getRoom(), $joke);
-        } else {
+        return htmlspecialchars_decode($result['value']['joke']);
+    }
+
+    public function getChuckJoke(Command $command): \Generator
+    {
+        try {
+            $joke = yield from $this->getJoke();
+        } catch (\Throwable $e) {
             yield from $this->chatClient->postReply(
                 $command, "Ugh, there was some weird problem while getting the joke."
             );
-        }
-    }
-
-    private function skeetify(Command $command, string $joke): string {
-        if ($command->getCommandName() !== "skeet") {
-            return $joke;
+            return;
         }
 
-        return str_replace("Chuck Norris", "Jon Skeet", $joke);
+        yield from $this->chatClient->postMessage($command->getRoom(), $joke);
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
+    public function getSkeetJoke(Command $command): \Generator
     {
-        yield from $this->getResult($command);
+        try {
+            $joke = str_replace('Chuck Norris', 'Jon Skeet', yield from $this->getJoke());
+        } catch (\Throwable $e) {
+            yield from $this->chatClient->postReply(
+                $command, "Ugh, there was some weird problem while getting the joke."
+            );
+            return;
+        }
+
+        yield from $this->chatClient->postMessage($command->getRoom(), $joke);
     }
 
     /**
@@ -66,5 +75,31 @@ class Chuck implements Plugin {
     public function getHandledCommands(): array
     {
         return ["chuck", "skeet"];
+    }
+
+    public function getName(): string
+    {
+        return 'ChuckSkeet';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Posts a random Chuck Norris/Jon Skeet joke on request';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
+    }
+
+    /**
+     * @return PluginCommandEndpoint[]
+     */
+    public function getCommandEndpoints(): array
+    {
+        return [
+            new PluginCommandEndpoint('Chuck', [$this, 'getChuckJoke'], 'chuck', 'Posts a random Chuck Norris joke'),
+            new PluginCommandEndpoint('Skeet', [$this, 'getSkeetJoke'], 'skeet', 'Posts a random Jon Skeet joke'),
+        ];
     }
 }

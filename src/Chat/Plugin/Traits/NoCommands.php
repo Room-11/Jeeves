@@ -1,7 +1,7 @@
 <?php  declare(strict_types=1);
 namespace Room11\Jeeves\Chat\Plugin\Traits;
 
-class NoCommands
+trait NoCommands
 {
     public function getCommandEndpoints(): array { return []; }
 }

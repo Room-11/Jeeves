@@ -24,4 +24,8 @@ interface Plugin
      * @return callable|null
      */
     public function getMessageHandler();
+
+    public function enableForRoom(string $roomIdent) /*: void*/;
+
+    public function disableForRoom(string $roomIdent) /*: void*/;
 }

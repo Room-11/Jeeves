@@ -6,11 +6,12 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\NoDisableEnable;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Canon implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, NoDisableEnable;
 
     // we need shortened links because otherwise we will hit the chat message length
     const CANONS = [
@@ -46,8 +47,12 @@ class Canon implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    private function getResult(Command $command): \Generator {
-        if ($command->getParameters()[0] === "list") {
+    public function getResult(Command $command): \Generator {
+        if (!$command->hasParameters()) {
+            return;
+        }
+
+        if ($command->getParameter(0) === "list") {
             yield from $this->chatClient->postMessage(
                 $command->getRoom(),
                 $this->getSupportedCanonicalsMessage()
@@ -81,31 +86,6 @@ class Canon implements Plugin
         return self::CANONS[strtolower($keyword)]["stackoverflow"];
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
-    {
-        if (!$command->getParameters()) {
-            return;
-        }
-
-        yield from $this->getResult($command);
-    }
-
-    /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
-     */
-    public function getHandledCommands(): array
-    {
-        return ["canon"];
-    }
-
     public function getName(): string
     {
         return 'Canonicals';
@@ -123,6 +103,6 @@ class Canon implements Plugin
 
     public function getCommandEndpoints(): array
     {
-        return [new PluginCommandEndpoint('canon', [$this, 'handleCommand'], 'canon')];
+        return [new PluginCommandEndpoint('canon', [$this, 'getResult'], 'canon')];
     }
 }
