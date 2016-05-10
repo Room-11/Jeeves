@@ -26,8 +26,8 @@ use Room11\OpenId\UriFactory;
 $injector->alias(HttpClient::class, ArtaxClient::class);
 $injector->alias(OpenIdAuthenticator::class, StackExchangeAuthenticator::class);
 
-$injector->define(FileAdminStorage::class, [":dataFile" => __DIR__ . "/../data/admins.json"]);
-$injector->define(FileBanStorage::class, [":dataFile" => __DIR__ . "/../data/bans.json"]);
+$injector->define(FileAdminStorage::class, [":dataFile" => __DIR__ . "/../data/admins.%s.json"]);
+$injector->define(FileBanStorage::class, [":dataFile" => __DIR__ . "/../data/bans.%s.json"]);
 
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);

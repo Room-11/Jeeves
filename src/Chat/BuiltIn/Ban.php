@@ -23,7 +23,7 @@ class Ban implements BuiltInCommand
     }
 
     private function execute(CommandMessage $command): \Generator {
-        if (!yield from $this->admin->isAdmin($command->getUserId())) {
+        if (!yield from $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
             yield from $this->chatClient->postReply(
                 $command, "I'm sorry Dave, I'm afraid I can't do that"
             );
@@ -50,7 +50,7 @@ class Ban implements BuiltInCommand
 
     private function list(CommandMessage $command): \Generator
     {
-        $bans = yield from $this->storage->getAll();
+        $bans = yield from $this->storage->getAll($command->getRoom());
 
         if (!$bans) {
             yield from $this->chatClient->postMessage($command->getRoom(), "No users are currently on the naughty list.");
@@ -65,13 +65,13 @@ class Ban implements BuiltInCommand
     }
 
     private function add(CommandMessage $command, int $userId, string $duration): \Generator {
-        yield from $this->storage->add($userId, $duration);
+        yield from $this->storage->add($command->getRoom(), $userId, $duration);
 
         yield from $this->chatClient->postMessage($command->getRoom(), "User is banned.");
     }
 
     private function remove(CommandMessage $command, int $userId): \Generator {
-        yield from $this->storage->remove($userId);
+        yield from $this->storage->remove($command->getRoom(), $userId);
 
         yield from $this->chatClient->postMessage($command->getRoom(), "User is unbanned.");
     }

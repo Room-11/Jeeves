@@ -216,42 +216,6 @@ class PluginManager
     }
 
     /**
-     * @param Plugin|string $plugin
-     * @param ChatRoom|ChatRoomIdentifier|string $room
-     * @return bool
-     */
-    public function isPluginEnabledForRoom($plugin, $room): bool
-    {
-        list($pluginName) = $this->resolvePluginFromNameOrObject($plugin);
-        $roomId = $this->resolveRoomFromIdentOrObject($room);
-
-        return isset($this->enabledPlugins[$roomId][$pluginName]);
-    }
-
-    /**
-     * @param Plugin|string $plugin
-     * @param ChatRoom|ChatRoomIdentifier|string $room
-     * @todo persist this
-     */
-    public function disablePluginForRoom($plugin, $room) /*: void*/
-    {
-        list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
-        $roomId = $this->resolveRoomFromIdentOrObject($room);
-
-        $this->logger->log(Level::DEBUG, "Disabling plugin '{$pluginName}' for room '{$roomId}'");
-
-        unset($this->enabledPlugins[$roomId][$pluginName]);
-
-        foreach ($this->commandEndpoints[$pluginName] as $endpoint) {
-            if (null !== $command = $endpoint->getDefaultCommand()) {
-                unset($this->commandMap[$roomId][$command]);
-            }
-        }
-
-        $plugin->disableForRoom($roomId);
-    }
-
-    /**
      * @param ChatRoom|ChatRoomIdentifier|string $room
      * @return array
      */
@@ -321,6 +285,42 @@ class PluginManager
         }
 
         unset($this->commandMap[$roomId][$command]);
+    }
+
+    /**
+     * @param Plugin|string $plugin
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @return bool
+     */
+    public function isPluginEnabledForRoom($plugin, $room): bool
+    {
+        list($pluginName) = $this->resolvePluginFromNameOrObject($plugin);
+        $roomId = $this->resolveRoomFromIdentOrObject($room);
+
+        return isset($this->enabledPlugins[$roomId][$pluginName]);
+    }
+
+    /**
+     * @param Plugin|string $plugin
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @todo persist this
+     */
+    public function disablePluginForRoom($plugin, $room) /*: void*/
+    {
+        list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
+        $roomId = $this->resolveRoomFromIdentOrObject($room);
+
+        $this->logger->log(Level::DEBUG, "Disabling plugin '{$pluginName}' for room '{$roomId}'");
+
+        unset($this->enabledPlugins[$roomId][$pluginName]);
+
+        foreach ($this->commandEndpoints[$pluginName] as $endpoint) {
+            if (null !== $command = $endpoint->getDefaultCommand()) {
+                unset($this->commandMap[$roomId][$command]);
+            }
+        }
+
+        $plugin->disableForRoom($roomId);
     }
 
     /**
@@ -421,7 +421,7 @@ class PluginManager
             $room = $message->getRoom()->getIdentifier()->getIdentString();
             $command = $message->getCommandName();
 
-            if (yield from $this->banStorage->isBanned($userId)) {
+            if (yield from $this->banStorage->isBanned($message->getRoom(), $userId)) {
                 $this->logger->log(Level::DEBUG,
                     "User #{$userId} is banned, ignoring event #{$eventId} for plugin command endpoints"
                     . " (command: {$command})"

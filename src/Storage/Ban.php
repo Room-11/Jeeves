@@ -2,13 +2,36 @@
 
 namespace Room11\Jeeves\Storage;
 
+use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+
 interface Ban
 {
-    public function getAll(): \Generator;
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @return \Generator
+     */
+    public function getAll($room): \Generator;
 
-    public function isBanned(int $userId): \Generator;
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @param int $userId
+     * @return \Generator
+     */
+    public function isBanned($room, int $userId): \Generator;
 
-    public function add(int $userId, string $duration): \Generator;
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @param int $userId
+     * @param string $duration
+     * @return \Generator
+     */
+    public function add($room, int $userId, string $duration): \Generator;
 
-    public function remove(int $userId): \Generator;
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @param int $userId
+     * @return \Generator
+     */
+    public function remove($room, int $userId): \Generator;
 }

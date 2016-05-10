@@ -162,7 +162,7 @@ class Tweet implements Plugin
             return;
         }
 
-        if (!yield from $this->admin->isAdmin($command->getUserId())) {
+        if (!yield from $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
             yield from $this->chatClient->postReply(
                 $command, "I'm sorry Dave, I'm afraid I can't do that"
             );

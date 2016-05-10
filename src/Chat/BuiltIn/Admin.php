@@ -36,7 +36,7 @@ class Admin implements BuiltInCommand
             return;
         }
 
-        if (!yield from $this->storage->isAdmin($command->getUserId())) {
+        if (!yield from $this->storage->isAdmin($command->getRoom(), $command->getUserId())) {
             yield from $this->chatClient->postReply(
                 $command, "I'm sorry Dave, I'm afraid I can't do that"
             );
@@ -52,7 +52,7 @@ class Admin implements BuiltInCommand
     }
 
     private function getList(CommandMessage $command): \Generator {
-        $userIds = yield from $this->storage->getAll();
+        $userIds = yield from $this->storage->getAll($command->getRoom());
 
         if (!$userIds) {
             yield from $this->chatClient->postMessage($command->getRoom(), "There are no registered admins");
@@ -67,13 +67,13 @@ class Admin implements BuiltInCommand
     }
 
     private function add(CommandMessage $command, int $userId): \Generator {
-        yield from $this->storage->add($userId);
+        yield from $this->storage->add($command->getRoom(), $userId);
 
         yield from $this->chatClient->postMessage($command->getRoom(), "User added to the admin list.");
     }
 
     private function remove(CommandMessage $command, int $userId): \Generator {
-        yield from $this->storage->remove($userId);
+        yield from $this->storage->remove($command->getRoom(), $userId);
 
         yield from $this->chatClient->postMessage($command->getRoom(), "User removed from the admin list.");
     }
