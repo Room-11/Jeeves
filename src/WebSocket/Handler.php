@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\WebSocket;
 
+use Amp\Promise;
 use Amp\Websocket;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Event\Factory as EventFactory;
@@ -46,15 +47,12 @@ class Handler implements Websocket {
         $this->sockets = $sockets;
         $this->room = $room;
         $this->socketId = $socketId;
-
-        //todo persist this
-        foreach ($pluginManager->getRegisteredPlugins() as $plugin) {
-            $pluginManager->enablePluginForRoom($plugin, $room);
-        }
     }
 
-    public function onOpen(Websocket\Endpoint $endpoint, array $headers) {
+    public function onOpen(Websocket\Endpoint $endpoint, array $headers): Promise {
         $this->logger->log(Level::DEBUG, "Connection established");
+
+        return $this->pluginManager->enableAllPluginsForRoom($this->room);
     }
 
     public function onData(Websocket\Message $msg): \Generator {

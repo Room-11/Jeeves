@@ -21,6 +21,7 @@ use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
 use Room11\Jeeves\WebSocket\Collection as WebSocketCollection;
 use Room11\OpenId\Credentials;
@@ -42,6 +43,7 @@ require_once __DIR__ . '/setup-di.php';
 
 $injector->alias(AdminStorage::class, $config['storage']['admin']);
 $injector->alias(BanStorage::class, $config['storage']['ban']);
+$injector->alias(PluginStorage::class, $config['storage']['plugin']);
 
 $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);
 
@@ -122,6 +124,7 @@ $injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
 $injector->delegate(PluginManager::class, function () use ($injector, $config) {
     $pluginManager = new PluginManager(
         $injector->make(BanStorage::class),
+        $injector->make(PluginStorage::class),
         $injector->make(Logger::class),
         $injector->make(EventFilterBuilder::class)
     );

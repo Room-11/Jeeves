@@ -15,12 +15,14 @@ use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use function Amp\all;
 use function Amp\resolve;
 
 class PluginManager
 {
     private $banStorage;
+    private $pluginStorage;
     private $logger;
     private $filterBuilder;
 
@@ -121,9 +123,19 @@ class PluginManager
         return $room instanceof ChatRoomIdentifier ? $room->getIdentString() : (string)$room;
     }
 
-    public function __construct(BanStorage $banStorage, Logger $logger, EventFilterBuilder $filterBuilder)
+    private function promise(callable $generator): Promise
     {
+        return resolve($generator());
+    }
+
+    public function __construct(
+        BanStorage $banStorage,
+        PluginStorage $pluginStorage,
+        Logger $logger,
+        EventFilterBuilder $filterBuilder
+    ) {
         $this->banStorage = $banStorage;
+        $this->pluginStorage = $pluginStorage;
         $this->logger = $logger;
         $this->filterBuilder = $filterBuilder;
     }
@@ -255,28 +267,31 @@ class PluginManager
      * @param Plugin|string $plugin
      * @param string $endpoint
      * @param string $command
-     * @todo persist this
+     * @return Promise
      */
-    public function mapCommandForRoom($room, $plugin, string $endpoint, string $command) /*: void*/
+    public function mapCommandForRoom($room, $plugin, string $endpoint, string $command): Promise
     {
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
 
-        if (!isset($this->commandEndpoints[$pluginName][strtolower($endpoint)])) {
+        $endpointName = strtolower($endpoint);
+        if (!isset($this->commandEndpoints[$pluginName][$endpointName])) {
             throw new \LogicException("Endpoint '{$endpoint}' not found for plugin '{$pluginName}'");
         }
+        $endpoint = $this->commandEndpoints[$pluginName][$endpointName];
 
-        $endpoint = $this->commandEndpoints[$pluginName][strtolower($endpoint)];
         $roomId = $this->resolveRoomFromIdentOrObject($room);
 
         $this->commandMap[$roomId][$command] = [$plugin, $endpoint];
+
+        return $this->pluginStorage->addCommandMapping($roomId, $pluginName, $command, $endpointName);
     }
 
     /**
      * @param ChatRoom|ChatRoomIdentifier|string $room
      * @param string $command
-     * @todo persist this
+     * @return Promise
      */
-    public function unmapCommandForRoom($room, string $command) /*: void*/
+    public function unmapCommandForRoom($room, string $command): Promise
     {
         $roomId = $this->resolveRoomFromIdentOrObject($room);
 
@@ -284,7 +299,11 @@ class PluginManager
             throw new \LogicException("Command '{$command}' not mapped in room '{$roomId}'");
         }
 
+        list($pluginName) = $this->resolvePluginFromNameOrObject($this->commandMap[$roomId][$command][0]);
+
         unset($this->commandMap[$roomId][$command]);
+
+        return $this->pluginStorage->removeCommandMapping($roomId, $pluginName, $command);
     }
 
     /**
@@ -301,11 +320,29 @@ class PluginManager
     }
 
     /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @return Promise
+     */
+    public function enableAllPluginsForRoom($room): Promise
+    {
+        return $this->promise(function() use($room) {
+            foreach ($this->registeredPlugins as $plugin) {
+                list($pluginName) = $this->resolvePluginFromNameOrObject($plugin);
+                $roomId = $this->resolveRoomFromIdentOrObject($room);
+
+                if (yield $this->pluginStorage->isPluginEnabled($roomId, $pluginName)) {
+                    yield $this->enablePluginForRoom($plugin, $room);
+                }
+            }
+        });
+    }
+
+    /**
      * @param Plugin|string $plugin
      * @param ChatRoom|ChatRoomIdentifier|string $room
-     * @todo persist this
+     * @return Promise
      */
-    public function disablePluginForRoom($plugin, $room) /*: void*/
+    public function disablePluginForRoom($plugin, $room): Promise
     {
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
         $roomId = $this->resolveRoomFromIdentOrObject($room);
@@ -314,35 +351,53 @@ class PluginManager
 
         unset($this->enabledPlugins[$roomId][$pluginName]);
 
-        foreach ($this->commandEndpoints[$pluginName] as $endpoint) {
-            if (null !== $command = $endpoint->getDefaultCommand()) {
+        foreach ($this->commandMap[$roomId] as $command => list($cmdPlugin, $cmdEndpoint)) {
+            if ($cmdPlugin === $plugin) {
                 unset($this->commandMap[$roomId][$command]);
             }
         }
 
         $plugin->disableForRoom($roomId);
+
+        return $this->pluginStorage->setPluginEnabled($roomId, $pluginName, false);
     }
 
     /**
      * @param Plugin|string $plugin
      * @param ChatRoom|ChatRoomIdentifier|string $room
-     * @todo persist this
+     * @return Promise
      */
-    public function enablePluginForRoom($plugin, $room) /*: void*/
+    public function enablePluginForRoom($plugin, $room): Promise
     {
-        list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
-        $roomId = $this->resolveRoomFromIdentOrObject($room);
+        return $this->promise(function() use($plugin, $room) {
+            list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
+            $roomId = $this->resolveRoomFromIdentOrObject($room);
 
-        $this->logger->log(Level::DEBUG, "Enabling plugin '{$pluginName}' for room '{$roomId}'");
-        $this->enabledPlugins[$roomId][$pluginName] = true;
+            $this->logger->log(Level::DEBUG, "Enabling plugin '{$pluginName}' for room '{$roomId}'");
+            $this->enabledPlugins[$roomId][$pluginName] = true;
 
-        foreach ($this->commandEndpoints[$pluginName] as $endpoint) {
-            if (null !== $command = $endpoint->getDefaultCommand()) {
-                $this->commandMap[$roomId][$command] = [$plugin, $endpoint];
+            $commandMappings = yield $this->pluginStorage->getAllMappedCommands($roomId, $pluginName);
+
+            if ($commandMappings === null) {
+                foreach ($this->commandEndpoints[$pluginName] as $endpoint) {
+                    if (null !== $command = $endpoint->getDefaultCommand()) {
+                        $this->commandMap[$roomId][$command] = [$plugin, $endpoint];
+                        yield $this->pluginStorage->addCommandMapping($roomId, $pluginName, $command, strtolower($endpoint->getName()));
+                    }
+                }
+            } else {
+                foreach ($commandMappings as $command => $endpointName) {
+                    if (isset($this->commandEndpoints[$pluginName][$endpointName])) {
+                        $endpoint = $this->commandEndpoints[$pluginName][$endpointName];
+                        $this->commandMap[$roomId][$command] = [$plugin, $endpoint];
+                    }
+                }
             }
-        }
 
-        $plugin->disableForRoom($roomId);
+            $plugin->disableForRoom($roomId);
+
+            yield $this->pluginStorage->setPluginEnabled($roomId, $pluginName, true);
+        });
     }
 
     /**

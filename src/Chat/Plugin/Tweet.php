@@ -54,7 +54,7 @@ class Tweet implements Plugin
         $messageInfo = yield from $this->chatClient->getMessage($command->getRoom(), (int) $matches[1]);
 
         $messageBody = html_entity_decode($messageInfo->getBody(), ENT_QUOTES);
-        $dom = domdocument_load_html($messageBody, 'UTF-8', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $dom = domdocument_load_html($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
         $this->replaceEmphasizeTags($dom);
         $this->replaceStrikeTags($dom);

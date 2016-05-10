@@ -65,7 +65,7 @@ class Command implements BuiltInCommand
             }
         }
 
-        $this->pluginManager->mapCommandForRoom($command->getRoom(), $plugin, $endpoint, $cmd);
+        yield $this->pluginManager->mapCommandForRoom($command->getRoom(), $plugin, $endpoint, $cmd);
 
         yield from $this->chatClient->postMessage(
             $command->getRoom(), "Command '{$cmd}' mapped to {$plugin->getName()} # {$endpoint}"
@@ -101,6 +101,8 @@ class Command implements BuiltInCommand
             yield from $this->chatClient->postMessage($command->getRoom(), "No commands are currently mapped");
             return;
         }
+
+        ksort($mappings);
 
         $result = "Commands currently mapped:";
 

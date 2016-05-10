@@ -110,7 +110,7 @@ class Plugin implements BuiltInCommand
             return;
         }
 
-        $this->pluginManager->enablePluginForRoom($plugin, $command->getRoom());
+        yield $this->pluginManager->enablePluginForRoom($plugin, $command->getRoom());
         yield from $this->chatClient->postMessage($command->getRoom(), "Plugin '{$plugin}' is now enabled in this room");
     }
 
@@ -131,7 +131,7 @@ class Plugin implements BuiltInCommand
             return;
         }
 
-        $this->pluginManager->disablePluginForRoom($plugin, $command->getRoom());
+        yield $this->pluginManager->disablePluginForRoom($plugin, $command->getRoom());
         yield from $this->chatClient->postMessage($command->getRoom(), "Plugin '{$plugin}' is now disabled in this room");
     }
 

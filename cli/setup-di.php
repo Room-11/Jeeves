@@ -15,8 +15,10 @@ use Room11\Jeeves\Chat\Room\CredentialManager;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use Room11\Jeeves\Storage\File\Admin as FileAdminStorage;
 use Room11\Jeeves\Storage\File\Ban as FileBanStorage;
+use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
 use Room11\Jeeves\WebSocket\Collection as WebSocketCollection;
 use Room11\OpenId\Authenticator as OpenIdAuthenticator;
 use Room11\OpenId\StackExchangeAuthenticator;
@@ -28,9 +30,11 @@ $injector->alias(OpenIdAuthenticator::class, StackExchangeAuthenticator::class);
 
 $injector->define(FileAdminStorage::class, [":dataFile" => __DIR__ . "/../data/admins.%s.json"]);
 $injector->define(FileBanStorage::class, [":dataFile" => __DIR__ . "/../data/bans.%s.json"]);
+$injector->define(FilePluginStorage::class, [":dataFile" => __DIR__ . "/../data/plugins.%s.json"]);
 
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);
+$injector->share(PluginStorage::class);
 $injector->share(BitlyClient::class);
 $injector->share(ChatClient::class);
 $injector->share(ChatRoomCollection::class);
