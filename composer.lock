@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "39e04cf18206ac47f61101263bd16908",
+    "hash": "925335ca761041b14e5549fcda5c2cbf",
     "content-hash": "e15b4f9101585bc6301d5a0c5a66b6e7",
     "packages": [
         {
@@ -578,16 +578,16 @@
         },
         {
             "name": "room11/dom-utils",
-            "version": "v1.0.0",
+            "version": "v1.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/DOMUtils.git",
-                "reference": "cadfd74ad5f4962418e35043d21121212e63655b"
+                "reference": "2f5961bca75588a32ec8221aabe91b0bcbbc9734"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/cadfd74ad5f4962418e35043d21121212e63655b",
-                "reference": "cadfd74ad5f4962418e35043d21121212e63655b",
+                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/2f5961bca75588a32ec8221aabe91b0bcbbc9734",
+                "reference": "2f5961bca75588a32ec8221aabe91b0bcbbc9734",
                 "shasum": ""
             },
             "type": "library",
@@ -609,7 +609,7 @@
                 }
             ],
             "description": "Utility functions for the PHP DOM extension",
-            "time": "2016-05-06 12:09:53"
+            "time": "2016-05-10 17:51:51"
         },
         {
             "name": "room11/openid",
@@ -741,7 +741,7 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.0.5",
+            "version": "v3.0.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
