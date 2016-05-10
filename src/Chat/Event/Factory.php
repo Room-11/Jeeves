@@ -41,21 +41,27 @@ class Factory
     {
         $result = [];
 
-        foreach ($data['r' . $room->getIdentifier()->getId()]['e'] ?? [] as $event) {
-            if (!isset($event['id'])) {
+        foreach ($data['r' . $room->getIdentifier()->getId()]['e'] ?? [] as $eventData) {
+            if (!isset($eventData['id'])) {
                 continue;
             }
 
-            $eventId = (int)$event['id'];
+            $eventId = (int)$eventData['id'];
             if (isset($result[$eventId])) {
                 continue;
             }
 
-            $eventType = (int)($event['event_type'] ?? 0);
+            $eventType = (int)($eventData['event_type'] ?? 0);
 
-            $result[$eventId] = isset($this->classes[$eventType])
-                ? new $this->classes[$eventType]($event, $room, $this->messageFactory)
-                : new Unknown($event);
+            $event = isset($this->classes[$eventType])
+                ? new $this->classes[$eventType]($eventData, $room, $this->messageFactory)
+                : new Unknown($eventData);
+
+            if ($event instanceof RoomSourcedEvent && $eventData['room_id'] !== $room->getIdentifier()->getId()) {
+                continue;
+            }
+
+            $result[$eventId] = $event;
         }
 
         return $result;
