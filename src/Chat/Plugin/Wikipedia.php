@@ -7,10 +7,12 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Wikipedia implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     private $chatClient;
 
@@ -20,23 +22,6 @@ class Wikipedia implements Plugin
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
-    }
-
-    private function getResult(Command $command): \Generator
-    {
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(
-            'https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . rawurlencode(implode('%20', $command->getParameters()))
-        );
-
-        $result   = json_decode($response->getBody(), true);
-        $firstHit = reset($result['query']['pages']);
-
-        if (isset($firstHit['pageid'])) {
-            yield from $this->postResult($command, $firstHit);
-        } else {
-            yield from $this->postNoResult($command);
-        }
     }
 
     private function postResult(Command $command, array $result): \Generator
@@ -56,28 +41,47 @@ class Wikipedia implements Plugin
         yield from $this->chatClient->postReply($command, 'Sorry I couldn\'t find that page.');
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
+    public function search(Command $command): \Generator
     {
-        if (!$command->getParameters()) {
+        if (!$command->hasParameters()) {
             return;
         }
 
-        yield from $this->getResult($command);
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request(
+            'https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . rawurlencode(implode('%20', $command->getParameters()))
+        );
+
+        $result   = json_decode($response->getBody(), true);
+        $firstHit = reset($result['query']['pages']);
+
+        if (isset($firstHit['pageid'])) {
+            yield from $this->postResult($command, $firstHit);
+        } else {
+            yield from $this->postNoResult($command);
+        }
+    }
+
+    public function getName(): string
+    {
+        return 'Wikipedia';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Looks up wikipedia entries and posts onebox links';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['wiki'];
+        return [new PluginCommandEndpoint('Search', [$this, 'search'], 'wiki')];
     }
 }

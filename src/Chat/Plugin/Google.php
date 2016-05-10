@@ -7,11 +7,13 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Amp\all;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Google implements Plugin {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     const ENCODING = "UTF-8";
     const ELLIPSIS = "\xE2\x80\xA6";
@@ -34,36 +36,6 @@ class Google implements Plugin {
             'q' => implode(' ', $command->getParameters()),
             'lr' => 'lang_en',
         ]);
-    }
-
-    private function getResult(Command $command): \Generator {
-        $uri = $this->getSearchURL($command);
-
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($uri);
-
-        if ($response->getStatus() !== 200) {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                "It was Google's fault, not mine."
-            );
-            return;
-        }
-
-        $dom = domdocument_load_html($response->getBody());
-        $xpath = new \DOMXPath($dom);
-        $nodes = $this->getResultNodes($xpath);
-
-        if($nodes->length === 0) {
-            yield from $this->postNoResultsMessage($command);
-
-            return;
-        }
-
-        $searchResults = $this->getSearchResults($nodes, $xpath);
-        $postMessage   = $this->getPostMessage($searchResults, $uri, $command);
-
-        yield from $this->chatClient->postMessage($command->getRoom(),$postMessage);
     }
 
     private function postNoResultsMessage(Command $command): \Generator {
@@ -153,28 +125,60 @@ class Google implements Plugin {
         return $message;
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
-    {
-        if (!$command->getParameters()) {
+    public function search(Command $command): \Generator {
+        if (!$command->hasParameters()) {
             return;
         }
 
-        yield from $this->getResult($command);
+        $uri = $this->getSearchURL($command);
+
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request($uri);
+
+        if ($response->getStatus() !== 200) {
+            yield from $this->chatClient->postMessage(
+                $command->getRoom(),
+                "It was Google's fault, not mine."
+            );
+            return;
+        }
+
+        $dom = domdocument_load_html($response->getBody());
+        $xpath = new \DOMXPath($dom);
+        $nodes = $this->getResultNodes($xpath);
+
+        if($nodes->length === 0) {
+            yield from $this->postNoResultsMessage($command);
+
+            return;
+        }
+
+        $searchResults = $this->getSearchResults($nodes, $xpath);
+        $postMessage   = $this->getPostMessage($searchResults, $uri, $command);
+
+        yield from $this->chatClient->postMessage($command->getRoom(),$postMessage);
+    }
+
+    public function getName(): string
+    {
+        return 'Google';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Retrieves and displays search results from Google';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ["google"];
+        return [new PluginCommandEndpoint('Search', [$this, 'search'], 'google')];
     }
 }

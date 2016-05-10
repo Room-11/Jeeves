@@ -8,13 +8,15 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Twitter\Credentials;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Tweet implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     const BASE_URI = "https://api.twitter.com/1.1";
 
@@ -33,82 +35,6 @@ class Tweet implements Plugin
         $this->admin       = $admin;
         $this->credentials = $credentials;
         $this->httpClient = $httpClient;
-    }
-
-    private function validMessage(Command $command): bool {
-        return count($command->getParameters()) === 1
-            && $this->isMessageValid($command->getParameters()[0]);
-    }
-
-    private function execute(Command $command): \Generator {
-        if (!yield from $this->admin->isAdmin($command->getUserId())) {
-            yield from $this->chatClient->postReply(
-                $command, "I'm sorry Dave, I'm afraid I can't do that"
-            );
-
-            return;
-        }
-
-        yield from $this->updateConfigWhenNeeded();
-
-        $tweetText = yield from $this->getMessage($command, $command->getParameters()[0]);
-
-        if (mb_strlen($tweetText, "UTF-8") > 140) {
-            yield from $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
-
-            return;
-        }
-
-        $oauthParameters = [
-            "oauth_consumer_key"     => $this->credentials->getConsumerKey(),
-            "oauth_token"            => $this->credentials->getAccessToken(),
-            "oauth_nonce"            => $this->getNonce(),
-            "oauth_timestamp"        => (new \DateTimeImmutable())->format("U"),
-            "oauth_signature_method" => "HMAC-SHA1",
-            "oauth_version"          => "1.0",
-            "status"                 => $tweetText,
-        ];
-
-        $oauthParameters = array_map("rawurlencode", $oauthParameters);
-
-        asort($oauthParameters);
-        ksort($oauthParameters);
-
-        $queryString = urldecode(http_build_query($oauthParameters, '', '&'));
-
-        $baseString = "POST&" . rawurlencode(self::BASE_URI . "/statuses/update.json") . "&" . rawurlencode($queryString);
-        $key        = $this->credentials->getConsumerSecret() . "&" . $this->credentials->getAccessTokenSecret();
-        $signature  = rawurlencode(base64_encode(hash_hmac('sha1', $baseString, $key, true)));
-
-        $oauthParameters["oauth_signature"] = $signature;
-        $oauthParameters = array_map(function($value){
-            return '"'. $value . '"';
-        }, $oauthParameters);
-
-        unset($oauthParameters["status"]);
-
-        asort($oauthParameters);
-        ksort($oauthParameters);
-
-        $authorizationHeader = $auth = "OAuth " . urldecode(http_build_query($oauthParameters, '', ', '));
-
-        $request = (new HttpRequest)
-            ->setUri(self::BASE_URI . "/statuses/update.json")
-            ->setMethod('POST')
-            ->setProtocol('1.1')
-            ->setBody('status=' . urlencode($tweetText))
-            ->setAllHeaders([
-                'Authorization' => $authorizationHeader,
-                'Content-Type'  => 'application/x-www-form-urlencoded',
-            ])
-        ;
-
-        /** @var HttpResponse $result */
-        $result    = yield $this->httpClient->request($request);
-        $tweetInfo = json_decode($result->getBody(), true);
-        $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
-
-        yield from $this->chatClient->postReply($command, $tweetUri);
     }
 
     private function getNonce(): string {
@@ -231,28 +157,101 @@ class Tweet implements Plugin
         var_dump($this->twitterConfig);
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
-    {
-        if (!$this->validMessage($command)) {
+    public function tweet(Command $command): \Generator {
+        if (!$this->isMessageValid($command->getParameter(0))) {
             return;
         }
 
-        yield from $this->execute($command);
+        if (!yield from $this->admin->isAdmin($command->getUserId())) {
+            yield from $this->chatClient->postReply(
+                $command, "I'm sorry Dave, I'm afraid I can't do that"
+            );
+
+            return;
+        }
+
+        yield from $this->updateConfigWhenNeeded();
+
+        $tweetText = yield from $this->getMessage($command, $command->getParameters()[0]);
+
+        if (mb_strlen($tweetText, "UTF-8") > 140) {
+            yield from $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
+
+            return;
+        }
+
+        $oauthParameters = [
+            "oauth_consumer_key"     => $this->credentials->getConsumerKey(),
+            "oauth_token"            => $this->credentials->getAccessToken(),
+            "oauth_nonce"            => $this->getNonce(),
+            "oauth_timestamp"        => (new \DateTimeImmutable())->format("U"),
+            "oauth_signature_method" => "HMAC-SHA1",
+            "oauth_version"          => "1.0",
+            "status"                 => $tweetText,
+        ];
+
+        $oauthParameters = array_map("rawurlencode", $oauthParameters);
+
+        asort($oauthParameters);
+        ksort($oauthParameters);
+
+        $queryString = urldecode(http_build_query($oauthParameters, '', '&'));
+
+        $baseString = "POST&" . rawurlencode(self::BASE_URI . "/statuses/update.json") . "&" . rawurlencode($queryString);
+        $key        = $this->credentials->getConsumerSecret() . "&" . $this->credentials->getAccessTokenSecret();
+        $signature  = rawurlencode(base64_encode(hash_hmac('sha1', $baseString, $key, true)));
+
+        $oauthParameters["oauth_signature"] = $signature;
+        $oauthParameters = array_map(function($value){
+            return '"'. $value . '"';
+        }, $oauthParameters);
+
+        unset($oauthParameters["status"]);
+
+        asort($oauthParameters);
+        ksort($oauthParameters);
+
+        $authorizationHeader = $auth = "OAuth " . urldecode(http_build_query($oauthParameters, '', ', '));
+
+        $request = (new HttpRequest)
+            ->setUri(self::BASE_URI . "/statuses/update.json")
+            ->setMethod('POST')
+            ->setProtocol('1.1')
+            ->setBody('status=' . urlencode($tweetText))
+            ->setAllHeaders([
+                'Authorization' => $authorizationHeader,
+                'Content-Type'  => 'application/x-www-form-urlencoded',
+            ])
+        ;
+
+        /** @var HttpResponse $result */
+        $result    = yield $this->httpClient->request($request);
+        $tweetInfo = json_decode($result->getBody(), true);
+        $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
+
+        yield from $this->chatClient->postReply($command, $tweetUri);
+    }
+
+    public function getName(): string
+    {
+        return 'Tweeter';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Tweets chat messages';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ["tweet"];
+        return [new PluginCommandEndpoint('Tweet', [$this, 'tweet'], 'tweet')];
     }
 }

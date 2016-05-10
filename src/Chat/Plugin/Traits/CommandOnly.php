@@ -3,5 +3,5 @@ namespace Room11\Jeeves\Chat\Plugin\Traits;
 
 trait CommandOnly
 {
-    use NoMessageHandler, NoEventHandlers;
+    use NoMessageHandler, NoEventHandlers, NoDisableEnable;
 }

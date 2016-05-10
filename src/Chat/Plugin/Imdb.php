@@ -7,11 +7,13 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Imdb implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     private $chatClient;
 
@@ -21,18 +23,6 @@ class Imdb implements Plugin
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
-    }
-
-    private function getResult(Command $command): \Generator
-    {
-        $response = yield $this->httpClient->request(
-            'http://www.imdb.com/xml/find?xml=1&nr=1&tt=on&q=' . rawurlencode(implode(' ', $command->getParameters()))
-        );
-
-        yield from $this->chatClient->postMessage(
-            $command->getRoom(),
-            $this->getMessage($response)
-        );
     }
 
     private function getMessage(HttpResponse $response): string
@@ -56,28 +46,42 @@ class Imdb implements Plugin
         );
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
+    public function search(Command $command): \Generator
     {
-        if (!$command->getParameters()) {
+        if (!$command->hasParameters()) {
             return;
         }
 
-        yield from $this->getResult($command);
+        $response = yield $this->httpClient->request(
+            'http://www.imdb.com/xml/find?xml=1&nr=1&tt=on&q=' . rawurlencode(implode(' ', $command->getParameters()))
+        );
+
+        yield from $this->chatClient->postMessage(
+            $command->getRoom(),
+            $this->getMessage($response)
+        );
+    }
+
+    public function getName(): string
+    {
+        return 'IMDB';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Searches and displays IMDB entries';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['imdb'];
+        return [new PluginCommandEndpoint('Search', [$this, 'search'], 'imdb')];
     }
 }

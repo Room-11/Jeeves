@@ -6,11 +6,13 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class RFC implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     private $chatClient;
 
@@ -21,7 +23,7 @@ class RFC implements Plugin
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(Command $command): \Generator {
+    public function search(Command $command): \Generator {
         $uri = "https://wiki.php.net/rfc";
 
         /** @var HttpResponse $response */
@@ -72,24 +74,26 @@ class RFC implements Plugin
         );
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
+    public function getName(): string
     {
-        yield from $this->getResult($command);
+        return 'RFC.PHP';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Displays the PHP RFCs which are currently in the voting phase';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['rfcs'];
+        return [new PluginCommandEndpoint('Search', [$this, 'search'], 'rfcs')];
     }
 }

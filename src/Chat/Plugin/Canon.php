@@ -6,12 +6,11 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
-use Room11\Jeeves\Chat\Plugin\Traits\NoDisableEnable;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Canon implements Plugin
 {
-    use CommandOnly, NoDisableEnable;
+    use CommandOnly;
 
     // we need shortened links because otherwise we will hit the chat message length
     const CANONS = [
@@ -47,25 +46,7 @@ class Canon implements Plugin
         $this->chatClient = $chatClient;
     }
 
-    public function getResult(Command $command): \Generator {
-        if (!$command->hasParameters()) {
-            return;
-        }
-
-        if ($command->getParameter(0) === "list") {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                $this->getSupportedCanonicalsMessage()
-            );
-        } else {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                $this->getMessage(implode(" ", $command->getParameters()))
-            );
-        }
-    }
-
-    private function getSupportedCanonicalsMessage(): string {
+     private function getSupportedCanonicalsMessage(): string {
         $delimiter = "";
         $message = "The following canonicals are currently supported:";
 
@@ -86,6 +67,24 @@ class Canon implements Plugin
         return self::CANONS[strtolower($keyword)]["stackoverflow"];
     }
 
+    public function getCanonical(Command $command): \Generator {
+        if (!$command->hasParameters()) {
+            return;
+        }
+
+        if ($command->getParameter(0) === "list") {
+            yield from $this->chatClient->postMessage(
+                $command->getRoom(),
+                $this->getSupportedCanonicalsMessage()
+            );
+        } else {
+            yield from $this->chatClient->postMessage(
+                $command->getRoom(),
+                $this->getMessage(implode(" ", $command->getParameters()))
+            );
+        }
+    }
+
     public function getName(): string
     {
         return 'Canonicals';
@@ -103,6 +102,6 @@ class Canon implements Plugin
 
     public function getCommandEndpoints(): array
     {
-        return [new PluginCommandEndpoint('canon', [$this, 'getResult'], 'canon')];
+        return [new PluginCommandEndpoint('canon', [$this, 'getCanonical'], 'canon')];
     }
 }

@@ -5,61 +5,25 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Regex implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
+
+    const HE_COMES = "\x48\xCD\xA8\xCD\x8A\xCC\xBD\xCC\x85\xCC\xBE\xCC\x8E\xCC\xA1\xCC\xB8\xCC\xAA\xCC\xAF\x45\xCC\xBE"
+                   . "\xCD\x9B\xCD\xAA\xCD\x84\xCC\x80\xCC\x81\xCC\xA7\xCD\x98\xCC\xAC\xCC\xA9\x20\xCD\xA7\xCC\xBE\xCD"
+                   . "\xAC\xCC\xA7\xCC\xB6\xCC\xA8\xCC\xB1\xCC\xB9\xCC\xAD\xCC\xAF\x43\xCD\xAD\xCC\x8F\xCD\xA5\xCD\xAE"
+                   . "\xCD\x9F\xCC\xB7\xCC\x99\xCC\xB2\xCC\x9D\xCD\x96\x4F\xCD\xAE\xCD\x8F\xCC\xAE\xCC\xAA\xCC\x9D\xCD"
+                   . "\x8D\x4D\xCD\x8A\xCC\x92\xCC\x9A\xCD\xAA\xCD\xA9\xCD\xAC\xCC\x9A\xCD\x9C\xCC\xB2\xCC\x96\x45\xCC"
+                   . "\x91\xCD\xA9\xCD\x8C\xCD\x9D\xCC\xB4\xCC\x9F\xCC\x9F\xCD\x99\xCC\x9E\x53\xCD\xAF\xCC\xBF\xCC\x94"
+                   . "\xCC\xA8\xCD\x80\xCC\xA5\xCD\x85\xCC\xAB\xCD\x8E\xCC\xAD";
 
     private $chatClient;
 
     public function __construct(ChatClient $chatClient) {
         $this->chatClient = $chatClient;
-    }
-
-    private function getResult(Command $command): \Generator {
-        $dom = new \DOMDocument();
-        $dom->loadHTML(implode(" ", $command->getParameters()));
-
-        if (!$this->hasPattern($dom)) {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                "Pattern must be wrapped in a code block."
-            );
-
-            return;
-        }
-
-        if ($this->zalgo($dom)) {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                "H̸̡̪̯ͨ͊̽̅̾̎Ȩ̬̩̾͛ͪ̈́̀́͘ ̶̧̨̱̹̭̯ͧ̾ͬC̷̙̲̝͖ͭ̏ͥͮ͟Oͮ͏̮̪̝͍M̲̖͊̒ͪͩͬ̚̚͜Ȇ̴̟̟͙̞ͩ͌͝S̨̥̫͎̭ͯ̿̔̀ͅ"
-            );
-
-            return;
-        }
-
-        if (!$this->doesMatch($dom)) {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                "No match."
-            );
-
-            return;
-        }
-
-        if (!$this->hasCapturingGroups($dom)) {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                "Matches \\o/"
-            );
-
-            return;
-        }
-
-        yield from $this->chatClient->postMessage(
-            $command->getRoom(),
-            "Matches with the following captured groups: " . $this->getCapturingGroups($dom)
-        );
     }
 
     private function hasPattern(\DOMDocument $dom): bool {
@@ -103,28 +67,64 @@ class Regex implements Plugin
         return $subject;
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
-    {
-        if (!$command->getParameters()) {
+    public function test(Command $command): \Generator {
+        if (!$command->hasParameters()) {
             return;
         }
 
-        yield from $this->getResult($command);
+        $dom = new \DOMDocument();
+        $dom->loadHTML(implode(" ", $command->getParameters()));
+
+        if (!$this->hasPattern($dom)) {
+            yield from $this->chatClient->postReply($command, 'Pattern must be wrapped in a code block');
+
+            return;
+        }
+
+        if ($this->zalgo($dom)) {
+            yield from $this->chatClient->postReply($command, self::HE_COMES);
+
+            return;
+        }
+
+        if (!$this->doesMatch($dom)) {
+            yield from $this->chatClient->postReply($command, 'No match');
+
+            return;
+        }
+
+        if (!$this->hasCapturingGroups($dom)) {
+            yield from $this->chatClient->postReply($command, 'Matches \o/');
+
+            return;
+        }
+
+        yield from $this->chatClient->postReply(
+            $command,
+            "Matches with the following captured groups: " . $this->getCapturingGroups($dom)
+        );
+    }
+
+    public function getName(): string
+    {
+        return 'Regex';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Evaluates regular expressions with PCRE';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ["regex", "re", "pcre"];
+        return [new PluginCommandEndpoint('Test', [$this, 'test'], 'regex')];
     }
 }

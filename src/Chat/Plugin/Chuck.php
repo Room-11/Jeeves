@@ -8,11 +8,10 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
-use Room11\Jeeves\Chat\Plugin\Traits\NoDisableEnable;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Chuck implements Plugin {
-    use CommandOnly, NoDisableEnable;
+    use CommandOnly;
 
     const API_URL = 'http://api.icndb.com/jokes/random/';
 
@@ -56,7 +55,7 @@ class Chuck implements Plugin {
     public function getSkeetJoke(Command $command): \Generator
     {
         try {
-            $joke = str_replace('Chuck Norris', 'Jon Skeet', yield from $this->getJoke());
+            $joke = str_replace(['Chuck', 'Norris'], ['Jon', 'Skeet'], yield from $this->getJoke());
         } catch (\Throwable $e) {
             yield from $this->chatClient->postReply(
                 $command, "Ugh, there was some weird problem while getting the joke."
@@ -65,16 +64,6 @@ class Chuck implements Plugin {
         }
 
         yield from $this->chatClient->postMessage($command->getRoom(), $joke);
-    }
-
-    /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
-     */
-    public function getHandledCommands(): array
-    {
-        return ["chuck", "skeet"];
     }
 
     public function getName(): string

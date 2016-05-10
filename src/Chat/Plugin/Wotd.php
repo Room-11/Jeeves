@@ -7,11 +7,13 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Wotd implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     private $chatClient;
 
@@ -21,18 +23,6 @@ class Wotd implements Plugin
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
-    }
-
-    private function getResult(Command $command): \Generator
-    {
-        $response = yield $this->httpClient->request(
-            'http://www.dictionary.com/wordoftheday/wotd.rss'
-        );
-
-        yield from $this->chatClient->postMessage(
-            $command->getRoom(),
-            $this->getMessage($response)
-        );
     }
 
     private function getMessage(HttpResponse $response): string
@@ -49,24 +39,35 @@ class Wotd implements Plugin
         return '**['.$before[0].'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $before[0]).')**' . $after[0];
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
+    public function fetch(Command $command): \Generator
     {
-        yield from $this->getResult($command);
+        $response = yield $this->httpClient->request(
+            'http://www.dictionary.com/wordoftheday/wotd.rss'
+        );
+
+        yield from $this->chatClient->postMessage($command->getRoom(), $this->getMessage($response));
+    }
+
+    public function getName(): string
+    {
+        return 'WOTD';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Gets the Word Of The Day from dictionary.com';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['wotd'];
+        return [new PluginCommandEndpoint('Fetch', [$this, 'fetch'], 'wotd')];
     }
 }

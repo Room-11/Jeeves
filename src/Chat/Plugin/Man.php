@@ -7,11 +7,13 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Man implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     private $chatClient;
 
@@ -20,22 +22,6 @@ class Man implements Plugin
     public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
-    }
-
-    private function getResult(Command $command): \Generator {
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(
-            "https://man.freebsd.org/" . rawurlencode(implode("%20", $command->getParameters()))
-        );
-
-        $dom = domdocument_load_html($response->getBody());
-        $xpath = new \DOMXPath($dom);
-
-        if ($this->isFound($xpath)) {
-            yield from $this->postResult($command, $xpath, $response->getRequest()->getUri());
-        } else {
-            yield from $this->postNoResult($command);
-        }
     }
 
     private function isFound(\DOMXPath $xpath): bool
@@ -47,7 +33,7 @@ class Man implements Plugin
         return ltrim($xpath->evaluate("//a[@name='NAME']/following-sibling::b/text()")->item(0)->textContent);
     }
 
-    private function getDescription(\DOMXPath $xpath): string {
+    private function getSymbolDescription(\DOMXPath $xpath): string {
         return rtrim(str_replace(
             ["\r\n", "\r", "\n"],
             [" ", " ", " "],
@@ -79,7 +65,7 @@ class Man implements Plugin
             sprintf(
                 "[ [`%s`%s](%s) ] `%s`",
                 $this->getSymbolName($xpath),
-                $this->getDescription($xpath),
+                $this->getSymbolDescription($xpath),
                 $url,
                 $this->getSynopsis($xpath)
             )
@@ -92,28 +78,46 @@ class Man implements Plugin
         );
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
-    {
-        if (!$command->getParameters()) {
+    public function search(Command $command): \Generator {
+        if (!$command->hasParameters()) {
             return;
         }
 
-        yield from $this->getResult($command);
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request(
+            "https://man.freebsd.org/" . rawurlencode(implode("%20", $command->getParameters()))
+        );
+
+        $dom = domdocument_load_html($response->getBody());
+        $xpath = new \DOMXPath($dom);
+
+        if ($this->isFound($xpath)) {
+            yield from $this->postResult($command, $xpath, $response->getRequest()->getUri());
+        } else {
+            yield from $this->postNoResult($command);
+        }
+    }
+
+    public function getName(): string
+    {
+        return 'Man';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fetches manual entries from freebsd.org';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['man'];
+        return [new PluginCommandEndpoint('Search', [$this, 'search'], 'man')];
     }
 }

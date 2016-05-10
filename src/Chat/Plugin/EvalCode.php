@@ -12,11 +12,13 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostedMessage;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class EvalCode implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     // limit the number of requests while polling for results
     const REQUEST_LIMIT = 20;
@@ -32,41 +34,6 @@ class EvalCode implements Plugin
         $this->httpClient = $httpClient;
 
         $this->mutex = new QueuedExclusiveMutex();
-    }
-
-    private function getResult(Command $command): \Generator {
-        $code = $this->normalizeCode(implode(' ', $command->getParameters()));
-
-        $body = (new FormBody)
-            ->addField("title", "")
-            ->addField("code", $code)
-        ;
-
-        $request = (new HttpRequest)
-            ->setUri("https://3v4l.org/new")
-            ->setMethod("POST")
-            ->setHeader("Accept", "application/json")
-            ->setBody($body)
-        ;
-
-        yield $this->mutex->withLock(function() use($request, $command) {
-            /** @var HttpResponse $response */
-            $response = yield $this->httpClient->request($request);
-
-            /** @var PostedMessage $chatMessage */
-            $chatMessage = yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                $this->getMessageText(
-                    "Waiting for results",
-                    "",
-                    $response->getPreviousResponse()->getHeader("Location")[0])
-            );
-
-            yield from $this->pollUntilDone(
-                $response->getPreviousResponse()->getHeader("Location")[0],
-                $chatMessage
-            );
-        });
     }
 
     private function normalizeCode($code) {
@@ -145,28 +112,65 @@ class EvalCode implements Plugin
         return $result;
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
-    {
+    public function eval(Command $command): \Generator {
         if (!$command->getParameters()) {
             return;
         }
 
-        yield from $this->getResult($command);
+        $code = $this->normalizeCode(implode(' ', $command->getParameters()));
+
+        $body = (new FormBody)
+            ->addField("title", "")
+            ->addField("code", $code)
+        ;
+
+        $request = (new HttpRequest)
+            ->setUri("https://3v4l.org/new")
+            ->setMethod("POST")
+            ->setHeader("Accept", "application/json")
+            ->setBody($body)
+        ;
+
+        yield $this->mutex->withLock(function() use($request, $command) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($request);
+
+            /** @var PostedMessage $chatMessage */
+            $chatMessage = yield from $this->chatClient->postMessage(
+                $command->getRoom(),
+                $this->getMessageText(
+                    "Waiting for results",
+                    "",
+                    $response->getPreviousResponse()->getHeader("Location")[0])
+            );
+
+            yield from $this->pollUntilDone(
+                $response->getPreviousResponse()->getHeader("Location")[0],
+                $chatMessage
+            );
+        });
+    }
+
+    public function getName(): string
+    {
+        return '3v4l';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Executes code snippets on 3v4l.org and displays the output';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['eval', '&gt;'];
+        return [new PluginCommandEndpoint('Eval', [$this, 'eval'], 'eval')];
     }
 }

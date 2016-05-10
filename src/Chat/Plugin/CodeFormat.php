@@ -5,9 +5,12 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Event\NewMessage;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\NoCommands;
+use Room11\Jeeves\Chat\Plugin\Traits\NoDisableEnable;
+use Room11\Jeeves\Chat\Plugin\Traits\NoEventHandlers;
 
 class CodeFormat implements Plugin {
-    use MessageOnlyPlugin;
+    use NoCommands, NoEventHandlers, NoDisableEnable;
 
     private $chatClient;
 
@@ -15,20 +18,16 @@ class CodeFormat implements Plugin {
         $this->chatClient = $chatClient;
     }
 
-    public function handleMessage(Message $message): \Generator {
-        if (!$this->validMessage($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
-    }
-
     private function validMessage(Message $message): bool {
         return get_class($message) === Message::class
         && $message->getEvent() instanceof NewMessage;
     }
 
-    private function getResult(Message $message): \Generator {
+    public function handleMessage(Message $message): \Generator {
+        if (!$this->validMessage($message)) {
+            return;
+        }
+
         $content = $message->getText();
         $origin = $message->getId();
 
@@ -69,5 +68,28 @@ class CodeFormat implements Plugin {
                 ":{$origin} Please format your code - hit Ctrl+K before sending and have a look at the [FAQ](http://chat.stackoverflow.com/faq)."
             );
         }
+    }
+
+    public function getName(): string
+    {
+        return 'CodeFormat';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Asks users to format their code when unformatted multi-line code blocks are posted';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
+    }
+
+    /**
+     * @return callable|null
+     */
+    public function getMessageHandler()
+    {
+        return [$this, 'handleMessage'];
     }
 }

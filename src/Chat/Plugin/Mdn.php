@@ -7,9 +7,11 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Mdn implements Plugin {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     private $chatClient;
 
@@ -21,8 +23,26 @@ class Mdn implements Plugin {
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(Command $command): \Generator
+    private function postResult(Command $command, array $result): \Generator
     {
+        $message = sprintf("[ [%s](%s) ] %s", $result["title"], $result["url"], $result["excerpt"]);
+
+        yield from $this->chatClient->postMessage($command->getRoom(), $message);
+    }
+
+    private function postNoResult(Command $command): \Generator
+    {
+        yield from $this->chatClient->postReply(
+            $command, 'Sorry, I couldn\'t find a page concerning that topic on MDN.'
+        );
+    }
+
+    public function search(Command $command): \Generator
+    {
+        if (!$command->hasParameters()) {
+            return;
+        }
+
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(
             'https://developer.mozilla.org/en-US/search.json?highlight=false&q=' . rawurlencode(implode('%20', $command->getParameters()))
@@ -41,42 +61,26 @@ class Mdn implements Plugin {
         }
     }
 
-    private function postResult(Command $command, array $result): \Generator
+    public function getName(): string
     {
-        $message = sprintf("[ [%s](%s) ] %s", $result["title"], $result["url"], $result["excerpt"]);
-
-        yield from $this->chatClient->postMessage($command->getRoom(), $message);
+        return 'MDN';
     }
 
-    private function postNoResult(Command $command): \Generator
+    public function getDescription(): string
     {
-        yield from $this->chatClient->postReply(
-            $command, 'Sorry, I couldn\'t find a page concerning that topic on MDN.'
-        );
+        return 'Fetches manual entries from the Mozilla Developer Network';
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
+    public function getHelpText(array $args): string
     {
-        if (!$command->getParameters()) {
-            return;
-        }
-
-        yield from $this->getResult($command);
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['mdn'];
+        return [new PluginCommandEndpoint('Search', [$this, 'search'], 'mdn')];
     }
 }

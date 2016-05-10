@@ -7,10 +7,12 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Urban implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     private $chatClient;
 
@@ -20,18 +22,6 @@ class Urban implements Plugin
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
-    }
-
-    private function getResult(Command $command): \Generator
-    {
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(
-            'http://api.urbandictionary.com/v0/define?term=' . rawurlencode(implode(' ', $command->getParameters()))
-        );
-
-        $result = json_decode($response->getBody(), true);
-
-        yield from $this->chatClient->postMessage($command->getRoom(), $this->getMessage($result));
     }
 
     private function getMessage(array $result): string
@@ -49,28 +39,42 @@ class Urban implements Plugin
         );
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
+    public function search(Command $command): \Generator
     {
-        if (!$command->getParameters()) {
+        if (!$command->hasParameters()) {
             return;
         }
 
-        yield from $this->getResult($command);
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request(
+            'http://api.urbandictionary.com/v0/define?term=' . rawurlencode(implode(' ', $command->getParameters()))
+        );
+
+        $result = json_decode($response->getBody(), true);
+
+        yield from $this->chatClient->postMessage($command->getRoom(), $this->getMessage($result));
+    }
+
+    public function getName(): string
+    {
+        return 'Urban';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Looks up entries from urbandictionary.com';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['urban'];
+        return [new PluginCommandEndpoint('Search', [$this, 'search'], 'urban')];
     }
 }

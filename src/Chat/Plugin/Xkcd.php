@@ -6,10 +6,12 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Xkcd implements Plugin {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     const NOT_FOUND_COMIC = 'https://xkcd.com/1334/';
 
@@ -22,7 +24,11 @@ class Xkcd implements Plugin {
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(Command $command): \Generator {
+    public function search(Command $command): \Generator {
+        if (!$command->hasParameters()) {
+            return;
+        }
+
         $uri = "https://www.google.com/search?q=site:xkcd.com+intitle%3a%22xkcd%3a+%22+" . urlencode(implode(' ', $command->getParameters()));
 
         /** @var HttpResponse $response */
@@ -53,28 +59,26 @@ class Xkcd implements Plugin {
         yield from $this->chatClient->postMessage($command->getRoom(), self::NOT_FOUND_COMIC);
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
+    public function getName(): string
     {
-        if (!$command->getParameters()) {
-            return;
-        }
+        return 'xkcd';
+    }
 
-        yield from $this->getResult($command);
+    public function getDescription(): string
+    {
+        return 'Searches for relevant comics from xkcd and posts them as a onebox';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['xkcd'];
+        return [new PluginCommandEndpoint('Search', [$this, 'search'], 'xkcd')];
     }
 }

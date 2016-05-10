@@ -2,16 +2,18 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
-use Amp\Artax\Client as HttpClient; // interface does not have option constants :-(
+use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint; // interface does not have option constants :-(
 
 class HttpRequester implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     const FLAGS = ['chrome', 'firefox', 'googlebot', 'nofollow'];
 
@@ -31,14 +33,10 @@ class HttpRequester implements Plugin
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(Command $command): \Generator {
+    private function getResult(HttpRequest $request, Command $command): \Generator {
         try {
             /** @var HttpResponse $response */
-
-            $request = $this->getRequest($command);
-            $options = $this->getClientOptions($command);
-
-            $response = yield $this->httpClient->request($request, $options);
+            $response = yield $this->httpClient->request($request, $this->getClientOptions($command));
 
             yield from $this->chatClient->postMessage($command->getRoom(), $this->formatResult($response));
         } catch (\RuntimeException $e) {
@@ -64,29 +62,6 @@ class HttpRequester implements Plugin
         }
 
         return $options;
-    }
-
-    private function getRequest(Command $command): HttpRequest
-    {
-        switch ($command->getCommandName()) {
-            case 'get':
-                return (new HttpRequest)->setUri($this->getRequestUrl($command));
-
-            case 'head':
-                return (new HttpRequest)
-                    ->setMethod('HEAD')
-                    ->setUri($this->getRequestUrl($command))
-                ;
-
-            case 'post':
-                return (new HttpRequest)
-                    ->setMethod('POST')
-                    ->setUri($this->getRequestUrl($command))
-                    ->setBody($this->getPostBody($command))
-                ;
-        }
-
-        throw new \InvalidArgumentException('Invalid command routed to plugin: ' . $command->getCommandName());
     }
 
     private function getRequestUrl(Command $command): string
@@ -130,28 +105,57 @@ class HttpRequester implements Plugin
         return sprintf('%s %s', $response->getStatus(), $response->getReason());
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
+    public function get(Command $command)
     {
-        if (!$command->getParameters()) {
-            return;
-        }
+        $request = (new HttpRequest)
+            ->setUri($this->getRequestUrl($command));
 
-        yield from $this->getResult($command);
+        yield from $this->getResult($request, $command);
+    }
+
+    public function post(Command $command)
+    {
+        $request = (new HttpRequest)
+            ->setMethod('POST')
+            ->setUri($this->getRequestUrl($command))
+            ->setBody($this->getPostBody($command));
+
+        yield from $this->getResult($request, $command);
+    }
+
+    public function head(Command $command)
+    {
+        $request = (new HttpRequest)
+            ->setMethod('HEAD')
+            ->setUri($this->getRequestUrl($command));
+
+        yield from $this->getResult($request, $command);
+    }
+
+    public function getName(): string
+    {
+        return 'HTTPRequester';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Sends HTTP requests and displays the headers of the response';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['get', 'post', 'head'];
+        return [
+            new PluginCommandEndpoint('GET', [$this, 'get'], 'get', 'Sends HTTP GET request and displays the headers of the response'),
+            new PluginCommandEndpoint('POST', [$this, 'post'], 'post', 'Sends HTTP POST request and displays the headers of the response'),
+            new PluginCommandEndpoint('HEAD', [$this, 'head'], 'head', 'Sends HTTP HEAD request and displays the headers of the response'),
+        ];
     }
 }

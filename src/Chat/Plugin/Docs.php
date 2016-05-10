@@ -7,13 +7,15 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class NoComprendeException extends \RuntimeException {}
 
 class Docs implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     const URL_BASE = 'http://php.net';
     const LOOKUP_URL_BASE = self::URL_BASE . '/manual-lookup.php?scope=quickref&pattern=';
@@ -216,49 +218,6 @@ class Docs implements Plugin
     public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
-    }
-
-    private function getResult(Command $command): \Generator {
-        $pattern = strtolower(implode(' ', $command->getParameters()));
-
-        foreach ([$pattern, '$' . $pattern, $pattern . 's', $pattern . 'ing'] as $candidate) {
-            if (isset($this->specialCases[$candidate])) {
-                $result = $this->specialCases[$candidate][0] === '@' && isset($this->specialCases[substr($this->specialCases[$candidate], 1)])
-                    ? $this->specialCases[substr($this->specialCases[$candidate], 1)]
-                    : $this->specialCases[$candidate];
-
-                yield from $this->chatClient->postMessage($command->getRoom(), $result);
-
-                return;
-            }
-        }
-
-        if (substr($pattern, 0, 6) === "mysql_") {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                $this->getMysqlMessage()
-            );
-
-            return;
-        }
-
-        $pattern = str_replace(['::', '->'], '.', $pattern);
-        $url = self::LOOKUP_URL_BASE . rawurlencode($pattern);
-
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($url);
-
-        if ($response->getPreviousResponse() !== null) {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                $this->getMessageFromMatch(yield from $this->preProcessMatch($response, $pattern))
-            );
-        } else {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                yield from $this->getMessageFromSearch($response)
-            );
-        }
     }
 
     private function preProcessMatch(HttpResponse $response, string $pattern) : \Generator
@@ -471,28 +430,73 @@ class Docs implements Plugin
         }
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
-    {
+    public function search(Command $command): \Generator {
         if (!$command->getParameters()) {
             return;
         }
 
-        yield from $this->getResult($command);
+        $pattern = strtolower(implode(' ', $command->getParameters()));
+
+        foreach ([$pattern, '$' . $pattern, $pattern . 's', $pattern . 'ing'] as $candidate) {
+            if (isset($this->specialCases[$candidate])) {
+                $result = $this->specialCases[$candidate][0] === '@' && isset($this->specialCases[substr($this->specialCases[$candidate], 1)])
+                    ? $this->specialCases[substr($this->specialCases[$candidate], 1)]
+                    : $this->specialCases[$candidate];
+
+                yield from $this->chatClient->postMessage($command->getRoom(), $result);
+
+                return;
+            }
+        }
+
+        if (substr($pattern, 0, 6) === "mysql_") {
+            yield from $this->chatClient->postMessage(
+                $command->getRoom(),
+                $this->getMysqlMessage()
+            );
+
+            return;
+        }
+
+        $pattern = str_replace(['::', '->'], '.', $pattern);
+        $url = self::LOOKUP_URL_BASE . rawurlencode($pattern);
+
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request($url);
+
+        if ($response->getPreviousResponse() !== null) {
+            yield from $this->chatClient->postMessage(
+                $command->getRoom(),
+                $this->getMessageFromMatch(yield from $this->preProcessMatch($response, $pattern))
+            );
+        } else {
+            yield from $this->chatClient->postMessage(
+                $command->getRoom(),
+                yield from $this->getMessageFromSearch($response)
+            );
+        }
+    }
+
+    public function getName(): string
+    {
+        return 'PHPDocs';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Searches the PHP manual and displays links with a summary of the result';
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['docs'];
+        return [new PluginCommandEndpoint('Search', [$this, 'search'], 'docs')];
     }
 }

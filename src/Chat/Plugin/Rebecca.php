@@ -5,10 +5,12 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Rebecca implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     const VIDEO_URL = 'https://www.youtube.com/watch?v=kfVsfOSbJY0';
 
@@ -16,10 +18,6 @@ class Rebecca implements Plugin
 
     public function __construct(ChatClient $chatClient) {
         $this->chatClient = $chatClient;
-    }
-
-    private function getResult(Command $command): \Generator {
-        yield from $this->chatClient->postReply($command, $this->getRebeccaLinkIfFriday());
     }
 
     private function getRebeccaLinkIfFriday(): string
@@ -57,24 +55,122 @@ class Rebecca implements Plugin
         return $now->diff($friday);
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
-     */
-    public function handleCommand(Command $command): \Generator
+    public function gottaGetDownOnFriday(Command $command): \Generator {
+        yield from $this->chatClient->postReply($command, $this->getRebeccaLinkIfFriday());
+    }
+
+    public function getName(): string
     {
-        yield from $this->getResult($command);
+        return 'Rebecca';
+    }
+
+    public function getDescription(): string
+    {
+        static $descriptions = [
+            "(Yeah, Ah-Ah-Ah-Ah-Ah-Ark)",
+            "Oo-ooh-ooh, hoo yeah, yeah",
+            "Yeah, yeah",
+            "Yeah-ah-ah",
+            "Yeah-ah-ah",
+            "Yeah-ah-ah",
+            "Yeah-ah-ah",
+            "Yeah, yeah, yeah",
+            "Seven a.m., waking up in the morning",
+            "Gotta be fresh, gotta go downstairs",
+            "Gotta have my bowl, gotta have cereal",
+            "Seein' everything, the time is goin'",
+            "Tickin' on and on, everybody's rushin'",
+            "Gotta get down to the bus stop",
+            "Gotta catch my bus, I see my friends (My friends)",
+            "Kickin' in the front seat",
+            "Sittin' in the back seat",
+            "Gotta make my mind up",
+            "Which seat can I take?",
+            "It's Friday, Friday",
+            "Gotta get down on Friday",
+            "Everybody's lookin' forward to the weekend, weekend",
+            "Friday, Friday",
+            "Gettin' down on Friday",
+            "Everybody's lookin' forward to the weekend",
+            "Partyin', partyin' (Yeah)",
+            "Partyin', partyin' (Yeah)",
+            "Fun, fun, fun, fun",
+            "Lookin' forward to the weekend",
+            "7:45, we're drivin' on the highway",
+            "Cruisin' so fast, I want time to fly",
+            "Fun, fun, think about fun",
+            "You know what it is",
+            "I got this, you got this",
+            "My friend is by my right, ay",
+            "I got this, you got this",
+            "Now you know it",
+            "Kickin' in the front seat",
+            "Sittin' in the back seat",
+            "Gotta make my mind up",
+            "Which seat can I take?",
+            "It's Friday, Friday",
+            "Gotta get down on Friday",
+            "Everybody's lookin' forward to the weekend, weekend",
+            "Friday, Friday",
+            "Gettin' down on Friday",
+            "Everybody's lookin' forward to the weekend",
+            "Partyin', partyin' (Yeah)",
+            "Partyin', partyin' (Yeah)",
+            "Fun, fun, fun, fun",
+            "Lookin' forward to the weekend",
+            "Yesterday was Thursday, Thursday",
+            "Today i-is Friday, Friday (Partyin')",
+            "We-we-we so excited",
+            "We so excited",
+            "We gonna have a ball today",
+            "Tomorrow is Saturday",
+            "And Sunday comes after ... wards",
+            "I don't want this weekend to end",
+            "R-B, Rebecca Black",
+            "So chillin' in the front seat (In the front seat)",
+            "In the back seat (In the back seat)",
+            "I'm drivin', cruisin' (Yeah, yeah)",
+            "Fast lanes, switchin' lanes",
+            "Wit' a car up on my side (Woo!)",
+            "(C'mon) Passin' by is a school bus in front of me",
+            "Makes tick tock, tick tock, wanna scream",
+            "Check my time, it's Friday, it's a weekend",
+            "We gonna have fun, c'mon, c'mon, y'all",
+            "It's Friday, Friday",
+            "Gotta get down on Friday",
+            "Everybody's lookin' forward to the weekend, weekend",
+            "Friday, Friday",
+            "Gettin' down on Friday",
+            "Everybody's lookin' forward to the weekend",
+            "Partyin', partyin' (Yeah)",
+            "Partyin', partyin' (Yeah)",
+            "Fun, fun, fun, fun",
+            "Lookin' forward to the weekend",
+            "It's Friday, Friday",
+            "Gotta get down on Friday",
+            "Everybody's lookin' forward to the weekend, weekend",
+            "Friday, Friday",
+            "Gettin' down on Friday",
+            "Everybody's lookin' forward to the weekend",
+            "Partyin', partyin' (Yeah)",
+            "Partyin', partyin' (Yeah)",
+            "Fun, fun, fun, fun",
+            "Lookin' forward to the weekend",
+        ];
+
+        return $descriptions[array_rand($descriptions)];
+    }
+
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
+     * @return PluginCommandEndpoint[]
      */
-    public function getHandledCommands(): array
+    public function getCommandEndpoints(): array
     {
-        return ['rebecca'];
+        return [new PluginCommandEndpoint('Friday', [$this, 'gottaGetDownOnFriday'], 'rebecca')];
     }
 }

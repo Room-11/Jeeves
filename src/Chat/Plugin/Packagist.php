@@ -7,11 +7,13 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Packagist implements Plugin
 {
-    use CommandOnlyPlugin;
+    use CommandOnly;
 
     private $chatClient;
     /**
@@ -25,7 +27,30 @@ class Packagist implements Plugin
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(Command $command): \Generator
+    private function getResultFromSearchFallback(string $vendor, string $package): \Generator {
+        $url = 'https://packagist.org/search/?q=' . urlencode($vendor) . '%2F' . urldecode($package);
+
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request($url);
+
+        $dom = domdocument_load_html($response->getBody());
+        $nodes = (new \DOMXPath($dom))
+            ->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' packages ')]/li");
+
+        if ($nodes->length === 0) {
+            throw new \RuntimeException('Search page contains no results');
+        }
+
+        /** @var \DOMElement $node */
+        $node = $nodes->item(0);
+        if (!$node->hasAttribute('data-url')) {
+            throw new \RuntimeException('First result has no URL');
+        }
+
+        return yield $this->httpClient->request('https://packagist.org' . $node->getAttribute('data-url') . '.json');
+    }
+
+    public function search(Command $command): \Generator
     {
         $info = explode('/', implode('/', $command->getParameters()), 2);
 
@@ -62,47 +87,26 @@ class Packagist implements Plugin
         }
     }
 
-    private function getResultFromSearchFallback(string $vendor, string $package): \Generator {
-        $url = 'https://packagist.org/search/?q=' . urlencode($vendor) . '%2F' . urldecode($package);
+    public function getName(): string
+    {
+        return 'Packagist';
+    }
 
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($url);
+    public function getDescription(): string
+    {
+        return 'Fetches package information from packagist.org';
+    }
 
-        $dom = domdocument_load_html($response->getBody());
-        $nodes = (new \DOMXPath($dom))
-            ->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' packages ')]/li");
-
-        if ($nodes->length === 0) {
-            throw new \RuntimeException('Search page contains no results');
-        }
-
-        /** @var \DOMElement $node */
-        $node = $nodes->item(0);
-        if (!$node->hasAttribute('data-url')) {
-            throw new \RuntimeException('First result has no URL');
-        }
-
-        return yield $this->httpClient->request('https://packagist.org' . $node->getAttribute('data-url') . '.json');
+    public function getHelpText(array $args): string
+    {
+        // TODO: Implement getHelpText() method.
     }
 
     /**
-     * Handle a command message
-     *
-     * @param Command $command
-     * @return \Generator
+     * @return PluginCommandEndpoint[]
      */
-    public function handleCommand(Command $command): \Generator
+    public function getCommandEndpoints(): array
     {
-        yield from $this->getResult($command);
-    }
-
-    /**
-     * Get a list of specific commands handled by this plugin
-     *
-     * @return string[]
-     */
-    public function getHandledCommands(): array
-    {
-        return ['packagist', 'package'];
+        return [new PluginCommandEndpoint('Search', [$this, 'search'], 'packagist')];
     }
 }
