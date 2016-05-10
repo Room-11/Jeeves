@@ -421,7 +421,7 @@ class PluginManager
             $room = $message->getRoom()->getIdentifier()->getIdentString();
             $command = $message->getCommandName();
 
-            if (yield from $this->banStorage->isBanned($message->getRoom(), $userId)) {
+            if (yield $this->banStorage->isBanned($message->getRoom(), $userId)) {
                 $this->logger->log(Level::DEBUG,
                     "User #{$userId} is banned, ignoring event #{$eventId} for plugin command endpoints"
                     . " (command: {$command})"

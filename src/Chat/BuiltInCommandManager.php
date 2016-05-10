@@ -42,7 +42,7 @@ class BuiltInCommandManager
 
         $this->logger->log(Level::DEBUG, "Processing event #{$eventId} for built in commands");
 
-        if (yield from $this->banStorage->isBanned($command->getRoom(), $userId)) {
+        if (yield $this->banStorage->isBanned($command->getRoom(), $userId)) {
             $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
             return;
         }
