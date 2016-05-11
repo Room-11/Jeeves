@@ -9,16 +9,16 @@
     "packages": [
         {
             "name": "amphp/amp",
-            "version": "v1.1.0",
+            "version": "v1.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/amp.git",
-                "reference": "093d33c36c72c0b4bf505000eb53b97351939279"
+                "reference": "bb85e40ce1d3b273a52272ce245dfcba9028727d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/amp/zipball/093d33c36c72c0b4bf505000eb53b97351939279",
-                "reference": "093d33c36c72c0b4bf505000eb53b97351939279",
+                "url": "https://api.github.com/repos/amphp/amp/zipball/bb85e40ce1d3b273a52272ce245dfcba9028727d",
+                "reference": "bb85e40ce1d3b273a52272ce245dfcba9028727d",
                 "shasum": ""
             },
             "require": {
@@ -62,7 +62,7 @@
                 "non-blocking",
                 "promise"
             ],
-            "time": "2016-03-09 13:10:31"
+            "time": "2016-05-11 17:14:33"
         },
         {
             "name": "amphp/artax",
