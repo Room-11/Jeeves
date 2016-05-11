@@ -208,14 +208,6 @@ class Compiler
             $predicates[] = $this->processClass($conditions[self::FIELD_CLASS]);
         }
 
-        return [function($event) use($predicates) {
-            foreach ($predicates as $predicate) {
-                if (!$predicate($event)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }, $types, $rooms];
+        return [$predicates, $types, $rooms];
     }
 }

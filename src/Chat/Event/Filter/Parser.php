@@ -17,8 +17,7 @@ class Parser
 
     public function parse(string $string): array
     {
-        $ptr = 0;
-        $position = -1;
+        $ptr = $position = -1;
         $line = 1;
         $length = strlen($string);
         $conditions = [];

@@ -210,17 +210,17 @@ class PluginManager
 
         $this->commandEndpoints[$pluginName] = $endpoints;
 
-        foreach ($filters as $handler) {
-            $this->filteredEventHandlers[] = $handler;
+        foreach ($filters as $key => $handler) {
+            $this->filteredEventHandlers[$key] = $handler;
         }
         foreach ($roomFilters as $room => $handlers) {
-            foreach ($handlers as $handler) {
-                $this->roomFilteredEventHandlers[$room][] = $handler;
+            foreach ($handlers as $key => $handler) {
+                $this->roomFilteredEventHandlers[$room][$key] = $handler;
             }
         }
         foreach ($typeFilters as $type => $handlers) {
-            foreach ($handlers as $handler) {
-                $this->typeFilteredEventHandlers[$type][] = $handler;
+            foreach ($handlers as $key => $handler) {
+                $this->typeFilteredEventHandlers[$type][$key] = $handler;
             }
         }
 
@@ -394,7 +394,7 @@ class PluginManager
                 }
             }
 
-            $plugin->disableForRoom($roomId);
+            $plugin->enableForRoom($roomId);
 
             yield $this->pluginStorage->setPluginEnabled($roomId, $pluginName, true);
         });
