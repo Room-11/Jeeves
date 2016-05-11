@@ -33,6 +33,20 @@ class Ban implements BanStorage
         return sprintf($this->dataFileTemplate, $roomId);
     }
 
+    private function readFile($room): \Generator
+    {
+        $filePath = $this->getDataFileName($room);
+
+        return (yield exists($filePath))
+            ? json_decode(yield get($filePath), true)
+            : [];
+    }
+
+    private function writeFile($room, array $data): \Generator
+    {
+        return yield put($this->getDataFileName($room), json_encode($data));
+    }
+
     private function promise(callable $generator): Promise
     {
         return resolve($generator());
@@ -80,19 +94,15 @@ class Ban implements BanStorage
     public function getAll($room): Promise
     {
         return $this->promise(function() use($room) {
-            $filePath = $this->getDataFileName($room);
+            $banned = yield from $this->readFile($room);
 
-            if (!yield exists($filePath)) {
-                return [];
-            }
+            $nonExpiredBans = array_filter($banned, function($expiration) {
+                return new \DateTimeImmutable($expiration) > new \DateTimeImmutable();
+            });
 
-            $banned = yield get($filePath);
+            yield from $this->writeFile($room, $nonExpiredBans);
 
-            yield from $this->clearExpiredBans($room, json_decode($banned, true));
-
-            $banned = yield get($filePath);
-
-            return json_decode($banned, true);
+            return $nonExpiredBans;
         });
     }
 
@@ -117,7 +127,7 @@ class Ban implements BanStorage
 
             $banned[$userId] = $this->getExpiration($duration)->format('Y-m-d H:i:s');
 
-            yield put($this->getDataFileName($room), json_encode($banned));
+            yield from $this->writeFile($room, $banned);
         });
     }
 
@@ -132,18 +142,7 @@ class Ban implements BanStorage
 
             unset($banned[$userId]);
 
-            yield put($this->getDataFileName($room), json_encode($banned));
-        });
-    }
-
-    private function clearExpiredBans($room, array $banned): Promise
-    {
-        return $this->promise(function() use($room, $banned) {
-            $nonExpiredBans = array_filter($banned, function($expiration) {
-                return new \DateTimeImmutable($expiration) > new \DateTimeImmutable();
-            });
-
-            yield put($this->getDataFileName($room), json_encode($nonExpiredBans));
+            yield from $this->writeFile($room, $banned);
         });
     }
 }
