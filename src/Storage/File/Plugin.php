@@ -23,11 +23,6 @@ class Plugin implements PluginStorage
         return sprintf($this->dataFileTemplate, $room);
     }
 
-    private function promise(callable $generator): Promise
-    {
-        return resolve($generator());
-    }
-
     private function read($room): \Generator
     {
         $filePath = $this->getDataFileName($room);
@@ -44,7 +39,7 @@ class Plugin implements PluginStorage
 
     public function isPluginEnabled(string $room, string $plugin): Promise
     {
-        return $this->promise(function() use($room, $plugin) {
+        return resolve(function() use($room, $plugin) {
             $data = yield from $this->read($room);
 
             return $data[strtolower($plugin)]['enabled'] ?? true;
@@ -53,7 +48,7 @@ class Plugin implements PluginStorage
 
     public function setPluginEnabled(string $room, string $plugin, bool $enabled): Promise
     {
-        return $this->promise(function() use($room, $plugin, $enabled) {
+        return resolve(function() use($room, $plugin, $enabled) {
             $data = yield from $this->read($room);
 
             $data[strtolower($plugin)]['enabled'] = $enabled;
@@ -64,7 +59,7 @@ class Plugin implements PluginStorage
 
     public function getAllMappedCommands(string $room, string $plugin): Promise
     {
-        return $this->promise(function() use($room, $plugin) {
+        return resolve(function() use($room, $plugin) {
             $data = yield from $this->read($room);
 
             return $data[strtolower($plugin)]['commands'] ?? null;
@@ -73,7 +68,7 @@ class Plugin implements PluginStorage
 
     public function addCommandMapping(string $room, string $plugin, string $command, string $endpoint): Promise
     {
-        return $this->promise(function() use($room, $plugin, $command, $endpoint) {
+        return resolve(function() use($room, $plugin, $command, $endpoint) {
             $data = yield from $this->read($room);
 
             $data[strtolower($plugin)]['commands'][$command] = $endpoint;
@@ -84,7 +79,7 @@ class Plugin implements PluginStorage
 
     public function removeCommandMapping(string $room, string $plugin, string $command): Promise
     {
-        return $this->promise(function() use($room, $plugin, $command) {
+        return resolve(function() use($room, $plugin, $command) {
             $data = yield from $this->read($room);
 
             unset($data[strtolower($plugin)]['commands'][$command]);

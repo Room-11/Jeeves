@@ -123,11 +123,6 @@ class PluginManager
         return $room instanceof ChatRoomIdentifier ? $room->getIdentString() : (string)$room;
     }
 
-    private function promise(callable $generator): Promise
-    {
-        return resolve($generator());
-    }
-
     public function __construct(
         BanStorage $banStorage,
         PluginStorage $pluginStorage,
@@ -325,7 +320,7 @@ class PluginManager
      */
     public function enableAllPluginsForRoom($room): Promise
     {
-        return $this->promise(function() use($room) {
+        return resolve(function() use($room) {
             foreach ($this->registeredPlugins as $plugin) {
                 list($pluginName) = $this->resolvePluginFromNameOrObject($plugin);
                 $roomId = $this->resolveRoomFromIdentOrObject($room);
@@ -369,7 +364,7 @@ class PluginManager
      */
     public function enablePluginForRoom($plugin, $room): Promise
     {
-        return $this->promise(function() use($plugin, $room) {
+        return resolve(function() use($plugin, $room) {
             list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
             $roomId = $this->resolveRoomFromIdentOrObject($room);
 

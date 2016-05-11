@@ -47,11 +47,6 @@ class Ban implements BanStorage
         return yield put($this->getDataFileName($room), json_encode($data));
     }
 
-    private function promise(callable $generator): Promise
-    {
-        return resolve($generator());
-    }
-
     // duration string should be in the format of [nd(ays)][nh(ours)][nm(inutes)][ns(econds)]
     private function getExpiration(string $duration): \DateTimeImmutable
     {
@@ -93,7 +88,7 @@ class Ban implements BanStorage
      */
     public function getAll($room): Promise
     {
-        return $this->promise(function() use($room) {
+        return resolve(function() use($room) {
             $banned = yield from $this->readFile($room);
 
             $nonExpiredBans = array_filter($banned, function($expiration) {
@@ -108,7 +103,7 @@ class Ban implements BanStorage
 
     public function isBanned($room, int $userId): Promise
     {
-        return $this->promise(function() use($room, $userId) {
+        return resolve(function() use($room, $userId) {
             // inb4 people "testing" banning me
             if ($userId === 508666) {
                 return false;
@@ -122,7 +117,7 @@ class Ban implements BanStorage
 
     public function add($room, int $userId, string $duration): Promise
     {
-        return $this->promise(function() use($room, $userId, $duration) {
+        return resolve(function() use($room, $userId, $duration) {
             $banned = yield $this->getAll($room);
 
             $banned[$userId] = $this->getExpiration($duration)->format('Y-m-d H:i:s');
@@ -133,7 +128,7 @@ class Ban implements BanStorage
 
     public function remove($room, int $userId): Promise
     {
-        return $this->promise(function() use($room, $userId) {
+        return resolve(function() use($room, $userId) {
             if (!yield $this->isBanned($room, $userId)) {
                 return;
             }

@@ -19,11 +19,6 @@ class Admin implements AdminStorage
         $this->dataFileTemplate = $dataFile;
     }
 
-    private function promise(callable $genFunc): Promise
-    {
-        return resolve($genFunc());
-    }
-
     /**
      * @param ChatRoom|ChatRoomIdentifier|string $room
      * @return string
@@ -40,7 +35,7 @@ class Admin implements AdminStorage
 
     public function getAll($room): Promise
     {
-        return $this->promise(function() use($room) {
+        return resolve(function() use($room) {
             $filePath = $this->getDataFileName($room);
 
             if (!yield exists($filePath)) {
@@ -55,7 +50,7 @@ class Admin implements AdminStorage
 
     public function isAdmin($room, int $userId): Promise
     {
-        return $this->promise(function() use($room, $userId) {
+        return resolve(function() use($room, $userId) {
             // inb4 people "testing" removing me from the admin list
             if ($userId === 508666) {
                 return true;
@@ -69,7 +64,7 @@ class Admin implements AdminStorage
 
     public function add($room, int $userId): Promise
     {
-        return $this->promise(function() use($room, $userId) {
+        return resolve(function() use($room, $userId) {
             $administrators = yield $this->getAll($room);
 
             if (in_array($userId, $administrators, true)) {
@@ -84,7 +79,7 @@ class Admin implements AdminStorage
 
     public function remove($room, int $userId): Promise
     {
-        return $this->promise(function() use($room, $userId) {
+        return resolve(function() use($room, $userId) {
             if (!yield $this->isAdmin($room, $userId)) {
                 return;
             }
