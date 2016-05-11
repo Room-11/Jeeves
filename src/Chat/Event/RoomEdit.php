@@ -8,7 +8,7 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class RoomEdit extends BaseEvent implements RoomSourcedEvent, UserSourcedEvent
 {
-    const EVENT_TYPE_ID = 5;
+    const TYPE_ID = 5;
 
     use RoomSource;
     use UserSource;

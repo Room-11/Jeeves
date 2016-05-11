@@ -16,10 +16,10 @@ class Message
     const TYPE_DELETE = 3;
 
     private static $eventTypeMap = [
-        NewMessage::EVENT_TYPE_ID => self::TYPE_NEW,
-        DeleteMessage::EVENT_TYPE_ID => self::TYPE_DELETE,
-        EditMessage::EVENT_TYPE_ID => self::TYPE_EDIT,
-        MentionMessage::EVENT_TYPE_ID => self::TYPE_NEW,
+        NewMessage::TYPE_ID => self::TYPE_NEW,
+        DeleteMessage::TYPE_ID => self::TYPE_DELETE,
+        EditMessage::TYPE_ID => self::TYPE_EDIT,
+        MentionMessage::TYPE_ID => self::TYPE_NEW,
     ];
 
     private $event;

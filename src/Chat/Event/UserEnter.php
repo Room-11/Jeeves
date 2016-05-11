@@ -11,7 +11,7 @@ class UserEnter extends BaseEvent implements RoomSourcedEvent, UserSourcedEvent
     use RoomSource;
     use UserSource;
 
-    const EVENT_TYPE_ID = 3;
+    const TYPE_ID = 3;
 
     public function __construct(array $data, ChatRoom $room)
     {

@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Event;
 
 abstract class BaseEvent
 {
-    const EVENT_TYPE_ID = 0;
+    const TYPE_ID = 0;
 
     private $eventId;
 
@@ -18,7 +18,7 @@ abstract class BaseEvent
 
     public function getTypeId(): int
     {
-        return static::EVENT_TYPE_ID;
+        return static::TYPE_ID;
     }
 
     public function getEventId(): int

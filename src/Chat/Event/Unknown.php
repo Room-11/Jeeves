@@ -3,7 +3,7 @@ namespace Room11\Jeeves\Chat\Event;
 
 class Unknown extends BaseEvent
 {
-    const EVENT_TYPE_ID = 0;
+    const TYPE_ID = 0;
 
     private $data;
 

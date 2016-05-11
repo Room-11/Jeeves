@@ -6,7 +6,7 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class DeleteMessage extends MessageEvent
 {
-    const EVENT_TYPE_ID = 10;
+    const TYPE_ID = 10;
 
     public function __construct(array $data, ChatRoom $room)
     {

@@ -6,7 +6,7 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class NewMessage extends MessageEvent
 {
-    const EVENT_TYPE_ID = 1;
+    const TYPE_ID = 1;
 
     public function __construct(array $data, ChatRoom $room)
     {

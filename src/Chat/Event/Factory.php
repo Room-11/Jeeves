@@ -10,15 +10,15 @@ class Factory
      * @var string[]
      */
     private $classes = [
-        Unknown::EVENT_TYPE_ID => Unknown::class,
-        NewMessage::EVENT_TYPE_ID => NewMessage::class,
-        EditMessage::EVENT_TYPE_ID => EditMessage::class,
-        UserEnter::EVENT_TYPE_ID => UserEnter::class,
-        UserLeave::EVENT_TYPE_ID => UserLeave::class,
-        RoomEdit::EVENT_TYPE_ID => RoomEdit::class,
-        StarMessage::EVENT_TYPE_ID => StarMessage::class,
-        MentionMessage::EVENT_TYPE_ID => MentionMessage::class,
-        DeleteMessage::EVENT_TYPE_ID => DeleteMessage::class,
+        Unknown::TYPE_ID => Unknown::class,
+        NewMessage::TYPE_ID => NewMessage::class,
+        EditMessage::TYPE_ID => EditMessage::class,
+        UserEnter::TYPE_ID => UserEnter::class,
+        UserLeave::TYPE_ID => UserLeave::class,
+        RoomEdit::TYPE_ID => RoomEdit::class,
+        StarMessage::TYPE_ID => StarMessage::class,
+        MentionMessage::TYPE_ID => MentionMessage::class,
+        DeleteMessage::TYPE_ID => DeleteMessage::class,
     ];
 
     /**
