@@ -6,16 +6,19 @@ use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Chat\PluginManager;
+use Room11\Jeeves\Storage\Admin as AdminStorage;
 
 class Plugin implements BuiltInCommand
 {
     private $pluginManager;
     private $chatClient;
+    private $adminStorage;
 
-    public function __construct(PluginManager $pluginManager, ChatClient $chatClient)
+    public function __construct(PluginManager $pluginManager, ChatClient $chatClient, AdminStorage $adminStorage)
     {
         $this->pluginManager = $pluginManager;
         $this->chatClient = $chatClient;
+        $this->adminStorage = $adminStorage;
     }
 
     /**
@@ -95,6 +98,11 @@ class Plugin implements BuiltInCommand
 
     private function enable(CommandMessage $command): \Generator
     {
+        if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
+            yield from $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+            return;
+        }
+
         if (null === $plugin = $command->getParameter(1)) {
             yield from $this->chatClient->postReply($command, "No plugin name supplied");
             return;
@@ -116,6 +124,11 @@ class Plugin implements BuiltInCommand
 
     private function disable(CommandMessage $command): \Generator
     {
+        if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
+            yield from $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+            return;
+        }
+
         if (null === $plugin = $command->getParameter(1)) {
             yield from $this->chatClient->postReply($command, "No plugin name supplied");
             return;

@@ -6,11 +6,13 @@ use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Chat\PluginManager;
+use Room11\Jeeves\Storage\Admin as AdminStorage;
 
 class Command implements BuiltInCommand
 {
     private $pluginManager;
     private $chatClient;
+    private $adminStorage;
 
     private function showSyntax(CommandMessage $command): \Generator
     {
@@ -19,6 +21,11 @@ class Command implements BuiltInCommand
 
     private function map(CommandMessage $command): \Generator
     {
+        if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
+            yield from $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+            return;
+        }
+
         if (!$command->hasParameters(3)) {
             yield from $this->showSyntax($command);
             return;
@@ -74,6 +81,11 @@ class Command implements BuiltInCommand
 
     private function unmap(CommandMessage $command): \Generator
     {
+        if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
+            yield from $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+            return;
+        }
+
         if (!$command->hasParameters(2)) {
             yield from $this->showSyntax($command);
             return;
@@ -113,10 +125,11 @@ class Command implements BuiltInCommand
         yield from $this->chatClient->postMessage($command->getRoom(), $result, true);
     }
 
-    public function __construct(PluginManager $pluginManager, ChatClient $chatClient)
+    public function __construct(PluginManager $pluginManager, ChatClient $chatClient, AdminStorage $adminStorage)
     {
         $this->pluginManager = $pluginManager;
         $this->chatClient = $chatClient;
+        $this->adminStorage = $adminStorage;
     }
 
     /**
