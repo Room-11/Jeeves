@@ -41,6 +41,10 @@ class Plugin implements BuiltInCommand
             case 'disable':
                 yield from $this->disable($command);
                 return;
+
+            case 'status':
+                yield from $this->status($command);
+                return;
         }
 
         yield from $this->chatClient->postReply($command, "Syntax: plugin [list|disable|enable] [plugin-name]");
@@ -146,6 +150,25 @@ class Plugin implements BuiltInCommand
 
         yield $this->pluginManager->disablePluginForRoom($plugin, $command->getRoom());
         yield from $this->chatClient->postMessage($command->getRoom(), "Plugin '{$plugin}' is now disabled in this room");
+    }
+
+    private function status(CommandMessage $command): \Generator
+    {
+        if (null === $plugin = $command->getParameter(1)) {
+            yield from $this->chatClient->postReply($command, "No plugin name supplied");
+            return;
+        }
+
+        if (!$this->pluginManager->isPluginRegistered($plugin)) {
+            yield from $this->chatClient->postReply($command, "Invalid plugin name");
+            return;
+        }
+
+        $message = $this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())
+            ? "Plugin '{$plugin}' is currently enabled in this room"
+            : "Plugin '{$plugin}' is currently disabled in this room";
+
+        yield from $this->chatClient->postMessage($command->getRoom(), $message);
     }
 
     /**
