@@ -20,7 +20,7 @@
     },
     "require": {
         "php": ">=7",
-        "amphp/amp": "^1",
+        "amphp/amp": "^1.2",
         "amphp/artax": "^2",
         "amphp/websocket": "dev-master",
         "amphp/file": "0.1.*",
