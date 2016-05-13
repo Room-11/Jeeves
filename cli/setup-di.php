@@ -3,6 +3,8 @@
 namespace Room11\Jeeves;
 
 use Amp\Artax\Client as ArtaxClient;
+use Amp\Artax\Cookie\CookieJar;
+use Amp\Artax\Cookie\ArrayCookieJar;
 use Amp\Artax\HttpClient;
 use Auryn\Injector;
 use Room11\Jeeves\Bitly\Client as BitlyClient;
@@ -28,10 +30,12 @@ use Room11\OpenId\UriFactory;
 /** @var Injector $injector */
 $injector->alias(HttpClient::class, ArtaxClient::class);
 $injector->alias(OpenIdAuthenticator::class, StackExchangeAuthenticator::class);
+$injector->alias(CookieJar::class, ArrayCookieJar::class);
 
 $injector->define(FileAdminStorage::class, [":dataFile" => __DIR__ . "/../data/admins.%s.json"]);
 $injector->define(FileBanStorage::class, [":dataFile" => __DIR__ . "/../data/bans.%s.json"]);
 $injector->define(FilePluginStorage::class, [":dataFile" => __DIR__ . "/../data/plugins.%s.json"]);
+//$injector->define(FileCookieJar::class, [":storagePath" => __DIR__ . "/../data/cookie.jar"]);
 
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);
@@ -41,6 +45,7 @@ $injector->share(ChatClient::class);
 $injector->share(ChatRoomCollection::class);
 $injector->share(ChatRoomConnector::class);
 $injector->share(CredentialManager::class);
+$injector->share(CookieJar::class);
 $injector->share(EventFilterBuilder::class);
 $injector->share(HttpClient::class);
 $injector->share(Logger::class);

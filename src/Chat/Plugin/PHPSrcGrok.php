@@ -2,6 +2,8 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Artax\Cookie\Cookie;
+use Amp\Artax\Cookie\CookieJar;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Artax\Request as HttpRequest;
@@ -25,10 +27,12 @@ class PHPSrcGrok implements Plugin
 
     private $chatClient;
     private $httpClient;
+    private $cookieJar;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
-        $this->chatClient  = $chatClient;
-        $this->httpClient  = $httpClient;
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, CookieJar $cookieJar) {
+        $this->chatClient = $chatClient;
+        $this->httpClient = $httpClient;
+        $this->cookieJar  = $cookieJar;
     }
 
     private function getBranchAndSearchTerm(Command $command): array
@@ -37,7 +41,7 @@ class PHPSrcGrok implements Plugin
 
         if (count($parameters) < 3
             || strtolower($command->getParameter(0)) !== '-b'
-            || !preg_match('#^(?:[0-9]+\.[0-9]+|PECL)$#i', $command->getParameter(1))) {
+            || !preg_match('#^(?:[0-9]+\.[0-9]+|PECL|MASTER)$#i', $command->getParameter(1))) {
             return [self::DEFAULT_BRANCH, implode(' ', $parameters)];
         }
 
@@ -52,8 +56,9 @@ class PHPSrcGrok implements Plugin
         try {
             $request = (new HttpRequest)
                 ->setMethod('GET')
-                ->setUri($url)
-                ->setHeader('Cookie', ['OpenGrokProject=' . $branch, 'OpenGrokSorting=relevancy']);
+                ->setUri($url);
+
+            $this->cookieJar->store(new Cookie('OpenGrokProject', $branch, null, null, 'lxr.php.net'));
 
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($request);
@@ -130,7 +135,7 @@ class PHPSrcGrok implements Plugin
 
         $exprs = [
             '/^#\s*def(ine)?\s+' . $searchTerm . '\b/i',                          // macro #define
-            '/^(?:[a-z_][a-z0-9_]*\s+)+' . $searchTerm . '\s*\([^;]+$/i',         // function definition
+            '/^(?:[a-z_][a-z0-9_]*\s+)+\**\s*' . $searchTerm . '\s*\([^;]+$/i',   // function definition
             '/^struct\s+' . $searchTerm . '/i',                                   // struct definition
             '/^typedef\s+(?:struct\s+)?[a-z_][a-z0-9_]*\s+' . $searchTerm . '/i', // typedef
         ];
