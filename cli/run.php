@@ -11,7 +11,6 @@ use Room11\Jeeves\Chat\BuiltIn\Command as CommandBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Plugin AS PluginBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
-use Room11\Jeeves\Chat\Event\Filter\Builder as EventFilterBuilder;
 use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\CredentialManager;
@@ -35,6 +34,14 @@ use function Amp\websocket;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../version.php';
+
+$builtInCommands = [
+    AdminBuiltIn::class,
+    BanBuiltIn::class,
+    CommandBuiltIn::class,
+    PluginBuiltIn::class,
+    VersionBuiltIn::class,
+];
 
 $config = Yaml::parse(file_get_contents(__DIR__ . '/../config/config.yml'));
 
@@ -109,32 +116,16 @@ $injector->delegate(CredentialManager::class, function () use ($config) {
     return $manager;
 });
 
-$injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
-    $builtInCommandManager = new BuiltInCommandManager($injector->make(BanStorage::class), $injector->make(Logger::class));
+$builtInCommandManager = $injector->make(BuiltInCommandManager::class);
+$pluginManager = $injector->make(PluginManager::class);
 
-    $commands = [AdminBuiltIn::class, BanBuiltIn::class, CommandBuiltIn::class, PluginBuiltIn::class, VersionBuiltIn::class];
+foreach ($builtInCommands as $command) {
+    $builtInCommandManager->register($injector->make($command));
+}
 
-    foreach ($commands as $command) {
-        $builtInCommandManager->register($injector->make($command));
-    }
-
-    return $builtInCommandManager;
-});
-
-$injector->delegate(PluginManager::class, function () use ($injector, $config) {
-    $pluginManager = new PluginManager(
-        $injector->make(BanStorage::class),
-        $injector->make(PluginStorage::class),
-        $injector->make(Logger::class),
-        $injector->make(EventFilterBuilder::class)
-    );
-
-    foreach ($config['plugins'] ?? [] as $plugin) {
-        $pluginManager->registerPlugin($injector->make($plugin));
-    }
-
-    return $pluginManager;
-});
+foreach ($config['plugins'] ?? [] as $plugin) {
+    $pluginManager->registerPlugin($injector->make($plugin));
+}
 
 try {
     run(function () use ($injector, $roomIdentifiers) {
