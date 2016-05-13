@@ -156,7 +156,7 @@ class PHPSrcGrok implements Plugin
         $searchTerm = preg_quote($searchTerm, '/');
 
         $exprs = [
-            '/^(?:[a-z_][a-z0-9_]*\s+)*(?:PHP|ZEND)_FUNCTION\s*\(\s*' . $searchTerm . '/i', // PHP_FUNCTION def
+            '/^(?:[a-z_][a-z0-9_]*\s+)*(?:PHP|ZEND)_FUNCTION\s*\(\s*' . $searchTerm . '(?!.*;)/i', // PHP_FUNCTION def
             '/^(?:[a-z_][a-z0-9_]*\s+)*(?:PHP|ZEND)_NAMED_FUNCTION\s*\(.*?if_' . $searchTerm . '\)(?!.*;)/i', // PHP_NAMED_FUNCTION def
         ];
 
