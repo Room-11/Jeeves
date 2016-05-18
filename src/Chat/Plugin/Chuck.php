@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -43,13 +44,12 @@ class Chuck implements Plugin {
         try {
             $joke = yield from $this->getJoke();
         } catch (\Throwable $e) {
-            yield from $this->chatClient->postReply(
+            return $this->chatClient->postReply(
                 $command, "Ugh, there was some weird problem while getting the joke."
             );
-            return;
         }
 
-        yield from $this->chatClient->postMessage($command->getRoom(), $joke);
+        return $this->chatClient->postMessage($command->getRoom(), $joke);
     }
 
     public function getSkeetJoke(Command $command): \Generator
@@ -57,13 +57,12 @@ class Chuck implements Plugin {
         try {
             $joke = str_replace(['Chuck', 'Norris'], ['Jon', 'Skeet'], yield from $this->getJoke());
         } catch (\Throwable $e) {
-            yield from $this->chatClient->postReply(
+            return $this->chatClient->postReply(
                 $command, "Ugh, there was some weird problem while getting the joke."
             );
-            return;
         }
 
-        yield from $this->chatClient->postMessage($command->getRoom(), $joke);
+        return $this->chatClient->postMessage($command->getRoom(), $joke);
     }
 
     public function getName(): string

@@ -3,6 +3,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -26,7 +27,7 @@ class Xkcd implements Plugin {
 
     public function search(Command $command): \Generator {
         if (!$command->hasParameters()) {
-            return;
+            return new Success();
         }
 
         $uri = "https://www.google.com/search?q=site:xkcd.com+intitle%3a%22xkcd%3a+%22+" . urlencode(implode(' ', $command->getParameters()));
@@ -35,12 +36,10 @@ class Xkcd implements Plugin {
         $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
-            yield from $this->chatClient->postMessage(
+            return $this->chatClient->postMessage(
                 $command->getRoom(),
                 "Useless error message here so debugging this is harder than needed."
             );
-
-            return;
         }
 
         $dom = domdocument_load_html($response->getBody());
@@ -50,13 +49,11 @@ class Xkcd implements Plugin {
         /** @var \DOMElement $node */
         foreach ($nodes as $node) {
             if (preg_match('~^/url\?q=(https://xkcd\.com/\d+/)~', $node->getAttribute('href'), $matches)) {
-                yield from $this->chatClient->postMessage($command->getRoom(), $matches[1]);
-
-                return;
+                return $this->chatClient->postMessage($command->getRoom(), $matches[1]);
             }
         }
 
-        yield from $this->chatClient->postMessage($command->getRoom(), self::NOT_FOUND_COMIC);
+        return $this->chatClient->postMessage($command->getRoom(), self::NOT_FOUND_COMIC);
     }
 
     public function getName(): string

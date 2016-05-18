@@ -4,6 +4,8 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -59,8 +61,8 @@ class Man implements Plugin
         ));
     }
 
-    private function postResult(Command $command, \DOMXPath $xpath, string $url): \Generator {
-        yield from $this->chatClient->postMessage(
+    private function postResult(Command $command, \DOMXPath $xpath, string $url): Promise {
+        return $this->chatClient->postMessage(
             $command->getRoom(),
             sprintf(
                 "[ [`%s`%s](%s) ] `%s`",
@@ -72,15 +74,15 @@ class Man implements Plugin
         );
     }
 
-    private function postNoResult(Command $command): \Generator {
-        yield from $this->chatClient->postReply(
+    private function postNoResult(Command $command): Promise {
+        return $this->chatClient->postReply(
             $command, "Command not found. Have you tried Windows instead? It's great and does all the things!"
         );
     }
 
     public function search(Command $command): \Generator {
         if (!$command->hasParameters()) {
-            return;
+            return new Success();
         }
 
         /** @var HttpResponse $response */
@@ -91,11 +93,11 @@ class Man implements Plugin
         $dom = domdocument_load_html($response->getBody());
         $xpath = new \DOMXPath($dom);
 
-        if ($this->isFound($xpath)) {
-            yield from $this->postResult($command, $xpath, $response->getRequest()->getUri());
-        } else {
-            yield from $this->postNoResult($command);
+        if (!$this->isFound($xpath)) {
+            return $this->postNoResult($command);
         }
+
+        return $this->postResult($command, $xpath, $response->getRequest()->getUri());
     }
 
     public function getName(): string

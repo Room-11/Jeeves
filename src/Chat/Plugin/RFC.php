@@ -30,12 +30,7 @@ class RFC implements Plugin
         $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                "Nope, we can't have nice things."
-            );
-
-            return;
+            return $this->chatClient->postMessage($command->getRoom(), "Nope, we can't have nice things.");
         }
 
         $dom = domdocument_load_html($response->getBody());
@@ -60,12 +55,10 @@ class RFC implements Plugin
         }
 
         if (empty($rfcsInVoting)) {
-            yield from $this->chatClient->postMessage($command->getRoom(), "Sorry, but we can't have nice things.");
-
-            return;
+            return $this->chatClient->postMessage($command->getRoom(), "Sorry, but we can't have nice things.");
         }
 
-        yield from $this->chatClient->postMessage(
+        return $this->chatClient->postMessage(
             $command->getRoom(),
             sprintf(
                 "[tag:rfc-vote] %s",

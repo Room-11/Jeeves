@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -49,14 +50,14 @@ class Imdb implements Plugin
     public function search(Command $command): \Generator
     {
         if (!$command->hasParameters()) {
-            return;
+            return new Success();
         }
 
         $response = yield $this->httpClient->request(
             'http://www.imdb.com/xml/find?xml=1&nr=1&tt=on&q=' . rawurlencode(implode(' ', $command->getParameters()))
         );
 
-        yield from $this->chatClient->postMessage(
+        return $this->chatClient->postMessage(
             $command->getRoom(),
             $this->getMessage($response)
         );

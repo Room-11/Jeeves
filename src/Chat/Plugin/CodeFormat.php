@@ -1,6 +1,8 @@
 <?php  declare(strict_types=1);
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Event\NewMessage;
 use Room11\Jeeves\Chat\Message\Message;
@@ -20,12 +22,12 @@ class CodeFormat implements Plugin {
 
     private function validMessage(Message $message): bool {
         return get_class($message) === Message::class
-        && $message->getEvent() instanceof NewMessage;
+            && $message->getEvent() instanceof NewMessage;
     }
 
-    public function handleMessage(Message $message): \Generator {
+    public function handleMessage(Message $message): Promise {
         if (!$this->validMessage($message)) {
-            return;
+            return new Success();
         }
 
         $content = $message->getText();
@@ -33,12 +35,12 @@ class CodeFormat implements Plugin {
 
         # Message is already formatted as code
         if (strpos($content, "<pre class='full'>") !== false) {
-            return;
+            return new Success();
         }
 
         # Check only multiline messages
         if (strpos($content, "<div class='full'>") === false) {
-            return;
+            return new Success();
         }
 
         $lines = str_replace(["<div class='full'>", "</div>"], "", $content);
@@ -62,12 +64,14 @@ class CodeFormat implements Plugin {
             return $carry;
         }, 0);
 
-        if ($linesOfCode >= 3) {
-            yield from $this->chatClient->postMessage(
-                $message->getRoom(),
-                ":{$origin} Please format your code - hit Ctrl+K before sending and have a look at the [FAQ](http://chat.stackoverflow.com/faq)."
-            );
+        if ($linesOfCode < 3) {
+            return new Success();
         }
+
+        return $this->chatClient->postMessage(
+            $message->getRoom(),
+            ":{$origin} Please format your code - hit Ctrl+K before sending and have a look at the [FAQ](http://chat.stackoverflow.com/faq)."
+        );
     }
 
     public function getName(): string

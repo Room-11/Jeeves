@@ -4,6 +4,9 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
+use function Amp\resolve;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -430,9 +433,9 @@ class Docs implements Plugin
         }
     }
 
-    public function search(Command $command): \Generator {
+    public function search(Command $command): Promise {
         if (!$command->getParameters()) {
-            return;
+            return new Success();
         }
 
         $pattern = strtolower(implode(' ', $command->getParameters()));
@@ -443,38 +446,28 @@ class Docs implements Plugin
                     ? $this->specialCases[substr($this->specialCases[$candidate], 1)]
                     : $this->specialCases[$candidate];
 
-                yield from $this->chatClient->postMessage($command->getRoom(), $result);
-
-                return;
+                return $this->chatClient->postMessage($command->getRoom(), $result);
             }
         }
 
         if (substr($pattern, 0, 6) === "mysql_") {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                $this->getMysqlMessage()
-            );
-
-            return;
+            return $this->chatClient->postMessage($command->getRoom(), $this->getMysqlMessage());
         }
 
         $pattern = str_replace(['::', '->'], '.', $pattern);
         $url = self::LOOKUP_URL_BASE . rawurlencode($pattern);
 
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($url);
+        return resolve(function() use($command, $pattern, $url) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($url);
 
-        if ($response->getPreviousResponse() !== null) {
-            yield from $this->chatClient->postMessage(
+            return $this->chatClient->postMessage(
                 $command->getRoom(),
-                $this->getMessageFromMatch(yield from $this->preProcessMatch($response, $pattern))
+                $response->getPreviousResponse() !== null
+                    ? $this->getMessageFromMatch(yield from $this->preProcessMatch($response, $pattern))
+                    : yield from $this->getMessageFromSearch($response)
             );
-        } else {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                yield from $this->getMessageFromSearch($response)
-            );
-        }
+        });
     }
 
     public function getName(): string

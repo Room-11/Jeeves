@@ -2,6 +2,8 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -67,22 +69,18 @@ class Canon implements Plugin
         return self::CANONS[strtolower($keyword)]["stackoverflow"];
     }
 
-    public function getCanonical(Command $command): \Generator {
+    public function getCanonical(Command $command): Promise
+    {
         if (!$command->hasParameters()) {
-            return;
+            return new Success();
         }
 
-        if ($command->getParameter(0) === "list") {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                $this->getSupportedCanonicalsMessage()
-            );
-        } else {
-            yield from $this->chatClient->postMessage(
-                $command->getRoom(),
-                $this->getMessage(implode(" ", $command->getParameters()))
-            );
-        }
+        return $this->chatClient->postMessage(
+            $command->getRoom(),
+            $command->getParameter(0) === "list"
+                ? $this->getSupportedCanonicalsMessage()
+                : $this->getMessage(implode(" ", $command->getParameters()))
+        );
     }
 
     public function getName(): string

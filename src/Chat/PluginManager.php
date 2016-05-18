@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat;
 
 use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Event\Filter\Builder as EventFilterBuilder;
 use Room11\Jeeves\Chat\Event\Filter\Filter;
@@ -16,7 +17,7 @@ use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
-use function Amp\all;
+use function Amp\any;
 use function Amp\resolve;
 
 class PluginManager
@@ -55,9 +56,9 @@ class PluginManager
     /**
      * @param callable $handler
      * @param array ...$args
-     * @return Promise|null
+     * @return Promise
      */
-    private function invokeCallbackAsPromise(callable $handler, ...$args)
+    private function invokeCallbackAsPromise(callable $handler, ...$args): Promise
     {
         $result = $handler(...$args);
 
@@ -67,7 +68,7 @@ class PluginManager
             return $result;
         }
 
-        return null;
+        return new Success($result);
     }
 
     /**
@@ -100,6 +101,65 @@ class PluginManager
     }
 
     /**
+     * @param Message $message
+     * @return Promise[]
+     */
+    private function invokeHandlersForMessage(Message $message): array
+    {
+        $promises = [];
+
+        $roomIdent = $message->getRoom()->getIdentifier()->getIdentString();
+
+        foreach ($this->messageHandlers as $pluginName => $handler) {
+            if ($this->isPluginEnabledForRoom($pluginName, $roomIdent)) {
+                $promises[] = $this->invokeCallbackAsPromise($handler, $message); // some callbacks may be synchronous
+            }
+        }
+
+        return $promises;
+    }
+
+    private function invokeHandlerForCommand(Command $command): Promise
+    {
+        $roomIdent = $command->getRoom()->getIdentifier()->getIdentString();
+        $commandName = $command->getCommandName();
+
+        if (!isset($this->commandMap[$roomIdent][$commandName])) {
+            return new Success();
+        }
+
+        return resolve(function() use($command, $roomIdent, $commandName) {
+            $userId = $command->getUserId();
+            $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
+
+            if ($userIsBanned) {
+                $this->logger->log(Level::DEBUG,
+                    "User #{$userId} is banned, ignoring event #{$command->getEvent()->getEventId()} for plugin command endpoints"
+                    . " (command: {$commandName})"
+                );
+
+                return;
+            }
+
+            /** @var Plugin $plugin */
+            /** @var PluginCommandEndpoint $endpoint */
+            list($plugin, $endpoint) = $this->commandMap[$roomIdent][$commandName];
+
+            // just a sanity check, shouldn't ever be false but in case something goes horribly wrong
+            if (!$this->isPluginEnabledForRoom($plugin, $roomIdent)) {
+                $this->logger->log(Level::DEBUG,
+                    "Command {$commandName} still present for {$roomIdent} but plugin {$plugin->getName()}"
+                    . " is disabled! (endpoint: {$endpoint->getName()})"
+                );
+
+                return;
+            }
+
+            yield $this->invokeCallbackAsPromise($endpoint->getCallback(), $command);
+        });
+    }
+
+    /**
      * @param Plugin|string $plugin
      * @return string[]|Plugin[]
      */
@@ -114,7 +174,7 @@ class PluginManager
         return [$pluginName, $this->registeredPlugins[$pluginName]];
     }
 
-    private function resolveRoomFromIdentOrObject($room): string
+    private function resolveRoomIdent($room): string
     {
         if ($room instanceof ChatRoom) {
             $room = $room->getIdentifier();
@@ -228,7 +288,7 @@ class PluginManager
      */
     public function getMappedCommandsForRoom($room): array
     {
-        $roomId = $this->resolveRoomFromIdentOrObject($room);
+        $roomId = $this->resolveRoomIdent($room);
 
         $result = [];
 
@@ -254,7 +314,7 @@ class PluginManager
      */
     public function isCommandMappedForRoom($room, string $command): bool
     {
-        return isset($this->commandMap[$this->resolveRoomFromIdentOrObject($room)][$command]);
+        return isset($this->commandMap[$this->resolveRoomIdent($room)][$command]);
     }
 
     /**
@@ -274,7 +334,7 @@ class PluginManager
         }
         $endpoint = $this->commandEndpoints[$pluginName][$endpointName];
 
-        $roomId = $this->resolveRoomFromIdentOrObject($room);
+        $roomId = $this->resolveRoomIdent($room);
 
         $this->commandMap[$roomId][$command] = [$plugin, $endpoint];
 
@@ -288,7 +348,7 @@ class PluginManager
      */
     public function unmapCommandForRoom($room, string $command): Promise
     {
-        $roomId = $this->resolveRoomFromIdentOrObject($room);
+        $roomId = $this->resolveRoomIdent($room);
 
         if (!isset($this->commandMap[$roomId][$command])) {
             throw new \LogicException("Command '{$command}' not mapped in room '{$roomId}'");
@@ -309,7 +369,7 @@ class PluginManager
     public function isPluginEnabledForRoom($plugin, $room): bool
     {
         list($pluginName) = $this->resolvePluginFromNameOrObject($plugin);
-        $roomId = $this->resolveRoomFromIdentOrObject($room);
+        $roomId = $this->resolveRoomIdent($room);
 
         return isset($this->enabledPlugins[$roomId][$pluginName]);
     }
@@ -323,7 +383,7 @@ class PluginManager
         return resolve(function() use($room) {
             foreach ($this->registeredPlugins as $plugin) {
                 list($pluginName) = $this->resolvePluginFromNameOrObject($plugin);
-                $roomId = $this->resolveRoomFromIdentOrObject($room);
+                $roomId = $this->resolveRoomIdent($room);
 
                 if (yield $this->pluginStorage->isPluginEnabled($roomId, $pluginName)) {
                     yield $this->enablePluginForRoom($plugin, $room);
@@ -340,7 +400,7 @@ class PluginManager
     public function disablePluginForRoom($plugin, $room): Promise
     {
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
-        $roomId = $this->resolveRoomFromIdentOrObject($room);
+        $roomId = $this->resolveRoomIdent($room);
 
         $this->logger->log(Level::DEBUG, "Disabling plugin '{$pluginName}' for room '{$roomId}'");
 
@@ -366,7 +426,7 @@ class PluginManager
     {
         return resolve(function() use($plugin, $room) {
             list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
-            $roomId = $this->resolveRoomFromIdentOrObject($room);
+            $roomId = $this->resolveRoomIdent($room);
 
             $this->logger->log(Level::DEBUG, "Enabling plugin '{$pluginName}' for room '{$roomId}'");
             $this->enabledPlugins[$roomId][$pluginName] = true;
@@ -426,7 +486,7 @@ class PluginManager
     {
         /** @var Plugin $plugin */
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
-        $roomId = $room !== null ? $this->resolveRoomFromIdentOrObject($room) : null;
+        $roomId = $room !== null ? $this->resolveRoomIdent($room) : null;
 
         $endpoints = [];
         
@@ -451,52 +511,18 @@ class PluginManager
         return $endpoints;
     }
 
-    public function handleRoomEvent(RoomSourcedEvent $event, Message $message = null): \Generator
+    public function handleRoomEvent(RoomSourcedEvent $event, Message $message = null): Promise
     {
-        $eventId = $event->getEventId();
-        $this->logger->log(Level::DEBUG, "Processing event #{$eventId} for plugins");
-
         $promises = $this->invokeHandlersForEvent($event);
 
         if ($message !== null) {
-            foreach ($this->messageHandlers as $handler) {
-                if ($promise = $this->invokeCallbackAsPromise($handler, $message)) { // some callbacks may be synchronous
-                    $promises[] = $promise;
-                }
+            $promises = array_merge($promises, $this->invokeHandlersForMessage($message));
+
+            if ($message instanceof Command) {
+                $promises[] = $this->invokeHandlerForCommand($message);
             }
         }
 
-        if ($message instanceof Command) {
-            $userId = $message->getUserId();
-            $room = $message->getRoom()->getIdentifier()->getIdentString();
-            $command = $message->getCommandName();
-
-            if (yield $this->banStorage->isBanned($message->getRoom(), $userId)) {
-                $this->logger->log(Level::DEBUG,
-                    "User #{$userId} is banned, ignoring event #{$eventId} for plugin command endpoints"
-                    . " (command: {$command})"
-                );
-            } else if (isset($this->commandMap[$room][$command])) {
-                /** @var Plugin $plugin */
-                /** @var PluginCommandEndpoint $endpoint */
-                list($plugin, $endpoint) = $this->commandMap[$room][$command];
-
-                // just a sanity check, shouldn't ever be false but in case something goes horribly wrong
-                if ($this->isPluginEnabledForRoom($plugin, $room)) {
-                    if ($promise = $this->invokeCallbackAsPromise($endpoint->getCallback(), $message)) { // some callbacks may be synchronous
-                        $promises[] = $promise;
-                    }
-                } else {
-                    $this->logger->log(Level::DEBUG,
-                        "Command {$command} still present for {$room} but plugin {$plugin->getName()}"
-                      . " is disabled! (endpoint: {$endpoint->getName()})"
-                    );
-                }
-            }
-        }
-
-        yield all($promises);
-
-        $this->logger->log(Level::DEBUG, "Event #{$eventId} processed for plugins");
+        return any($promises);
     }
 }

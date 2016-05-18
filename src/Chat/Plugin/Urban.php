@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -42,7 +43,7 @@ class Urban implements Plugin
     public function search(Command $command): \Generator
     {
         if (!$command->hasParameters()) {
-            return;
+            return new Success();
         }
 
         /** @var HttpResponse $response */
@@ -52,7 +53,7 @@ class Urban implements Plugin
 
         $result = json_decode($response->getBody(), true);
 
-        yield from $this->chatClient->postMessage($command->getRoom(), $this->getMessage($result));
+        return $this->chatClient->postMessage($command->getRoom(), $this->getMessage($result));
     }
 
     public function getName(): string

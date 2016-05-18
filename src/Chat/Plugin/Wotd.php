@@ -15,6 +15,8 @@ class Wotd implements Plugin
 {
     use CommandOnly;
 
+    const API_URL = 'http://www.dictionary.com/wordoftheday/wotd.rss';
+
     private $chatClient;
 
     private $httpClient;
@@ -41,11 +43,9 @@ class Wotd implements Plugin
 
     public function fetch(Command $command): \Generator
     {
-        $response = yield $this->httpClient->request(
-            'http://www.dictionary.com/wordoftheday/wotd.rss'
-        );
+        $response = yield $this->httpClient->request(self::API_URL);
 
-        yield from $this->chatClient->postMessage($command->getRoom(), $this->getMessage($response));
+        return $this->chatClient->postMessage($command->getRoom(), $this->getMessage($response));
     }
 
     public function getName(): string

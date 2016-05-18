@@ -8,6 +8,7 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Mutex\QueuedExclusiveMutex;
 use Amp\Pause;
+use Amp\Promise;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
@@ -34,12 +35,14 @@ class ChatClient {
         $this->editMutex = new QueuedExclusiveMutex();
     }
 
-    public function getMessage(ChatRoom $room, int $id): \Generator {
+    public function getMessage(ChatRoom $room, int $id): Promise
+    {
         $url = $room->getIdentifier()->getEndpointURL(ChatRoomEndpoint::GET_MESSAGE, $id);
-        return yield $this->httpClient->request($url);
+        return $this->httpClient->request($url);
     }
 
-    public function postMessage(ChatRoom $room, string $text, bool $fixedFont = false): \Generator {
+    public function postMessage(ChatRoom $room, string $text, bool $fixedFont = false): Promise
+    {
         if ($fixedFont) {
             $text = preg_replace('#(^|\r?\n)#', '$1    ', $text);
         }
@@ -55,7 +58,7 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
-        return yield $this->postMutex->withLock(function() use($request, $room) {
+        return $this->postMutex->withLock(function() use($request, $room) {
             $attempt = 0;
 
             try {
@@ -119,7 +122,7 @@ class ChatClient {
 
                 if ($this->postRecursionDepth === 1) {
                     yield new Pause(2000);
-                    yield from $this->postMessage($room, "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
+                    return $this->postMessage($room, "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
                 }
             } finally {
                 $this->postRecursionDepth--;
@@ -129,17 +132,13 @@ class ChatClient {
         });
     }
 
-    /**
-     * @param Message $origin
-     * @param string $text
-     * @return \Generator
-     */
-    public function postReply(Message $origin, string $text): \Generator
+    public function postReply(Message $origin, string $text): Promise
     {
         return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}");
     }
 
-    public function editMessage(PostedMessage $message, string $text): \Generator {
+    public function editMessage(PostedMessage $message, string $text): Promise
+    {
         $body = (new FormBody)
             ->addField("text", $text)
             ->addField("fkey", (string) $message->getRoom()->getFKey());
@@ -153,7 +152,7 @@ class ChatClient {
             ->setMethod("POST")
             ->setBody($body);
 
-        yield $this->editMutex->withLock(function() use($request, $message) {
+        return $this->editMutex->withLock(function() use($request, $message) {
             $attempt = 0;
 
             try {
@@ -203,7 +202,7 @@ class ChatClient {
                 $this->logger->log(Level::ERROR, 'Error while editing message: ' . $e->getMessage(), $errorInfo);
 
                 yield new Pause(2000);
-                yield from $this->postMessage($message->getRoom(), "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
+                yield $this->postMessage($message->getRoom(), "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
             } finally {
                 $this->postRecursionDepth--;
             }

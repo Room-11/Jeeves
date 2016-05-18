@@ -5,6 +5,8 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
+use function Amp\resolve;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -38,9 +40,9 @@ class HttpRequester implements Plugin
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($request, $this->getClientOptions($command));
 
-            yield from $this->chatClient->postMessage($command->getRoom(), $this->formatResult($response));
+            return $this->chatClient->postMessage($command->getRoom(), $this->formatResult($response));
         } catch (\RuntimeException $e) {
-            yield from $this->chatClient->postMessage($command->getRoom(), $e->getMessage());
+            return $this->chatClient->postMessage($command->getRoom(), $e->getMessage());
         }
     }
 
@@ -105,31 +107,31 @@ class HttpRequester implements Plugin
         return sprintf('%s %s', $response->getStatus(), $response->getReason());
     }
 
-    public function get(Command $command)
+    public function get(Command $command): Promise
     {
         $request = (new HttpRequest)
             ->setUri($this->getRequestUrl($command));
 
-        yield from $this->getResult($request, $command);
+        return resolve($this->getResult($request, $command));
     }
 
-    public function post(Command $command)
+    public function post(Command $command): Promise
     {
         $request = (new HttpRequest)
             ->setMethod('POST')
             ->setUri($this->getRequestUrl($command))
             ->setBody($this->getPostBody($command));
 
-        yield from $this->getResult($request, $command);
+        return resolve($this->getResult($request, $command));
     }
 
-    public function head(Command $command)
+    public function head(Command $command): Promise
     {
         $request = (new HttpRequest)
             ->setMethod('HEAD')
             ->setUri($this->getRequestUrl($command));
 
-        yield from $this->getResult($request, $command);
+        return resolve($this->getResult($request, $command));
     }
 
     public function getName(): string

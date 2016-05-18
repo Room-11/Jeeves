@@ -2,6 +2,8 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -67,39 +69,31 @@ class Regex implements Plugin
         return $subject;
     }
 
-    public function test(Command $command): \Generator {
+    public function test(Command $command): Promise {
         if (!$command->hasParameters()) {
-            return;
+            return new Success();
         }
 
         $dom = new \DOMDocument();
         $dom->loadHTML(implode(" ", $command->getParameters()));
 
         if (!$this->hasPattern($dom)) {
-            yield from $this->chatClient->postReply($command, 'Pattern must be wrapped in a code block');
-
-            return;
+            return $this->chatClient->postReply($command, 'Pattern must be wrapped in a code block');
         }
 
         if ($this->zalgo($dom)) {
-            yield from $this->chatClient->postReply($command, self::HE_COMES);
-
-            return;
+            return $this->chatClient->postReply($command, self::HE_COMES);
         }
 
         if (!$this->doesMatch($dom)) {
-            yield from $this->chatClient->postReply($command, 'No match');
-
-            return;
+            return $this->chatClient->postReply($command, 'No match');
         }
 
         if (!$this->hasCapturingGroups($dom)) {
-            yield from $this->chatClient->postReply($command, 'Matches \o/');
-
-            return;
+            return $this->chatClient->postReply($command, 'Matches \o/');
         }
 
-        yield from $this->chatClient->postReply(
+        return $this->chatClient->postReply(
             $command,
             "Matches with the following captured groups: " . $this->getCapturingGroups($dom)
         );

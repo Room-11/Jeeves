@@ -65,20 +65,25 @@ class Handler implements Websocket {
             ]);
 
             if ($event instanceof Unknown) {
-                $this->logger->log(Level::UNKNOWN_EVENT, "Unknown message received", $rawMessage);
+                $this->logger->log(Level::UNKNOWN_EVENT, "Unknown message received", $event->getJson());
                 return;
             }
 
+            $eventId = $event->getEventId();
             $message = null;
             if ($event instanceof MessageEvent) {
                 $message = $this->messageFactory->build($event);
 
                 if ($message instanceof Command) {
-                    yield from $this->builtInCommandManager->handle($message);
+                    $this->logger->log(Level::DEBUG, "Processing event #{$eventId} for built in commands");
+                    yield $this->builtInCommandManager->handleCommand($message);
+                    $this->logger->log(Level::DEBUG, "Event #{$eventId} processed for built in commands");
                 }
             }
 
-            yield from $this->pluginManager->handleRoomEvent($event, $message);
+            $this->logger->log(Level::DEBUG, "Processing event #{$eventId} for plugins");
+            yield $this->pluginManager->handleRoomEvent($event, $message);
+            $this->logger->log(Level::DEBUG, "Event #{$eventId} processed for plugins");
         }
     }
 

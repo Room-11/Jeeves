@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -24,27 +25,10 @@ class Wikipedia implements Plugin
         $this->httpClient = $httpClient;
     }
 
-    private function postResult(Command $command, array $result): \Generator
-    {
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(
-            'http://en.wikipedia.org/w/api.php?action=query&prop=info&pageids=' . $result['pageid'] . '&inprop=url&format=json'
-        );
-
-        $page = json_decode($response->getBody(), true);
-
-        yield from $this->chatClient->postMessage($command->getRoom(), $page['query']['pages'][$result['pageid']]['canonicalurl']);
-    }
-
-    private function postNoResult(Command $command): \Generator
-    {
-        yield from $this->chatClient->postReply($command, 'Sorry I couldn\'t find that page.');
-    }
-
     public function search(Command $command): \Generator
     {
         if (!$command->hasParameters()) {
-            return;
+            return new Success();
         }
 
         /** @var HttpResponse $response */
@@ -55,11 +39,17 @@ class Wikipedia implements Plugin
         $result   = json_decode($response->getBody(), true);
         $firstHit = reset($result['query']['pages']);
 
-        if (isset($firstHit['pageid'])) {
-            yield from $this->postResult($command, $firstHit);
-        } else {
-            yield from $this->postNoResult($command);
+        if (!isset($firstHit['pageid'])) {
+            return $this->chatClient->postReply($command, 'Sorry I couldn\'t find that page.');
         }
+
+        $response = yield $this->httpClient->request(
+            'http://en.wikipedia.org/w/api.php?action=query&prop=info&pageids=' . $result['pageid'] . '&inprop=url&format=json'
+        );
+
+        $page = json_decode($response->getBody(), true);
+
+        return $this->chatClient->postMessage($command->getRoom(), $page['query']['pages'][$result['pageid']]['canonicalurl']);
     }
 
     public function getName(): string

@@ -8,6 +8,8 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Mutex\QueuedExclusiveMutex;
 use Amp\Pause;
+use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostedMessage;
 use Room11\Jeeves\Chat\Message\Command;
@@ -65,7 +67,7 @@ class EvalCode implements Plugin
 
             $editStart = microtime(true);
 
-            yield from $this->chatClient->editMessage(
+            yield $this->chatClient->editMessage(
                 $message,
                 $this->getMessageText(
                     $parsedResult["output"][0][0]["versions"],
@@ -85,7 +87,7 @@ class EvalCode implements Plugin
         }
 
         for ($i = 1; isset($parsedResult["output"][0][$i]) && $i < 4; $i++) {
-            yield from $this->chatClient->postMessage(
+            yield $this->chatClient->postMessage(
                 $message->getRoom(),
                 $this->getMessageText(
                     $parsedResult["output"][0][$i]["versions"],
@@ -112,9 +114,9 @@ class EvalCode implements Plugin
         return $result;
     }
 
-    public function eval(Command $command): \Generator {
+    public function eval(Command $command): Promise {
         if (!$command->getParameters()) {
-            return;
+            return new Success();
         }
 
         $code = $this->normalizeCode(implode(' ', $command->getParameters()));
@@ -131,12 +133,12 @@ class EvalCode implements Plugin
             ->setBody($body)
         ;
 
-        yield $this->mutex->withLock(function() use($request, $command) {
+        return $this->mutex->withLock(function() use($request, $command) {
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($request);
 
             /** @var PostedMessage $chatMessage */
-            $chatMessage = yield from $this->chatClient->postMessage(
+            $chatMessage = yield $this->chatClient->postMessage(
                 $command->getRoom(),
                 $this->getMessageText(
                     "Waiting for results",

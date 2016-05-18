@@ -4,6 +4,8 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -23,16 +25,16 @@ class Mdn implements Plugin {
         $this->httpClient = $httpClient;
     }
 
-    private function postResult(Command $command, array $result): \Generator
+    private function postResult(Command $command, array $result): Promise
     {
         $message = sprintf("[ [%s](%s) ] %s", $result["title"], $result["url"], $result["excerpt"]);
 
-        yield from $this->chatClient->postMessage($command->getRoom(), $message);
+        return $this->chatClient->postMessage($command->getRoom(), $message);
     }
 
-    private function postNoResult(Command $command): \Generator
+    private function postNoResult(Command $command): Promise
     {
-        yield from $this->chatClient->postReply(
+        return $this->chatClient->postReply(
             $command, 'Sorry, I couldn\'t find a page concerning that topic on MDN.'
         );
     }
@@ -40,7 +42,7 @@ class Mdn implements Plugin {
     public function search(Command $command): \Generator
     {
         if (!$command->hasParameters()) {
-            return;
+            return new Success();
         }
 
         /** @var HttpResponse $response */
@@ -50,15 +52,11 @@ class Mdn implements Plugin {
 
         $result = json_decode($response->getBody(), true);
 
-        if(isset($result["documents"][0])) {
-            $firstHit = $result["documents"][0];
+        if(!isset($result["documents"][0]["id"], $result["documents"][0]["url"])) {
+            return $this->postNoResult($command);
         }
 
-        if(isset($firstHit) && isset($firstHit["id"]) && isset($firstHit["url"])) {
-            yield from $this->postResult($command, $firstHit);
-        } else {
-            yield from $this->postNoResult($command);
-        }
+        return $this->postResult($command, $result["documents"][0]);
     }
 
     public function getName(): string

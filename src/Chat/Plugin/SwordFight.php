@@ -2,6 +2,8 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Conversation;
 use Room11\Jeeves\Chat\Message\Message;
@@ -77,11 +79,6 @@ class SwordFight implements Plugin
         return trim(preg_replace('/\s+/', ' ', $text));
     }
 
-    private function getResult(Conversation $conversation): \Generator
-    {
-        yield from $this->chatClient->postReply($conversation, $this->getResponse($conversation));
-    }
-
     private function getResponse(Conversation $conversation): string
     {
         $text = $this->normalize($conversation->getText());
@@ -95,19 +92,11 @@ class SwordFight implements Plugin
         return null;
     }
 
-    /**
-     * Handle a general message
-     *
-     * @param Message $message
-     * @return \Generator
-     */
-    public function handleMessage(Message $message): \Generator
+    public function handleMessage(Message $message): Promise
     {
-        if (!($message instanceof Conversation) || !$this->isMatch($message)) {
-            return;
-        }
-
-        yield from $this->getResult($message);
+        return $message instanceof Conversation && $this->isMatch($message)
+            ? $this->chatClient->postReply($message, $this->getResponse($message))
+            : new Success();
     }
 
     public function getName(): string

@@ -2,6 +2,8 @@
 
 namespace Room11\Jeeves\Chat\BuiltIn;
 
+use Amp\Promise;
+use function Amp\resolve;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
@@ -30,18 +32,18 @@ class Version implements BuiltInCommand
             );
         }, $version);
 
-        yield from $this->chatClient->postMessage($command->getRoom(), $version);
+        yield $this->chatClient->postMessage($command->getRoom(), $version);
     }
 
     /**
      * Handle a command message
      *
      * @param CommandMessage $command
-     * @return \Generator
+     * @return Promise
      */
-    public function handleCommand(CommandMessage $command): \Generator
+    public function handleCommand(CommandMessage $command): Promise
     {
-        yield from $this->getVersion($command);
+        return resolve($this->getVersion($command));
     }
 
     /**

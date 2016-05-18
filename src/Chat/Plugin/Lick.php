@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -30,9 +31,9 @@ class Lick implements Plugin
         return self::RESPONSES[random_int(0, (count(self::RESPONSES) - 1))];
     }
 
-    public function lick(Command $command): \Generator
+    public function lick(Command $command): Promise
     {
-        yield from $this->chatClient->postReply($command, $this->getRandomReply());
+        return $this->chatClient->postReply($command, $this->getRandomReply());
     }
 
     public function getName(): string

@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -51,7 +52,7 @@ class Tweet implements Plugin
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
         /** @var HttpResponse $messageInfo */
-        $messageInfo = yield from $this->chatClient->getMessage($command->getRoom(), (int) $matches[1]);
+        $messageInfo = yield $this->chatClient->getMessage($command->getRoom(), (int) $matches[1]);
 
         $messageBody = html_entity_decode($messageInfo->getBody(), ENT_QUOTES);
         $dom = domdocument_load_html($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
@@ -159,15 +160,11 @@ class Tweet implements Plugin
 
     public function tweet(Command $command): \Generator {
         if (!$this->isMessageValid($command->getParameter(0))) {
-            return;
+            return new Success();
         }
 
         if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
-            yield from $this->chatClient->postReply(
-                $command, "I'm sorry Dave, I'm afraid I can't do that"
-            );
-
-            return;
+            return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
         }
 
         yield from $this->updateConfigWhenNeeded();
@@ -175,9 +172,7 @@ class Tweet implements Plugin
         $tweetText = yield from $this->getMessage($command, $command->getParameters()[0]);
 
         if (mb_strlen($tweetText, "UTF-8") > 140) {
-            yield from $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
-
-            return;
+            return $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
         }
 
         $oauthParameters = [
@@ -229,7 +224,7 @@ class Tweet implements Plugin
         $tweetInfo = json_decode($result->getBody(), true);
         $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
-        yield from $this->chatClient->postReply($command, $tweetUri);
+        return $this->chatClient->postReply($command, $tweetUri);
     }
 
     public function getName(): string

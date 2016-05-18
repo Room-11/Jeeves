@@ -4,6 +4,8 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -38,13 +40,18 @@ class Google implements Plugin {
         ]);
     }
 
-    private function postNoResultsMessage(Command $command): \Generator {
-        yield from $this->chatClient->postReply(
-            $command, sprintf("Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P", implode(' ', $command->getParameters()))
+    private function postNoResultsMessage(Command $command): Promise
+    {
+        $message = sprintf(
+            "Did you know? That `%s...` doesn't exist in the world! Cuz' GOOGLE can't find it :P",
+            implode(' ', $command->getParameters())
         );
+
+        return $this->chatClient->postReply($command, $message);
     }
 
-    private function getResultNodes(\DOMXPath $xpath): \DOMNodeList {
+    private function getResultNodes(\DOMXPath $xpath): \DOMNodeList
+    {
         return $xpath->evaluate("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]");
     }
 
@@ -127,7 +134,7 @@ class Google implements Plugin {
 
     public function search(Command $command): \Generator {
         if (!$command->hasParameters()) {
-            return;
+            return new Success();
         }
 
         $uri = $this->getSearchURL($command);
@@ -136,11 +143,10 @@ class Google implements Plugin {
         $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
-            yield from $this->chatClient->postMessage(
+            return $this->chatClient->postMessage(
                 $command->getRoom(),
                 "It was Google's fault, not mine."
             );
-            return;
         }
 
         $dom = domdocument_load_html($response->getBody());
@@ -148,15 +154,13 @@ class Google implements Plugin {
         $nodes = $this->getResultNodes($xpath);
 
         if($nodes->length === 0) {
-            yield from $this->postNoResultsMessage($command);
-
-            return;
+            return $this->postNoResultsMessage($command);
         }
 
         $searchResults = $this->getSearchResults($nodes, $xpath);
         $postMessage   = $this->getPostMessage($searchResults, $uri, $command);
 
-        yield from $this->chatClient->postMessage($command->getRoom(),$postMessage);
+        return $this->chatClient->postMessage($command->getRoom(),$postMessage);
     }
 
     public function getName(): string

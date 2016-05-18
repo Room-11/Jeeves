@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Plugin;
 
+use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -55,8 +56,9 @@ class Rebecca implements Plugin
         return $now->diff($friday);
     }
 
-    public function gottaGetDownOnFriday(Command $command): \Generator {
-        yield from $this->chatClient->postReply($command, $this->getRebeccaLinkIfFriday());
+    public function gottaGetDownOnFriday(Command $command): Promise
+    {
+        return $this->chatClient->postReply($command, $this->getRebeccaLinkIfFriday());
     }
 
     public function getName(): string

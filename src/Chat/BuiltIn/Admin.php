@@ -4,11 +4,14 @@ namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\all;
+use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_process_html_docs;
 
 class Admin implements BuiltInCommand
@@ -29,53 +32,39 @@ class Admin implements BuiltInCommand
         $this->httpClient = $httpClient;
     }
 
-    private function execute(CommandMessage $command): \Generator {
-        if ($command->getParameter(0) === "list") {
-            yield from $this->getList($command);
+    private function list(CommandMessage $command): Promise
+    {
+        return resolve(function() use($command) {
+            $userIds = yield $this->storage->getAll($command->getRoom());
 
-            return;
-        }
+            if (!$userIds) {
+                return $this->chatClient->postMessage($command->getRoom(), "There are no registered admins");
+            }
 
-        if (!yield $this->storage->isAdmin($command->getRoom(), $command->getUserId())) {
-            yield from $this->chatClient->postReply(
-                $command, "I'm sorry Dave, I'm afraid I can't do that"
-            );
+            $list = implode(", ", array_map(function($profile) {
+                return $profile["username"];
+            }, yield from $this->getUserData($userIds)));
 
-            return;
-        }
-
-        if ($command->getParameter(0) === "add") {
-            yield from $this->add($command, (int)$command->getParameter(1));
-        } elseif ($command->getParameter(0) === "remove") {
-            yield from $this->remove($command, (int)$command->getParameter(1));
-        }
+            return $this->chatClient->postMessage($command->getRoom(), $list);
+        });
     }
 
-    private function getList(CommandMessage $command): \Generator {
-        $userIds = yield $this->storage->getAll($command->getRoom());
+    private function add(CommandMessage $command, int $userId): Promise
+    {
+        return resolve(function() use($command, $userId) {
+            yield $this->storage->add($command->getRoom(), $userId);
 
-        if (!$userIds) {
-            yield from $this->chatClient->postMessage($command->getRoom(), "There are no registered admins");
-            return;
-        }
-
-        $list = implode(", ", array_map(function($profile) {
-            return $profile["username"];
-        }, yield from $this->getUserData($userIds)));
-
-        yield from $this->chatClient->postMessage($command->getRoom(), $list);
+            return $this->chatClient->postMessage($command->getRoom(), "User added to the admin list.");
+        });
     }
 
-    private function add(CommandMessage $command, int $userId): \Generator {
-        yield $this->storage->add($command->getRoom(), $userId);
+    private function remove(CommandMessage $command, int $userId): Promise
+    {
+        return resolve(function() use($command, $userId) {
+            yield $this->storage->remove($command->getRoom(), $userId);
 
-        yield from $this->chatClient->postMessage($command->getRoom(), "User added to the admin list.");
-    }
-
-    private function remove(CommandMessage $command, int $userId): \Generator {
-        yield $this->storage->remove($command->getRoom(), $userId);
-
-        yield from $this->chatClient->postMessage($command->getRoom(), "User removed from the admin list.");
+            return $this->chatClient->postMessage($command->getRoom(), "User removed from the admin list.");
+        });
     }
 
     private function getUserData(array $userIds): \Generator {
@@ -122,13 +111,30 @@ class Admin implements BuiltInCommand
      * Handle a command message
      *
      * @param CommandMessage $command
-     * @return \Generator
+     * @return Promise
      */
-    public function handleCommand(CommandMessage $command): \Generator
+    public function handleCommand(CommandMessage $command): Promise
     {
-        if (in_array($command->getParameter(0), self::ACTIONS, true)) {
-            yield from $this->execute($command);
+        if (!in_array($command->getParameter(0), self::ACTIONS, true)) {
+            return new Success();
         }
+
+        if ($command->getParameter(0) === "list") {
+            return $this->list($command);
+        }
+
+        return resolve(function() use($command) {
+            if (!yield $this->storage->isAdmin($command->getRoom(), $command->getUserId())) {
+                return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+            }
+
+            switch ($command->getParameter(0)) {
+                case 'add':    return $this->add($command, (int)$command->getParameter(1));
+                case 'remove': return $this->remove($command, (int)$command->getParameter(1));
+            }
+
+            throw new \LogicException('Operation ' . $command->getParameter(0) . ' was considered valid but not handled??');
+        });
     }
 
     /**

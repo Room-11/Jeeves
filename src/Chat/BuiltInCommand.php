@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat;
 
+use Amp\Promise;
 use Room11\Jeeves\Chat\Message\Command;
 
 interface BuiltInCommand
@@ -10,9 +11,9 @@ interface BuiltInCommand
      * Handle a command message
      *
      * @param Command $command
-     * @return \Generator
+     * @return Promise
      */
-    public function handleCommand(Command $command): \Generator;
+    public function handleCommand(Command $command): Promise;
 
     /**
      * Get a list of specific commands handled by this built-in

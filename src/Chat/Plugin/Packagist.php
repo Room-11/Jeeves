@@ -55,8 +55,7 @@ class Packagist implements Plugin
         $info = explode('/', implode('/', $command->getParameters()), 2);
 
         if (count($info) !== 2) {
-            yield from $this->chatClient->postReply($command, "Usage: `!!packagist vendor package`");
-            return;
+            return $this->chatClient->postReply($command, "Usage: `!!packagist vendor package`");
         }
 
         list ($vendor, $package) = $info;
@@ -73,7 +72,7 @@ class Packagist implements Plugin
 
             $data = json_try_decode($response->getBody());
 
-            yield from $this->chatClient->postMessage(
+            return $this->chatClient->postMessage(
                 $command->getRoom(),
                 sprintf(
                     "[ [%s](%s) ] %s",
@@ -83,7 +82,7 @@ class Packagist implements Plugin
                 )
             );
         } catch (\Throwable $e) {
-            yield from $this->chatClient->postReply($command, 'No matching packages found');
+            return $this->chatClient->postReply($command, 'No matching packages found');
         }
     }
 

@@ -2,10 +2,12 @@
 
 namespace Room11\Jeeves\Chat;
 
+use Amp\Promise;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use function Amp\resolve;
 
 class BuiltInCommandManager
 {
@@ -35,24 +37,34 @@ class BuiltInCommandManager
         return $this;
     }
 
-    public function handle(Command $command): \Generator
+    /**
+     * @return string[]
+     */
+    public function getRegisteredCommands(): array
     {
-        $eventId = $command->getEvent()->getEventId();
-        $userId = $command->getUserId();
+        return array_keys($this->commands);
+    }
 
-        $this->logger->log(Level::DEBUG, "Processing event #{$eventId} for built in commands");
+    public function handleCommand(Command $command): Promise
+    {
+        return resolve(function() use($command) {
+            $commandName = $command->getCommandName();
+            if (!isset($this->commands[$commandName])) {
+                return;
+            }
 
-        if (yield $this->banStorage->isBanned($command->getRoom(), $userId)) {
-            $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
-            return;
-        }
+            $eventId = $command->getEvent()->getEventId();
 
-        $commandName = $command->getCommandName();
-        if (isset($this->commands[$commandName])) {
+            $userId = $command->getUserId();
+            $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
+
+            if ($userIsBanned) {
+                $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
+                return;
+            }
+
             $this->logger->log(Level::DEBUG, "Passing event #{$eventId} to built in command handler " . get_class($this->commands[$commandName]));
-            yield from $this->commands[$commandName]->handleCommand($command);
-        }
-
-        $this->logger->log(Level::DEBUG, "Event #{$eventId} processed for built in commands");
+            yield $this->commands[$commandName]->handleCommand($command);
+        });
     }
 }

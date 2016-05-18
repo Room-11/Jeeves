@@ -18,4 +18,9 @@ class Unknown extends BaseEvent
     {
         return $this->data;
     }
+
+    public function getJson(): string
+    {
+        return \json_encode($this->data);
+    }
 }
