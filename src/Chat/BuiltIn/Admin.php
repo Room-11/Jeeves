@@ -35,15 +35,20 @@ class Admin implements BuiltInCommand
     private function list(CommandMessage $command): Promise
     {
         return resolve(function() use($command) {
-            $userIds = yield $this->storage->getAll($command->getRoom());
+            $admins = yield $this->storage->getAll($command->getRoom());
 
-            if (!$userIds) {
+            if ($admins['owners'] === [] && $admins['admins'] === []) {
                 return $this->chatClient->postMessage($command->getRoom(), "There are no registered admins");
             }
 
-            $list = implode(", ", array_map(function($profile) {
+            $userIds = array_merge($admins['owners'], $admins['admins']);
+            $usernames = array_map(function($profile) {
                 return $profile["username"];
-            }, yield from $this->getUserData($userIds)));
+            }, yield from $this->getUserData($userIds));
+
+            sort($usernames, SORT_ASC);
+
+            $list = implode(", ", $usernames);
 
             return $this->chatClient->postMessage($command->getRoom(), $list);
         });
@@ -68,9 +73,11 @@ class Admin implements BuiltInCommand
     }
 
     private function getUserData(array $userIds): \Generator {
-        $userProfiles = yield all($this->httpClient->requestMulti(array_map(function($userId) {
-            return "http://stackoverflow.com/users/$userId";
-        }, $userIds)));
+        $profileURLs = array_map(function($userId) {
+            return "http://stackoverflow.com/users/$userId"; // todo multi-site
+        }, $userIds);
+
+        $userProfiles = yield all($this->httpClient->requestMulti($profileURLs));
 
         return $this->parseUserProfiles(array_map(function(HttpResponse $response) {
             return $response->getBody();
@@ -78,7 +85,7 @@ class Admin implements BuiltInCommand
     }
 
     /**
-     * @param HttpResponse[] $userProfiles
+     * @param string[] $userProfiles
      * @return array
      */
     private function parseUserProfiles(array $userProfiles): array {

@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Storage\File;
 
 use Amp\Promise;
+use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -13,10 +14,13 @@ use function Amp\resolve;
 
 class Admin implements AdminStorage
 {
+    private $chatClient;
     private $dataFileTemplate;
 
-    public function __construct(string $dataFile) {
+    public function __construct(ChatClient $chatClient, string $dataFile)
+    {
         $this->dataFileTemplate = $dataFile;
+        $this->chatClient = $chatClient;
     }
 
     /**
@@ -33,22 +37,39 @@ class Admin implements AdminStorage
         return sprintf($this->dataFileTemplate, $roomId);
     }
 
-    public function getAll($room): Promise
+    private function getExtraAdmins(ChatRoom $room): \Generator
+    {
+        $filePath = $this->getDataFileName($room);
+
+        if (!yield exists($filePath)) {
+            return [];
+        }
+
+        $administrators = yield get($filePath);
+
+        return json_decode($administrators, true);
+    }
+
+    public function getAll(ChatRoom $room): Promise
     {
         return resolve(function() use($room) {
-            $filePath = $this->getDataFileName($room);
+            $owners = array_keys(yield $this->chatClient->getRoomOwners($room));
+            $admins = yield from $this->getExtraAdmins($room);
 
-            if (!yield exists($filePath)) {
-                return [];
+            $reconciled = array_diff($admins, $owners);
+
+            if (count($reconciled) !== count($admins)) {
+                yield put($this->getDataFileName($room), json_encode($reconciled));
             }
 
-            $administrators = yield get($filePath);
-
-            return json_decode($administrators, true);
+            return [
+                'owners' => $owners,
+                'admins' => $reconciled,
+            ];
         });
     }
 
-    public function isAdmin($room, int $userId): Promise
+    public function isAdmin(ChatRoom $room, int $userId): Promise
     {
         return resolve(function() use($room, $userId) {
             // inb4 people "testing" removing me from the admin list
@@ -58,14 +79,16 @@ class Admin implements AdminStorage
 
             $administrators = yield $this->getAll($room);
 
-            return $administrators === [] || in_array($userId, $administrators, true);
+            return ($administrators['owners'] === [] && $administrators['admins'] === [])
+                || in_array($userId, $administrators['owners'], true)
+                || in_array($userId, $administrators['admins'], true);
         });
     }
 
-    public function add($room, int $userId): Promise
+    public function add(ChatRoom $room, int $userId): Promise
     {
         return resolve(function() use($room, $userId) {
-            $administrators = yield $this->getAll($room);
+            $administrators = yield from $this->getExtraAdmins($room);
 
             if (in_array($userId, $administrators, true)) {
                 return;
@@ -77,16 +100,14 @@ class Admin implements AdminStorage
         });
     }
 
-    public function remove($room, int $userId): Promise
+    public function remove(ChatRoom $room, int $userId): Promise
     {
         return resolve(function() use($room, $userId) {
             if (!yield $this->isAdmin($room, $userId)) {
                 return;
             }
 
-            $administrators = yield $this->getAll($room);
-
-            $administrators = array_diff($administrators, [$userId]);
+            $administrators = array_diff(yield from $this->getExtraAdmins($room), [$userId]);
 
             yield put($this->getDataFileName($room), json_encode($administrators));
         });

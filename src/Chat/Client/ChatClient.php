@@ -15,8 +15,13 @@ use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
+use function Amp\resolve;
+use function Room11\DOMUtils\domdocument_load_html;
+use function Room11\DOMUtils\xpath_get_element;
+use function Room11\DOMUtils\xpath_get_elements;
 
-class ChatClient {
+class ChatClient
+{
     const MAX_POST_ATTEMPTS = 5;
 
     private $httpClient;
@@ -33,6 +38,38 @@ class ChatClient {
 
         $this->postMutex = new QueuedExclusiveMutex();
         $this->editMutex = new QueuedExclusiveMutex();
+    }
+
+    public function getRoomOwners(ChatRoom $room): Promise
+    {
+        return resolve(function() use($room) {
+            $url = $room->getIdentifier()->getEndpointURL(ChatRoomEndpoint::INFO_ACCESS);
+
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($url);
+
+            $doc = domdocument_load_html($response->getBody());
+
+            $ownerSection = $doc->getElementById('access-section-owner');
+            if ($ownerSection === null) {
+                throw new \RuntimeException('Could not find the access-section-owner container div');
+            }
+
+            $userEls = xpath_get_elements($ownerSection, ".//div[contains(concat(' ', normalize-space(@class), ' '), ' usercard ')]");
+            $users = [];
+
+            foreach ($userEls as $userEl) {
+                $profileAnchor = xpath_get_element($userEl, ".//a[contains(concat(' ', normalize-space(@class), ' '), ' username ')]");
+
+                if (!preg_match('#^/users/([0-9]+)/#', $profileAnchor->getAttribute('href'), $match)) {
+                    continue;
+                }
+
+                $users[(int)$match[1]] = trim($profileAnchor->textContent);
+            }
+
+            return $users;
+        });
     }
 
     public function getMessage(ChatRoom $room, int $id): Promise
