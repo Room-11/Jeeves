@@ -42,13 +42,15 @@ class Admin implements BuiltInCommand
             }
 
             $userIds = array_merge($admins['owners'], $admins['admins']);
-            $usernames = array_map(function($profile) {
-                return $profile["username"];
+            $userNames = array_map(function($profile) use($admins) {
+                return in_array($profile['id'], $admins['owners'])
+                    ? '*' . $profile['username'] . '*'
+                    : $profile['username'];
             }, yield from $this->getUserData($userIds));
 
-            sort($usernames, SORT_ASC);
+            sort($userNames, SORT_ASC);
 
-            $list = implode(", ", $usernames);
+            $list = implode(", ", $userNames);
 
             return $this->chatClient->postMessage($command->getRoom(), $list);
         });
@@ -103,8 +105,10 @@ class Admin implements BuiltInCommand
 
                 $usernameNode = $usernameNodes->item(0);
                 $profileNode = $profileNodes->item(0);
+                preg_match('#/users/([0-9]+)#', $profileNode->getAttribute("href"), $match);
 
                 $userData[] = [
+                    'id'       => (int)$match[1],
                     'username' => trim($usernameNode->textContent),
                     'profile'  => $profileNode->getAttribute("href"),
                 ];
