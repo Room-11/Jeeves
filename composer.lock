@@ -4,21 +4,21 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "b8694c97b9b9211926e4bff46eab60cb",
-    "content-hash": "651768ced307030d90ce3141f4579aac",
+    "hash": "f39a0e84d87ae6b602caf91d6663cf2c",
+    "content-hash": "16b7e48b087b4c008e10634863872b43",
     "packages": [
         {
             "name": "amphp/amp",
-            "version": "v1.2.0",
+            "version": "v1.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/amp.git",
-                "reference": "bb85e40ce1d3b273a52272ce245dfcba9028727d"
+                "reference": "4f2161da5f68f274f116985635aea63b5c0f54d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/amp/zipball/bb85e40ce1d3b273a52272ce245dfcba9028727d",
-                "reference": "bb85e40ce1d3b273a52272ce245dfcba9028727d",
+                "url": "https://api.github.com/repos/amphp/amp/zipball/4f2161da5f68f274f116985635aea63b5c0f54d2",
+                "reference": "4f2161da5f68f274f116985635aea63b5c0f54d2",
                 "shasum": ""
             },
             "require": {
@@ -62,7 +62,7 @@
                 "non-blocking",
                 "promise"
             ],
-            "time": "2016-05-11 17:14:33"
+            "time": "2016-05-12 12:54:59"
         },
         {
             "name": "amphp/artax",
@@ -481,20 +481,20 @@
         },
         {
             "name": "daverandom/mutex",
-            "version": "v0.0.1",
+            "version": "v0.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/DaveRandom/Mutex.git",
-                "reference": "e2d7d63aeadf2d217287cd3ec32f73c4aec4879c"
+                "reference": "f81d9678897541dd8c5e3b32cbed3dd5a0561fa1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/DaveRandom/Mutex/zipball/e2d7d63aeadf2d217287cd3ec32f73c4aec4879c",
-                "reference": "e2d7d63aeadf2d217287cd3ec32f73c4aec4879c",
+                "url": "https://api.github.com/repos/DaveRandom/Mutex/zipball/f81d9678897541dd8c5e3b32cbed3dd5a0561fa1",
+                "reference": "f81d9678897541dd8c5e3b32cbed3dd5a0561fa1",
                 "shasum": ""
             },
             "require": {
-                "amphp/amp": "^1",
+                "amphp/amp": "^1.2",
                 "php": ">=7"
             },
             "type": "library",
@@ -513,7 +513,7 @@
                 }
             ],
             "description": "Basic common mutex framework for amp",
-            "time": "2016-05-06 13:48:53"
+            "time": "2016-05-15 14:39:24"
         },
         {
             "name": "rdlowrey/auryn",
@@ -578,16 +578,16 @@
         },
         {
             "name": "room11/dom-utils",
-            "version": "v1.0.1",
+            "version": "v1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/DOMUtils.git",
-                "reference": "2f5961bca75588a32ec8221aabe91b0bcbbc9734"
+                "reference": "4de002616b32aaf5b8942d12c370774e82a4afd2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/2f5961bca75588a32ec8221aabe91b0bcbbc9734",
-                "reference": "2f5961bca75588a32ec8221aabe91b0bcbbc9734",
+                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/4de002616b32aaf5b8942d12c370774e82a4afd2",
+                "reference": "4de002616b32aaf5b8942d12c370774e82a4afd2",
                 "shasum": ""
             },
             "type": "library",
@@ -609,7 +609,7 @@
                 }
             ],
             "description": "Utility functions for the PHP DOM extension",
-            "time": "2016-05-10 17:51:51"
+            "time": "2016-05-13 17:03:09"
         },
         {
             "name": "room11/openid",
@@ -1150,20 +1150,23 @@
         },
         {
             "name": "phpunit/php-timer",
-            "version": "1.0.7",
+            "version": "1.0.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-timer.git",
-                "reference": "3e82f4e9fc92665fafd9157568e4dcb01d014e5b"
+                "reference": "38e9124049cf1a164f1e4537caf19c99bf1eb260"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-timer/zipball/3e82f4e9fc92665fafd9157568e4dcb01d014e5b",
-                "reference": "3e82f4e9fc92665fafd9157568e4dcb01d014e5b",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-timer/zipball/38e9124049cf1a164f1e4537caf19c99bf1eb260",
+                "reference": "38e9124049cf1a164f1e4537caf19c99bf1eb260",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~4|~5"
             },
             "type": "library",
             "autoload": {
@@ -1187,7 +1190,7 @@
             "keywords": [
                 "timer"
             ],
-            "time": "2015-06-21 08:01:12"
+            "time": "2016-05-12 18:03:57"
         },
         {
             "name": "phpunit/php-token-stream",
@@ -1240,16 +1243,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "5.3.2",
+            "version": "5.3.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "2c6da3536035617bae3fe3db37283c9e0eb63ab3"
+                "reference": "00dd95ffb48805503817ced06399017df315fe5c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/2c6da3536035617bae3fe3db37283c9e0eb63ab3",
-                "reference": "2c6da3536035617bae3fe3db37283c9e0eb63ab3",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/00dd95ffb48805503817ced06399017df315fe5c",
+                "reference": "00dd95ffb48805503817ced06399017df315fe5c",
                 "shasum": ""
             },
             "require": {
@@ -1311,7 +1314,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2016-04-12 16:20:08"
+            "time": "2016-05-11 13:28:45"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -1532,16 +1535,16 @@
         },
         {
             "name": "sebastian/environment",
-            "version": "1.3.6",
+            "version": "1.3.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/environment.git",
-                "reference": "2292b116f43c272ff4328083096114f84ea46a56"
+                "reference": "4e8f0da10ac5802913afc151413bc8c53b6c2716"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/environment/zipball/2292b116f43c272ff4328083096114f84ea46a56",
-                "reference": "2292b116f43c272ff4328083096114f84ea46a56",
+                "url": "https://api.github.com/repos/sebastianbergmann/environment/zipball/4e8f0da10ac5802913afc151413bc8c53b6c2716",
+                "reference": "4e8f0da10ac5802913afc151413bc8c53b6c2716",
                 "shasum": ""
             },
             "require": {
@@ -1578,7 +1581,7 @@
                 "environment",
                 "hhvm"
             ],
-            "time": "2016-05-04 07:59:13"
+            "time": "2016-05-17 03:18:57"
         },
         {
             "name": "sebastian/exporter",
