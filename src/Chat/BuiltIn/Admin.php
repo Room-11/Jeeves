@@ -59,6 +59,15 @@ class Admin implements BuiltInCommand
     private function add(CommandMessage $command, int $userId): Promise
     {
         return resolve(function() use($command, $userId) {
+            $admins = yield $this->storage->getAll($command->getRoom());
+
+            if (in_array($userId, $admins['admins'])) {
+                return $this->chatClient->postReply($command, "User already on admin list.");
+            }
+            if (in_array($userId, $admins['owners'])) {
+                return $this->chatClient->postReply($command, "User is a room owner and has implicit admin rights.");
+            }
+
             yield $this->storage->add($command->getRoom(), $userId);
 
             return $this->chatClient->postMessage($command->getRoom(), "User added to the admin list.");
@@ -68,6 +77,15 @@ class Admin implements BuiltInCommand
     private function remove(CommandMessage $command, int $userId): Promise
     {
         return resolve(function() use($command, $userId) {
+            $admins = yield $this->storage->getAll($command->getRoom());
+
+            if (in_array($userId, $admins['owners'])) {
+                return $this->chatClient->postReply($command, "User is a room owner and has implicit admin rights.");
+            }
+            if (!in_array($userId, $admins['admins'])) {
+                return $this->chatClient->postReply($command, "User not currently on admin list.");
+            }
+
             yield $this->storage->remove($command->getRoom(), $userId);
 
             return $this->chatClient->postMessage($command->getRoom(), "User removed from the admin list.");
