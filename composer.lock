@@ -481,16 +481,16 @@
         },
         {
             "name": "daverandom/mutex",
-            "version": "v0.0.2",
+            "version": "v0.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/DaveRandom/Mutex.git",
-                "reference": "f81d9678897541dd8c5e3b32cbed3dd5a0561fa1"
+                "reference": "7f25287d9d1143637a9eb4a215f7b172749499b3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/DaveRandom/Mutex/zipball/f81d9678897541dd8c5e3b32cbed3dd5a0561fa1",
-                "reference": "f81d9678897541dd8c5e3b32cbed3dd5a0561fa1",
+                "url": "https://api.github.com/repos/DaveRandom/Mutex/zipball/7f25287d9d1143637a9eb4a215f7b172749499b3",
+                "reference": "7f25287d9d1143637a9eb4a215f7b172749499b3",
                 "shasum": ""
             },
             "require": {
@@ -513,7 +513,7 @@
                 }
             ],
             "description": "Basic common mutex framework for amp",
-            "time": "2016-05-15 14:39:24"
+            "time": "2016-05-19 22:28:27"
         },
         {
             "name": "rdlowrey/auryn",
