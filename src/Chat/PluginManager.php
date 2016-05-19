@@ -26,6 +26,7 @@ class PluginManager
     private $pluginStorage;
     private $logger;
     private $filterBuilder;
+    private $builtInCommandManager;
 
     /**
      * @var Plugin[]
@@ -51,6 +52,9 @@ class PluginManager
      */
     private $commandEndpoints = [];
 
+    /**
+     * @var bool[][]
+     */
     private $enabledPlugins = [];
 
     /**
@@ -187,12 +191,14 @@ class PluginManager
         BanStorage $banStorage,
         PluginStorage $pluginStorage,
         Logger $logger,
-        EventFilterBuilder $filterBuilder
+        EventFilterBuilder $filterBuilder,
+        BuiltInCommandManager $builtInCommandManager
     ) {
         $this->banStorage = $banStorage;
         $this->pluginStorage = $pluginStorage;
         $this->logger = $logger;
         $this->filterBuilder = $filterBuilder;
+        $this->builtInCommandManager = $builtInCommandManager;
     }
 
     public function registerPlugin(Plugin $plugin) /*: void*/
@@ -326,6 +332,10 @@ class PluginManager
      */
     public function mapCommandForRoom($room, $plugin, string $endpoint, string $command): Promise
     {
+        if (in_array($command, $this->builtInCommandManager->getRegisteredCommands())) {
+            throw new \LogicException("Command '{$command}' is built in");
+        }
+
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
 
         $endpointName = strtolower($endpoint);
@@ -335,6 +345,9 @@ class PluginManager
         $endpoint = $this->commandEndpoints[$pluginName][$endpointName];
 
         $roomId = $this->resolveRoomIdent($room);
+        if (isset($this->commandMap[$roomId][$command])) {
+            throw new \LogicException("Command '{$command}' already mapped in room '{$roomId}'");
+        }
 
         $this->commandMap[$roomId][$command] = [$plugin, $endpoint];
 
@@ -348,6 +361,10 @@ class PluginManager
      */
     public function unmapCommandForRoom($room, string $command): Promise
     {
+        if (in_array($command, $this->builtInCommandManager->getRegisteredCommands())) {
+            throw new \LogicException("Command '{$command}' is built in");
+        }
+
         $roomId = $this->resolveRoomIdent($room);
 
         if (!isset($this->commandMap[$roomId][$command])) {

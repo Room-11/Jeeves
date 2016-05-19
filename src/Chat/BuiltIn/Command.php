@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\BuiltInCommand;
+use Room11\Jeeves\Chat\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Chat\PluginManager;
@@ -12,101 +13,228 @@ use function Amp\resolve;
 
 class Command implements BuiltInCommand
 {
+    const RESPONSE_MESSAGES = [
+        'command_already_mapped' => "Command '%s' is already mapped. Use `!!command list` to display the currently "
+                                  . "mapped commands.",
+        'command_built_in'       => "Command '%s' is built in and cannot be altered",
+        'command_map_success'    => "Command '%s' is now mapped to %s # %s",
+        'command_not_mapped'     => "Command '%s' is not currently mapped",
+        'command_unmap_success'  => "Command '%s' is no longer mapped",
+        'multiple_endpoints'     => "Plugin '%1\$s' provides %2\$d endpoints, you must specify the endpoint to which "
+                                  . "the command should be mapped. Use `!!plugin list %1\$s` to display information "
+                                  . "about the available endpoints.",
+        'syntax'                 => "    Syntax: command [map|remap] <command> <plugin> [<endpoint>]\n"
+                                  . "            command unmap <command>\n"
+                                  . "            command alias <new command> <existing command>\n"
+                                  . "            command list",
+        'unexpected_error'       => "Something really unexpected happened: %s",
+        'unknown_endpoint'       => "Unknown endpoint name '%s' for plugin '%s'",
+        'unknown_plugin'         => "Unknown plugin '%s'. Use `!!plugin list` to display the currently registered "
+                                  . "plugins.",
+        'user_not_admin'         => "I'm sorry Dave, I'm afraid I can't do that",
+    ];
+
     private $pluginManager;
     private $chatClient;
     private $adminStorage;
+    private $builtInCommandManager;
 
-    private function showSyntax(CommandMessage $command): Promise
-    {
-        return $this->chatClient->postReply($command, "Syntax: command [map|unmap|list] [command] [plugin] [endpoint]");
+    private static function message(string $name, ...$args) {
+        return vsprintf(self::RESPONSE_MESSAGES[$name], $args);
     }
 
-    private function map(CommandMessage $command): Promise
+    private /* async */ function map(CommandMessage $command): \Generator
     {
-        return resolve(function() use($command) {
-            if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
-                return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+        $room = $command->getRoom();
+
+        if (!yield $this->adminStorage->isAdmin($room, $command->getUserId())) {
+            return $this->chatClient->postReply($command, self::message('user_not_admin'));
+        }
+
+        if (!$command->hasParameters(3)) {
+            return $this->chatClient->postReply($command, self::message('syntax'));
+        }
+
+        $cmd = $command->getParameter(1);
+        $pluginName = $command->getParameter(2);
+        $endpointName = $command->getParameter(3);
+
+        if (in_array($cmd, $this->builtInCommandManager->getRegisteredCommands())) {
+            return $this->chatClient->postReply($command, self::message('command_built_in', $cmd));
+        }
+
+        if ($this->pluginManager->isCommandMappedForRoom($room, $cmd)) {
+            return $this->chatClient->postReply($command, self::message('command_already_mapped', $cmd));
+        }
+
+        if (!$this->pluginManager->isPluginRegistered($pluginName)) {
+            return $this->chatClient->postReply($command, self::message('unknown_plugin', $pluginName));
+        }
+
+        $plugin = $this->pluginManager->getPluginByName($pluginName);
+        $endpoints = $this->pluginManager->getPluginCommandEndpoints($plugin);
+
+        if ($endpointName === null) {
+            $count = count($endpoints);
+
+            if ($count > 1) {
+                return $this->chatClient->postReply($command, self::message('multiple_endpoints', $pluginName, $count));
             }
 
-            if (!$command->hasParameters(3)) {
-                return $this->showSyntax($command);
-            }
-
-            $cmd = $command->getParameter(1);
-
-            if ($this->pluginManager->isCommandMappedForRoom($command->getRoom(), $cmd)) {
-                return $this->chatClient->postReply($command, "Command '$cmd' is already mapped in this room");
-            }
-
-            if (!$this->pluginManager->isPluginRegistered($command->getParameter(2))) {
-                return $this->chatClient->postReply($command, "Invalid plugin name: " . $command->getParameter(2));
-            }
-
-            $plugin = $this->pluginManager->getPluginByName($command->getParameter(2));
-            $endpoints = $this->pluginManager->getPluginCommandEndpoints($plugin);
-
-            $endpoint = $command->getParameter(3);
-
-            if ($endpoint === null) {
-                if (count($endpoints) > 1) {
-                    return $this->chatClient->postReply(
-                        $command,
-                        "Plugin provides multiple endpoints, you must specify the endpoint to which the command maps"
-                    );
+            reset($endpoints);
+            $endpointName = key($endpoints);
+        } else {
+            $validEndpoint = false;
+            foreach ($endpoints as $name => $info) {
+                if (strtolower($name) === strtolower($endpointName)) {
+                    $validEndpoint = true;
                 }
-
-                reset($endpoints);
-                $endpoint = key($endpoints);
-            } else {
-                $validEndpoint = false;
-                foreach ($endpoints as $name => $info) {
-                    if (strtolower($name) === strtolower($endpoint)) {
-                        $validEndpoint = true;
-                    }
-                }
-
-                if (!$validEndpoint) {
-                    return $this->chatClient->postReply($command, "Invalid endpoint name: {$endpoint}");
-                }
             }
 
-            yield $this->pluginManager->mapCommandForRoom($command->getRoom(), $plugin, $endpoint, $cmd);
+            if (!$validEndpoint) {
+                return $this->chatClient->postReply($command, self::message('unknown_endpoint', $endpointName, $pluginName));
+            }
+        }
 
-            return $this->chatClient->postMessage(
-                $command->getRoom(), "Command '{$cmd}' mapped to {$plugin->getName()} # {$endpoint}"
-            );
-        });
+        yield $this->pluginManager->mapCommandForRoom($room, $plugin, $endpointName, $cmd);
+
+        return $this->chatClient->postMessage(
+            $room, self::message('command_map_success', $cmd, $plugin->getName(), $endpointName)
+        );
     }
 
-    private function unmap(CommandMessage $command): Promise
+    private /* async */ function unmap(CommandMessage $command): \Generator
     {
-        return resolve(function() use($command) {
-            if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
-                return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+        $room = $command->getRoom();
+
+        if (!yield $this->adminStorage->isAdmin($room, $command->getUserId())) {
+            return $this->chatClient->postReply($command, self::message('user_not_admin'));
+        }
+
+        if (!$command->hasParameters(2)) {
+            return $this->chatClient->postReply($command, self::message('syntax'));
+        }
+
+        $cmd = $command->getParameter(1);
+
+        if (in_array($cmd, $this->builtInCommandManager->getRegisteredCommands())) {
+            return $this->chatClient->postReply($command, self::message('command_built_in', $cmd));
+        }
+
+        if (!$this->pluginManager->isCommandMappedForRoom($room, $cmd)) {
+            return $this->chatClient->postReply($command, self::message('command_not_mapped', $cmd));
+        }
+
+        yield $this->pluginManager->unmapCommandForRoom($room, $cmd);
+
+        return $this->chatClient->postMessage($room, self::message('command_unmap_success', $cmd));
+    }
+
+    private /* async */ function remap(CommandMessage $command): \Generator
+    {
+        $room = $command->getRoom();
+
+        if (!yield $this->adminStorage->isAdmin($room, $command->getUserId())) {
+            return $this->chatClient->postReply($command, self::message('user_not_admin'));
+        }
+
+        if (!$command->hasParameters(3)) {
+            return $this->chatClient->postReply($command, self::message('syntax'));
+        }
+
+        $cmd = $command->getParameter(1);
+        $pluginName = $command->getParameter(2);
+        $endpointName = $command->getParameter(3);
+
+        if (in_array($cmd, $this->builtInCommandManager->getRegisteredCommands())) {
+            return $this->chatClient->postReply($command, self::message('command_built_in', $cmd));
+        }
+
+        if (!$this->pluginManager->isPluginRegistered($pluginName)) {
+            return $this->chatClient->postReply($command, self::message('unknown_plugin', $pluginName));
+        }
+
+        $plugin = $this->pluginManager->getPluginByName($pluginName);
+        $endpoints = $this->pluginManager->getPluginCommandEndpoints($plugin);
+
+        if ($endpointName === null) {
+            $count = count($endpoints);
+
+            if ($count > 1) {
+                return $this->chatClient->postReply($command, self::message('multiple_endpoints', $pluginName, $count));
             }
 
-            if (!$command->hasParameters(2)) {
-                return $this->showSyntax($command);
+            reset($endpoints);
+            $endpointName = key($endpoints);
+        } else {
+            $validEndpoint = false;
+            foreach ($endpoints as $name => $info) {
+                if (strtolower($name) === strtolower($endpointName)) {
+                    $validEndpoint = true;
+                }
             }
 
-            $cmd = $command->getParameter(1);
-
-            if (!$this->pluginManager->isCommandMappedForRoom($command->getRoom(), $cmd)) {
-                return $this->chatClient->postReply($command, "Command '$cmd' is not currently mapped in this room");
+            if (!$validEndpoint) {
+                return $this->chatClient->postReply($command, self::message('unknown_endpoint', $endpointName, $pluginName));
             }
+        }
 
-            $this->pluginManager->unmapCommandForRoom($command->getRoom(), $cmd);
+        if ($this->pluginManager->isCommandMappedForRoom($room, $cmd)) {
+            yield $this->pluginManager->unmapCommandForRoom($room, $cmd);
+        }
+        yield $this->pluginManager->mapCommandForRoom($room, $plugin, $endpointName, $cmd);
 
-            return $this->chatClient->postMessage($command->getRoom(), "Mapping for command '{$cmd}' removed");
-        });
+        return $this->chatClient->postMessage(
+            $room, self::message('command_map_success', $cmd, $plugin->getName(), $endpointName)
+        );
+    }
+
+    private /* async */ function alias(CommandMessage $command): \Generator
+    {
+        $room = $command->getRoom();
+
+        if (!yield $this->adminStorage->isAdmin($room, $command->getUserId())) {
+            return $this->chatClient->postReply($command, self::message('user_not_admin'));
+        }
+
+        if (!$command->hasParameters(2)) {
+            return $this->chatClient->postReply($command, self::message('syntax'));
+        }
+
+        $newCmd = $command->getParameter(1);
+        $oldCmd = $command->getParameter(2);
+
+        if (in_array($newCmd, $this->builtInCommandManager->getRegisteredCommands())) {
+            return $this->chatClient->postReply($command, self::message('command_built_in', $newCmd));
+        }
+
+        if ($this->pluginManager->isCommandMappedForRoom($room, $newCmd)) {
+            return $this->chatClient->postReply($command, self::message('command_already_mapped', $newCmd));
+        }
+
+        if (in_array($oldCmd, $this->builtInCommandManager->getRegisteredCommands())) {
+            return $this->chatClient->postReply($command, self::message('command_built_in', $oldCmd));
+        }
+
+        if (!$this->pluginManager->isCommandMappedForRoom($room, $oldCmd)) {
+            return $this->chatClient->postReply($command, self::message('command_not_mapped', $oldCmd));
+        }
+
+        $mapping = $this->pluginManager->getMappedCommandsForRoom($room)[$oldCmd];
+        yield $this->pluginManager->mapCommandForRoom($room, $mapping['plugin_name'], $mapping['endpoint_name'], $newCmd);
+
+        return $this->chatClient->postMessage(
+            $room, self::message('command_map_success', $newCmd, $mapping['plugin_name'], $mapping['endpoint_name'])
+        );
     }
 
     private function list(CommandMessage $command): Promise
     {
-        $mappings = $this->pluginManager->getMappedCommandsForRoom($command->getRoom());
+        $room = $command->getRoom();
+        $mappings = $this->pluginManager->getMappedCommandsForRoom($room);
 
         if (!$mappings) {
-            return $this->chatClient->postMessage($command->getRoom(), "No commands are currently mapped");
+            return $this->chatClient->postMessage($room, "No commands are currently mapped");
         }
 
         ksort($mappings);
@@ -117,14 +245,19 @@ class Command implements BuiltInCommand
             $result .= "\n {$cmd} - {$info['endpoint_description']} ({$info['plugin_name']} # {$info['endpoint_name']})";
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), $result, true);
+        return $this->chatClient->postMessage($room, $result, true);
     }
 
-    public function __construct(PluginManager $pluginManager, ChatClient $chatClient, AdminStorage $adminStorage)
-    {
+    public function __construct(
+        PluginManager $pluginManager,
+        BuiltInCommandManager $builtInCommandManager,
+        ChatClient $chatClient,
+        AdminStorage $adminStorage
+    ) {
         $this->pluginManager = $pluginManager;
         $this->chatClient = $chatClient;
         $this->adminStorage = $adminStorage;
+        $this->builtInCommandManager = $builtInCommandManager;
     }
 
     /**
@@ -135,13 +268,19 @@ class Command implements BuiltInCommand
      */
     public function handleCommand(CommandMessage $command): Promise
     {
-        switch ($command->getParameter(0)) {
-            case 'map':   return $this->map($command);
-            case 'unmap': return $this->unmap($command);
-            case 'list':  return $this->list($command);
+        try {
+            switch ($command->getParameter(0)) {
+                case 'alias': return resolve($this->alias($command));
+                case 'list':  return $this->list($command);
+                case 'map':   return resolve($this->map($command));
+                case 'remap': return resolve($this->remap($command));
+                case 'unmap': return resolve($this->unmap($command));
+            }
+        } catch (\Throwable $e) {
+            return $this->chatClient->postReply($command, self::message('unexpected_error', $e->getMessage()));
         }
 
-        return $this->showSyntax($command);
+        return $this->chatClient->postMessage($command->getRoom(), self::message('syntax'));
     }
 
     /**
