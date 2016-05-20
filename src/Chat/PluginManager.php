@@ -68,7 +68,7 @@ class PluginManager
 
         if ($result instanceof \Generator) {
             return resolve($result);
-        } else if ($handler instanceof Promise) {
+        } else if ($result instanceof Promise) {
             return $result;
         }
 

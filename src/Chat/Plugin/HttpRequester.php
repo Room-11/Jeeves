@@ -41,7 +41,7 @@ class HttpRequester implements Plugin
             $response = yield $this->httpClient->request($request, $this->getClientOptions($command));
 
             return $this->chatClient->postMessage($command->getRoom(), $this->formatResult($response));
-        } catch (\RuntimeException $e) {
+        } catch (\Throwable $e) {
             return $this->chatClient->postMessage($command->getRoom(), $e->getMessage());
         }
     }
