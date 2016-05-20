@@ -53,7 +53,7 @@ class BuiltInCommandManager
                 return;
             }
 
-            $eventId = $command->getEvent()->getEventId();
+            $eventId = $command->getEvent()->getId();
 
             $userId = $command->getUserId();
             $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);

@@ -69,7 +69,7 @@ class Handler implements Websocket {
                 return;
             }
 
-            $eventId = $event->getEventId();
+            $eventId = $event->getId();
             $message = null;
             if ($event instanceof MessageEvent) {
                 $message = $this->messageFactory->build($event);

@@ -138,7 +138,7 @@ class PluginManager
 
             if ($userIsBanned) {
                 $this->logger->log(Level::DEBUG,
-                    "User #{$userId} is banned, ignoring event #{$command->getEvent()->getEventId()} for plugin command endpoints"
+                    "User #{$userId} is banned, ignoring event #{$command->getEvent()->getId()} for plugin command endpoints"
                     . " (command: {$commandName})"
                 );
 
