@@ -27,15 +27,16 @@ use Room11\OpenId\Authenticator as OpenIdAuthenticator;
 use Room11\OpenId\StackExchangeAuthenticator;
 use Room11\OpenId\UriFactory;
 
+const DATA_BASE_DIR = __DIR__ . '/../data';
+
 /** @var Injector $injector */
 $injector->alias(HttpClient::class, ArtaxClient::class);
 $injector->alias(OpenIdAuthenticator::class, StackExchangeAuthenticator::class);
 $injector->alias(CookieJar::class, ArrayCookieJar::class);
 
-$injector->define(FileAdminStorage::class, [":dataFile" => __DIR__ . "/../data/admins.%s.json"]);
-$injector->define(FileBanStorage::class, [":dataFile" => __DIR__ . "/../data/bans.%s.json"]);
-$injector->define(FilePluginStorage::class, [":dataFile" => __DIR__ . "/../data/plugins.%s.json"]);
-//$injector->define(FileCookieJar::class, [":storagePath" => __DIR__ . "/../data/cookie.jar"]);
+$injector->define(FileAdminStorage::class,  [":dataFile" => DATA_BASE_DIR . "/admins.%s.json"]);
+$injector->define(FileBanStorage::class,    [":dataFile" => DATA_BASE_DIR . "/bans.%s.json"]);
+$injector->define(FilePluginStorage::class, [":dataFile" => DATA_BASE_DIR . "/plugins.%s.json"]);
 
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);
