@@ -43,7 +43,7 @@ class ChatClient
     public function getRoomOwners(ChatRoom $room): Promise
     {
         return resolve(function() use($room) {
-            $url = $room->getIdentifier()->getEndpointURL(ChatRoomEndpoint::INFO_ACCESS);
+            $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_INFO_ACCESS);
 
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($url);
@@ -74,7 +74,7 @@ class ChatClient
 
     public function getMessage(ChatRoom $room, int $id): Promise
     {
-        $url = $room->getIdentifier()->getEndpointURL(ChatRoomEndpoint::GET_MESSAGE, $id);
+        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_GET_MESSAGE, $id);
         return $this->httpClient->request($url);
     }
 
@@ -88,7 +88,7 @@ class ChatClient
             ->addField("text", rtrim($text)) // only rtrim an not trim, leading space may be legit
             ->addField("fkey", (string) $room->getFKey());
 
-        $url = $room->getIdentifier()->getEndpointURL(ChatRoomEndpoint::POST_MESSAGE);
+        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_POST_MESSAGE);
 
         $request = (new HttpRequest)
             ->setUri($url)
@@ -180,9 +180,7 @@ class ChatClient
             ->addField("text", $text)
             ->addField("fkey", (string) $message->getRoom()->getFKey());
 
-        $url = $message->getRoom()
-            ->getIdentifier()
-            ->getEndpointURL(ChatRoomEndpoint::EDIT_MESSAGE, $message->getMessageId());
+        $url = $message->getRoom()->getEndpointURL(ChatRoomEndpoint::CHATROOM_EDIT_MESSAGE, $message->getMessageId());
 
         $request = (new HttpRequest)
             ->setUri($url)

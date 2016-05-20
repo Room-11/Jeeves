@@ -8,20 +8,20 @@ class Identifier
     private $isSecure;
 
     private static $endpointURLTemplates = [
-        Endpoint::UI                 => '%1$s://%2$s/rooms/%3$d',
-        Endpoint::WEBSOCKET_AUTH     => '%1$s://%2$s/ws-auth',
-        Endpoint::EVENT_HISTORY      => '%1$s://%2$s/chats/%3$d/events',
+        Endpoint::CHATROOM_UI                 => '%1$s://%2$s/rooms/%3$d',
+        Endpoint::CHATROOM_WEBSOCKET_AUTH     => '%1$s://%2$s/ws-auth',
+        Endpoint::CHATROOM_EVENT_HISTORY      => '%1$s://%2$s/chats/%3$d/events',
 
-        Endpoint::GET_MESSAGE        => '%1$s://%2$s/message/%4$d',
-        Endpoint::POST_MESSAGE       => '%1$s://%2$s/chats/%3$d/messages/new',
-        Endpoint::EDIT_MESSAGE       => '%1$s://%2$s/messages/%4$d',
+        Endpoint::CHATROOM_GET_MESSAGE        => '%1$s://%2$s/message/%4$d',
+        Endpoint::CHATROOM_POST_MESSAGE       => '%1$s://%2$s/chats/%3$d/messages/new',
+        Endpoint::CHATROOM_EDIT_MESSAGE       => '%1$s://%2$s/messages/%4$d',
 
-        Endpoint::INFO_GENERAL       => '%1$s://%2$s/rooms/info/%3$d?tab=general',
-        Endpoint::INFO_STARS         => '%1$s://%2$s/rooms/info/%3$d?tab=stars',
-        Endpoint::INFO_CONVERSATIONS => '%1$s://%2$s/rooms/info/%3$d?tab=conversations',
-        Endpoint::INFO_SCHEDULE      => '%1$s://%2$s/rooms/info/%3$d?tab=schedule',
-        Endpoint::INFO_FEEDS         => '%1$s://%2$s/rooms/info/%3$d?tab=feeds',
-        Endpoint::INFO_ACCESS        => '%1$s://%2$s/rooms/info/%3$d?tab=access',
+        Endpoint::CHATROOM_INFO_GENERAL       => '%1$s://%2$s/rooms/info/%3$d?tab=general',
+        Endpoint::CHATROOM_INFO_STARS         => '%1$s://%2$s/rooms/info/%3$d?tab=stars',
+        Endpoint::CHATROOM_INFO_CONVERSATIONS => '%1$s://%2$s/rooms/info/%3$d?tab=conversations',
+        Endpoint::CHATROOM_INFO_SCHEDULE      => '%1$s://%2$s/rooms/info/%3$d?tab=schedule',
+        Endpoint::CHATROOM_INFO_FEEDS         => '%1$s://%2$s/rooms/info/%3$d?tab=feeds',
+        Endpoint::CHATROOM_INFO_ACCESS        => '%1$s://%2$s/rooms/info/%3$d?tab=access',
     ];
 
     public function __construct(int $id, string $host, bool $isSecure) {
