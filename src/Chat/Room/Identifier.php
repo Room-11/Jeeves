@@ -22,6 +22,7 @@ class Identifier
         Endpoint::CHATROOM_INFO_SCHEDULE      => '%1$s://%2$s/rooms/info/%3$d?tab=schedule',
         Endpoint::CHATROOM_INFO_FEEDS         => '%1$s://%2$s/rooms/info/%3$d?tab=feeds',
         Endpoint::CHATROOM_INFO_ACCESS        => '%1$s://%2$s/rooms/info/%3$d?tab=access',
+        Endpoint::CHAT_USER                   => '%1$s://%2$s/users/%4$d',
     ];
 
     public function __construct(int $id, string $host, bool $isSecure) {

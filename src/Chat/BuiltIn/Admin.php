@@ -3,12 +3,12 @@
 namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Amp\Artax\HttpClient;
-use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\all;
 use function Amp\resolve;
@@ -46,9 +46,9 @@ class Admin implements BuiltInCommand
                 return in_array($profile['id'], $admins['owners'])
                     ? '*' . $profile['username'] . '*'
                     : $profile['username'];
-            }, yield from $this->getUserData($userIds));
+            }, yield from $this->getUserData($command->getRoom(), $userIds));
 
-            sort($userNames, SORT_ASC);
+            usort($userNames, function ($a, $b) { return trim($a, '*') <=> trim($b, '*'); });
 
             $list = implode(", ", $userNames);
 
@@ -92,48 +92,11 @@ class Admin implements BuiltInCommand
         });
     }
 
-    private function getUserData(array $userIds): \Generator {
-        $profileURLs = array_map(function($userId) {
-            return "http://stackoverflow.com/users/$userId"; // todo multi-site
-        }, $userIds);
-
-        $userProfiles = yield all($this->httpClient->requestMulti($profileURLs));
-
-        return $this->parseUserProfiles(array_map(function(HttpResponse $response) {
-            return $response->getBody();
-        }, $userProfiles));
-    }
-
-    /**
-     * @param string[] $userProfiles
-     * @return array
-     */
-    private function parseUserProfiles(array $userProfiles): array {
-        $userData = [];
-
-        domdocument_process_html_docs($userProfiles, function(\DOMDocument $dom) use(&$userData) {
-            $xpath = new \DOMXPath($dom);
-
-            $usernameNodes = $xpath->query("//h2[@class='user-card-name']/text()");
-            $profileNodes = $xpath->query("//link[@rel='canonical']");
-
-            if ($usernameNodes->length > 0 && $profileNodes->length > 0) {
-                /** @var \DOMText $usernameNode */
-                /** @var \DOMElement $profileNode */
-
-                $usernameNode = $usernameNodes->item(0);
-                $profileNode = $profileNodes->item(0);
-                preg_match('#/users/([0-9]+)#', $profileNode->getAttribute("href"), $match);
-
-                $userData[] = [
-                    'id'       => (int)$match[1],
-                    'username' => trim($usernameNode->textContent),
-                    'profile'  => $profileNode->getAttribute("href"),
-                ];
-            }
-        });
-
-        return $userData;
+    private function getUserData(ChatRoom $room, array $userIds): \Generator
+    {
+        return yield all(array_map(function($userId) use($room) {
+            return $this->chatClient->getChatUser($room, $userId);
+        }, $userIds));
     }
 
     /**
