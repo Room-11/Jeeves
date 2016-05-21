@@ -152,29 +152,80 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
         $this->assertNull(wait($builtInCommandManager->handleCommand($userCommand)));
     }
 
-    public function handleCommand(Command $command): Promise
+    public function testHandleCommandWhenMatches()
     {
-        return resolve(function() use($command) {
-            $commandName = $command->getCommandName();
-            if (!isset($this->commands[$commandName])) {
-                return;
-            }
+        $event = $this->getMockBuilder(MessageEvent::class)
+            ->disableOriginalConstructor()
+            ->getMock()
+        ;
 
-            $eventId = $command->getEvent()->getId();
+        $event
+            ->expects($this->once())
+            ->method('getId')
+            ->willReturn(721)
+        ;
 
-            $userId = $command->getUserId();
+        $userCommand = $this->getMockBuilder(Command::class)
+            ->disableOriginalConstructor()
+            ->getMock()
+        ;
 
-            $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
+        $userCommand
+            ->expects($this->once())
+            ->method('getCommandName')
+            ->will($this->returnValue('foo'))
+        ;
 
-            // @todo testHandleCommandWhenBanned
-            if ($userIsBanned) {
-                $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
-                return;
-            }
+        $userCommand
+            ->expects($this->once())
+            ->method('getEvent')
+            ->willReturn($event)
+        ;
 
-            // @todo testHandleCommandMatches
-            $this->logger->log(Level::DEBUG, "Passing event #{$eventId} to built in command handler " . get_class($this->commands[$commandName]));
-            yield $this->commands[$commandName]->handleCommand($command);
-        });
+        $userCommand
+            ->expects($this->once())
+            ->method('getUserId')
+            ->willReturn(14)
+        ;
+
+        $registeredCommand = $this->getMock(BuiltInCommand::class);
+
+        $registeredCommand
+            ->expects($this->once())
+            ->method('getCommandNames')
+            ->will($this->returnValue(['foo']))
+        ;
+
+        $registeredCommand
+            ->expects($this->once())
+            ->method('handleCommand')
+            ->with($this->isInstanceOf($userCommand))
+            ->willReturn(new Success())
+        ;
+
+        $logger = $this->getMock(Logger::class);
+
+        $logger
+            ->expects($this->exactly(2))
+            ->method('log')
+            ->withConsecutive(
+                [Level::DEBUG, 'Registering command name \'foo\' with built in command ' . get_class($registeredCommand)],
+                [Level::DEBUG, 'Passing event #721 to built in command handler ' . get_class($registeredCommand)]
+            )
+        ;
+
+        $banStorage = $this->getMock(BanStorage::class);
+
+        $banStorage
+            ->expects($this->once())
+            ->method('isBanned')
+            ->willReturn(new Success(false))
+        ;
+
+        $builtInCommandManager = new BuiltInCommandManager($banStorage, $logger);
+
+        $builtInCommandManager->register($registeredCommand);
+
+        $this->assertNull(wait($builtInCommandManager->handleCommand($userCommand)));
     }
 }
