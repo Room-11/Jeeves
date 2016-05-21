@@ -7,11 +7,13 @@ abstract class Endpoint
     const CHATROOM_UI                 = 101;
     const CHATROOM_WEBSOCKET_AUTH     = 102;
     const CHATROOM_EVENT_HISTORY      = 103;
+    const CHATROOM_STARS_LIST         = 104;
 
     // chat actions
     const CHATROOM_GET_MESSAGE        = 201;
     const CHATROOM_POST_MESSAGE       = 202;
     const CHATROOM_EDIT_MESSAGE       = 203;
+    const CHATROOM_PIN_MESSAGE        = 204;
 
     // chat info
     const CHATROOM_INFO_GENERAL       = 301;

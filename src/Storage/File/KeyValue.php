@@ -92,7 +92,7 @@ class KeyValue implements KeyValueStoreStorage
         }
 
         yield $mutex->withLock(function() use($filePath, $json) {
-            return put($filePath, $json);
+            yield put($filePath, $json);
         });
     }
 

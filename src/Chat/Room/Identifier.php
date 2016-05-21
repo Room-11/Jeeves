@@ -11,10 +11,12 @@ class Identifier
         Endpoint::CHATROOM_UI                 => '%1$s://%2$s/rooms/%3$d',
         Endpoint::CHATROOM_WEBSOCKET_AUTH     => '%1$s://%2$s/ws-auth',
         Endpoint::CHATROOM_EVENT_HISTORY      => '%1$s://%2$s/chats/%3$d/events',
+        Endpoint::CHATROOM_STARS_LIST         => '%1$s://%2$s/chats/stars/%3$d?count=0',
 
         Endpoint::CHATROOM_GET_MESSAGE        => '%1$s://%2$s/message/%4$d',
         Endpoint::CHATROOM_POST_MESSAGE       => '%1$s://%2$s/chats/%3$d/messages/new',
         Endpoint::CHATROOM_EDIT_MESSAGE       => '%1$s://%2$s/messages/%4$d',
+        Endpoint::CHATROOM_PIN_MESSAGE        => '%1$s://%2$s/messages/%4$d/owner-star',
 
         Endpoint::CHATROOM_INFO_GENERAL       => '%1$s://%2$s/rooms/info/%3$d?tab=general',
         Endpoint::CHATROOM_INFO_STARS         => '%1$s://%2$s/rooms/info/%3$d?tab=stars',
