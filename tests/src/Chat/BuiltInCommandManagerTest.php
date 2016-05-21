@@ -9,6 +9,7 @@ use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Event\MessageEvent;
+use Amp\Success;
 use function Amp\wait;
 
 
@@ -102,10 +103,15 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             )
         ;
 
-        $builtInCommandManager = new BuiltInCommandManager(
-            $this->getMock(BanStorage::class),
-            $logger
-        );
+        $banStorage = $this->getMock(BanStorage::class);
+
+        $banStorage
+            ->expects($this->once())
+            ->method('isBanned')
+            ->willReturn(new Success(true))
+        ;
+
+        $builtInCommandManager = new BuiltInCommandManager($banStorage, $logger);
 
         $builtInCommandManager->register($registeredCommand);
 
@@ -143,7 +149,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->willReturn(14)
         ;
 
-        wait($builtInCommandManager->handleCommand($userCommand));
+        $this->assertNull(wait($builtInCommandManager->handleCommand($userCommand)));
     }
 
     public function handleCommand(Command $command): Promise
@@ -157,6 +163,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             $eventId = $command->getEvent()->getId();
 
             $userId = $command->getUserId();
+
             $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
 
             // @todo testHandleCommandWhenBanned
