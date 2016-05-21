@@ -29,12 +29,15 @@ logging:
 storage:
   admin: Room11\Jeeves\Storage\File\Admin
   ban: Room11\Jeeves\Storage\File\Ban
+  plugin: Room11\Jeeves\Storage\File\Plugin
 
 plugins:
   - Room11\Jeeves\Chat\Plugin\Canon
   - Room11\Jeeves\Chat\Plugin\Chuck
+  - Room11\Jeeves\Chat\Plugin\CodeFormat
   - Room11\Jeeves\Chat\Plugin\Docs
   - Room11\Jeeves\Chat\Plugin\EvalCode
+  - Room11\Jeeves\Chat\Plugin\Giphy
   - Room11\Jeeves\Chat\Plugin\Google
   - Room11\Jeeves\Chat\Plugin\HttpRequester
   - Room11\Jeeves\Chat\Plugin\Imdb
@@ -42,6 +45,7 @@ plugins:
   - Room11\Jeeves\Chat\Plugin\Man
   - Room11\Jeeves\Chat\Plugin\Mdn
   - Room11\Jeeves\Chat\Plugin\Packagist
+  - Room11\Jeeves\Chat\Plugin\PHPSrcGrok
   - Room11\Jeeves\Chat\Plugin\Rebecca
   - Room11\Jeeves\Chat\Plugin\Regex
   - Room11\Jeeves\Chat\Plugin\RFC
