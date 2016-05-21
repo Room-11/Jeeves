@@ -8,6 +8,7 @@ use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Event\MessageEvent;
 use function Amp\wait;
 
 
@@ -78,6 +79,71 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
         ;
 
         $this->assertNull(wait($builtInCommandManager->handleCommand($command)));
+    }
+
+    public function testHandleCommandWhenBanned()
+    {
+        $registeredCommand = $this->getMock(BuiltInCommand::class);
+
+        $registeredCommand
+            ->expects($this->once())
+            ->method('getCommandNames')
+            ->will($this->returnValue(['foo']))
+        ;
+
+        $logger = $this->getMock(Logger::class);
+
+        $logger
+            ->expects($this->exactly(2))
+            ->method('log')
+            ->withConsecutive(
+                [Level::DEBUG, 'Registering command name \'foo\' with built in command ' . get_class($registeredCommand)],
+                [Level::DEBUG, 'User #14 is banned, ignoring event #721 for built in commands']
+            )
+        ;
+
+        $builtInCommandManager = new BuiltInCommandManager(
+            $this->getMock(BanStorage::class),
+            $logger
+        );
+
+        $builtInCommandManager->register($registeredCommand);
+
+        $event = $this->getMockBuilder(MessageEvent::class)
+            ->disableOriginalConstructor()
+            ->getMock()
+        ;
+
+        $event
+            ->expects($this->once())
+            ->method('getId')
+            ->willReturn(721)
+        ;
+        
+        $userCommand = $this->getMockBuilder(Command::class)
+            ->disableOriginalConstructor()
+            ->getMock()
+        ;
+
+        $userCommand
+            ->expects($this->once())
+            ->method('getCommandName')
+            ->will($this->returnValue('foo'))
+        ;
+
+        $userCommand
+            ->expects($this->once())
+            ->method('getEvent')
+            ->willReturn($event)
+        ;
+
+        $userCommand
+            ->expects($this->once())
+            ->method('getUserId')
+            ->willReturn(14)
+        ;
+
+        wait($builtInCommandManager->handleCommand($userCommand));
     }
 
     public function handleCommand(Command $command): Promise
