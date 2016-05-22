@@ -154,8 +154,6 @@ class Tweet implements Plugin
 
         $this->twitterConfig = json_decode($result->getBody(), true);
         $this->twitterConfig["expiration"] = (new \DateTimeImmutable())->add(new \DateInterval("P1D"));
-
-        var_dump($this->twitterConfig);
     }
 
     public function tweet(Command $command): \Generator {

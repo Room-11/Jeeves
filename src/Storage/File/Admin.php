@@ -4,7 +4,6 @@ namespace Room11\Jeeves\Storage\File;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\File\exists;
@@ -14,57 +13,29 @@ use function Amp\resolve;
 
 class Admin implements AdminStorage
 {
+    private $accessor;
     private $chatClient;
     private $dataFileTemplate;
 
-    public function __construct(ChatClient $chatClient, string $dataFile)
+    public function __construct(JsonFileAccessor $accessor, ChatClient $chatClient, string $dataFile)
     {
-        $this->dataFileTemplate = $dataFile;
+        $this->accessor = $accessor;
         $this->chatClient = $chatClient;
-    }
-
-    /**
-     * @param ChatRoom|ChatRoomIdentifier|string $room
-     * @return string
-     */
-    private function getDataFileName($room): string
-    {
-        if ($room instanceof ChatRoom) {
-            $room = $room->getIdentifier();
-        }
-
-        $roomId = $room instanceof ChatRoomIdentifier ? $room->getIdentString() : (string)$room;
-        return sprintf($this->dataFileTemplate, $roomId);
-    }
-
-    private function getExtraAdmins(ChatRoom $room): \Generator
-    {
-        $filePath = $this->getDataFileName($room);
-
-        if (!yield exists($filePath)) {
-            return [];
-        }
-
-        $administrators = yield get($filePath);
-
-        return json_decode($administrators, true);
+        $this->dataFileTemplate = $dataFile;
     }
 
     public function getAll(ChatRoom $room): Promise
     {
         return resolve(function() use($room) {
             $owners = array_keys(yield $this->chatClient->getRoomOwners($room));
-            $admins = yield from $this->getExtraAdmins($room);
 
-            $reconciled = array_diff($admins, $owners);
-
-            if (count($reconciled) !== count($admins)) {
-                yield put($this->getDataFileName($room), json_encode($reconciled));
-            }
+            $admins = yield $this->accessor->writeCallback(function($data) use($owners) {
+                return array_values(array_diff($data, $owners));
+            }, $this->dataFileTemplate, $room);
 
             return [
                 'owners' => $owners,
-                'admins' => $reconciled,
+                'admins' => $admins,
             ];
         });
     }
@@ -87,29 +58,19 @@ class Admin implements AdminStorage
 
     public function add(ChatRoom $room, int $userId): Promise
     {
-        return resolve(function() use($room, $userId) {
-            $administrators = yield from $this->getExtraAdmins($room);
-
-            if (in_array($userId, $administrators, true)) {
-                return;
-            }
-
-            $administrators[] = $userId;
-
-            yield put($this->getDataFileName($room), json_encode($administrators));
-        });
+        return $this->accessor->writeCallback(function($data) use($userId) {
+            $data[] = $userId;
+            return array_unique($data);
+        }, $this->dataFileTemplate, $room);
     }
 
     public function remove(ChatRoom $room, int $userId): Promise
     {
-        return resolve(function() use($room, $userId) {
-            if (!yield $this->isAdmin($room, $userId)) {
-                return;
+        return $this->accessor->writeCallback(function($data) use($userId) {
+            if (false !== $key = array_search($userId, $data)) {
+                array_splice($data, $key, 1);
             }
-
-            $administrators = array_diff(yield from $this->getExtraAdmins($room), [$userId]);
-
-            yield put($this->getDataFileName($room), json_encode($administrators));
-        });
+            return $data;
+        }, $this->dataFileTemplate, $room);
     }
 }

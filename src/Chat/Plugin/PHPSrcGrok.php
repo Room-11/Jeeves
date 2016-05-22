@@ -169,8 +169,6 @@ class PHPSrcGrok implements Plugin
             foreach ($results['code'] ?? [] as $result) {
                 if (preg_match($expr, $result['code'])) {
                     return $result;
-                } else if ($k === 1) {
-                    var_dump($expr, $result);
                 }
             }
         }

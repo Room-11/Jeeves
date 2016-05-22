@@ -38,48 +38,50 @@ class JsonFileAccessor
     {
         if (isset($this->loadPromises[$filePath])) {
             yield $this->loadPromises[$filePath];
-            return;
+            return $this->dataCache[$filePath];
         }
 
         $deferred = new Deferred();
         $this->loadPromises[$filePath] = $deferred->promise();
 
-        if (!isset($this->lockMutexes[$filePath])) {
-            $this->lockMutexes[$filePath] = new QueuedExclusiveMutex();
-        }
+        $this->lockMutexes[$filePath] = new QueuedExclusiveMutex();
 
-        yield $this->lockMutexes[$filePath]->withLock(function() use($filePath, $deferred) {
+        return yield $this->lockMutexes[$filePath]->withLock(function() use($filePath, $deferred) {
             try {
                 // we may have been waiting on a lock and it's been populated by now
-                if (isset($this->dataCache[$filePath])) {
-                    return;
+                if (!isset($this->dataCache[$filePath])) {
+                    $this->dataCache[$filePath] = (yield exists($filePath))
+                        ? json_try_decode(yield get($filePath), true)
+                        : [];
                 }
-
-                $this->dataCache[$filePath] = (yield exists($filePath))
-                    ? json_try_decode(yield get($filePath), true)
-                    : [];
             } catch (\Throwable $e) {
                 $this->dataCache[$filePath] = [];
             } finally {
                 $deferred->succeed();
                 unset($this->loadPromises[$filePath]);
             }
+
+            return $this->dataCache[$filePath];
         });
     }
 
     private function saveFile(string $filePath, callable $callback): \Generator
     {
-        if (!isset($this->lockMutexes[$filePath])) {
-            $this->lockMutexes[$filePath] = new QueuedExclusiveMutex();
+        if (!isset($this->dataCache[$filePath])) {
+            yield from $this->loadFile($filePath);
         }
 
-        yield $this->lockMutexes[$filePath]->withLock(function() use($filePath, $callback) {
-            $data = $callback($this->dataCache[$filePath] ?? []);
+        return yield $this->lockMutexes[$filePath]->withLock(function() use($filePath, $callback) {
+            $data = $callback($this->dataCache[$filePath]);
+
+            if (!is_array($data)) {
+                throw new \LogicException('JSON data files may only contain arrays as the root element');
+            }
 
             // make sure we can persist it before updating the store
             yield put($filePath, json_try_encode($data));
 
-            $this->dataCache[$filePath] = $data;
+            return $this->dataCache[$filePath] = $data;
         });
     }
 

@@ -13,38 +13,12 @@ use function Amp\resolve;
 
 class Ban implements BanStorage
 {
+    private $accessor;
     private $dataFileTemplate;
 
-    public function __construct(string $dataFile) {
+    public function __construct(JsonFileAccessor $accessor, string $dataFile) {
         $this->dataFileTemplate = $dataFile;
-    }
-
-    /**
-     * @param ChatRoom|ChatRoomIdentifier|string $room
-     * @return string
-     */
-    private function getDataFileName($room): string
-    {
-        if ($room instanceof ChatRoom) {
-            $room = $room->getIdentifier();
-        }
-
-        $roomId = $room instanceof ChatRoomIdentifier ? $room->getIdentString() : (string)$room;
-        return sprintf($this->dataFileTemplate, $roomId);
-    }
-
-    private function readFile($room): \Generator
-    {
-        $filePath = $this->getDataFileName($room);
-
-        return (yield exists($filePath))
-            ? json_decode(yield get($filePath), true)
-            : [];
-    }
-
-    private function writeFile($room, array $data): \Generator
-    {
-        return yield put($this->getDataFileName($room), json_encode($data));
+        $this->accessor = $accessor;
     }
 
     // duration string should be in the format of [nd(ays)][nh(ours)][nm(inutes)][ns(econds)]
@@ -86,58 +60,40 @@ class Ban implements BanStorage
      * @param ChatRoom|ChatRoomIdentifier|string $room
      * @return Promise
      */
-    public function getAll($room): Promise
+    public function getAll(ChatRoom $room): Promise
     {
-        return resolve(function() use($room) {
-            $banned = yield from $this->readFile($room);
+        return $this->accessor->writeCallback(function($data) {
+            $now = new \DateTimeImmutable();
 
-            $nonExpiredBans = array_filter($banned, function($expiration) {
-                return new \DateTimeImmutable($expiration) > new \DateTimeImmutable();
+            return array_filter($data, function($expiration) use($now) {
+                return new \DateTimeImmutable($expiration) > $now;
             });
-
-            yield from $this->writeFile($room, $nonExpiredBans);
-
-            return $nonExpiredBans;
-        });
+        }, $this->dataFileTemplate, $room);
     }
 
-    public function isBanned($room, int $userId): Promise
+    public function isBanned(ChatRoom $room, int $userId): Promise
     {
         return resolve(function() use($room, $userId) {
-            // inb4 people "testing" banning me
-            if ($userId === 508666) {
-                return false;
-            }
+            $banned = yield $this->accessor->read($this->dataFileTemplate, $room);
 
-            $banned = yield $this->getAll($room);
-
-            return array_key_exists($userId, $banned) && new \DateTimeImmutable($banned[$userId]) > new \DateTimeImmutable();
+            return array_key_exists($userId, $banned)
+                && new \DateTimeImmutable($banned[$userId]) > new \DateTimeImmutable();
         });
     }
 
-    public function add($room, int $userId, string $duration): Promise
+    public function add(ChatRoom $room, int $userId, string $duration): Promise
     {
-        return resolve(function() use($room, $userId, $duration) {
-            $banned = yield $this->getAll($room);
-
-            $banned[$userId] = $this->getExpiration($duration)->format('Y-m-d H:i:s');
-
-            yield from $this->writeFile($room, $banned);
-        });
+        return $this->accessor->writeCallback(function($data) use($userId, $duration) {
+            $data[$userId] = $this->getExpiration($duration)->format('Y-m-d H:i:s');
+            return $data;
+        }, $this->dataFileTemplate, $room);
     }
 
-    public function remove($room, int $userId): Promise
+    public function remove(ChatRoom $room, int $userId): Promise
     {
-        return resolve(function() use($room, $userId) {
-            if (!yield $this->isBanned($room, $userId)) {
-                return;
-            }
-
-            $banned = yield $this->getAll($room);
-
-            unset($banned[$userId]);
-
-            yield from $this->writeFile($room, $banned);
-        });
+        return $this->accessor->writeCallback(function($data) use($userId) {
+            unset($data[$userId]);
+            return $data;
+        }, $this->dataFileTemplate, $room);
     }
 }
