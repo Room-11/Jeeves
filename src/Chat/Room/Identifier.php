@@ -17,6 +17,7 @@ class Identifier
         Endpoint::CHATROOM_POST_MESSAGE       => '%1$s://%2$s/chats/%3$d/messages/new',
         Endpoint::CHATROOM_EDIT_MESSAGE       => '%1$s://%2$s/messages/%4$d',
         Endpoint::CHATROOM_PIN_MESSAGE        => '%1$s://%2$s/messages/%4$d/owner-star',
+        Endpoint::CHATROOM_UNSTAR_MESSAGE     => '%1$s://%2$s/messages/%4$d/unstar',
 
         Endpoint::CHATROOM_INFO_GENERAL       => '%1$s://%2$s/rooms/info/%3$d?tab=general',
         Endpoint::CHATROOM_INFO_STARS         => '%1$s://%2$s/rooms/info/%3$d?tab=stars',
