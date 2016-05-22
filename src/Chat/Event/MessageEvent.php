@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Event;
 
+use function Room11\DOMUtils\domdocument_load_html;
 use Room11\Jeeves\Chat\Event\Traits\RoomSource;
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
@@ -17,7 +18,7 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
     private $messageId;
 
     /**
-     * @var string
+     * @var \DOMDocument
      */
     private $messageContent;
 
@@ -31,7 +32,7 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
         $this->userName = (string)$data['user_name'];
 
         $this->messageId = (int)$data['message_id'];
-        $this->messageContent = (string)$data['content'] ?? '';
+        $this->messageContent = domdocument_load_html((string)($data['content'] ?? ''), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
     }
 
     public function getMessageId(): int
@@ -39,7 +40,7 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
         return $this->messageId;
     }
 
-    public function getMessageContent(): string
+    public function getMessageContent(): \DOMDocument
     {
         return $this->messageContent;
     }

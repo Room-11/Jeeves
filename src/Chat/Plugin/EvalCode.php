@@ -111,12 +111,13 @@ class EvalCode implements Plugin
         return $result;
     }
 
-    public function eval(Command $command): Promise {
-        if (!$command->getParameters()) {
+    public function eval(Command $command): Promise
+    {
+        if (!$command->hasParameters()) {
             return new Success();
         }
 
-        $code = $this->normalizeCode(implode(' ', $command->getParameters()));
+        $code = $this->normalizeCode($command->getText());
 
         $body = (new FormBody)
             ->addField("title", "")
