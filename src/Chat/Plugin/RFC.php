@@ -149,6 +149,7 @@ class RFC implements Plugin
                 'name' => $id,
                 'votes' => [],
             ];
+            $options = array();
 
             $table = $form->getElementsByTagName('table')->item(0);
             foreach ($table->getElementsByTagName('tr') as $row) {
