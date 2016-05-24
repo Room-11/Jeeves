@@ -30,6 +30,12 @@ class RFC implements Plugin
     }
 
     public function search(Command $command): \Generator {
+        if ($command->hasParameter(0)) {
+            // !!rfcs some-rfc-name
+            yield from $this->getRFC($command);
+            return;
+        }
+
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(self::BASE_URI);
 
@@ -120,23 +126,10 @@ class RFC implements Plugin
             );
         }
 
-        /** @var PostedMessage $postedMessage */
-        $postedMessage = yield $this->chatClient->postMessage(
+        yield $this->chatClient->postMessage(
             $command->getRoom(),
             implode("\n", $messages)
         );
-
-        $pinnedMessages = yield $this->chatClient->getPinnedMessages($command->getRoom());
-        $lastPinId = (yield $this->pluginData->exists('lastpinid', $command->getRoom()))
-            ? yield $this->pluginData->get('lastpinid', $command->getRoom())
-            : -1;
-
-        if (in_array($lastPinId, $pinnedMessages)) {
-            yield $this->chatClient->unstarMessage($lastPinId, $command->getRoom());
-        }
-
-        yield $this->pluginData->set('lastpinid', $postedMessage->getMessageId(), $command->getRoom());
-        return $this->chatClient->pinOrUnpinMessage($postedMessage->getMessageId(), $command->getRoom());
     }
 
     private static function parseVotes(string $html) {
@@ -206,8 +199,8 @@ class RFC implements Plugin
     public function getCommandEndpoints(): array
     {
         return [
-          new PluginCommandEndpoint('Search', [$this, 'search'], 'rfcs'),
-          new PluginCommandEndpoint('RFC', [$this, 'getRFC'], 'rfc'),
+            new PluginCommandEndpoint('Search', [$this, 'search'], 'rfcs',
+                                      'List RFCs in voting, or vote status of a given RFC'),
         ];
     }
 }
