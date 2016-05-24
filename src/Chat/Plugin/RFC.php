@@ -77,7 +77,7 @@ class RFC implements Plugin
             : -1;
 
         if (in_array($lastPinId, $pinnedMessages)) {
-            yield $this->chatClient->pinOrUnpinMessage($lastPinId, $command->getRoom());
+            yield $this->chatClient->unstarMessage($lastPinId, $command->getRoom());
         }
 
         yield $this->pluginData->set('lastpinid', $postedMessage->getMessageId(), $command->getRoom());

@@ -30,7 +30,7 @@ class ChatClient
 
     private $postMutex;
     private $editMutex;
-    private $pinMutex;
+    private $starMutex;
 
     private $postRecursionDepth = 0;
 
@@ -40,7 +40,7 @@ class ChatClient
 
         $this->postMutex = new QueuedExclusiveMutex();
         $this->editMutex = new QueuedExclusiveMutex();
-        $this->pinMutex  = new QueuedExclusiveMutex();
+        $this->starMutex  = new QueuedExclusiveMutex();
     }
 
     public function getRoomOwners(ChatRoom $room): Promise
@@ -323,7 +323,7 @@ class ChatClient
             ->setMethod("POST")
             ->setBody($body);
 
-        return $this->pinMutex->withLock(function() use($request, $room) {
+        return $this->starMutex->withLock(function() use($request, $room) {
             $attempt = 0;
 
             try {
@@ -371,6 +371,91 @@ class ChatClient
                 ];
 
                 $this->logger->log(Level::ERROR, 'Error while pinning message: ' . $e->getMessage(), $errorInfo);
+
+                yield new Pause(2000);
+                yield $this->postMessage($room, "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
+            } finally {
+                $this->postRecursionDepth--;
+            }
+
+            return false;
+        });
+    }
+
+    /**
+     * @param Message|int $messageOrId
+     * @param ChatRoom|null $room
+     * @return Promise
+     */
+    public function unstarMessage($messageOrId, ChatRoom $room = null): Promise
+    {
+        if ($messageOrId instanceof Message) {
+            $messageId = $messageOrId->getId();
+            $room = $messageOrId->getRoom();
+        } else if (is_int($messageOrId)) {
+            $messageId = $messageOrId;
+        } else {
+            throw new \InvalidArgumentException('$messageOrId must be integer or instance of ' . Message::class);
+        }
+
+        $body = (new FormBody)
+            ->addField("fkey", $room->getFKey());
+
+        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_UNSTAR_MESSAGE, $messageId);
+
+        $request = (new HttpRequest)
+            ->setUri($url)
+            ->setMethod("POST")
+            ->setBody($body);
+
+        return $this->starMutex->withLock(function() use($request, $room) {
+            $attempt = 0;
+
+            try {
+                $this->postRecursionDepth++;
+
+                while ($attempt++ < self::MAX_POST_ATTEMPTS) {
+                    /** @var HttpResponse $response */
+                    $this->logger->log(Level::DEBUG, 'Unstar attempt ' . $attempt);
+                    $response = yield $this->httpClient->request($request);
+                    $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());
+
+                    try {
+                        $decoded = json_try_decode($response->getBody(), true);
+
+                        if ($decoded === 'ok') {
+                            return true;
+                        }
+
+                        throw new \RuntimeException('A JSON response that I don\'t understand was received');
+                    } catch (JSONDecodeErrorException $e) {
+                        if ($attempt >= self::MAX_POST_ATTEMPTS) {
+                            break;
+                        }
+
+                        if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
+                            throw new \RuntimeException(
+                                'A response that could not be decoded as JSON or otherwise handled was received'
+                                . ' (JSON decode error: ' . $e->getMessage() . ')'
+                            );
+                        }
+
+                        $this->logger->log(Level::DEBUG, "Backing off message pinning for {$delay}ms");
+                        yield new Pause($delay);
+                    }
+                }
+
+                $attempt--;
+                throw new \RuntimeException(
+                    'Unstarring the message failed after ' . self::MAX_POST_ATTEMPTS . ' attempts and I know when to quit'
+                );
+            } catch (\Throwable $e) {
+                $errorInfo = [
+                    'attempt' => $attempt,
+                    'responseBody' => isset($response) ? $response->getBody() : 'No response data',
+                ];
+
+                $this->logger->log(Level::ERROR, 'Error while unstarring message: ' . $e->getMessage(), $errorInfo);
 
                 yield new Pause(2000);
                 yield $this->postMessage($room, "@PeeHaa error has been logged. Fix it fix it fix it fix it.");

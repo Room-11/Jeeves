@@ -48,7 +48,7 @@ class Admin implements BuiltInCommand
                     : $profile['username'];
             }, yield from $this->getUserData($command->getRoom(), $userIds));
 
-            usort($userNames, function ($a, $b) { return trim($a, '*') <=> trim($b, '*'); });
+            usort($userNames, function ($a, $b) { return strcasecmp(trim($a, '*'), trim($b, '*')); });
 
             $list = implode(", ", $userNames);
 

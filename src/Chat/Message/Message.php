@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Message;
 
+use function Room11\DOMUtils\domdocument_load_html;
 use Room11\Jeeves\Chat\Event\DeleteMessage;
 use Room11\Jeeves\Chat\Event\EditMessage;
 use Room11\Jeeves\Chat\Event\MentionMessage;
@@ -28,6 +29,8 @@ class Message
 
     private $type;
 
+    private $text;
+
     public function __construct(MessageEvent $event, ChatRoom $room)
     {
         $this->event = $event;
@@ -42,7 +45,18 @@ class Message
 
     public function getText(): string
     {
-        return html_entity_decode($this->event->getMessageContent(), ENT_QUOTES);
+        if (!isset($this->text)) {
+            $doc = $this->event->getMessageContent();
+
+            /** @var \DOMElement $brEl */
+            foreach ($doc->getElementsByTagName('br') as $brEl) {
+                $brEl->parentNode->replaceChild(new \DOMText("\n"), $brEl);
+            }
+
+            $this->text = $doc->textContent;
+        }
+
+        return $this->text;
     }
 
     public function getId(): int

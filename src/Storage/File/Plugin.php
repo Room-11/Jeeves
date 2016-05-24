@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Storage\File;
 
 use Amp\Promise;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use function Amp\File\exists;
 use function Amp\File\get;
@@ -11,80 +12,54 @@ use function Amp\resolve;
 
 class Plugin implements PluginStorage
 {
+    private $accessor;
     private $dataFileTemplate;
 
-    public function __construct(string $dataFile)
+    public function __construct(JsonFileAccessor $accessor, string $dataFile)
     {
+        $this->accessor = $accessor;
         $this->dataFileTemplate = $dataFile;
     }
 
-    private function getDataFileName(string $room): string
-    {
-        return sprintf($this->dataFileTemplate, $room);
-    }
-
-    private function read($room): \Generator
-    {
-        $filePath = $this->getDataFileName($room);
-
-        return (yield exists($filePath))
-            ? json_try_decode(yield get($filePath), true)
-            : [];
-    }
-
-    private function write($room, array $data): \Generator
-    {
-        yield put($this->getDataFileName($room), json_encode($data));
-    }
-
-    public function isPluginEnabled(string $room, string $plugin): Promise
+    public function isPluginEnabled(ChatRoom $room, string $plugin): Promise
     {
         return resolve(function() use($room, $plugin) {
-            $data = yield from $this->read($room);
+            $data = yield $this->accessor->read($this->dataFileTemplate, $room);
 
             return $data[strtolower($plugin)]['enabled'] ?? true;
         });
     }
 
-    public function setPluginEnabled(string $room, string $plugin, bool $enabled): Promise
+    public function setPluginEnabled(ChatRoom $room, string $plugin, bool $enabled): Promise
     {
-        return resolve(function() use($room, $plugin, $enabled) {
-            $data = yield from $this->read($room);
-
+        return $this->accessor->writeCallback(function($data) use($plugin, $enabled) {
             $data[strtolower($plugin)]['enabled'] = $enabled;
-
-            yield from $this->write($room, $data);
-        });
+            return $data;
+        }, $this->dataFileTemplate, $room);
     }
 
-    public function getAllMappedCommands(string $room, string $plugin): Promise
+    public function getAllMappedCommands(ChatRoom $room, string $plugin): Promise
     {
         return resolve(function() use($room, $plugin) {
-            $data = yield from $this->read($room);
+            $data = yield $this->accessor->read($this->dataFileTemplate, $room);
 
             return $data[strtolower($plugin)]['commands'] ?? null;
         });
     }
 
-    public function addCommandMapping(string $room, string $plugin, string $command, string $endpoint): Promise
+    public function addCommandMapping(ChatRoom $room, string $plugin, string $command, string $endpoint): Promise
     {
-        return resolve(function() use($room, $plugin, $command, $endpoint) {
-            $data = yield from $this->read($room);
-
+        return $this->accessor->writeCallback(function($data) use($plugin, $command, $endpoint) {
             $data[strtolower($plugin)]['commands'][$command] = $endpoint;
-
-            yield from $this->write($room, $data);
-        });
+            return $data;
+        }, $this->dataFileTemplate, $room);
     }
 
-    public function removeCommandMapping(string $room, string $plugin, string $command): Promise
+    public function removeCommandMapping(ChatRoom $room, string $plugin, string $command): Promise
     {
-        return resolve(function() use($room, $plugin, $command) {
-            $data = yield from $this->read($room);
-
+        return $this->accessor->writeCallback(function($data) use($plugin, $command) {
             unset($data[strtolower($plugin)]['commands'][$command]);
-
-            yield from $this->write($room, $data);
-        });
+            return $data;
+        }, $this->dataFileTemplate, $room);
     }
 }

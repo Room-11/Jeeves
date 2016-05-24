@@ -3,8 +3,8 @@
 namespace Room11\Jeeves;
 
 use Amp\Artax\Client as ArtaxClient;
-use Amp\Artax\Cookie\CookieJar;
 use Amp\Artax\Cookie\ArrayCookieJar;
+use Amp\Artax\Cookie\CookieJar;
 use Amp\Artax\HttpClient;
 use Auryn\Injector;
 use Room11\Jeeves\Bitly\Client as BitlyClient;
@@ -20,6 +20,7 @@ use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\File\Admin as FileAdminStorage;
 use Room11\Jeeves\Storage\File\Ban as FileBanStorage;
+use Room11\Jeeves\Storage\File\JsonFileAccessor;
 use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use Room11\Jeeves\WebSocket\Collection as WebSocketCollection;
@@ -34,8 +35,8 @@ $injector->alias(HttpClient::class, ArtaxClient::class);
 $injector->alias(OpenIdAuthenticator::class, StackExchangeAuthenticator::class);
 $injector->alias(CookieJar::class, ArrayCookieJar::class);
 
-$injector->define(FileAdminStorage::class,  [":dataFile" => DATA_BASE_DIR . "/admins.%s.json"]);
-$injector->define(FileBanStorage::class,    [":dataFile" => DATA_BASE_DIR . "/bans.%s.json"]);
+$injector->define(FileAdminStorage::class, [":dataFile" => DATA_BASE_DIR . "/admins.%s.json"]);
+$injector->define(FileBanStorage::class, [":dataFile" => DATA_BASE_DIR . "/bans.%s.json"]);
 $injector->define(FilePluginStorage::class, [":dataFile" => DATA_BASE_DIR . "/plugins.%s.json"]);
 
 $injector->share(AdminStorage::class);
@@ -49,6 +50,7 @@ $injector->share(CredentialManager::class);
 $injector->share(CookieJar::class);
 $injector->share(EventFilterBuilder::class);
 $injector->share(HttpClient::class);
+$injector->share(JsonFileAccessor::class);
 $injector->share(Logger::class);
 $injector->share(OpenIdAuthenticator::class);
 $injector->share(PluginManager::class);

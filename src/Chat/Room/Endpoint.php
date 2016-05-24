@@ -14,6 +14,7 @@ abstract class Endpoint
     const CHATROOM_POST_MESSAGE       = 202;
     const CHATROOM_EDIT_MESSAGE       = 203;
     const CHATROOM_PIN_MESSAGE        = 204;
+    const CHATROOM_UNSTAR_MESSAGE     = 205;
 
     // chat info
     const CHATROOM_INFO_GENERAL       = 301;

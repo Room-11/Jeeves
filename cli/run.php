@@ -8,7 +8,7 @@ use Room11\Jeeves\Bitly\Client as BitlyClient;
 use Room11\Jeeves\Chat\BuiltIn\Admin as AdminBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Ban as BanBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Command as CommandBuiltIn;
-use Room11\Jeeves\Chat\BuiltIn\Plugin AS PluginBuiltIn;
+use Room11\Jeeves\Chat\BuiltIn\Plugin as PluginBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Plugin;
@@ -135,21 +135,18 @@ foreach ($builtInCommands as $command) {
     $builtInCommandManager->register($injector->make($command));
 }
 
-call_user_func(function() use($config, $pluginManager, $injector) {
-    $pluginClass = null; // fixme: this is a horrible horrible hack
-
-    $injector->delegate(FileKeyValueStorage::class, function() use(&$pluginClass) {
-        return new FileKeyValueStorage(DATA_BASE_DIR . "/keyvalue.%s.json", $pluginClass);
-    });
-
-    foreach ($config['plugins'] ?? [] as $pluginClass) {
-        if (!is_a($pluginClass, Plugin::class, true)) {
-            throw new \LogicException("Plugin class {$pluginClass} does not implement " . Plugin::class);
-        }
-
-        $pluginManager->registerPlugin($injector->make($pluginClass));
+foreach ($config['plugins'] ?? [] as $pluginClass) {
+    if (!is_a($pluginClass, Plugin::class, true)) {
+        throw new \LogicException("Plugin class {$pluginClass} does not implement " . Plugin::class);
     }
-});
+
+    $injector->define(FileKeyValueStorage::class, [
+        ':dataFile' => DATA_BASE_DIR . '/keyvalue.%s.json',
+        ':partitionName' => $pluginClass
+    ]);
+
+    $pluginManager->registerPlugin($injector->make($pluginClass));
+}
 
 try {
     run(function () use ($injector, $roomIdentifiers) {

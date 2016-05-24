@@ -39,9 +39,6 @@ class EvalCode implements Plugin
     }
 
     private function normalizeCode($code) {
-        $code = domdocument_load_html($code, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD)
-            ->textContent;
-
         if (strpos($code, '<?php') === false && strpos($code, '<?=') === false) {
             $code = "<?php {$code}";
         }
@@ -114,12 +111,13 @@ class EvalCode implements Plugin
         return $result;
     }
 
-    public function eval(Command $command): Promise {
-        if (!$command->getParameters()) {
+    public function eval(Command $command): Promise
+    {
+        if (!$command->hasParameters()) {
             return new Success();
         }
 
-        $code = $this->normalizeCode(implode(' ', $command->getParameters()));
+        $code = $this->normalizeCode($command->getText());
 
         $body = (new FormBody)
             ->addField("title", "")

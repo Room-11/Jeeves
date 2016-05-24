@@ -9,7 +9,7 @@ class Factory
 {
     public function build(MessageEvent $event): Message
     {
-        if (strpos($event->getMessageContent(), '!!') === 0) {
+        if (strpos($event->getMessageContent()->textContent, '!!') === 0) {
             return new Command($event, $event->getRoom());
         }
 
