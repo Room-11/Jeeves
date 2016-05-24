@@ -87,7 +87,8 @@ $injector->delegate(Logger::class, function () use ($config) {
         }, 0);
     }
 
-    $logger = $config['handler'] ?? StdOutLogger::class;
+    $logger = $config['logging']['handler'] ?? StdOutLogger::class;
+
     return new $logger($flags);
 });
 
