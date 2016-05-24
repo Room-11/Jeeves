@@ -89,6 +89,10 @@ $injector->delegate(Logger::class, function () use ($config) {
 
     $logger = $config['logging']['handler'] ?? StdOutLogger::class;
 
+    if ($config['logging']['params']) {
+        return new $logger($flags, ...array_values($config['logging']['params']));
+    }
+
     return new $logger($flags);
 });
 

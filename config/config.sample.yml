@@ -25,6 +25,8 @@ room:
 logging:
   level: ALL | DEBUG
   handler: Room11\Jeeves\Log\StdOut
+  params:
+    #filename: /var/log/jeeves.log
 
 storage:
   admin: Room11\Jeeves\Storage\File\Admin
