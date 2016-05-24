@@ -21,8 +21,6 @@ class Command extends Message
 
         $this->commandName = substr(array_shift($commandParts), 2);
         $this->parameters = $commandParts;
-
-        var_dump($this->getText());
     }
 
     public function getCommandName(): string
