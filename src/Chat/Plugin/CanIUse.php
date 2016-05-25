@@ -30,7 +30,7 @@ class CanIUse implements Plugin
      * @param  string $searchFor The search term, if any.
      * @return string            A markdown formatted link for Can I Use.
      */
-    private function generateLink(string $searchFor = ''): string
+    private function generateLink(string $searchFor): string
     {
         $searchFor = trim($searchFor);
 
