@@ -74,6 +74,6 @@ class CanIUse implements Plugin
      */
     public function getHandledCommands(): array
     {
-        return ['caniuse', 'ciu'];
+        return ['caniuse'];
     }
 }
