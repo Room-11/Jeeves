@@ -89,6 +89,7 @@ class Handler implements Websocket {
 
     public function onClose($code, $reason) {
         // todo: reconnect stuffz
+        $this->logger->log(Level::DEBUG, "Socket {$this->room->getIdentifier()->getIdentString()} disconnected!");
         $this->sockets->remove($this->socketId);
     }
 }
