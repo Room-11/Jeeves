@@ -27,16 +27,17 @@ class Github implements Plugin
 
     public function github(Command $command): \Generator {
         $obj = $command->getParameter(0) ?? 'status';
+
         if ($obj === 'status') {
-            yield from $this->status($command);
+            return yield from $this->status($command);
         } elseif (strpos($obj, '/') === false) {
-            yield from $this->profile($command, $obj);
+            return yield from $this->profile($command, $obj);
         } elseif (strpos($obj, '/') === strrpos($obj, '/')) {
-            yield from $this->repo($command, $obj);
-        } else {
-            return $this->chatClient->postMessage($command->getRoom(),
-              "Usage: !!github [status | <project> | <profile> | <profile>/<repo> ]");
+            return yield from $this->repo($command, $obj);
         }
+
+        return $this->chatClient->postMessage($command->getRoom(),
+            "Usage: !!github [status | <project> | <profile> | <profile>/<repo> ]");
     }
 
     /**
@@ -45,40 +46,52 @@ class Github implements Plugin
      *   !!github status
      *
      * [tag:github-status] good: Everything operating normally. as of 2016-05-25T18:44:58Z
+     *
+     * @param Command $command
+     * @return \Generator
      */
     protected function status(Command $command): \Generator {
+        /** @var HttpResponse $response */
         $response = yield $this->httpClient->request('https://status.github.com/api/last-message.json');
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage($command->getRoom(), "Failed fetching status");
         }
         $json = json_decode($response->getBody());
-        yield $this->chatClient->postMessage(
+
+        return $this->chatClient->postMessage(
             $command->getRoom(),
             sprintf(
-                "[tag:github-status] %s: %s as of %s",
+                "[tag:github-status] **%s**: %s *as of %s*",
                 $json->status,
-                $json->body,
+                rtrim($json->body, '.!?'),
                 $json->created_on
             )
         );
     }
 
     /**
-     * Eample:
+     * Example:
      *   !!github Room-11
      *
      * [tag:github-profile] Organization [Room-11](https://github.com/Room-11): 15 public repos
+     *
+     * @param Command $command
+     * @param string $profile
+     * @return \Generator
      */
-    protected function profile(Command $command, $profile): \Generator {
+    protected function profile(Command $command, string $profile): \Generator {
+        /** @var HttpResponse $response */
         $response = yield $this->httpClient->request('https://api.github.com/users/'.urlencode($profile));
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage($command->getRoom(), "Failed fetching profile for $profile");
         }
+
         $json = json_decode($response->getBody());
         if (!isset($json->id)) {
             return $this->chatClient->postMessage($command->getRoom(), "Unknown profile $profile");
         }
-        yield $this->chatClient->postMessage(
+
+        return $this->chatClient->postMessage(
             $command->getRoom(),
             sprintf(
                 "[tag:github-profile] %s [%s](%s): %d public repos",
@@ -96,18 +109,26 @@ class Github implements Plugin
      *
      * [tag:github-repo] [Room-11/Jeeves](https://github.com/Room-11/Jeeves) Chatbot attempt -
      *    - Watchers: 14, Forks: 15, Last Pushed: 2016-05-26T08:57:41Z
+     *
+     * @param Command $command
+     * @param string $path
+     * @return \Generator
      */
-    protected function repo(Command $command, $path): \Generator {
+    protected function repo(Command $command, string $path): \Generator {
         list($user, $repo) = explode('/', $path, 2);
+
+        /** @var HttpResponse $response */
         $response = yield $this->httpClient->request('https://api.github.com/repos/' . urlencode($user).'/'.urlencode($repo));
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage($command->getRoom(), "Failed fetching repo for $path");
         }
+
         $json = json_decode($response->getBody());
         if (!isset($json->id)) {
             return $this->chatClient->postMessage($command->getRoom(), "Unknown repo $path");
         }
-        yield $this->chatClient->postMessage(
+
+        return $this->chatClient->postMessage(
             $command->getRoom(),
             sprintf(
                 "[tag:github-repo] [%s](%s) %s - Watchers: %d, Forks: %d, Last Push: %s",
@@ -123,7 +144,7 @@ class Github implements Plugin
 
     public function getName(): string
     {
-        return 'Github.php';
+        return 'Github';
     }
 
     public function getDescription(): string
@@ -142,8 +163,7 @@ class Github implements Plugin
     public function getCommandEndpoints(): array
     {
         return [
-            new PluginCommandEndpoint('Github', [$this, 'github'], 'github',
-                                      'Display Github status, profile, or repo info'),
+            new PluginCommandEndpoint('Github', [$this, 'github'], 'github'),
         ];
     }
 }
