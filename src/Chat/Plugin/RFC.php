@@ -21,6 +21,7 @@ class RFC implements Plugin
     private $pluginData;
 
     const BASE_URI = 'https://wiki.php.net/rfc';
+    const BULLET   = "\xE2\x80\xA2";
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
@@ -30,10 +31,9 @@ class RFC implements Plugin
     }
 
     public function search(Command $command): \Generator {
-        if ($command->hasParameter(0)) {
+        if ($command->hasParameters(1)) {
             // !!rfcs some-rfc-name
-            yield from $this->getRFC($command);
-            return;
+            return yield from $this->getRFC($command);
         }
 
         /** @var HttpResponse $response */
@@ -97,9 +97,11 @@ class RFC implements Plugin
             return $this->chatClient->postMessage($command->getRoom(), "RFC id required");
         }
 
-        /*r @var HttpResponse $response */
         $uri = self::BASE_URI . '/' . urlencode($rfc);
+
+        /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($uri);
+
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage($command->getRoom(), "Nope, we can't have nice things.");
         }
@@ -109,69 +111,103 @@ class RFC implements Plugin
             return $this->chatClient->postMessage($command->getRoom(), "No votes found");
         }
 
-        $messages = array();
+        $messages = [];
+
         foreach ($votes as $id => $vote) {
-            $breakdown = array();
+            $breakdown = [];
+
             $total = array_sum($vote['votes']);
             if ($total > 0) {
                 foreach ($vote['votes'] as $option => $value) {
                     $breakdown[] = sprintf("%s (%d: %d%%)", $option, $value, 100 * $value / $total);
                 }
             }
-            $messages[] = sprintf(
-                "[tag:rfc-vote] [%s](%s) %s",
-                $vote['name'],
-                $uri . '#' . $id,
-                implode(', ', $breakdown)
+
+            $messages[] = [
+                'name' => $vote['name'],
+                'href' => $uri . '#' . $id,
+                'breakdown' => implode(', ', $breakdown),
+            ];
+        }
+
+        if (count($messages) === 1) {
+            return $this->chatClient->postMessage(
+                $command->getRoom(),
+                sprintf(
+                    "[tag:rfc-vote] [%s](%s) %s",
+                    $messages[0]['name'],
+                    $messages[0]['href'],
+                    $messages[0]['breakdown']
+                )
             );
         }
 
-        yield $this->chatClient->postMessage(
-            $command->getRoom(),
-            implode("\n", $messages)
-        );
+        $message = implode("\n", array_map(function($message) {
+            return sprintf(
+                '%s %s - %s (%s)',
+                self::BULLET,
+                $message['name'],
+                $message['breakdown'],
+                $message['href']
+            );
+        }, $messages));
+
+        return $this->chatClient->postMessage($command->getRoom(), $message);
     }
 
     private static function parseVotes(string $html) {
         $dom = domdocument_load_html($html);
-        $votes = array();
+        $votes = [];
+
+        /** @var \DOMElement $form */
         foreach ($dom->getElementsByTagName('form') as $form) {
-            if ($form->getAttribute('name') != 'doodle__form') continue;
+            if ($form->getAttribute('name') != 'doodle__form') {
+                continue;
+            }
+
             $id = $form->getAttribute('id');
             $info = [
                 'name' => $id,
                 'votes' => [],
             ];
-            $options = array();
+            $options = [];
 
+            /** @var \DOMElement $table */
             $table = $form->getElementsByTagName('table')->item(0);
+
+            /** @var \DOMElement $row */
             foreach ($table->getElementsByTagName('tr') as $row) {
                 $class = $row->getAttribute('class');
-                if ($class == 'row0') { // Title
+
+                if ($class === 'row0') { // Title
                     $title = trim($row->getElementsByTagName('th')->item(0)->textContent);
+
                     if (!empty($title)) {
                         $info['name'] = $title;
                     }
-                    continue;
-                }
-                if ($class == 'row1') { // Options
-                    $opts = $row->getElementsByTagName('td');
-                    for ($i = 0; $i < $opts->length; ++$i) {
-                        $options[$i] = strval($opts->item($i)->textContent);
-                        $info['votes'][$options[$i]] = 0;
-                    }
+
                     continue;
                 }
 
-                // Vote
-                $vote = $row->getElementsByTagName('td');
-                for ($i = 1; $i < $vote->length; ++$i) {
+                if ($class == 'row1') { // Options
+                    /** @var \DOMElement $opt */
+                    foreach ($row->getElementsByTagName('td') as $i => $opt) {
+                        $options[$i] = strval($opt->textContent);
+                        $info['votes'][$options[$i]] = 0;
+                    }
+
+                    continue;
+                }
+
+                /** @var \DOMElement $vote */
+                foreach ($row->getElementsByTagName('td') as $i => $vote) {
                     // Adjust by one to ignore voter name
-                    if ($vote->item($i)->getElementsByTagName('img')->length > 0) {
+                    if ($vote->getElementsByTagName('img')->length > 0) {
                         ++$info['votes'][$options[$i - 1]];
                     }
                 }
             }
+
             $votes[$id] = $info;
         }
 
@@ -199,8 +235,8 @@ class RFC implements Plugin
     public function getCommandEndpoints(): array
     {
         return [
-            new PluginCommandEndpoint('Search', [$this, 'search'], 'rfcs',
-                                      'List RFCs in voting, or vote status of a given RFC'),
+            new PluginCommandEndpoint('Search', [$this, 'search'], 'rfcs', 'List RFCs currently in voting, or get the current vote status of a given RFC'),
+            new PluginCommandEndpoint('Votes', [$this, 'getRFC'], 'rfc', 'Get the current vote status of a given RFC'),
         ];
     }
 }
