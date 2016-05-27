@@ -5,14 +5,19 @@ use Room11\Jeeves\Chat\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Event\Factory as EventFactory;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\PluginManager;
+use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
+use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
+use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
+use Room11\Jeeves\Chat\Room\RoomFactory as ChatRoomFactory;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class HandlerFactory
 {
     private $eventFactory;
     private $messageFactory;
-    private $sockets;
+    private $roomConnector;
+    private $roomFactory;
+    private $rooms;
     private $logger;
     private $builtInCommandManager;
     private $pluginManager;
@@ -20,25 +25,28 @@ class HandlerFactory
     public function __construct(
         EventFactory $eventFactory,
         MessageFactory $messageFactory,
-        Collection $sockets,
-        Logger $logger,
+        ChatRoomConnector $roomConnector,
+        ChatRoomFactory $roomFactory,
+        ChatRoomCollection $rooms,
         BuiltInCommandManager $builtInCommandManager,
-        PluginManager $pluginManager
+        PluginManager $pluginManager,
+        Logger $logger
     ) {
         $this->eventFactory = $eventFactory;
         $this->messageFactory = $messageFactory;
-        $this->sockets = $sockets;
+        $this->roomConnector = $roomConnector;
+        $this->roomFactory = $roomFactory;
+        $this->rooms = $rooms;
         $this->logger = $logger;
         $this->builtInCommandManager = $builtInCommandManager;
         $this->pluginManager = $pluginManager;
     }
 
-    public function build(ChatRoom $room, int $socketId)
+    public function build(ChatRoomIdentifier $identifier)
     {
         return new Handler(
-            $this->eventFactory, $this->messageFactory, $this->sockets,
-            $this->logger, $this->builtInCommandManager, $this->pluginManager,
-            $room, $socketId
+            $this->eventFactory, $this->messageFactory, $this->roomConnector, $this->roomFactory, $this->rooms,
+            $this->builtInCommandManager, $this->pluginManager, $this->logger, $identifier
         );
     }
 }

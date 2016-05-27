@@ -14,33 +14,30 @@ use Room11\OpenId\UriFactory;
 class Authenticator
 {
     private $httpClient;
-    private $roomFactory;
+    private $sessionInfoFactory;
     private $authenticator;
     private $credentialManager;
-    /**
-     * @var UriFactory
-     */
     private $uriFactory;
 
     public function __construct(
         HttpClient $httpClient,
-        RoomFactory $roomFactory,
+        SessionInfoFactory $sessionInfoFactory,
         OpenIdAuthenticator $authenticator,
         UriFactory $uriFactory,
         CredentialManager $credentialManager
     )
     {
         $this->httpClient = $httpClient;
-        $this->roomFactory = $roomFactory;
+        $this->sessionInfoFactory = $sessionInfoFactory;
         $this->authenticator = $authenticator;
         $this->uriFactory = $uriFactory;
         $this->credentialManager = $credentialManager;
     }
 
-    public function logIn(Identifier $identifier): \Generator
+    public function getRoomSessionInfo(Identifier $identifier): \Generator
     {
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($identifier->getEndpointURL(Endpoint::CHATROOM_UI));
+        $response = yield $this->httpClient->request($identifier->getEndpointUrl(Endpoint::CHATROOM_UI));
 
         $doc = domdocument_load_html($response->getBody());
         $xpath = new \DOMXPath($doc);
@@ -52,10 +49,11 @@ class Authenticator
         }
 
         $fkey = $this->getFKey($xpath);
+        $userID = $this->getUserID($xpath);
 
         $webSocketURL = yield from $this->getWebSocketUri($identifier, $fkey);
 
-        return $this->roomFactory->build($identifier, $fkey, $webSocketURL, $mainSiteURL);
+        return $this->sessionInfoFactory->build($userID, $fkey, $mainSiteURL, $webSocketURL);
     }
 
     private function logInMainSite(\DOMDocument $doc, Credentials $credentials): \Generator
@@ -122,6 +120,23 @@ class Authenticator
         return $node->getAttribute('value');
     }
 
+    private function getUserID(\DOMXPath $xpath): int
+    {
+        /** @var \DOMElement $node */
+
+        $nodes = $xpath->query("//div[@id='active-user']");
+        if ($nodes->length < 1) {
+            throw new \RuntimeException('Could not find user ID for chat room: no active-user div');
+        }
+
+        $node = $nodes->item(0);
+        if (!preg_match('#\buser-([0-9]+)\b#', $node->getAttribute('class'), $match)) {
+            throw new \RuntimeException('Could not find user ID for chat room: no user ID class');
+        }
+
+        return (int)$match;
+    }
+
     private function getWebSocketUri(Identifier $identifier, string $fKey): \Generator
     {
         $authBody = (new FormBody)
@@ -136,11 +151,11 @@ class Authenticator
 
         $requests = [
             'auth' => (new HttpRequest)
-                ->setUri($identifier->getEndpointURL(Endpoint::CHATROOM_WEBSOCKET_AUTH))
+                ->setUri($identifier->getEndpointUrl(Endpoint::CHATROOM_WEBSOCKET_AUTH))
                 ->setMethod("POST")
                 ->setBody($authBody),
             'history' => (new HttpRequest)
-                ->setUri($identifier->getEndpointURL(Endpoint::CHATROOM_EVENT_HISTORY))
+                ->setUri($identifier->getEndpointUrl(Endpoint::CHATROOM_EVENT_HISTORY))
                 ->setMethod("POST")
                 ->setBody($historyBody),
         ];

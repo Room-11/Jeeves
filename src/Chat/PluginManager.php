@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat;
 
+use function Amp\all;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Event\Event;
@@ -379,32 +380,45 @@ class PluginManager
 
     /**
      * @param ChatRoom $room
+     * @param bool $persist
      * @return Promise
      */
-    public function enableAllPluginsForRoom(ChatRoom $room): Promise
+    public function enableAllPluginsForRoom(ChatRoom $room, bool $persist = false): Promise
     {
-        return resolve(function () use ($room) {
+        return resolve(function () use ($room, $persist) {
             foreach ($this->registeredPlugins as $plugin) {
-                list($pluginName) = $this->resolvePluginFromNameOrObject($plugin);
-
-                if (yield $this->pluginStorage->isPluginEnabled($room, $pluginName)) {
-                    yield $this->enablePluginForRoom($plugin, $room);
+                if ($persist || yield $this->pluginStorage->isPluginEnabled($room, $plugin->getName())) {
+                    yield $this->enablePluginForRoom($plugin, $room, $persist);
                 }
             }
         });
     }
 
     /**
-     * @param Plugin|string $plugin
      * @param ChatRoom $room
+     * @param bool $persist
      * @return Promise
      */
-    public function disablePluginForRoom($plugin, ChatRoom $room): Promise
+    public function disableAllPluginsForRoom(ChatRoom $room, bool $persist = false): Promise
+    {
+        return all(array_map(function(Plugin $plugin) use($room, $persist) {
+            return $this->disablePluginForRoom($plugin, $room, $persist);
+        }, $this->registeredPlugins));
+    }
+
+    /**
+     * @param Plugin|string $plugin
+     * @param ChatRoom $room
+     * @param bool $persist
+     * @return Promise
+     */
+    public function disablePluginForRoom($plugin, ChatRoom $room, bool $persist = true): Promise
     {
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
         $roomId = $room->getIdentifier()->getIdentString();
 
-        $this->logger->log(Level::DEBUG, "Disabling plugin '{$pluginName}' for room '{$roomId}'");
+        $yesNo = $persist ? 'yes' : 'no';
+        $this->logger->log(Level::DEBUG, "Disabling plugin '{$pluginName}' for room '{$roomId}' (persist = {$yesNo})");
 
         unset($this->enabledPlugins[$roomId][$pluginName]);
 
@@ -416,21 +430,25 @@ class PluginManager
 
         $plugin->disableForRoom($roomId);
 
-        return $this->pluginStorage->setPluginEnabled($room, $pluginName, false);
+        return $persist
+            ? $this->pluginStorage->setPluginEnabled($room, $pluginName, false)
+            : new Success();
     }
 
     /**
      * @param Plugin|string $plugin
      * @param ChatRoom $room
+     * @param bool $persist
      * @return Promise
      */
-    public function enablePluginForRoom($plugin, ChatRoom $room): Promise
+    public function enablePluginForRoom($plugin, ChatRoom $room, bool $persist = true): Promise
     {
-        return resolve(function() use($plugin, $room) {
+        return resolve(function() use($plugin, $room, $persist) {
             list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
             $roomId = $room->getIdentifier()->getIdentString();
 
-            $this->logger->log(Level::DEBUG, "Enabling plugin '{$pluginName}' for room '{$roomId}'");
+            $yesNo = $persist ? 'yes' : 'no';
+            $this->logger->log(Level::DEBUG, "Enabling plugin '{$pluginName}' for room '{$roomId}' (persist = {$yesNo})");
             $this->enabledPlugins[$roomId][$pluginName] = true;
 
             $commandMappings = yield $this->pluginStorage->getAllMappedCommands($room, $pluginName);
@@ -453,7 +471,9 @@ class PluginManager
 
             $plugin->enableForRoom($roomId);
 
-            yield $this->pluginStorage->setPluginEnabled($room, $pluginName, true);
+            return $persist
+                ? $this->pluginStorage->setPluginEnabled($room, $pluginName, true)
+                : new Success();
         });
     }
 

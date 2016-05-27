@@ -2,23 +2,23 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
+use Amp\Websocket\Endpoint as WebsocketEndpoint;
+
 class Room
 {
     private $identifier;
-    private $fKey;
-    private $mainSiteURL;
-    private $webSocketURL;
+    private $sessionInfo;
+    private $websocketEndpoint;
 
     private static $endpointURLTemplates = [
         Endpoint::MAINSITE_USER => '%1$s/users/%2$d',
     ];
 
-    public function __construct(Identifier $identifier, string $fKey, string $webSocketURL, string $mainSiteURL)
+    public function __construct(Identifier $identifier, SessionInfo $sessionInfo, WebsocketEndpoint $websocketEndpoint)
     {
         $this->identifier = $identifier;
-        $this->fKey = $fKey;
-        $this->mainSiteURL = $mainSiteURL;
-        $this->webSocketURL = $webSocketURL;
+        $this->sessionInfo = $sessionInfo;
+        $this->websocketEndpoint = $websocketEndpoint;
     }
 
     public function getIdentifier(): Identifier
@@ -26,25 +26,20 @@ class Room
         return $this->identifier;
     }
 
-    public function getFKey(): string
+    public function getSessionInfo(): SessionInfo
     {
-        return $this->fKey;
+        return $this->sessionInfo;
     }
 
-    public function getMainSiteURL(): string
+    public function getWebsocketEndpoint(): WebsocketEndpoint
     {
-        return $this->mainSiteURL;
-    }
-
-    public function getWebSocketURL(): string
-    {
-        return $this->webSocketURL;
+        return $this->websocketEndpoint;
     }
 
     public function getEndpointURL(int $endpoint, ...$extraData): string
     {
         if ($endpoint < 500) {
-            return $this->identifier->getEndpointURL($endpoint, ...$extraData);
+            return $this->identifier->getEndpointUrl($endpoint, ...$extraData);
         }
 
         if (!isset(self::$endpointURLTemplates[$endpoint])) {
@@ -53,8 +48,17 @@ class Room
 
         return sprintf(
             self::$endpointURLTemplates[$endpoint],
-            rtrim($this->mainSiteURL, '/'),
+            rtrim($this->sessionInfo->getMainSiteUrl(), '/'),
             ...$extraData
         );
+    }
+
+    public function __debugInfo()
+    {
+        return [
+            'identifier' => $this->identifier,
+            'sessionInfo' => $this->sessionInfo,
+            'websocketEndpoint' => $this->websocketEndpoint->getInfo(),
+        ];
     }
 }

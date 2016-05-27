@@ -137,7 +137,7 @@ class ChatClient
 
         $body = (new FormBody)
             ->addField("text", rtrim($text)) // only rtrim an not trim, leading space may be legit
-            ->addField("fkey", (string) $room->getFKey());
+            ->addField("fkey", (string) $room->getSessionInfo()->getFKey());
 
         $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_POST_MESSAGE);
 
@@ -229,7 +229,7 @@ class ChatClient
     {
         $body = (new FormBody)
             ->addField("text", $text)
-            ->addField("fkey", (string) $message->getRoom()->getFKey());
+            ->addField("fkey", (string)$message->getRoom()->getSessionInfo()->getFKey());
 
         $url = $message->getRoom()->getEndpointURL(ChatRoomEndpoint::CHATROOM_EDIT_MESSAGE, $message->getMessageId());
 
@@ -314,7 +314,7 @@ class ChatClient
         }
 
         $body = (new FormBody)
-            ->addField("fkey", $room->getFKey());
+            ->addField("fkey", $room->getSessionInfo()->getFKey());
 
         $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_PIN_MESSAGE, $messageId);
 
@@ -399,7 +399,7 @@ class ChatClient
         }
 
         $body = (new FormBody)
-            ->addField("fkey", $room->getFKey());
+            ->addField("fkey", $room->getSessionInfo()->getFKey());
 
         $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_UNSTAR_MESSAGE, $messageId);
 

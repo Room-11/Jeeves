@@ -6,6 +6,7 @@ use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\RoomSourcedEvent;
 use Room11\Jeeves\Chat\Event\UserSourcedEvent;
+use const Room11\Jeeves\ROOM_IDENTIFIER_EXPR;
 
 class Compiler
 {
@@ -68,10 +69,8 @@ class Compiler
 
     private function processRoom(Condition $condition): array
     {
-        static $expr = '/^((?:(?:[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?)\.)*(?:[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?))#([0-9]+)$/i';
-
         if ($condition->getValueType() === Condition::VALUE_TYPE_SCALAR) {
-            if (!preg_match($expr, $condition->getScalarValue(), $match)) {
+            if (!preg_match(ROOM_IDENTIFIER_EXPR, $condition->getScalarValue(), $match)) {
                 throw new CompileErrorException(
                     "Invalid room identifier '{$condition->getScalarValue()}' for field " . self::FIELD_ROOM
                 );
@@ -100,7 +99,7 @@ class Compiler
 
         $roomIds = $rooms = [];
         foreach ($condition->getSetMembers() as $roomSpec) {
-            if (!preg_match($expr, $roomSpec, $match)) {
+            if (!preg_match(ROOM_IDENTIFIER_EXPR, $roomSpec, $match)) {
                 throw new CompileErrorException("
                     Invalid room identifier '{$condition->getScalarValue()}' for field " . self::FIELD_ROOM
                 );

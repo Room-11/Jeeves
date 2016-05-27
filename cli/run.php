@@ -28,11 +28,14 @@ use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStorage;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
-use Room11\Jeeves\WebSocket\Collection as WebSocketCollection;
+use Room11\Jeeves\WebSocket\Handler as WebSocketHandler;
+use Room11\Jeeves\WebSocket\HandlerFactory as WebSocketHandlerFactory;
 use Room11\OpenId\Credentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
 use Symfony\Component\Yaml\Yaml;
+use function Amp\all;
+use function Amp\info;
 use function Amp\resolve;
 use function Amp\run;
 use function Amp\wait;
@@ -68,14 +71,6 @@ $injector->define(TwitterCredentials::class, [
     ':accessTokenSecret' => $config['twitter']['accessTokenSecret'],
 ]);
 
-$roomIdentifiers = array_map(function($room) {
-    return new ChatRoomIdentifier(
-        $room['id'],
-        $room['hostname'] ?? 'chat.stackoverflow.com',
-        $room['secure'] ?? true
-    );
-}, $config['rooms']);
-
 $injector->delegate(Logger::class, function () use ($config) {
     $flags = array_map('trim', explode('|', $config['logging']['level'] ?? ''));
 
@@ -89,11 +84,7 @@ $injector->delegate(Logger::class, function () use ($config) {
 
     $logger = $config['logging']['handler'] ?? StdOutLogger::class;
 
-    if ($config['logging']['params']) {
-        return new $logger($flags, ...array_values($config['logging']['params']));
-    }
-
-    return new $logger($flags);
+    return new $logger($flags, ...array_values($config['logging']['params'] ?? []));
 });
 
 $injector->delegate(CredentialManager::class, function () use ($config) {
@@ -128,6 +119,18 @@ $injector->delegate(CredentialManager::class, function () use ($config) {
     return $manager;
 });
 
+/** @var WebSocketHandlerFactory $handlerFactory */
+$handlerFactory = $injector->make(WebSocketHandlerFactory::class);
+
+/** @var WebSocketHandler[] $websocketHandlers */
+$websocketHandlers = array_map(function($room) use($handlerFactory) {
+    return $handlerFactory->build(new ChatRoomIdentifier(
+        $room['id'],
+        $room['hostname'] ?? 'chat.stackoverflow.com',
+        $room['secure'] ?? true
+    ));
+}, $config['rooms']);
+
 $builtInCommandManager = $injector->make(BuiltInCommandManager::class);
 $pluginManager = $injector->make(PluginManager::class);
 
@@ -148,19 +151,18 @@ foreach ($config['plugins'] ?? [] as $pluginClass) {
     $pluginManager->registerPlugin($injector->make($pluginClass));
 }
 
+/** @var ChatRoomConnector $connector */
+$connector = $injector->make(ChatRoomConnector::class);
+
 try {
-    run(function () use ($injector, $roomIdentifiers) {
-        /** @var ChatRoomConnector $connector */
-        /** @var WebSocketCollection $sockets */
+    run(function () use ($connector, $handlerFactory, $websocketHandlers) {
+        $promises = [];
 
-        $connector = $injector->make(ChatRoomConnector::class);
-        $sockets = $injector->make(WebSocketCollection::class);
-
-        foreach ($roomIdentifiers as $identifier) {
-            yield from $connector->connect($identifier);
+        foreach ($websocketHandlers as $handler) {
+            $promises[] = yield from $connector->connect($handler);
         }
 
-        yield from $sockets->yieldAll();
+        return all($promises);
     });
 } catch (\Throwable $e) {
     fwrite(STDERR, "\nSomething went badly wrong:\n\n{$e}\n\n");

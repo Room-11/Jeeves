@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "f39a0e84d87ae6b602caf91d6663cf2c",
+    "hash": "f4dceba2f26aed34be253f366df4eaaa",
     "content-hash": "16b7e48b087b4c008e10634863872b43",
     "packages": [
         {
@@ -172,16 +172,16 @@
         },
         {
             "name": "amphp/dns",
-            "version": "v0.8.10",
+            "version": "v0.8.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/dns.git",
-                "reference": "9f12b2264f74e0cbad67565308f9e106fb6a5bec"
+                "reference": "ba6016dd0a2a79e2eed8b2392ae3002d49120aaa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/dns/zipball/9f12b2264f74e0cbad67565308f9e106fb6a5bec",
-                "reference": "9f12b2264f74e0cbad67565308f9e106fb6a5bec",
+                "url": "https://api.github.com/repos/amphp/dns/zipball/ba6016dd0a2a79e2eed8b2392ae3002d49120aaa",
+                "reference": "ba6016dd0a2a79e2eed8b2392ae3002d49120aaa",
                 "shasum": ""
             },
             "require": {
@@ -236,7 +236,7 @@
                 "dns",
                 "resolve"
             ],
-            "time": "2016-03-26 20:35:44"
+            "time": "2016-05-26 19:49:36"
         },
         {
             "name": "amphp/file",
@@ -999,16 +999,16 @@
         },
         {
             "name": "phpunit/php-code-coverage",
-            "version": "3.3.1",
+            "version": "3.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/php-code-coverage.git",
-                "reference": "2431befdd451fac43fbcde94d1a92fb3b8b68f86"
+                "reference": "4862dac433cbdb4438b593fa7f79e07559ba157e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/2431befdd451fac43fbcde94d1a92fb3b8b68f86",
-                "reference": "2431befdd451fac43fbcde94d1a92fb3b8b68f86",
+                "url": "https://api.github.com/repos/sebastianbergmann/php-code-coverage/zipball/4862dac433cbdb4438b593fa7f79e07559ba157e",
+                "reference": "4862dac433cbdb4438b593fa7f79e07559ba157e",
                 "shasum": ""
             },
             "require": {
@@ -1058,7 +1058,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2016-04-08 08:14:53"
+            "time": "2016-05-25 06:48:21"
         },
         {
             "name": "phpunit/php-file-iterator",

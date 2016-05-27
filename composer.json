@@ -13,7 +13,8 @@
         }
     ],
     "autoload": {
-        "psr-4": {"Room11\\Jeeves\\": "src/"}
+        "psr-4": {"Room11\\Jeeves\\": "src/"},
+        "files": ["src/helpers.php"]
     },
     "autoload-dev": {
         "psr-4": {"Room11\\Jeeves\\Tests\\": "tests/src/"}

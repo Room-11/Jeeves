@@ -50,7 +50,7 @@ class Identifier
         return $this->isSecure;
     }
 
-    public function getEndpointURL(int $endpoint, ...$extraData): string {
+    public function getEndpointUrl(int $endpoint, ...$extraData): string {
         if (!isset(self::$endpointURLTemplates[$endpoint])) {
             throw new \LogicException('Invalid endpoint ID');
         }
@@ -66,5 +66,10 @@ class Identifier
 
     public function getOriginURL(string $protocol): string {
         return sprintf('%s://%s', $this->isSecure ? $protocol . 's' : $protocol, $this->host);
+    }
+
+    public function __toString()
+    {
+        return $this->getIdentString();
     }
 }
