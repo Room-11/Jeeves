@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Event;
 
-abstract class BaseEvent implements Event
+abstract class BaseEvent implements Event, \JsonSerializable
 {
     const TYPE_ID = 0;
 
@@ -10,10 +10,14 @@ abstract class BaseEvent implements Event
 
     private $timestamp;
 
-    protected function __construct(int $eventId, int $timestamp)
+    private $data;
+
+    protected function __construct(array $data)
     {
-        $this->eventId   = $eventId;
-        $this->timestamp = new \DateTime('@' . $timestamp);
+        $this->data = $data;
+
+        $this->eventId   = (int)$data['id'];
+        $this->timestamp = new \DateTimeImmutable('@' . ((int)$data['time_stamp']));
     }
 
     public function getTypeId(): int
@@ -21,13 +25,28 @@ abstract class BaseEvent implements Event
         return static::TYPE_ID;
     }
 
+    public function getRawData(): array
+    {
+        return $this->data;
+    }
+
     public function getId(): int
     {
         return $this->eventId;
     }
 
-    public function getTimestamp(): \DateTime
+    public function getTimestamp(): \DateTimeImmutable
     {
         return $this->timestamp;
+    }
+
+    public function jsonSerialize()
+    {
+        return $this->data;
+    }
+
+    public function __debugInfo()
+    {
+        return $this->data;
     }
 }

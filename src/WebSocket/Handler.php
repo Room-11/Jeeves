@@ -120,21 +120,23 @@ class Handler implements Websocket
     public function onData(WebsocketMessage $websocketMessage): \Generator {
         $rawWebsocketMessage = yield $websocketMessage;
 
+        $this->logger->log(Level::DEBUG, "Websocket message received on connection to {$this->roomIdentifier}", $rawWebsocketMessage);
+
         $this->clearTimeoutWatcher();
         $this->setTimeoutWatcher();
 
-        foreach ($this->eventFactory->build(json_decode($rawWebsocketMessage, true), $this->room) as $event) {
-            $this->logger->log(Level::EVENT, "Event received", [
-                "rawData" => $rawWebsocketMessage,
-                "event" => $event,
-            ]);
+        $events = $this->eventFactory->build(json_decode($rawWebsocketMessage, true), $this->room);
+        $this->logger->log(Level::DEBUG, count($events) . " events targeting {$this->roomIdentifier} to process");
+
+        foreach ($events as $event) {
+            $eventId = $event->getId();
+            $this->logger->log(Level::EVENT, "Processing event #{$eventId}", $event);
 
             if ($event instanceof Unknown) {
-                $this->logger->log(Level::UNKNOWN_EVENT, "Unknown message received", $event->getJson());
+                $this->logger->log(Level::UNKNOWN_EVENT, "Unknown event received", $event);
                 return;
             }
 
-            $eventId = $event->getId();
             $chatMessage = null;
             if ($event instanceof MessageEvent) {
                 $chatMessage = $this->messageFactory->build($event);

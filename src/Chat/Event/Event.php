@@ -7,5 +7,5 @@ interface Event
 
     public function getId(): int;
 
-    public function getTimestamp(): \DateTime;
+    public function getTimestamp(): \DateTimeImmutable;
 }
