@@ -29,7 +29,7 @@ class Terminator implements Plugin
         'give (:?my|your|me my) (.*) back'            => '/me gives $1 back',
         '(:?thank you|thanks|thks|tnx)'               => 'You\'re welcome',
         '(:?you dead|are you dead|you are dead|dead)' => 'Nope. Not that I know of',
-        '(:?hi|hey|yo|hello|hellow|hola)'             => 'Hola',
+        '(:?hi|hey|yo|hello|hellow|hola)^'            => 'Hola',
         '(:?are )?you drunk'                          => 'Screw you human!',
         '^(:?what|wat)$'                              => 'What what?',
         '♥|love|<3'                                   => 'I love you too',
@@ -45,7 +45,7 @@ class Terminator implements Plugin
     private function isMatch(Conversation $conversation): bool
     {
          foreach ($this->patterns as $pattern => $response) {
-            if (preg_match('/' . $pattern . '/u', strtolower($conversation->getText())) === 1) {
+            if (preg_match('/' . $pattern . '/u', $this->normalizeText($conversation->getText())) === 1) {
                 return true;
             }
         }
@@ -56,10 +56,15 @@ class Terminator implements Plugin
     private function getResponse(Conversation $conversation): string
     {
         foreach ($this->patterns as $pattern => $response) {
-            if (preg_match('/' . $pattern . '/u', strtolower($conversation->getText())) === 1) {
+            if (preg_match('/' . $pattern . '/u', $this->normalizeText($conversation->getText())) === 1) {
                 return $response;
             }
         }
+    }
+
+    private function normalizeText(string $text)
+    {
+        return trim(strtolower($text));
     }
 
     public function handleMessage(Message $message): Promise
