@@ -134,7 +134,7 @@ class Handler implements Websocket
 
             if ($event instanceof Unknown) {
                 $this->logger->log(Level::UNKNOWN_EVENT, "Unknown event received", $event);
-                return;
+                continue;
             }
 
             $chatMessage = null;
