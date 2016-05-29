@@ -12,6 +12,7 @@ use Room11\Jeeves\Chat\Event\RoomSourcedEvent;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Log\Level;
@@ -28,6 +29,7 @@ class PluginManager
     private $logger;
     private $filterBuilder;
     private $builtInCommandManager;
+    private $rooms;
 
     /**
      * @var Plugin[]
@@ -83,12 +85,12 @@ class PluginManager
     private function invokeHandlersForEvent(Event $event): array
     {
         $room = $event instanceof RoomSourcedEvent
-            ? $event->getRoom()->getIdentifier()->getIdentString()
+            ? $event->getRoom()
             : null;
 
         $filters = array_merge(
             $this->typeFilteredEventHandlers[$event->getTypeId()] ?? [],
-            $this->roomFilteredEventHandlers[$room] ?? [],
+            $room ? $this->roomFilteredEventHandlers[$room->getIdentifier()->getIdentString()] ?? [] : [],
             $this->filteredEventHandlers
         );
 
@@ -182,13 +184,15 @@ class PluginManager
         PluginStorage $pluginStorage,
         Logger $logger,
         EventFilterBuilder $filterBuilder,
-        BuiltInCommandManager $builtInCommandManager
+        BuiltInCommandManager $builtInCommandManager,
+        ChatRoomCollection $rooms
     ) {
         $this->banStorage = $banStorage;
         $this->pluginStorage = $pluginStorage;
         $this->logger = $logger;
         $this->filterBuilder = $filterBuilder;
         $this->builtInCommandManager = $builtInCommandManager;
+        $this->rooms = $rooms;
     }
 
     public function registerPlugin(Plugin $plugin) /*: void*/

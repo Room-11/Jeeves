@@ -2,7 +2,7 @@
 namespace Room11\Jeeves\WebSocket;
 
 use Room11\Jeeves\Chat\BuiltInCommandManager;
-use Room11\Jeeves\Chat\Event\Factory as EventFactory;
+use Room11\Jeeves\Chat\Event\Builder as EventBuilder;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
@@ -13,7 +13,7 @@ use Room11\Jeeves\Log\Logger;
 
 class HandlerFactory
 {
-    private $eventFactory;
+    private $eventBuilder;
     private $messageFactory;
     private $roomConnector;
     private $roomFactory;
@@ -23,7 +23,7 @@ class HandlerFactory
     private $pluginManager;
 
     public function __construct(
-        EventFactory $eventFactory,
+        EventBuilder $eventBuilder,
         MessageFactory $messageFactory,
         ChatRoomConnector $roomConnector,
         ChatRoomFactory $roomFactory,
@@ -32,7 +32,7 @@ class HandlerFactory
         PluginManager $pluginManager,
         Logger $logger
     ) {
-        $this->eventFactory = $eventFactory;
+        $this->eventBuilder = $eventBuilder;
         $this->messageFactory = $messageFactory;
         $this->roomConnector = $roomConnector;
         $this->roomFactory = $roomFactory;
@@ -45,7 +45,7 @@ class HandlerFactory
     public function build(ChatRoomIdentifier $identifier)
     {
         return new Handler(
-            $this->eventFactory, $this->messageFactory, $this->roomConnector, $this->roomFactory, $this->rooms,
+            $this->eventBuilder, $this->messageFactory, $this->roomConnector, $this->roomFactory, $this->rooms,
             $this->builtInCommandManager, $this->pluginManager, $this->logger, $identifier
         );
     }

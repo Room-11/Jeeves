@@ -7,8 +7,10 @@ use Amp\Promise;
 use Amp\Websocket;
 use Amp\Websocket\Endpoint as WebSocketEndpoint;
 use Amp\Websocket\Message as WebSocketMessage;
+use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
-use Room11\Jeeves\Chat\Event\Factory as EventFactory;
+use Room11\Jeeves\Chat\Event\Builder as EventBuilder;
+use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\Unknown;
 use Room11\Jeeves\Chat\Message\Command;
@@ -54,7 +56,7 @@ class Handler implements Websocket
     private $timeoutWatcherId;
 
     public function __construct(
-        EventFactory $eventFactory,
+        EventBuilder $eventFactory,
         MessageFactory $messageFactory,
         ChatRoomConnector $roomConnector,
         ChatRoomFactory $roomFactory,
@@ -125,7 +127,15 @@ class Handler implements Websocket
         $this->clearTimeoutWatcher();
         $this->setTimeoutWatcher();
 
-        $events = $this->eventFactory->build(json_decode($rawWebsocketMessage, true), $this->room);
+        try {
+            $data = json_try_decode($rawWebsocketMessage, true);
+        } catch (JSONDecodeErrorException $e) {
+            $this->logger->log(Level::ERROR, "Error decoding JSON message from server: {$e->getMessage()}");
+            return;
+        }
+
+        /** @var Event[] $events */
+        $events = yield from $this->eventFactory->build($data, $this->room);
         $this->logger->log(Level::DEBUG, count($events) . " events targeting {$this->roomIdentifier} to process");
 
         foreach ($events as $event) {

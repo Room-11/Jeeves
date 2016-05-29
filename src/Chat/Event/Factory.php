@@ -22,37 +22,15 @@ class Factory
     ];
 
     /**
+     * @param int $eventType
      * @param array $data
      * @param ChatRoom $room
-     * @return array|Event[]
+     * @return Event
      */
-    public function build(array $data, ChatRoom $room): array
+    public function build(int $eventType, array $data, ChatRoom $room): Event
     {
-        $result = [];
-
-        foreach ($data['r' . $room->getIdentifier()->getId()]['e'] ?? [] as $eventData) {
-            if (!isset($eventData['id'])) {
-                continue;
-            }
-
-            $eventId = (int)$eventData['id'];
-            if (isset($result[$eventId])) {
-                continue;
-            }
-
-            $eventType = (int)($eventData['event_type'] ?? 0);
-
-            $event = isset($this->classes[$eventType])
-                ? new $this->classes[$eventType]($eventData, $room)
-                : new Unknown($eventData);
-
-            if ($event instanceof RoomSourcedEvent && $eventData['room_id'] !== $room->getIdentifier()->getId()) {
-                continue;
-            }
-
-            $result[$eventId] = $event;
-        }
-
-        return $result;
+        return isset($this->classes[$eventType])
+            ? new $this->classes[$eventType]($data, $room)
+            : new Unknown($data);
     }
 }

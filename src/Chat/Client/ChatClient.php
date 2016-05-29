@@ -123,10 +123,28 @@ class ChatClient
         });
     }
 
-    public function getMessage(ChatRoom $room, int $id): Promise
+    public function getMessageHTML(ChatRoom $room, int $id): Promise
     {
-        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_GET_MESSAGE, $id);
-        return $this->httpClient->request($url);
+        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_GET_MESSAGE_HTML, $id);
+
+        return resolve(function() use($url) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($url);
+
+            return $response->getBody();
+        });
+    }
+
+    public function getMessageText(ChatRoom $room, int $id): Promise
+    {
+        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_GET_MESSAGE_TEXT, $id);
+
+        return resolve(function() use($url) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($url);
+
+            return $response->getBody();
+        });
     }
 
     public function postMessage(ChatRoom $room, string $text, bool $fixedFont = false): Promise

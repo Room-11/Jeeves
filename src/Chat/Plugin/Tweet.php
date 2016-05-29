@@ -51,10 +51,9 @@ class Tweet implements Plugin
     private function getMessage(Command $command, string $url): \Generator {
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
-        /** @var HttpResponse $messageInfo */
-        $messageInfo = yield $this->chatClient->getMessage($command->getRoom(), (int) $matches[1]);
+        $messageInfo = yield $this->chatClient->getMessageHTML($command->getRoom(), (int) $matches[1]);
 
-        $messageBody = html_entity_decode($messageInfo->getBody(), ENT_QUOTES);
+        $messageBody = html_entity_decode($messageInfo, ENT_QUOTES);
         $dom = domdocument_load_html($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
         $this->replaceEmphasizeTags($dom);
