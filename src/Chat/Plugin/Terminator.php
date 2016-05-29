@@ -21,20 +21,28 @@ class Terminator implements Plugin
     private $chatClient;
 
     private $patterns = [
-        'you suck'                                    => 'And you *like* it',
-        'how are you( (doing|today))?'                => 'I\'m fine how are you?',
-        'you are a ([^\b]+)'                          => 'No *you* are a $i',
+        'you suck'                                    => 'And *you* like it.',
+        'how are you(?: (?:doing|today))?'            => 'I\'m fine how are you?',
+        'you are (a(?:n)?) ([^\b]+)'                  => 'No *you* are $1 $2',
         '^\?$'                                        => 'What?',
         '^(wtf|wth|defak|thefuck|the fuck|dafuq)$'    => 'What? I only execute commands. Go blame somebody else.',
-        'give (:?my|your|me my) (.*) back'            => '/me gives $1 back',
-        '(:?thank you|thanks|thks|tnx)'               => 'You\'re welcome',
-        '(:?you dead|are you dead|you are dead|dead)' => 'Nope. Not that I know of',
-        '(:?hi|hey|yo|hello|hellow|hola)^'            => 'Hola',
-        '(:?are )?you drunk'                          => 'Screw you human!',
-        '^(:?what|wat)$'                              => 'What what?',
-        '♥|love|<3'                                   => 'I love you too',
-        'your (mother|mom|momma|mommy|mummy)'         => 'My mother at least acknowledged me as her child',
-        '(That\'s|That is|You\'re|You are)( .*)? awesome|great|cool|nice|awesomesauce|perfect' => 'I know right!',
+        'give (?:my|your|me my) (.*) back'            => '/me gives $1 back.',
+        '(?:thank you|thanks|thks|tnx|thx)'           => 'You\'re welcome!',
+        '(?:you dead|are you dead|you are dead|dead)' => 'Nope. Not that I know of...',
+        '(?:hi|hey|heya|yo|hello|hellow|hola)^'       => 'Hola',
+        '(?:are )?you drunk'                          => 'Screw you human!',
+        'are you (?:ok|fine|alive|working)'           => 'Yeah I\'m fine thanks.',
+        'are you (?:busy|available)'                  => 'What do you need?',
+        '^(?:what|wat)$'                              => 'What what?',
+        '♥|love|<3'                                   => 'I love you too :-)',
+        'your (?:mother|mom|momma|mommy|mummy|mum)'   => 'My mother at least acknowledged me as her child.',
+        '(?:that\'s|that is|you\'re|you are|you)( .*)? (?:awesome|great|cool|nice|awesomesauce|perfect|the best)' => 'I know right!',
+        'you(.*)? sentient'                           => 'No no no. I am just a dumb bot. Carry one ---filthy human--- errrr master.',
+        '^what are you doing'                         => 'Nothing much. You?',
+        '^(what|who) are you'                         => 'I\'m a bot.',
+        'ask you (:?something|a question)'            => 'Sure. Shoot.',
+        'can you do something'                        => 'What do you want me to do?',
+        'can you do (?:a trick|tricks)'               => 'Type this code in your chat window: `<(?:"[^"]*"[\'"]*|\'[^\']*\'[\'"]*|[^\'">])+>`',
     ];
 
     public function __construct(ChatClient $chatClient)
@@ -57,7 +65,7 @@ class Terminator implements Plugin
     {
         foreach ($this->patterns as $pattern => $response) {
             if (preg_match('/' . $pattern . '/u', $this->normalizeText($conversation->getText())) === 1) {
-                return $response;
+                return $this->buildResponse($pattern, $response, $conversation->getText());
             }
         }
     }
@@ -65,6 +73,15 @@ class Terminator implements Plugin
     private function normalizeText(string $text)
     {
         return trim(strtolower($text));
+    }
+
+    private function buildResponse(string $pattern, string $response, string $conversationText): string
+    {
+        if (strpos($response, '$1') !== false) {
+            return preg_replace('/' . $pattern . '/u', $response, $this->normalizeText($conversationText));
+        }
+
+        return $response;
     }
 
     public function handleMessage(Message $message): Promise
