@@ -2,6 +2,8 @@
 
 namespace Room11\Jeeves\Chat;
 
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+
 interface Plugin
 {
     public function getName(): string;
@@ -56,7 +58,7 @@ interface Plugin
      */
     public function getMessageHandler() /* : ?callable */;
 
-    public function enableForRoom(string $roomIdent) /* : void */;
+    public function enableForRoom(ChatRoom $room, bool $persist) /* : void */;
 
-    public function disableForRoom(string $roomIdent) /* : void */;
+    public function disableForRoom(ChatRoom $room, bool $persist) /* : void */;
 }

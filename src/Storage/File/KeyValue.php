@@ -104,4 +104,48 @@ class KeyValue implements KeyValueStoreStorage
             return $data;
         }, $this->dataFileTemplate, $room);
     }
+
+    /**
+     * Determine whether a key exists in the data store
+     *
+     * @param ChatRoom|null $room
+     * @return Promise<bool>
+     */
+    public function clear(ChatRoom $room = null): Promise
+    {
+        return $this->accessor->writeCallback(function($data) {
+            unset($data[$this->partitionName]);
+            return $data;
+        }, $this->dataFileTemplate, $room);
+    }
+
+    /**
+     * Get the value from the data store for the specified key
+     *
+     * @param ChatRoom|null $room
+     * @return Promise<mixed>
+     * @throws \LogicException when the specified key does not exist
+     */
+    public function getAll(ChatRoom $room = null): Promise
+    {
+        return resolve(function() use($room) {
+            $data = yield $this->accessor->read($this->dataFileTemplate, $room);
+            return $data[$this->partitionName] ?? [];
+        });
+    }
+
+    /**
+     * Get the value from the data store for the specified key
+     *
+     * @param ChatRoom|null $room
+     * @return Promise<mixed>
+     * @throws \LogicException when the specified key does not exist
+     */
+    public function getKeys(ChatRoom $room = null): Promise
+    {
+        return resolve(function() use($room) {
+            $data = yield $this->accessor->read($this->dataFileTemplate, $room);
+            return array_keys($data[$this->partitionName] ?? []);
+        });
+    }
 }

@@ -20,6 +20,7 @@ use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
 use function Room11\DOMUtils\xpath_get_element;
 use function Room11\DOMUtils\xpath_get_elements;
+use Room11\Jeeves\MessageFetchFailureException;
 
 class ChatClient
 {
@@ -131,7 +132,11 @@ class ChatClient
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($url);
 
-            return $response->getBody();
+            if ($response->getStatus() !== 200) {
+                throw new MessageFetchFailureException("It doesn't working", $response->getStatus());
+            }
+            
+            return (string)$response->getBody();
         });
     }
 
@@ -143,7 +148,11 @@ class ChatClient
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($url);
 
-            return $response->getBody();
+            if ($response->getStatus() !== 200) {
+                throw new MessageFetchFailureException("It doesn't working", $response->getStatus());
+            }
+
+            return (string)$response->getBody();
         });
     }
 

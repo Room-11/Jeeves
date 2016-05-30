@@ -432,11 +432,13 @@ class PluginManager
             }
         }
 
-        $plugin->disableForRoom($roomId);
+        return resolve(function() use($plugin, $pluginName, $room, $persist) {
+            yield $this->invokeCallbackAsPromise([$plugin, 'disableForRoom'], $room, $persist);
 
-        return $persist
-            ? $this->pluginStorage->setPluginEnabled($room, $pluginName, false)
-            : new Success();
+            if ($persist) {
+                yield $this->pluginStorage->setPluginEnabled($room, $pluginName, false);
+            }
+        });
     }
 
     /**
@@ -473,11 +475,13 @@ class PluginManager
                 }
             }
 
-            $plugin->enableForRoom($roomId);
+            return resolve(function() use($plugin, $pluginName, $room, $persist) {
+                yield $this->invokeCallbackAsPromise([$plugin, 'enableForRoom'], $room, $persist);
 
-            return $persist
-                ? $this->pluginStorage->setPluginEnabled($room, $pluginName, true)
-                : new Success();
+                if ($persist) {
+                    yield $this->pluginStorage->setPluginEnabled($room, $pluginName, true);
+                }
+            });
         });
     }
 
