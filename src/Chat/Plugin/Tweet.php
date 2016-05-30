@@ -58,6 +58,7 @@ class Tweet implements Plugin
 
         $this->replaceEmphasizeTags($dom);
         $this->replaceStrikeTags($dom);
+        $this->replaceImages($dom);
         $this->replaceHrefs($dom);
 
         return $this->removePings($dom->textContent);
@@ -78,6 +79,17 @@ class Tweet implements Plugin
             $formattedNode = $dom->createTextNode("<strike>" . $node->textContent . "</strike>");
 
             $node->parentNode->replaceChild($formattedNode, $node);
+        }
+    }
+
+    private function replaceImages(\DOMDocument $dom)
+    {
+        foreach ($dom->getElementsByTagName('img') as $node) {
+            /** @var \DOMElement $node */
+
+            $formattedNode = $dom->createTextNode($node->getAttribute('src'));
+
+            $node->parentNode->parentNode->replaceChild($formattedNode, $node->parentNode);
         }
     }
 
