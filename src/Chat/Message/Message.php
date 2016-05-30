@@ -8,6 +8,7 @@ use Room11\Jeeves\Chat\Event\EditMessage;
 use Room11\Jeeves\Chat\Event\MentionMessage;
 use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\NewMessage;
+use Room11\Jeeves\Chat\Event\ReplyMessage;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class Message
@@ -21,6 +22,7 @@ class Message
         DeleteMessage::TYPE_ID => self::TYPE_DELETE,
         EditMessage::TYPE_ID => self::TYPE_EDIT,
         MentionMessage::TYPE_ID => self::TYPE_NEW,
+        ReplyMessage::TYPE_ID => self::TYPE_NEW,
     ];
 
     private $event;
