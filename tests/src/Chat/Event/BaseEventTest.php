@@ -7,13 +7,14 @@ use Room11\Jeeves\Chat\Event\Event;
 
 class BaseEventTest extends \PHPUnit_Framework_TestCase
 {
+    /** @var BaseEvent */
     private $event;
 
     public function setUp()
     {
-        $this->event = new class(2, 1005) extends BaseEvent {
-            public function __construct(int $eventId, int $timestamp) {
-                parent::__construct($eventId, $timestamp);
+        $this->event = new class(['id' => 2, 'time_stamp' => 1005]) extends BaseEvent {
+            public function __construct(array $data) {
+                parent::__construct($data);
             }
         };
     }
@@ -37,7 +38,7 @@ class BaseEventTest extends \PHPUnit_Framework_TestCase
     {
         $timestamp = $this->event->getTimestamp();
 
-        $this->assertInstanceOf(\DateTime::class, $timestamp);
+        $this->assertInstanceOf(\DateTimeImmutable::class, $timestamp);
         $this->assertSame('1970-01-01 00:16:45', $timestamp->format('Y-m-d H:i:s'));
     }
 }
