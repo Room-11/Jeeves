@@ -19,6 +19,7 @@ class Factory
         StarMessage::TYPE_ID => StarMessage::class,
         MentionMessage::TYPE_ID => MentionMessage::class,
         DeleteMessage::TYPE_ID => DeleteMessage::class,
+        ReplyMessage::TYPE_ID => ReplyMessage::class,
     ];
 
     /**

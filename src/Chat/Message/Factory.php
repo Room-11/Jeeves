@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Message;
 
 use Room11\Jeeves\Chat\Event\MentionMessage;
 use Room11\Jeeves\Chat\Event\MessageEvent;
+use Room11\Jeeves\Chat\Event\ReplyMessage;
 
 class Factory
 {
@@ -13,7 +14,7 @@ class Factory
             return new Command($event, $event->getRoom());
         }
 
-        if ($event instanceof MentionMessage) {
+        if ($event instanceof MentionMessage || $event instanceof ReplyMessage) {
             return new Conversation($event, $event->getRoom());
         }
 
