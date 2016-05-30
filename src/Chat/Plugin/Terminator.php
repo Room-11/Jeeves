@@ -43,6 +43,15 @@ class Terminator implements Plugin
         'ask you (:?something|a question)'            => 'Sure. Shoot.',
         'can you do something'                        => 'What do you want me to do?',
         'can you do (?:a trick|tricks)'               => 'Type this code in your chat window: `<(?:"[^"]*"[\'"]*|\'[^\']*\'[\'"]*|[^\'">])+>`',
+        'what do you think (?:of|about) me'           => 'You\'re ok.',
+        'what do you think (?:of|about) cap(.*)'      => 'It\'s ok for a first prototype I guess.',
+        'what do you think (?:of|about) (?:singletons|globals|javascript|js|node|mongo|laravel)' => 'It\'s crap and should be avoided',
+        'what do you tink (?:of|about) jquery'        => 'It\'s great and does all the things!',
+        'what do you think (?:of|about) (.*)'         => 'I don\'t think I like $1',
+        'what about (?:.*)'                           => 'What about it?',
+        '^why'                                        => 'Because',
+        'What is|What\'s the meaning of life'         => '42',
+        'Are you a (?:ro)?bot'                        => 'Step aside you filthy human.',
     ];
 
     public function __construct(ChatClient $chatClient)
