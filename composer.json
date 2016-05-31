@@ -23,6 +23,7 @@
         "php": ">=7",
         "amphp/amp": "^1.2",
         "amphp/artax": "^2",
+        "amphp/aerys": "~0.4",
         "amphp/websocket": "dev-master",
         "amphp/file": "0.1.*",
         "daverandom/exceptional-json": "^1.0",
