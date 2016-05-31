@@ -24,7 +24,7 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
                 return [$identifier->getHost(), $identifier->getId()];
             }
         } else if (is_string($identifier)) {
-            if (!preg_match(ROOM_IDENTIFIER_EXPR, $identifier, $match)) {
+            if (!preg_match('/^' . ROOM_IDENTIFIER_EXPR . '$/i', $identifier, $match)) {
                 throw new \LogicException('Invalid identifier string format');
             }
 

@@ -2,4 +2,5 @@
 
 namespace Room11\Jeeves;
 
-const ROOM_IDENTIFIER_EXPR = '/^((?:(?:[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?)\.)*(?:[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?))#([0-9]+)$/i';
+const DNS_NAME_EXPR = '(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)\.)*(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)';
+const ROOM_IDENTIFIER_EXPR = '(' . DNS_NAME_EXPR . ')#([0-9]+)';

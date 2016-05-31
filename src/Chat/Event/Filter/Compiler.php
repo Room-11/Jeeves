@@ -70,7 +70,7 @@ class Compiler
     private function processRoom(Condition $condition): array
     {
         if ($condition->getValueType() === Condition::VALUE_TYPE_SCALAR) {
-            if (!preg_match(ROOM_IDENTIFIER_EXPR, $condition->getScalarValue(), $match)) {
+            if (!preg_match('/^' . ROOM_IDENTIFIER_EXPR . '$/i', $condition->getScalarValue(), $match)) {
                 throw new CompileErrorException(
                     "Invalid room identifier '{$condition->getScalarValue()}' for field " . self::FIELD_ROOM
                 );
@@ -99,7 +99,7 @@ class Compiler
 
         $roomIds = $rooms = [];
         foreach ($condition->getSetMembers() as $roomSpec) {
-            if (!preg_match(ROOM_IDENTIFIER_EXPR, $roomSpec, $match)) {
+            if (!preg_match('/^' . ROOM_IDENTIFIER_EXPR . '$/i', $roomSpec, $match)) {
                 throw new CompileErrorException("
                     Invalid room identifier '{$condition->getScalarValue()}' for field " . self::FIELD_ROOM
                 );
