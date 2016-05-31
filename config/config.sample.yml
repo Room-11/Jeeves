@@ -17,11 +17,6 @@ rooms:
     secure: true
     id: 100286
 
-room:
-  hostname: chat.stackoverflow.com
-  secure: true
-  id: 100286
-
 logging:
   level: ALL | DEBUG
   handler: Room11\Jeeves\Log\StdOut
@@ -31,6 +26,7 @@ logging:
 storage:
   admin: Room11\Jeeves\Storage\File\Admin
   ban: Room11\Jeeves\Storage\File\Ban
+  keyvalue: Room11\Jeeves\Storage\File\KeyValue
   plugin: Room11\Jeeves\Storage\File\Plugin
 
 plugins:
@@ -40,6 +36,7 @@ plugins:
   - Room11\Jeeves\Chat\Plugin\Docs
   - Room11\Jeeves\Chat\Plugin\EvalCode
   - Room11\Jeeves\Chat\Plugin\Giphy
+  - Room11\Jeeves\Chat\Plugin\Github
   - Room11\Jeeves\Chat\Plugin\Google
   - Room11\Jeeves\Chat\Plugin\HttpRequester
   - Room11\Jeeves\Chat\Plugin\Imdb
@@ -50,8 +47,10 @@ plugins:
   - Room11\Jeeves\Chat\Plugin\PHPSrcGrok
   - Room11\Jeeves\Chat\Plugin\Rebecca
   - Room11\Jeeves\Chat\Plugin\Regex
+  - Room11\Jeeves\Chat\Plugin\RePinner
   - Room11\Jeeves\Chat\Plugin\RFC
   - Room11\Jeeves\Chat\Plugin\SwordFight
+  - Room11\Jeeves\Chat\Plugin\Terminator
   - Room11\Jeeves\Chat\Plugin\Tweet
   - Room11\Jeeves\Chat\Plugin\Urban
   - Room11\Jeeves\Chat\Plugin\Wikipedia
