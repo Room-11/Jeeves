@@ -3,22 +3,29 @@
 namespace Room11\Jeeves\Chat\Room;
 
 use Amp\Websocket\Endpoint as WebsocketEndpoint;
+use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 
 class Room
 {
     private $identifier;
     private $sessionInfo;
     private $websocketEndpoint;
+    private $keyValueStore;
 
     private static $endpointURLTemplates = [
         Endpoint::MAINSITE_USER => '%1$s/users/%2$d',
     ];
 
-    public function __construct(Identifier $identifier, SessionInfo $sessionInfo, WebsocketEndpoint $websocketEndpoint)
-    {
+    public function __construct(
+        Identifier $identifier,
+        SessionInfo $sessionInfo,
+        WebsocketEndpoint $websocketEndpoint,
+        KeyValueStore $keyValueStore
+    ) {
         $this->identifier = $identifier;
         $this->sessionInfo = $sessionInfo;
         $this->websocketEndpoint = $websocketEndpoint;
+        $this->keyValueStore = $keyValueStore;
     }
 
     public function getIdentifier(): Identifier
@@ -34,6 +41,11 @@ class Room
     public function getWebsocketEndpoint(): WebsocketEndpoint
     {
         return $this->websocketEndpoint;
+    }
+
+    public function getKeyValueStore(): KeyValueStore
+    {
+        return $this->keyValueStore;
     }
 
     public function getEndpointURL(int $endpoint, ...$extraData): string
