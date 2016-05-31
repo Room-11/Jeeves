@@ -41,7 +41,7 @@ $injector->alias(CookieJar::class, ArrayCookieJar::class);
 $injector->define(FileAdminStorage::class, [":dataFile" => DATA_BASE_DIR . "/admins.%s.json"]);
 $injector->define(FileBanStorage::class, [":dataFile" => DATA_BASE_DIR . "/bans.%s.json"]);
 $injector->define(FilePluginStorage::class, [":dataFile" => DATA_BASE_DIR . "/plugins.%s.json"]);
-$injector->define(FileKeyValueStorageFactory::class, [":dataFile" => DATA_BASE_DIR . "/keyvalue.%s.json"]);
+$injector->define(FileKeyValueStorageFactory::class, [":dataFileTemplate" => DATA_BASE_DIR . "/keyvalue.%s.json"]);
 
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);
