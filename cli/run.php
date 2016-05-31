@@ -3,6 +3,8 @@
 
 namespace Room11\Jeeves;
 
+use Aerys\Bootstrapper;
+use Aerys\Host;
 use Auryn\Injector;
 use Room11\Jeeves\External\BitlyClient;
 use Room11\Jeeves\BuiltInCommands\Admin as AdminBuiltIn;
@@ -16,6 +18,7 @@ use Room11\Jeeves\System\PluginManager;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\CredentialManager;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
+use Room11\Jeeves\Log\AerysLogger;
 use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
@@ -32,10 +35,12 @@ use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use Room11\Jeeves\External\TwitterCredentials;
 use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
+use Room11\Jeeves\WebAPI\Server as WebAPIServer;
 use Room11\OpenId\Credentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
 use Symfony\Component\Yaml\Yaml;
+use function Aerys\router;
 use function Amp\all;
 use function Amp\info;
 use function Amp\resolve;
@@ -164,9 +169,56 @@ foreach ($config['plugins'] ?? [] as $pluginClass) {
 /** @var ChatRoomConnector $connector */
 $connector = $injector->make(ChatRoomConnector::class);
 
+$server = null;
+if ($config['web-api']['enable'] ?? false) {
+    $host = new Host;
+
+    $sslEnabled = false;
+
+    if ($config['web-api']['ssl']['enable']) {
+        if (!isset($config['web-api']['ssl']['cert-path'])) {
+            throw new InvalidConfigurationException('SSL-enabled web API must define a certificate path');
+        }
+
+        $sslEnabled = true;
+        $sslCert = realpath($config['web-api']['ssl']['cert-path']);
+
+        if (!$sslCert) {
+            throw new InvalidConfigurationException('Invalid SSL certificate path');
+        }
+
+        $sslKey = null;
+        if (isset($config['web-api']['ssl']['key-path']) && !$sslKey = realpath($config['web-api']['ssl']['key-path'])) {
+            throw new InvalidConfigurationException('Invalid SSL key path');
+        }
+
+        $sslContext = $config['web-api']['ssl']['context'] ?? [];
+
+        $host->encrypt($sslCert, $sslKey, $sslContext);
+    }
+
+    $bindAddr = $config['web-api']['bind-addr'] ?? '127.0.0.1';
+    $bindPort = (int)($config['web-api']['bind-port'] ?? $sslEnabled ? 1337 : 1338);
+
+    $host->expose($bindAddr, $bindPort);
+
+    if (isset($config['web-api']['host'])) {
+        $host->name($config['web-api']['host']);
+    }
+
+    /** @var WebAPIServer $api */
+    $api = $injector->make(WebAPIServer::class);
+
+    $host->use($api->getRouter());
+
+    $server = (new Bootstrapper(function() use($host) {
+        return [$host];
+    }))->init(new AerysLogger($injector->make(Logger::class)));
+}
+
 try {
-    run(function () use ($connector, $handlerFactory, $websocketHandlers) {
-        $promises = [];
+    run(function () use ($server, $connector, $handlerFactory, $websocketHandlers) {
+        $promises = $server ? [$server->start()] : [];
 
         foreach ($websocketHandlers as $handler) {
             $promises[] = yield from $connector->connect($handler);
