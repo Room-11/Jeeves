@@ -40,10 +40,13 @@ class Rebecca implements Plugin
         $timeLeft = $this->getTimeUntilNextFriday();
 
         return sprintf(
-            'Only %d days, %d hours and %d minutes left until Rebeccaday, OMG!',
+            'Only %d %s, %d %s and %d %s left until Rebeccaday, OMG!',
             $timeLeft->days,
+            $timeLeft->days === 1 ? 'days' : 'day',
             $timeLeft->h,
-            $timeLeft->i
+            $timeLeft->h === 1 ? 'hours' : 'hour',
+            $timeLeft->i,
+            $timeLeft->i === 1 ? 'minutes' : 'minute'
         );
 
     }
