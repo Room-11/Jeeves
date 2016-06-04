@@ -61,6 +61,8 @@ class Docs implements Plugin
             . ' preferred for readability reasons.',
         '::' => '`::` is the [scope resolution operator](' . self::MANUAL_URL_BASE . '/language.oop5.paamayim-nekudotayim.php).'
             . ' It is used for accessing class members defined in a different class than the current scope.',
+        '?:' => '`?:` is the [ternary operator](' . self::MANUAL_URL_BASE . 'http://php.net/manual/en/language.operators.comparison.php#language.operators.comparison.ternary).'
+            . 'The expression (expr1) ? (expr2) : (expr3) evaluates to expr2 if expr1 evaluates to TRUE, and expr3 if expr1 evaluates to FALSE.'
 
         /* variables */
         '$_cookie' => 'The [`$_COOKIE`](' . self::MANUAL_URL_BASE . '/reserved.variables.cookie.php) superglobal variable'
