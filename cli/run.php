@@ -26,6 +26,7 @@ use Room11\Jeeves\Storage\File\Ban as FileBanStorage;
 use Room11\Jeeves\Storage\File\KeyValue as FileKeyValueStorage;
 use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStorage;
+use Room11\Jeeves\Storage\KeyValueFactory as KeyValueStorageFactory;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
 use Room11\Jeeves\WebSocket\Handler as WebSocketHandler;
@@ -60,6 +61,7 @@ require_once __DIR__ . '/setup-di.php';
 $injector->alias(AdminStorage::class,    $config['storage']['admin']    ?? FileAdminStorage::class);
 $injector->alias(BanStorage::class,      $config['storage']['ban']      ?? FileBanStorage::class);
 $injector->alias(KeyValueStorage::class, $config['storage']['keyvalue'] ?? FileKeyValueStorage::class);
+$injector->alias(KeyValueStorageFactory::class, ($config['storage']['keyvalue'] ?? FileKeyValueStorage::class) . 'Factory');
 $injector->alias(PluginStorage::class,   $config['storage']['plugin']   ?? FilePluginStorage::class);
 
 $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);

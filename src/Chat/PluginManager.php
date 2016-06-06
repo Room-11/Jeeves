@@ -455,6 +455,9 @@ class PluginManager
 
             $yesNo = $persist ? 'yes' : 'no';
             $this->logger->log(Level::DEBUG, "Enabling plugin '{$pluginName}' for room '{$roomId}' (persist = {$yesNo})");
+
+            yield $this->invokeCallbackAsPromise([$plugin, 'enableForRoom'], $room, $persist);
+
             $this->enabledPlugins[$roomId][$pluginName] = true;
 
             $commandMappings = yield $this->pluginStorage->getAllMappedCommands($room, $pluginName);
@@ -475,13 +478,9 @@ class PluginManager
                 }
             }
 
-            return resolve(function() use($plugin, $pluginName, $room, $persist) {
-                yield $this->invokeCallbackAsPromise([$plugin, 'enableForRoom'], $room, $persist);
-
-                if ($persist) {
-                    yield $this->pluginStorage->setPluginEnabled($room, $pluginName, true);
-                }
-            });
+            if ($persist) {
+                yield $this->pluginStorage->setPluginEnabled($room, $pluginName, true);
+            }
         });
     }
 
@@ -519,7 +518,7 @@ class PluginManager
         $roomId = $room !== null ? $room->getIdentifier()->getIdentString() : null;
 
         $endpoints = [];
-        
+
         foreach ($this->commandEndpoints[$pluginName] ?? [] as $endpoint) {
             $endpointData = [
                 'description'     => $endpoint->getDescription() ?? $plugin->getDescription(),
