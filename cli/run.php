@@ -19,6 +19,7 @@ use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
+use Room11\Jeeves\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\File\Admin as FileAdminStorage;
@@ -71,6 +72,11 @@ $injector->define(TwitterCredentials::class, [
     ':consumerSecret' => $config['twitter']['consumerSecret'],
     ':accessToken' => $config['twitter']['accessToken'],
     ':accessTokenSecret' => $config['twitter']['accessTokenSecret'],
+]);
+
+$injector->define(TranslationAPICredentials::class, [
+    ':clientId'     => $config['ms-translate']['client-id'] ?? '',
+    ':clientSecret' => $config['ms-translate']['client-secret'] ?? '',
 ]);
 
 $injector->delegate(Logger::class, function () use ($config) {
