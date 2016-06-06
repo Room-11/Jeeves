@@ -216,6 +216,8 @@ class Docs implements Plugin
         'type declarations' => '@hints',
         'variables' => '@vars',
         'yeild' => '@yield',
+        'ternary' => '@?:',
+        'ternarie' => '@?:',
     ];
 
     private $httpClient;
