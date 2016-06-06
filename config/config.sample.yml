@@ -65,3 +65,7 @@ twitter:
 
 bitly:
   accessToken: YourBitlyAccessToken
+
+ms-translate:
+  client-id: YourClientID
+  client-secret: YourClientSecret
