@@ -42,11 +42,11 @@ class Rebecca implements Plugin
         return sprintf(
             'Only %d %s, %d %s and %d %s left until Rebeccaday, OMG!',
             $timeLeft->days,
-            $timeLeft->days === 1 ? 'days' : 'day',
+            $timeLeft->days === 1 ? 'day' : 'days',
             $timeLeft->h,
-            $timeLeft->h === 1 ? 'hours' : 'hour',
+            $timeLeft->h === 1 ? 'hour' : 'hours',
             $timeLeft->i,
-            $timeLeft->i === 1 ? 'minutes' : 'minute'
+            $timeLeft->i === 1 ? 'minute' : 'minutes'
         );
 
     }
