@@ -148,7 +148,7 @@ class Handler implements Websocket
             }
 
             $chatMessage = null;
-            if ($event instanceof MessageEvent) {
+            if ($event instanceof MessageEvent && $event->getUserId() !== $this->room->getSessionInfo()->getUserId()) {
                 $chatMessage = $this->messageFactory->build($event);
 
                 if ($chatMessage instanceof Command) {
