@@ -6,6 +6,7 @@ use Amp\Promise;
 use function Amp\resolve;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -32,7 +33,7 @@ class Plugin implements BuiltInCommand
             $result .= "\n[{$check}] {$plugin->getName()} - {$plugin->getDescription()}";
         }
 
-        yield $this->chatClient->postMessage($command->getRoom(), $result, true);
+        yield $this->chatClient->postMessage($command->getRoom(), $result, PostFlags::FIXED_FONT);
     }
 
     private function listPluginEndpoints(string $plugin, CommandMessage $command): \Generator
@@ -61,7 +62,7 @@ class Plugin implements BuiltInCommand
             $result .= "\n[{$check}] {$name} - {$endpoint['description']} (Default command: {$endpoint['default_command']}, {$map})";
         }
 
-        yield $this->chatClient->postMessage($command->getRoom(), $result, true);
+        yield $this->chatClient->postMessage($command->getRoom(), $result, PostFlags::FIXED_FONT);
     }
 
     private function list(CommandMessage $command): Promise

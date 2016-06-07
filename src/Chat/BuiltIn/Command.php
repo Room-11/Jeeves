@@ -6,6 +6,7 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -245,7 +246,7 @@ class Command implements BuiltInCommand
             $result .= "\n {$cmd} - {$info['endpoint_description']} ({$info['plugin_name']} # {$info['endpoint_name']})";
         }
 
-        return $this->chatClient->postMessage($room, $result, true);
+        return $this->chatClient->postMessage($room, $result, PostFlags::FIXED_FONT);
     }
 
     public function __construct(

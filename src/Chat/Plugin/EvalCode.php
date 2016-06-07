@@ -12,6 +12,7 @@ use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostedMessage;
+use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
@@ -70,7 +71,8 @@ class EvalCode implements Plugin
                     $parsedResult["output"][0][0]["versions"],
                     htmlspecialchars_decode($parsedResult["output"][0][0]["output"]),
                     $snippetId
-                )
+                ),
+                PostFlags::SINGLE_LINE
             );
 
             if ($parsedResult["script"]["state"] !== "busy") {
@@ -90,25 +92,14 @@ class EvalCode implements Plugin
                     $parsedResult["output"][0][$i]["versions"],
                     htmlspecialchars_decode($parsedResult["output"][0][$i]["output"]),
                     $snippetId
-                )
+                ),
+                PostFlags::SINGLE_LINE
             );
         }
     }
 
     private function getMessageText(string $title, string $output, string $url): string {
-        return sprintf(
-            "[ [%s](%s) ] %s",
-            $title,
-            "https://3v4l.org" . $url,
-            $this->formatResult($output)
-        );
-    }
-
-    private function formatResult(string $result): string {
-        $result = str_replace(["\r\n", "\r", "\n"], " ", $result);
-        $result = str_replace("@", "@\u{200b}", $result);
-
-        return $result;
+        return sprintf('[ [%s](%s) ] %s', $title, 'https://3v4l.org' . $url, $output);
     }
 
     public function eval(Command $command): Promise
@@ -141,7 +132,8 @@ class EvalCode implements Plugin
                 $this->getMessageText(
                     "Waiting for results",
                     "",
-                    $response->getPreviousResponse()->getHeader("Location")[0])
+                    $response->getPreviousResponse()->getHeader("Location")[0]),
+                PostFlags::SINGLE_LINE
             );
 
             yield from $this->pollUntilDone(

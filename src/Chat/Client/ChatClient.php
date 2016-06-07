@@ -16,14 +16,17 @@ use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\MessageFetchFailureException;
 use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
 use function Room11\DOMUtils\xpath_get_element;
 use function Room11\DOMUtils\xpath_get_elements;
-use Room11\Jeeves\MessageFetchFailureException;
 
 class ChatClient
 {
+    const POST_FIXED_FONT  = 0b01;
+    const POST_STRIP_PINGS = 0b10;
+
     const MAX_POST_ATTEMPTS = 5;
 
     private $httpClient;
@@ -42,6 +45,21 @@ class ChatClient
         $this->postMutex = new QueuedExclusiveMutex();
         $this->editMutex = new QueuedExclusiveMutex();
         $this->starMutex  = new QueuedExclusiveMutex();
+    }
+
+    private function applyPostFlagsToText(string $text, int $flags)
+    {
+        if ($flags & PostFlags::SINGLE_LINE) {
+            $text = preg_replace('#\s+#', ' ', $text);
+        }
+        if ($flags & PostFlags::FIXED_FONT) {
+            $text = preg_replace('#(^|\r?\n)#', '$1    ', $text);
+        }
+        if (!($flags & PostFlags::ALLOW_PINGS)) {
+            $text = preg_replace('#(^|\s)@#', "$0\u{2060}", $text);
+        }
+
+        return $text;
     }
 
     public function getRoomOwners(ChatRoom $room): Promise
@@ -135,7 +153,7 @@ class ChatClient
             if ($response->getStatus() !== 200) {
                 throw new MessageFetchFailureException("It doesn't working", $response->getStatus());
             }
-            
+
             return (string)$response->getBody();
         });
     }
@@ -156,11 +174,9 @@ class ChatClient
         });
     }
 
-    public function postMessage(ChatRoom $room, string $text, bool $fixedFont = false): Promise
+    public function postMessage(ChatRoom $room, string $text, int $flags = 0): Promise
     {
-        if ($fixedFont) {
-            $text = preg_replace('#(^|\r?\n)#', '$1    ', $text);
-        }
+        $text = $this->applyPostFlagsToText($text, $flags);
 
         $body = (new FormBody)
             ->addField("text", rtrim($text)) // only rtrim an not trim, leading space may be legit
@@ -247,13 +263,15 @@ class ChatClient
         });
     }
 
-    public function postReply(Message $origin, string $text): Promise
+    public function postReply(Message $origin, string $text, int $flags = 0): Promise
     {
-        return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}");
+        return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}", $flags & ~PostFlags::FIXED_FONT);
     }
 
-    public function editMessage(PostedMessage $message, string $text): Promise
+    public function editMessage(PostedMessage $message, string $text, int $flags = 0): Promise
     {
+        $text = $this->applyPostFlagsToText($text, $flags);
+
         $body = (new FormBody)
             ->addField("text", $text)
             ->addField("fkey", (string)$message->getRoom()->getSessionInfo()->getFKey());
