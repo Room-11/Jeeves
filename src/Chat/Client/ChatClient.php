@@ -26,9 +26,6 @@ use function Room11\DOMUtils\xpath_get_elements;
 
 class ChatClient
 {
-    const POST_FIXED_FONT  = 0b01;
-    const POST_STRIP_PINGS = 0b10;
-
     const MAX_POST_ATTEMPTS = 5;
 
     private $httpClient;
@@ -151,7 +148,7 @@ class ChatClient
         });
     }
 
-    public function postMessage(ChatRoom $room, string $text, int $flags = 0): Promise
+    public function postMessage(ChatRoom $room, string $text, int $flags = PostFlags::NONE): Promise
     {
         $text = $this->applyPostFlagsToText($text, $flags);
 
@@ -240,12 +237,12 @@ class ChatClient
         });
     }
 
-    public function postReply(Message $origin, string $text, int $flags = 0): Promise
+    public function postReply(Message $origin, string $text, int $flags = PostFlags::NONE): Promise
     {
         return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}", $flags & ~PostFlags::FIXED_FONT);
     }
 
-    public function editMessage(PostedMessage $message, string $text, int $flags = 0): Promise
+    public function editMessage(PostedMessage $message, string $text, int $flags = PostFlags::NONE): Promise
     {
         $text = $this->applyPostFlagsToText($text, $flags);
 
