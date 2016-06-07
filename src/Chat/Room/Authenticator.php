@@ -134,7 +134,7 @@ class Authenticator
             throw new \RuntimeException('Could not find user ID for chat room: no user ID class');
         }
 
-        return (int)$match;
+        return (int)$match[1];
     }
 
     private function getWebSocketUri(Identifier $identifier, string $fKey): \Generator
