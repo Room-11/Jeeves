@@ -13,12 +13,11 @@ class Consumer
 {
     const AUTH_URL      = 'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13/';
     const BASE_URL      = 'http://api.microsofttranslator.com';
-    const DETECT_URL    = self::BASE_URL . '/V2/Http.svc/Detect?text=%s';
-    const TRANSLATE_URL = self::BASE_URL . '/V2/Http.svc/Translate?text=%s&from=%s&to=%s';
+    const SERVICE_URL    = self::BASE_URL . '/V2/Http.svc';
 
     private $httpClient;
 
-    private function sendRequestAndGetXMLTextContent(HttpRequest $request): \Generator
+    private function callApiMethod(HttpRequest $request, callable $transformCallback = null)
     {
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($request);
@@ -26,7 +25,32 @@ class Consumer
         $doc = new \DOMDocument;
         $doc->loadXML((string)$response->getBody());
 
-        return $doc->textContent;
+        return $transformCallback ? $transformCallback($doc) : $doc;
+    }
+
+    private function callApiGetMethod(string $accessToken, string $method, array $params = null, callable $transformCallback = null): Promise
+    {
+        $url = self::SERVICE_URL . '/' . $method . ($params ? '?' . http_build_query($params) : '');
+
+        $request = (new HttpRequest)
+            ->setUri($url)
+            ->setHeader('Authorization', 'Bearer ' . $accessToken);
+
+        return resolve($this->callApiMethod($request, $transformCallback));
+    }
+
+    private function callApiPostMethod(string $accessToken, string $method, \DOMDocument $document, callable $transformCallback = null): Promise
+    {
+        $url = self::SERVICE_URL . '/' . $method;
+
+        $request = (new HttpRequest)
+            ->setUri($url)
+            ->setMethod('POST')
+            ->setHeader('Authorization', 'Bearer ' . $accessToken)
+            ->setHeader('Content-Type', 'text/xml')
+            ->setBody($document->saveXML());
+
+        return resolve($this->callApiMethod($request, $transformCallback));
     }
 
     public function __construct(HttpClient $httpClient)
@@ -60,25 +84,48 @@ class Consumer
         });
     }
 
+    public function getSupportedLanguages(string $accessToken, string $locale = 'en'): Promise
+    {
+        return resolve(function() use($accessToken, $locale) {
+            /** @var \DOMDocument $doc */
+            $doc = yield $this->callApiGetMethod($accessToken, 'GetLanguagesForTranslate');
+
+            $codes = [];
+            foreach ($doc->getElementsByTagName('string') as $string) {
+                $codes[] = $string->textContent;
+            }
+
+            $doc = yield $this->callApiPostMethod($accessToken, 'GetLanguageNames?locale=' . urlencode($locale), $doc);
+
+            $languages = [];
+            foreach ($doc->getElementsByTagName('string') as $i => $string) {
+                $languages[$codes[$i]] = $string->textContent;
+            }
+
+            asort($languages);
+            return $languages;
+        });
+    }
+
     public function detectLanguage(string $accessToken, string $text): Promise
     {
-        $url = sprintf(self::DETECT_URL, urlencode($text));
+        $args = ['text' => $text];
 
-        $request = (new HttpRequest)
-            ->setUri($url)
-            ->setHeader('Authorization', 'Bearer ' . $accessToken);
-
-        return resolve($this->sendRequestAndGetXMLTextContent($request));
+        return $this->callApiGetMethod($accessToken, 'Detect', $args, function(\DOMDocument $doc) {
+            return $doc->textContent;
+        });
     }
 
     public function getTranslation(string $accessToken, string $text, string $from, string $to): Promise
     {
-        $url = sprintf(self::TRANSLATE_URL, urlencode($text), urlencode($from), urlencode($to));
+        $args = [
+            'text' => $text,
+            'from' => $from,
+            'to' => $to,
+        ];
 
-        $request = (new HttpRequest)
-            ->setUri($url)
-            ->setHeader('Authorization', 'Bearer ' . $accessToken);
-
-        return resolve($this->sendRequestAndGetXMLTextContent($request));
+        return $this->callApiGetMethod($accessToken, 'Translate', $args, function(\DOMDocument $doc) {
+            return $doc->textContent;
+        });
     }
 }
