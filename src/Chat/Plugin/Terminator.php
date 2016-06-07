@@ -51,7 +51,7 @@ class Terminator implements Plugin
         'what about (?:.*)'                           => 'What about it?',
         '^why'                                        => 'Because',
         'What is|What\'s the meaning of life'         => '42',
-        'Are you a (?:ro)?bot'                        => 'Step aside you filthy human.',
+        '(?:Are )you a (?:ro)?bot'                        => 'Step aside you filthy human.',
     ];
 
     public function __construct(ChatClient $chatClient)
@@ -62,7 +62,7 @@ class Terminator implements Plugin
     private function isMatch(Conversation $conversation): bool
     {
          foreach ($this->patterns as $pattern => $response) {
-            if (preg_match('/' . $pattern . '/u', $this->normalizeText($conversation->getText())) === 1) {
+            if (preg_match('/' . $pattern . '/iu', $this->normalizeText($conversation->getText())) === 1) {
                 return true;
             }
         }
@@ -73,7 +73,7 @@ class Terminator implements Plugin
     private function getResponse(Conversation $conversation): string
     {
         foreach ($this->patterns as $pattern => $response) {
-            if (preg_match('/' . $pattern . '/u', $this->normalizeText($conversation->getText())) === 1) {
+            if (preg_match('/' . $pattern . '/iu', $this->normalizeText($conversation->getText())) === 1) {
                 return $this->buildResponse($pattern, $response, $conversation->getText());
             }
         }
@@ -87,7 +87,7 @@ class Terminator implements Plugin
     private function buildResponse(string $pattern, string $response, string $conversationText): string
     {
         if (strpos($response, '$1') !== false) {
-            return preg_replace('/' . $pattern . '/u', $response, $this->normalizeText($conversationText));
+            return preg_replace('/' . $pattern . '/iu', $response, $this->normalizeText($conversationText));
         }
 
         return $response;
