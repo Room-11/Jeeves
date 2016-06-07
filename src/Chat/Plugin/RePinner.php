@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostedMessage;
+use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Event\StarMessage as StarMessageEvent;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
@@ -53,7 +53,7 @@ class RePinner implements Plugin
 
     public function repin(Command $command): \Generator
     {
-        $owners = yield $this->chatClient->getRoomOwners($command->getRoom());
+        $owners = yield $this->chatClient->getRoomOwnerIds($command->getRoom());
 
         if (!isset($owners[$command->getUserId()])) {
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
@@ -90,7 +90,7 @@ class RePinner implements Plugin
 
     public function unpin(Command $command)
     {
-        $owners = yield $this->chatClient->getRoomOwners($command->getRoom());
+        $owners = yield $this->chatClient->getRoomOwnerIds($command->getRoom());
 
         if (!isset($owners[$command->getUserId()])) {
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");

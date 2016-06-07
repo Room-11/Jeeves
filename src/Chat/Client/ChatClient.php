@@ -11,6 +11,8 @@ use Amp\Pause;
 use Amp\Promise;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\DOMUtils\ElementNotFoundException;
+use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Client\Entities\User;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
@@ -62,7 +64,7 @@ class ChatClient
         return $text;
     }
 
-    public function getRoomOwners(ChatRoom $room): Promise
+    public function getRoomOwnerIds(ChatRoom $room): Promise
     {
         return resolve(function() use($room) {
             $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_INFO_ACCESS);
@@ -94,51 +96,26 @@ class ChatClient
         });
     }
 
-    public function getChatUser(ChatRoom $room, int $id): Promise
+    public function getChatUsers(ChatRoom $room, int ...$ids): Promise
     {
-        return resolve(function() use($room, $id) {
-            $result = ['id' => $id];
+        $url = $room->getEndpointURL(ChatRoomEndpoint::CHAT_USER_INFO);
 
-            $url = $room->getEndpointURL(ChatRoomEndpoint::CHAT_USER, $id);
+        $body = (new FormBody)
+            ->addField('roomId', $room->getIdentifier()->getId())
+            ->addField('ids', implode(',', $ids));
 
-            /** @var HttpResponse $reponse */
-            $reponse = yield $this->httpClient->request($url);
+        $request = (new HttpRequest)
+            ->setMethod('POST')
+            ->setUri($url)
+            ->setBody($body);
 
-            $doc = domdocument_load_html($reponse->getBody());
+        return resolve(function() use($request) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($request);
 
-            $cardEl = xpath_get_element($doc, "//div[contains(concat(' ', normalize-space(@class), ' '), ' usercard-xxl ')]/table");
-
-            $result['avatar_url'] = xpath_get_element($cardEl, ".//img[contains(concat(' ', normalize-space(@class), ' '), ' user-gravatar-128 ')]")->getAttribute('src');
-            if (substr($result['avatar_url'], 0, 2) === '//') {
-                $result['avatar_url'] = 'http' . ($room->getIdentifier()->isSecure() ? 's' : '') . ':' . $result['avatar_url'];
-            }
-
-            $result['username'] = xpath_get_element($cardEl, ".//td/div[contains(concat(' ', normalize-space(@class), ' '), ' user-status ')]")->textContent;
-
-            foreach (xpath_get_elements($cardEl, './/td/table//tr') as $rowEl) {
-                $key = xpath_get_element($rowEl, "./td[contains(concat(' ', normalize-space(@class), ' '), ' user-keycell ')]")->textContent;
-                $value = xpath_get_element($rowEl, "./td[contains(concat(' ', normalize-space(@class), ' '), ' user-valuecell ')]");
-
-                switch (trim(strtolower($key))) {
-                    case 'chat user since':
-                        $result['chat_user_since'] = \DateTimeImmutable::createFromFormat('Y-m-d', $value->textContent);
-                        break;
-
-                    case 'last message':
-                        $result['last_message'] = $value->textContent;
-                        break;
-
-                    case 'last seen':
-                        $result['last_seen'] = $value->textContent;
-                        break;
-
-                    case 'about':
-                        $result['about'] = trim($value->textContent);
-                        break;
-                }
-            }
-
-            return $result;
+            return array_map(function($data) {
+                return new User($data);
+            }, json_try_decode($response->getBody(), true)['users'] ?? []);
         });
     }
 

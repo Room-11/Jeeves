@@ -11,7 +11,7 @@ use Amp\Pause;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostedMessage;
+use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;

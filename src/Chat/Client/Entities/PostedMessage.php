@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\Chat\Client;
+namespace Room11\Jeeves\Chat\Client\Entities;
 
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 

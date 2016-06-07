@@ -7,8 +7,8 @@ use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\Entities\User;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\all;
 use function Amp\resolve;
@@ -42,15 +42,15 @@ class Admin implements BuiltInCommand
             }
 
             $userIds = array_merge($admins['owners'], $admins['admins']);
-            $userNames = array_map(function($profile) use($admins) {
-                return in_array($profile['id'], $admins['owners'])
-                    ? '*' . $profile['username'] . '*'
-                    : $profile['username'];
-            }, yield from $this->getUserData($command->getRoom(), $userIds));
 
-            usort($userNames, function ($a, $b) { return strcasecmp(trim($a, '*'), trim($b, '*')); });
+            $users = yield $this->chatClient->getChatUsers($command->getRoom(), ...$userIds);
+            usort($users, function (User $a, User $b) { return strcasecmp($a->getName(), $b->getName()); });
 
-            $list = implode(", ", $userNames);
+            $list = implode(', ', array_map(function(User $user) use($admins) {
+                return in_array($user->getId(), $admins['owners'])
+                    ? '*' . $user->getName() . '*'
+                    : $user->getName();
+            }, $users));
 
             return $this->chatClient->postMessage($command->getRoom(), $list);
         });
@@ -90,13 +90,6 @@ class Admin implements BuiltInCommand
 
             return $this->chatClient->postMessage($command->getRoom(), "User removed from the admin list.");
         });
-    }
-
-    private function getUserData(ChatRoom $room, array $userIds): \Generator
-    {
-        return yield all(array_map(function($userId) use($room) {
-            return $this->chatClient->getChatUser($room, $userId);
-        }, $userIds));
     }
 
     /**
