@@ -18,6 +18,8 @@ use function Room11\DOMUtils\domdocument_load_html;
 use function Room11\DOMUtils\xpath_get_element;
 use function Room11\DOMUtils\xpath_get_elements;
 
+class OpenGrokSearchFailureException extends \RuntimeException {}
+
 class PHPSrcGrok implements Plugin
 {
     use CommandOnly;
