@@ -15,6 +15,7 @@ use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\Entities\User;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
+use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
@@ -61,6 +62,21 @@ class ChatClient
         return $text;
     }
 
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $arg
+     * @return ChatRoomIdentifier
+     */
+    private function getIdentifierFromArg($arg): ChatRoomIdentifier
+    {
+        if ($arg instanceof ChatRoom) {
+            return $arg->getIdentifier();
+        } else if ($arg instanceof ChatRoomIdentifier) {
+            return $arg;
+        }
+
+        throw new \InvalidArgumentException('Invalid chat room identifier');
+    }
+
     public function getRoomOwnerIds(ChatRoom $room): Promise
     {
         return resolve(function() use($room) {
@@ -93,12 +109,18 @@ class ChatClient
         });
     }
 
-    public function getChatUsers(ChatRoom $room, int ...$ids): Promise
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param int[] ...$ids
+     * @return Promise
+     */
+    public function getChatUsers($room, int ...$ids): Promise
     {
-        $url = $room->getEndpointURL(ChatRoomEndpoint::CHAT_USER_INFO);
+        $identifier = $this->getIdentifierFromArg($room);
+        $url = $identifier->getEndpointUrl(ChatRoomEndpoint::CHAT_USER_INFO);
 
         $body = (new FormBody)
-            ->addField('roomId', $room->getIdentifier()->getId())
+            ->addField('roomId', $identifier->getId())
             ->addField('ids', implode(',', $ids));
 
         $request = (new HttpRequest)

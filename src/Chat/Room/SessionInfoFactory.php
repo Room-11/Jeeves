@@ -2,10 +2,12 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
+use Room11\Jeeves\Chat\Client\Entities\User;
+
 class SessionInfoFactory
 {
-    public function build(int $userId, string $fkey, string $mainSiteUrl, string $webSocketUrl)
+    public function build(User $user, string $fkey, string $mainSiteUrl, string $webSocketUrl)
     {
-        return new SessionInfo($userId, $fkey, $mainSiteUrl, $webSocketUrl);
+        return new SessionInfo($user, $fkey, $mainSiteUrl, $webSocketUrl);
     }
 }
