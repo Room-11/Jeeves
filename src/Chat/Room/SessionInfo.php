@@ -11,6 +11,7 @@ class SessionInfo
 
     public function __construct(int $userId, string $fkey, string $mainSiteUrl, string $webSocketUrl)
     {
+        $this->userId = $userId;
         $this->fkey = $fkey;
         $this->mainSiteUrl = $mainSiteUrl;
         $this->webSocketUrl = $webSocketUrl;
