@@ -6,7 +6,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Plugin;
 
-class Annoyatron implements Plugin
+class JeevesDad implements Plugin
 {
     use Plugin\Traits\NoDisableEnable, Plugin\Traits\NoCommands, Plugin\Traits\NoEventHandlers;
 
@@ -21,7 +21,7 @@ class Annoyatron implements Plugin
 
     public function handleMessage(Message $message)
     {
-        if (!preg_match('#^i\'m\s+(.+?)\s*(?:[.,!]|$)#i', $message->getText(), $match)) {
+        if (!preg_match('#(?:i\'m|i am)\s+(.+?)\s*(?:[.,!]|$)#i', $message->getText(), $match)) {
             return;
         }
 
@@ -42,7 +42,7 @@ class Annoyatron implements Plugin
 
     public function getName(): string
     {
-        return 'Annoyatron';
+        return 'JeevesDad';
     }
 
     public function getDescription(): string
