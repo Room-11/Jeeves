@@ -33,6 +33,8 @@ class Handler implements Websocket
 {
     const MAX_RECONNECT_ATTEMPTS = 1500; // a little over 1 day, in practice
 
+    const HEARTBEAT_TIMEOUT_SECONDS = 40;
+
     private $eventFactory;
     private $messageFactory;
     private $roomConnector;
@@ -87,13 +89,13 @@ class Handler implements Websocket
         }
     }
 
-    private function setTimeoutWatcher()
+    private function setTimeoutWatcher(int $secs = self::HEARTBEAT_TIMEOUT_SECONDS)
     {
         $this->timeoutWatcherId = once(function() {
             $this->logger->log(Level::DEBUG, "Connection to {$this->roomIdentifier} timed out");
 
             $this->room->getWebsocketEndpoint()->close();
-        }, 40000);
+        }, $secs * 1000);
 
         $this->logger->log(Level::DEBUG, "Created timeout watcher #{$this->timeoutWatcherId}");
     }
@@ -111,7 +113,10 @@ class Handler implements Websocket
     public function onOpen(WebsocketEndpoint $endpoint, array $headers): Promise {
         $this->logger->log(Level::DEBUG, "Connection to {$this->roomIdentifier} established");
 
-        $this->setTimeoutWatcher();
+        // we expect a heartbeat message from the server immediately on connect, if we don't get one then try again
+        // this seems to happen a lot while testing, I'm not sure if it's an issue with the server or us (it's
+        // probably us)
+        $this->setTimeoutWatcher(2);
 
         $this->room = $this->roomFactory->build($this->roomIdentifier, $this->sessionInfo, $endpoint);
         $this->rooms->add($this->room);
