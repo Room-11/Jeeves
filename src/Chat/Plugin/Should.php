@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Plugin;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
@@ -42,15 +43,25 @@ class Should implements Plugin
 
     public function should(Command $command): Promise
     {
-        if (preg_match('~(\S+?) (.*?) or (.*?)(?:\?|$)~i', implode(" ", $command->getParameters()), $match)) {
-            $answer = random_int(0, 1) ? $match[2] : $match[3];
-            $person = strtolower($match[1]) === "i" ? "You" : "@{$match[1]}";
-            $reply = "{$person} should {$answer}.";
-
-            return $this->chatClient->postMessage($command->getRoom(), $reply);
+        if (!preg_match('~(\S+?) (.*?) or (.*?)(?:\?|$)~i', implode(" ", $command->getParameters()), $match)) {
+            return $this->chatClient->postMessage($command->getRoom(), "Dunno.");
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), "Dunno.");
+        $answer = random_int(0, 1) ? $match[2] : $match[3];
+
+        $flags = PostFlags::NONE;
+        if (strtolower($match[1]) === 'i') {
+            $person = 'You';
+        } else if ($match[1][0] === '@') {
+            $person = $match[1];
+        } else {
+            $person = "@{$match[1]}";
+            $flags |= PostFlags::ALLOW_PINGS;
+        }
+
+        $reply = "{$person} should {$answer}.";
+
+        return $this->chatClient->postMessage($command->getRoom(), $reply, $flags);
     }
 
     public function is(Command $command): Promise
