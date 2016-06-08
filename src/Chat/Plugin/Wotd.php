@@ -7,13 +7,15 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Wotd implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     const API_URL = 'http://www.dictionary.com/wordoftheday/wotd.rss';
 
@@ -48,19 +50,9 @@ class Wotd implements Plugin
         return $this->chatClient->postMessage($command->getRoom(), $this->getMessage($response));
     }
 
-    public function getName(): string
-    {
-        return 'WOTD';
-    }
-
     public function getDescription(): string
     {
         return 'Gets the Word Of The Day from dictionary.com';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

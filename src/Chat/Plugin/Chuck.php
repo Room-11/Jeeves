@@ -8,10 +8,11 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Chuck implements Plugin {
-    use CommandOnly;
+    use CommandOnly, Helpless;
 
     const API_URL = 'http://api.icndb.com/jokes/random/';
 
@@ -72,11 +73,6 @@ class Chuck implements Plugin {
     public function getDescription(): string
     {
         return 'Posts a random Chuck Norris/Jon Skeet joke on request';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

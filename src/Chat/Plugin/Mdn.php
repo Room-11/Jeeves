@@ -9,11 +9,13 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Mdn implements Plugin {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     private $chatClient;
 
@@ -59,19 +61,9 @@ class Mdn implements Plugin {
         return $this->postResult($command, $result["documents"][0]);
     }
 
-    public function getName(): string
-    {
-        return 'MDN';
-    }
-
     public function getDescription(): string
     {
         return 'Fetches manual entries from the Mozilla Developer Network';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

@@ -10,12 +10,14 @@ use function Amp\resolve;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint; // interface does not have option constants :-(
 
 class HttpRequester implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     const FLAGS = ['chrome', 'firefox', 'googlebot', 'nofollow'];
 
@@ -134,19 +136,9 @@ class HttpRequester implements Plugin
         return resolve($this->getResult($request, $command));
     }
 
-    public function getName(): string
-    {
-        return 'HTTPRequester';
-    }
-
     public function getDescription(): string
     {
         return 'Sends HTTP requests and displays the headers of the response';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

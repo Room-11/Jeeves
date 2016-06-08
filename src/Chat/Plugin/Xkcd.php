@@ -8,11 +8,12 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Xkcd implements Plugin {
-    use CommandOnly;
+    use CommandOnly, Helpless;
 
     const NOT_FOUND_COMIC = 'https://xkcd.com/1334/';
 
@@ -64,11 +65,6 @@ class Xkcd implements Plugin {
     public function getDescription(): string
     {
         return 'Searches for relevant comics from xkcd and posts them as a onebox';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

@@ -6,6 +6,8 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\Plugin\Traits\NoDisable;
 use Room11\Jeeves\Chat\Plugin\Traits\NoEventHandlers;
 use Room11\Jeeves\Chat\Plugin\Traits\NoMessageHandler;
@@ -17,7 +19,7 @@ use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 
 class Translate implements Plugin
 {
-    use NoMessageHandler, NoEventHandlers, NoDisable;
+    use NoMessageHandler, NoEventHandlers, NoDisable, AutoName, Helpless;
 
     const ACCESS_TOKEN_LIFETIME = 580; // really 10 minutes but this should avoid us needing to handle expired tokens
 
@@ -159,19 +161,9 @@ class Translate implements Plugin
         return $this->chatClient->postMessage($command->getRoom(), $translation);
     }
 
-    public function getName(): string
-    {
-        return 'Translate';
-    }
-
     public function getDescription(): string
     {
         return 'Translates text another language';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

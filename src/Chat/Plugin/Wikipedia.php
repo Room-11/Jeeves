@@ -8,12 +8,14 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Wikipedia implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     private $chatClient;
 
@@ -52,19 +54,9 @@ class Wikipedia implements Plugin
         return $this->chatClient->postMessage($command->getRoom(), $page['query']['pages'][$result['pageid']]['canonicalurl']);
     }
 
-    public function getName(): string
-    {
-        return 'Wikipedia';
-    }
-
     public function getDescription(): string
     {
         return 'Looks up wikipedia entries and posts onebox links';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

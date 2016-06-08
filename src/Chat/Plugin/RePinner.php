@@ -8,6 +8,8 @@ use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Event\StarMessage as StarMessageEvent;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\Plugin\Traits\NoMessageHandler;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
@@ -16,14 +18,13 @@ use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 
 class RePinner implements Plugin
 {
-    use NoMessageHandler;
+    use NoMessageHandler, AutoName, Helpless;
 
     private $chatClient;
     private $keyValueStore;
 
     public function __construct(ChatClient $chatClient, KeyValueStore $keyValueStore)
     {
-
         $this->chatClient = $chatClient;
         $this->keyValueStore = $keyValueStore;
     }
@@ -122,19 +123,9 @@ class RePinner implements Plugin
         );
     }
 
-    public function getName(): string
-    {
-        return 'RePinner';
-    }
-
     public function getDescription(): string
     {
         return 'Re-pins chat messages';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

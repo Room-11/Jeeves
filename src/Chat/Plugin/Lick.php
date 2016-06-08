@@ -6,12 +6,14 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Lick implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     const RESPONSES = [
         "Eeeeeeew",
@@ -36,19 +38,9 @@ class Lick implements Plugin
         return $this->chatClient->postReply($command, $this->getRandomReply());
     }
 
-    public function getName(): string
-    {
-        return 'Lick';
-    }
-
     public function getDescription(): string
     {
         return 'Implements the Lickable interface';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

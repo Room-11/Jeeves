@@ -5,10 +5,15 @@ namespace Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
+use Room11\Jeeves\Chat\Plugin\Traits\NoCommands;
+use Room11\Jeeves\Chat\Plugin\Traits\NoDisableEnable;
+use Room11\Jeeves\Chat\Plugin\Traits\NoEventHandlers;
 
 class JeevesDad implements Plugin
 {
-    use Plugin\Traits\NoDisableEnable, Plugin\Traits\NoCommands, Plugin\Traits\NoEventHandlers;
+    use NoCommands, NoEventHandlers, NoDisableEnable, AutoName, Helpless;
 
     const FREQUENCY = 10;
 
@@ -40,19 +45,9 @@ class JeevesDad implements Plugin
         yield $this->chatClient->postReply($message, $reply);
     }
 
-    public function getName(): string
-    {
-        return 'JeevesDad';
-    }
-
     public function getDescription(): string
     {
         return 'Is really annoying';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

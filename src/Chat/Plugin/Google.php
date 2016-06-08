@@ -9,13 +9,15 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Amp\all;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Google implements Plugin {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     const ENCODING = "UTF-8";
     const ELLIPSIS = "\xE2\x80\xA6";
@@ -163,19 +165,9 @@ class Google implements Plugin {
         return $this->chatClient->postMessage($command->getRoom(),$postMessage);
     }
 
-    public function getName(): string
-    {
-        return 'Google';
-    }
-
     public function getDescription(): string
     {
         return 'Retrieves and displays search results from Google';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

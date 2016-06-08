@@ -8,11 +8,12 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Canon implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, Helpless;
 
     // we need shortened links because otherwise we will hit the chat message length
     const CANONS = [
@@ -91,11 +92,6 @@ class Canon implements Plugin
     public function getDescription(): string
     {
         return 'Posts links to canonical resources on various subjects';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     public function getCommandEndpoints(): array

@@ -147,7 +147,9 @@ foreach ($builtInCommands as $command) {
 }
 
 foreach ($config['plugins'] ?? [] as $pluginClass) {
-    if (!is_a($pluginClass, Plugin::class, true)) {
+    if (!class_exists($pluginClass)) {
+        throw new \LogicException("Plugin class {$pluginClass} does not exist");
+    } else if (!is_a($pluginClass, Plugin::class, true)) {
         throw new \LogicException("Plugin class {$pluginClass} does not implement " . Plugin::class);
     }
 

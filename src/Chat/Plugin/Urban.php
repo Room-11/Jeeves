@@ -8,12 +8,14 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Urban implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     private $chatClient;
 
@@ -56,19 +58,9 @@ class Urban implements Plugin
         return $this->chatClient->postMessage($command->getRoom(), $this->getMessage($result));
     }
 
-    public function getName(): string
-    {
-        return 'Urban';
-    }
-
     public function getDescription(): string
     {
         return 'Looks up entries from urbandictionary.com';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

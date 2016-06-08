@@ -7,12 +7,14 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Should implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     const RESPONSES = [
         "yes" => [
@@ -82,19 +84,9 @@ class Should implements Plugin
         return self::RESPONSES[$answer][random_int(0, (count(self::RESPONSES[$answer]) - 1))];
     }
 
-    public function getName(): string
-    {
-        return 'Should';
-    }
-
     public function getDescription(): string
     {
         return 'Should I write a description or rather not?';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

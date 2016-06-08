@@ -7,12 +7,14 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Regex implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     const HE_COMES = "\x48\xCD\xA8\xCD\x8A\xCC\xBD\xCC\x85\xCC\xBE\xCC\x8E\xCC\xA1\xCC\xB8\xCC\xAA\xCC\xAF\x45\xCC\xBE"
                    . "\xCD\x9B\xCD\xAA\xCD\x84\xCC\x80\xCC\x81\xCC\xA7\xCD\x98\xCC\xAC\xCC\xA9\x20\xCD\xA7\xCC\xBE\xCD"
@@ -99,19 +101,9 @@ class Regex implements Plugin
         );
     }
 
-    public function getName(): string
-    {
-        return 'Regex';
-    }
-
     public function getDescription(): string
     {
         return 'Evaluates regular expressions with PCRE';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

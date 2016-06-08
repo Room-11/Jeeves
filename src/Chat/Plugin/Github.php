@@ -6,13 +6,15 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 
 class Github implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     private $chatClient;
     private $httpClient;
@@ -142,19 +144,9 @@ class Github implements Plugin
         );
     }
 
-    public function getName(): string
-    {
-        return 'Github';
-    }
-
     public function getDescription(): string
     {
         return 'Displays Github status, profile, or repo information';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

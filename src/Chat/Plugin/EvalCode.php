@@ -16,12 +16,13 @@ use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class EvalCode implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, Helpless;
 
     // limit the number of requests while polling for results
     const REQUEST_LIMIT = 20;
@@ -151,11 +152,6 @@ class EvalCode implements Plugin
     public function getDescription(): string
     {
         return 'Executes code snippets on 3v4l.org and displays the output';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

@@ -9,13 +9,15 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Man implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     private $chatClient;
 
@@ -100,19 +102,9 @@ class Man implements Plugin
         return $this->postResult($command, $xpath, $response->getRequest()->getUri());
     }
 
-    public function getName(): string
-    {
-        return 'Man';
-    }
-
     public function getDescription(): string
     {
         return 'Fetches manual entries from freebsd.org';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

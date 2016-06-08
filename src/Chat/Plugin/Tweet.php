@@ -10,6 +10,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Twitter\Credentials;
@@ -17,7 +18,7 @@ use function Room11\DOMUtils\domdocument_load_html;
 
 class Tweet implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, Helpless;
 
     const BASE_URI = "https://api.twitter.com/1.1";
 
@@ -244,11 +245,6 @@ class Tweet implements Plugin
     public function getDescription(): string
     {
         return 'Tweets chat messages';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

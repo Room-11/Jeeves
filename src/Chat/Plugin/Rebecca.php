@@ -6,12 +6,14 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Rebecca implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, AutoName, Helpless;
 
     const VIDEO_URL = 'https://www.youtube.com/watch?v=kfVsfOSbJY0';
 
@@ -62,11 +64,6 @@ class Rebecca implements Plugin
     public function gottaGetDownOnFriday(Command $command): Promise
     {
         return $this->chatClient->postReply($command, $this->getRebeccaLinkIfFriday());
-    }
-
-    public function getName(): string
-    {
-        return 'Rebecca';
     }
 
     public function getDescription(): string
@@ -164,11 +161,6 @@ class Rebecca implements Plugin
         ];
 
         return $descriptions[array_rand($descriptions)];
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

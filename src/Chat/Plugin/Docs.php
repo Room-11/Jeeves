@@ -11,6 +11,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Plugin;
 use Room11\Jeeves\Chat\Plugin\Traits\CommandOnly;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
@@ -18,7 +19,7 @@ class NoComprendeException extends \RuntimeException {}
 
 class Docs implements Plugin
 {
-    use CommandOnly;
+    use CommandOnly, Helpless;
 
     const URL_BASE = 'http://php.net';
     const LOOKUP_URL_BASE = self::URL_BASE . '/manual-lookup.php?scope=quickref&pattern=';
@@ -482,11 +483,6 @@ class Docs implements Plugin
     public function getDescription(): string
     {
         return 'Searches the PHP manual and displays links with a summary of the result';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**

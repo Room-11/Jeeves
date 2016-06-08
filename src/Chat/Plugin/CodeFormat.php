@@ -7,12 +7,14 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Event\NewMessage;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Chat\Plugin\Traits\AutoName;
+use Room11\Jeeves\Chat\Plugin\Traits\Helpless;
 use Room11\Jeeves\Chat\Plugin\Traits\NoCommands;
 use Room11\Jeeves\Chat\Plugin\Traits\NoDisableEnable;
 use Room11\Jeeves\Chat\Plugin\Traits\NoEventHandlers;
 
 class CodeFormat implements Plugin {
-    use NoCommands, NoEventHandlers, NoDisableEnable;
+    use NoCommands, NoEventHandlers, NoDisableEnable, AutoName, Helpless;
 
     private $chatClient;
 
@@ -74,19 +76,9 @@ class CodeFormat implements Plugin {
         );
     }
 
-    public function getName(): string
-    {
-        return 'CodeFormat';
-    }
-
     public function getDescription(): string
     {
         return 'Asks users to format their code when unformatted multi-line code blocks are posted';
-    }
-
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement getHelpText() method.
     }
 
     /**
