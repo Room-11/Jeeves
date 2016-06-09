@@ -30,32 +30,32 @@ storage:
   plugin: Room11\Jeeves\Storage\File\Plugin
 
 plugins:
-  - Room11\Jeeves\Chat\Plugin\Canon
-  - Room11\Jeeves\Chat\Plugin\Chuck
-  - Room11\Jeeves\Chat\Plugin\CodeFormat
-  - Room11\Jeeves\Chat\Plugin\Docs
-  - Room11\Jeeves\Chat\Plugin\EvalCode
-  - Room11\Jeeves\Chat\Plugin\Giphy
-  - Room11\Jeeves\Chat\Plugin\Github
-  - Room11\Jeeves\Chat\Plugin\Google
-  - Room11\Jeeves\Chat\Plugin\HttpRequester
-  - Room11\Jeeves\Chat\Plugin\Imdb
-  - Room11\Jeeves\Chat\Plugin\Lick
-  - Room11\Jeeves\Chat\Plugin\Man
-  - Room11\Jeeves\Chat\Plugin\Mdn
-  - Room11\Jeeves\Chat\Plugin\Packagist
-  - Room11\Jeeves\Chat\Plugin\PHPSrcGrok
-  - Room11\Jeeves\Chat\Plugin\Rebecca
-  - Room11\Jeeves\Chat\Plugin\Regex
-  - Room11\Jeeves\Chat\Plugin\RePinner
-  - Room11\Jeeves\Chat\Plugin\RFC
-  - Room11\Jeeves\Chat\Plugin\SwordFight
-  - Room11\Jeeves\Chat\Plugin\Terminator
-  - Room11\Jeeves\Chat\Plugin\Tweet
-  - Room11\Jeeves\Chat\Plugin\Urban
-  - Room11\Jeeves\Chat\Plugin\Wikipedia
-  - Room11\Jeeves\Chat\Plugin\Wotd
-  - Room11\Jeeves\Chat\Plugin\Xkcd
+  - Room11\Jeeves\Plugins\Canon
+  - Room11\Jeeves\Plugins\Chuck
+  - Room11\Jeeves\Plugins\CodeFormat
+  - Room11\Jeeves\Plugins\Docs
+  - Room11\Jeeves\Plugins\EvalCode
+  - Room11\Jeeves\Plugins\Giphy
+  - Room11\Jeeves\Plugins\Github
+  - Room11\Jeeves\Plugins\Google
+  - Room11\Jeeves\Plugins\HttpRequester
+  - Room11\Jeeves\Plugins\Imdb
+  - Room11\Jeeves\Plugins\Lick
+  - Room11\Jeeves\Plugins\Man
+  - Room11\Jeeves\Plugins\Mdn
+  - Room11\Jeeves\Plugins\Packagist
+  - Room11\Jeeves\Plugins\PHPSrcGrok
+  - Room11\Jeeves\Plugins\Rebecca
+  - Room11\Jeeves\Plugins\Regex
+  - Room11\Jeeves\Plugins\RePinner
+  - Room11\Jeeves\Plugins\RFC
+  - Room11\Jeeves\Plugins\SwordFight
+  - Room11\Jeeves\Plugins\Terminator
+  - Room11\Jeeves\Plugins\Tweet
+  - Room11\Jeeves\Plugins\Urban
+  - Room11\Jeeves\Plugins\Wikipedia
+  - Room11\Jeeves\Plugins\Wotd
+  - Room11\Jeeves\Plugins\Xkcd
 
 twitter:
   consumerKey: YourConsumerKey

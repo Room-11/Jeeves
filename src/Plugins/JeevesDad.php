@@ -8,19 +8,12 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\Plugins\Traits\NoDisableEnable;
-use Room11\Jeeves\Plugins\Traits\NoEventHandlers;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
-class JeevesDad implements Plugin
+class JeevesDad extends BasePlugin
 {
-    use NoEventHandlers, NoDisableEnable, AutoName, Helpless;
-
     const FREQUENCY = 10;
     const JOKE_URL = 'http://niceonedad.com/assets/js/niceonedad.js';
 

@@ -8,19 +8,14 @@ use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class NoComprendeException extends \RuntimeException {}
 
-class Docs implements Plugin
+class Docs extends BasePlugin
 {
-    use CommandOnly, Helpless;
-
     const URL_BASE = 'http://php.net';
     const LOOKUP_URL_BASE = self::URL_BASE . '/manual-lookup.php?scope=quickref&pattern=';
     const MANUAL_URL_BASE = self::URL_BASE . '/manual/en';

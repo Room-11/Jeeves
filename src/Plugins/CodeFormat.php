@@ -6,16 +6,9 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Event\NewMessage;
 use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\Plugins\Traits\NoCommands;
-use Room11\Jeeves\Plugins\Traits\NoDisableEnable;
-use Room11\Jeeves\Plugins\Traits\NoEventHandlers;
-use Room11\Jeeves\System\Plugin;
 
-class CodeFormat implements Plugin {
-    use NoCommands, NoEventHandlers, NoDisableEnable, AutoName, Helpless;
-
+class CodeFormat extends BasePlugin
+{
     private $chatClient;
 
     public function __construct(ChatClient $chatClient) {

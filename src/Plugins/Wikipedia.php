@@ -7,18 +7,11 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
-class Wikipedia implements Plugin
+class Wikipedia extends BasePlugin
 {
-    use CommandOnly, AutoName, Helpless;
-
     private $chatClient;
-
     private $httpClient;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient)

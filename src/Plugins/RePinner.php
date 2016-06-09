@@ -9,17 +9,11 @@ use Room11\Jeeves\Chat\Client\MessageFetchFailureException;
 use Room11\Jeeves\Chat\Event\StarMessage as StarMessageEvent;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\Plugins\Traits\NoMessageHandler;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
-class RePinner implements Plugin
+class RePinner extends BasePlugin
 {
-    use NoMessageHandler, AutoName, Helpless;
-
     private $chatClient;
     private $keyValueStore;
 

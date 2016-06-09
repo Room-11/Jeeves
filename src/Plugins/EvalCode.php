@@ -14,16 +14,11 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
-class EvalCode implements Plugin
+class EvalCode extends BasePlugin
 {
-    use CommandOnly, Helpless;
-
     // limit the number of requests while polling for results
     const REQUEST_LIMIT = 20;
 

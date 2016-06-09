@@ -8,19 +8,11 @@ use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\External\MicrosoftTranslationAPI\Consumer as TranslationAPIConsumer;
 use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\Plugins\Traits\NoDisable;
-use Room11\Jeeves\Plugins\Traits\NoEventHandlers;
-use Room11\Jeeves\Plugins\Traits\NoMessageHandler;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
-class Translate implements Plugin
+class Translate extends BasePlugin
 {
-    use NoMessageHandler, NoEventHandlers, NoDisable, AutoName, Helpless;
-
     const ACCESS_TOKEN_LIFETIME = 580; // really 10 minutes but this should avoid us needing to handle expired tokens
 
     private $chatClient;

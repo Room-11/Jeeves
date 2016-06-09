@@ -8,17 +8,12 @@ use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\all;
 use function Room11\DOMUtils\domdocument_load_html;
 
-class Google implements Plugin {
-    use CommandOnly, AutoName, Helpless;
-
+class Google extends BasePlugin
+{
     const ENCODING = "UTF-8";
     const ELLIPSIS = "\xE2\x80\xA6";
     const BULLET   = "\xE2\x80\xA2";

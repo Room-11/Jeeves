@@ -6,19 +6,14 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
-class Xkcd implements Plugin {
-    use CommandOnly, Helpless;
-
+class Xkcd extends BasePlugin
+{
     const NOT_FOUND_COMIC = 'https://xkcd.com/1334/';
 
     private $chatClient;
-
     private $httpClient;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient) {

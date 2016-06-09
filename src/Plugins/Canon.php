@@ -6,15 +6,10 @@ use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
-class Canon implements Plugin
+class Canon extends BasePlugin
 {
-    use CommandOnly, Helpless;
-
     // we need shortened links because otherwise we will hit the chat message length
     const CANONS = [
         "errors" => [

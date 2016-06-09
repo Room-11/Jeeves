@@ -9,17 +9,12 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\External\TwitterCredentials;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
-class Tweet implements Plugin
+class Tweet extends BasePlugin
 {
-    use CommandOnly, Helpless;
-
     const BASE_URI = "https://api.twitter.com/1.1";
 
     private $chatClient;

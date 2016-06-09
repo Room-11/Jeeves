@@ -6,21 +6,14 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
-class Wotd implements Plugin
+class Wotd extends BasePlugin
 {
-    use CommandOnly, AutoName, Helpless;
-
     const API_URL = 'http://www.dictionary.com/wordoftheday/wotd.rss';
 
     private $chatClient;
-
     private $httpClient;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient)

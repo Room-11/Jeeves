@@ -7,17 +7,9 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Conversation;
 use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\Plugins\Traits\NoCommands;
-use Room11\Jeeves\Plugins\Traits\NoDisableEnable;
-use Room11\Jeeves\Plugins\Traits\NoEventHandlers;
-use Room11\Jeeves\System\Plugin;
 
-class SwordFight implements Plugin
+class SwordFight extends BasePlugin
 {
-    use NoCommands, NoEventHandlers, NoDisableEnable, AutoName, Helpless;
-
     const COMMAND = 'swordfight';
 
     const MINIMUM_MATCH_PERCENTAGE = 60;

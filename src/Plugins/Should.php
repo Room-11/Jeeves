@@ -6,16 +6,10 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
-class Should implements Plugin
+class Should extends BasePlugin
 {
-    use CommandOnly, AutoName, Helpless;
-
     const RESPONSES = [
         "yes" => [
             "Yes.",

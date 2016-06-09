@@ -2,25 +2,18 @@
 
 namespace Room11\Jeeves\Plugins;
 
+// interface does not have option constants :-(
 use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\resolve;
 
-// interface does not have option constants :-(
-
-class HttpRequester implements Plugin
+class HttpRequester extends BasePlugin
 {
-    use CommandOnly, AutoName, Helpless;
-
     const FLAGS = ['chrome', 'firefox', 'googlebot', 'nofollow'];
 
     const USER_AGENTS = [

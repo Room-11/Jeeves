@@ -11,10 +11,6 @@ use Amp\Artax\Uri;
 use Room11\DOMUtils\ElementNotFoundException;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 use function Room11\DOMUtils\xpath_get_element;
@@ -22,10 +18,8 @@ use function Room11\DOMUtils\xpath_get_elements;
 
 class OpenGrokSearchFailureException extends \RuntimeException {}
 
-class PHPSrcGrok implements Plugin
+class PHPSrcGrok extends BasePlugin
 {
-    use CommandOnly, AutoName, Helpless;
-
     const DEFAULT_BRANCH = 'MASTER';
     const BASE_URL = 'http://lxr.php.net/search';
 

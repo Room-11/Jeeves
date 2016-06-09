@@ -5,16 +5,10 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\AutoName;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
-class Rebecca implements Plugin
+class Rebecca extends BasePlugin
 {
-    use CommandOnly, AutoName, Helpless;
-
     const VIDEO_URL = 'https://www.youtube.com/watch?v=kfVsfOSbJY0';
 
     private $chatClient;

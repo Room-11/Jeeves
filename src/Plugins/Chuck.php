@@ -6,14 +6,10 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Plugins\Traits\CommandOnly;
-use Room11\Jeeves\Plugins\Traits\Helpless;
-use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
-class Chuck implements Plugin {
-    use CommandOnly, Helpless;
-
+class Chuck extends BasePlugin
+{
     const API_URL = 'http://api.icndb.com/jokes/random/';
 
     private $chatClient;
