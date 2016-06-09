@@ -6,6 +6,9 @@ use Room11\Jeeves\External\TwitterCredentials;
 
 class CredentialsTest extends \PHPUnit_Framework_TestCase
 {
+    /**
+     * @var TwitterCredentials
+     */
     private $credentials;
 
     public function setUp()
