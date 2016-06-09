@@ -3,13 +3,13 @@
 namespace Room11\Jeeves\BuiltInCommands;
 
 use Amp\Promise;
-use Room11\Jeeves\System\BuiltInCommand;
-use Room11\Jeeves\System\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
-use Room11\Jeeves\System\PluginManager;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\System\BuiltInCommand;
+use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\PluginManager;
 use function Amp\resolve;
 
 class Command implements BuiltInCommand

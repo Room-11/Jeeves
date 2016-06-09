@@ -4,11 +4,11 @@ namespace Room11\Jeeves\BuiltInCommands;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\Jeeves\System\BuiltInCommand;
 use function Amp\resolve;
 
 class Ban implements BuiltInCommand

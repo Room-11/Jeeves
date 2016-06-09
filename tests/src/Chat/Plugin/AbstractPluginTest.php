@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Tests\Chat\Plugin;
 
-use Room11\Jeeves\Plugin;
+use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\Tests\Chat\AbstractChatTest;
 
 abstract class AbstractPluginTest extends AbstractChatTest

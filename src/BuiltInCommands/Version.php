@@ -3,9 +3,9 @@
 namespace Room11\Jeeves\BuiltInCommands;
 
 use Amp\Promise;
-use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\System\BuiltInCommand;
 use SebastianBergmann\Version as SebastianVersion;
 use function Amp\resolve;
 

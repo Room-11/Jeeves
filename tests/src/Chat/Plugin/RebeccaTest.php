@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Tests\Chat\Plugin;
 
-use Room11\Jeeves\Plugin\Rebecca;
+use Room11\Jeeves\Plugins\Rebecca;
 
 class RebeccaTest extends AbstractPluginTest
 {

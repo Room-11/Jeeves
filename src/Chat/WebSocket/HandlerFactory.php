@@ -1,15 +1,15 @@
 <?php  declare(strict_types=1);
 namespace Room11\Jeeves\Chat\WebSocket;
 
-use Room11\Jeeves\Chat\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Event\Builder as EventBuilder;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
-use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\RoomFactory as ChatRoomFactory;
 use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\PluginManager;
 
 class HandlerFactory
 {
