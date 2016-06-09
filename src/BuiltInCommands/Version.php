@@ -20,7 +20,7 @@ class Version implements BuiltInCommand
 
     private function getVersion(CommandMessage $command): \Generator
     {
-        $version = (new SebastianVersion(VERSION, dirname(dirname(dirname(__DIR__)))))->getVersion();
+        $version = (new SebastianVersion(VERSION, realpath(__DIR__ . '/../../')))->getVersion();
 
         $version = preg_replace_callback('@v([0-9.]+)(?:-\d+-g([0-9a-f]+))?@', function($match) {
             return sprintf(
