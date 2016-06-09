@@ -13,8 +13,8 @@ use Room11\Jeeves\Chat\Plugin\Traits\NoEventHandlers;
 use Room11\Jeeves\Chat\Plugin\Traits\NoMessageHandler;
 use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\MicrosoftTranslationAPI\Consumer as TranslationAPIConsumer;
-use Room11\Jeeves\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
+use Room11\Jeeves\External\MicrosoftTranslationAPI\Consumer as TranslationAPIConsumer;
+use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 
 class Translate implements Plugin

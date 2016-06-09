@@ -1,5 +1,5 @@
 <?php  declare(strict_types=1);
-namespace Room11\Jeeves\WebSocket;
+namespace Room11\Jeeves\Chat\WebSocket;
 
 use Room11\Jeeves\Chat\BuiltInCommandManager;
 use Room11\Jeeves\Chat\Event\Builder as EventBuilder;

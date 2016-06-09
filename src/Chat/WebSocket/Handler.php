@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\WebSocket;
+namespace Room11\Jeeves\Chat\WebSocket;
 
 use Amp\Pause;
 use Amp\Promise;

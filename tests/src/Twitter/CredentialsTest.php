@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Tests\Twitter;
 
-use Room11\Jeeves\Twitter\Credentials;
+use Room11\Jeeves\External\TwitterCredentials;
 
 class CredentialsTest extends \PHPUnit_Framework_TestCase
 {
@@ -10,7 +10,7 @@ class CredentialsTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->credentials = new Credentials('foo', 'bar', 'baz', 'qux');
+        $this->credentials = new TwitterCredentials('foo', 'bar', 'baz', 'qux');
     }
 
     public function testGetConsumerKey()

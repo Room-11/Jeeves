@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Bitly;
+namespace Room11\Jeeves\External;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use function Amp\all;
 
-class Client
+class BitlyClient
 {
     const URL_BASE = 'https://api-ssl.bitly.com/v3/shorten';
 

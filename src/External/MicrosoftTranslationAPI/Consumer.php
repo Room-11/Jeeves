@@ -1,6 +1,6 @@
 <?php
 
-namespace Room11\Jeeves\MicrosoftTranslationAPI;
+namespace Room11\Jeeves\External\MicrosoftTranslationAPI;
 
 use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;

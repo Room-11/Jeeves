@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Twitter;
+namespace Room11\Jeeves\External;
 
-class Credentials {
+class TwitterCredentials {
     private $consumerKey;
 
     private $consumerSecret;

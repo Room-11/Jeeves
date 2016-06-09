@@ -2,8 +2,8 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
-use Room11\Jeeves\WebSocket\Handler as WebSocketHandler;
-use Room11\Jeeves\WebSocket\HandshakeFactory as WebSocketHandshakeFactory;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
+use Room11\Jeeves\Chat\WebSocket\HandshakeFactory as WebSocketHandshakeFactory;
 use function Amp\websocket;
 
 class Connector
