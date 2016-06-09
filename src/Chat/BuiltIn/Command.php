@@ -24,6 +24,7 @@ class Command implements BuiltInCommand
         'multiple_endpoints'     => "Plugin '%1\$s' provides %2\$d endpoints, you must specify the endpoint to which "
                                   . "the command should be mapped. Use `!!plugin list %1\$s` to display information "
                                   . "about the available endpoints.",
+        'plugin_not_enabled'     => "Plugin '%s' is not currently enabled",
         'syntax'                 => "    Syntax: command [map|remap] <command> <plugin> [<endpoint>]\n"
                                   . "            command unmap <command>\n"
                                   . "            command alias <new command> <existing command>\n"
@@ -73,6 +74,11 @@ class Command implements BuiltInCommand
         }
 
         $plugin = $this->pluginManager->getPluginByName($pluginName);
+
+        if (!$this->pluginManager->isPluginEnabledForRoom($plugin, $room)) {
+            return $this->chatClient->postReply($command, self::message('plugin_not_enabled', $plugin->getName()));
+        }
+
         $endpoints = $this->pluginManager->getPluginCommandEndpoints($plugin);
 
         if ($endpointName === null) {
@@ -156,6 +162,11 @@ class Command implements BuiltInCommand
         }
 
         $plugin = $this->pluginManager->getPluginByName($pluginName);
+
+        if (!$this->pluginManager->isPluginEnabledForRoom($plugin, $room)) {
+            return $this->chatClient->postReply($command, self::message('plugin_not_enabled', $plugin->getName()));
+        }
+
         $endpoints = $this->pluginManager->getPluginCommandEndpoints($plugin);
 
         if ($endpointName === null) {
@@ -222,6 +233,11 @@ class Command implements BuiltInCommand
         }
 
         $mapping = $this->pluginManager->getMappedCommandsForRoom($room)[$oldCmd];
+
+        if (!$this->pluginManager->isPluginEnabledForRoom($mapping['plugin_name'], $room)) {
+            return $this->chatClient->postReply($command, self::message('plugin_not_enabled', $mapping['plugin_name']));
+        }
+
         yield $this->pluginManager->mapCommandForRoom($room, $mapping['plugin_name'], $mapping['endpoint_name'], $newCmd);
 
         return $this->chatClient->postMessage(

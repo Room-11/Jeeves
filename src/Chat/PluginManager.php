@@ -330,20 +330,26 @@ class PluginManager
 
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
 
-        $endpointName = strtolower($endpoint);
-        if (!isset($this->commandEndpoints[$pluginName][$endpointName])) {
-            throw new \LogicException("Endpoint '{$endpoint}' not found for plugin '{$pluginName}'");
-        }
-        $endpoint = $this->commandEndpoints[$pluginName][$endpointName];
+        return resolve(function() use($room, $pluginName, $plugin, $endpoint, $command) {
+            if (!yield $this->pluginStorage->isPluginEnabled($room, $plugin->getName())) {
+                throw new \LogicException("Plugin '{$pluginName}' is not enabled for room");
+            }
 
-        $roomId = $room->getIdentifier()->getIdentString();
-        if (isset($this->commandMap[$roomId][$command])) {
-            throw new \LogicException("Command '{$command}' already mapped in room '{$roomId}'");
-        }
+            $endpointName = strtolower($endpoint);
+            if (!isset($this->commandEndpoints[$pluginName][$endpointName])) {
+                throw new \LogicException("Endpoint '{$endpoint}' not found for plugin '{$pluginName}'");
+            }
+            $endpoint = $this->commandEndpoints[$pluginName][$endpointName];
 
-        $this->commandMap[$roomId][$command] = [$plugin, $endpoint];
+            $roomId = $room->getIdentifier()->getIdentString();
+            if (isset($this->commandMap[$roomId][$command])) {
+                throw new \LogicException("Command '{$command}' already mapped in room '{$roomId}'");
+            }
 
-        return $this->pluginStorage->addCommandMapping($room, $pluginName, $command, $endpointName);
+            $this->commandMap[$roomId][$command] = [$plugin, $endpoint];
+
+            return $this->pluginStorage->addCommandMapping($room, $pluginName, $command, $endpointName);
+        });
     }
 
     /**
@@ -390,11 +396,15 @@ class PluginManager
     public function enableAllPluginsForRoom(ChatRoom $room, bool $persist = false): Promise
     {
         return resolve(function () use ($room, $persist) {
+            $promises = [];
+
             foreach ($this->registeredPlugins as $plugin) {
                 if ($persist || yield $this->pluginStorage->isPluginEnabled($room, $plugin->getName())) {
-                    yield $this->enablePluginForRoom($plugin, $room, $persist);
+                    $promises[] = $this->enablePluginForRoom($plugin, $room, $persist);
                 }
             }
+
+            yield any($promises);
         });
     }
 
@@ -405,7 +415,7 @@ class PluginManager
      */
     public function disableAllPluginsForRoom(ChatRoom $room, bool $persist = false): Promise
     {
-        return all(array_map(function(Plugin $plugin) use($room, $persist) {
+        return any(array_map(function(Plugin $plugin) use($room, $persist) {
             return $this->disablePluginForRoom($plugin, $room, $persist);
         }, $this->registeredPlugins));
     }
@@ -433,7 +443,11 @@ class PluginManager
         }
 
         return resolve(function() use($plugin, $pluginName, $room, $persist) {
-            yield $this->invokeCallbackAsPromise([$plugin, 'disableForRoom'], $room, $persist);
+            try {
+                yield $this->invokeCallbackAsPromise([$plugin, 'disableForRoom'], $room, $persist);
+            } catch (\Throwable $e) {
+                $this->logger->log(Level::ERROR, "Unhandled exception in " . get_class($plugin) . '#disableForRoom(): ' . $e->getMessage());
+            }
 
             if ($persist) {
                 yield $this->pluginStorage->setPluginEnabled($room, $pluginName, false);
@@ -456,7 +470,11 @@ class PluginManager
             $yesNo = $persist ? 'yes' : 'no';
             $this->logger->log(Level::DEBUG, "Enabling plugin '{$pluginName}' for room '{$roomId}' (persist = {$yesNo})");
 
-            yield $this->invokeCallbackAsPromise([$plugin, 'enableForRoom'], $room, $persist);
+            try {
+                yield $this->invokeCallbackAsPromise([$plugin, 'enableForRoom'], $room, $persist);
+            } catch (\Throwable $e) {
+                $this->logger->log(Level::ERROR, "Unhandled exception in " . get_class($plugin) . '#enableForRoom(): ' . $e->getMessage());
+            }
 
             $this->enabledPlugins[$roomId][$pluginName] = true;
 
