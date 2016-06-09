@@ -6,14 +6,16 @@ use Amp\Artax\Client as HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
-use function Amp\resolve;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use Room11\Jeeves\Plugin;
 use Room11\Jeeves\Plugin\Traits\AutoName;
 use Room11\Jeeves\Plugin\Traits\CommandOnly;
 use Room11\Jeeves\Plugin\Traits\Helpless;
-use Room11\Jeeves\Chat\PluginCommandEndpoint; // interface does not have option constants :-(
+use function Amp\resolve;
+
+// interface does not have option constants :-(
 
 class HttpRequester implements Plugin
 {

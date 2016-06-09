@@ -2,7 +2,6 @@
 
 namespace Room11\Jeeves\Chat;
 
-use function Amp\all;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Event\Event;
@@ -11,14 +10,15 @@ use Room11\Jeeves\Chat\Event\Filter\Filter;
 use Room11\Jeeves\Chat\Event\RoomSourcedEvent;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Plugin;
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\Plugin;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
+use function Amp\all;
 use function Amp\any;
 use function Amp\resolve;
 

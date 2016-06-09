@@ -3,11 +3,11 @@
 namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Amp\Promise;
-use function Amp\resolve;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use SebastianBergmann\Version as SebastianVersion;
+use function Amp\resolve;
 
 class Version implements BuiltInCommand
 {

@@ -5,16 +5,16 @@ namespace Room11\Jeeves\Plugin;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\External\MicrosoftTranslationAPI\Consumer as TranslationAPIConsumer;
+use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Plugin;
 use Room11\Jeeves\Plugin\Traits\AutoName;
 use Room11\Jeeves\Plugin\Traits\Helpless;
 use Room11\Jeeves\Plugin\Traits\NoDisable;
 use Room11\Jeeves\Plugin\Traits\NoEventHandlers;
 use Room11\Jeeves\Plugin\Traits\NoMessageHandler;
-use Room11\Jeeves\Chat\PluginCommandEndpoint;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\External\MicrosoftTranslationAPI\Consumer as TranslationAPIConsumer;
-use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 
 class Translate implements Plugin

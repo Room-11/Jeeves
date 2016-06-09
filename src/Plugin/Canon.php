@@ -6,10 +6,10 @@ use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\PluginCommandEndpoint;
 use Room11\Jeeves\Plugin;
 use Room11\Jeeves\Plugin\Traits\CommandOnly;
 use Room11\Jeeves\Plugin\Traits\Helpless;
-use Room11\Jeeves\Chat\PluginCommandEndpoint;
 
 class Canon implements Plugin
 {

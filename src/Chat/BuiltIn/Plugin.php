@@ -3,13 +3,13 @@
 namespace Room11\Jeeves\Chat\BuiltIn;
 
 use Amp\Promise;
-use function Amp\resolve;
 use Room11\Jeeves\Chat\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use function Amp\resolve;
 
 class Plugin implements BuiltInCommand
 {
