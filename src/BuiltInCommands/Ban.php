@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat\BuiltIn;
+namespace Room11\Jeeves\BuiltInCommands;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\BuiltInCommand;
+use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
