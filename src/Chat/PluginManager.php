@@ -11,7 +11,7 @@ use Room11\Jeeves\Chat\Event\Filter\Filter;
 use Room11\Jeeves\Chat\Event\RoomSourcedEvent;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Plugin;
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;

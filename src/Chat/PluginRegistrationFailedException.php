@@ -2,6 +2,7 @@
 namespace Room11\Jeeves\Chat;
 
 use Room11\Jeeves\Exception;
+use Room11\Jeeves\Plugin;
 
 class PluginRegistrationFailedException extends Exception
 {

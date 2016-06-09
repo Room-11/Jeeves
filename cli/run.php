@@ -11,7 +11,7 @@ use Room11\Jeeves\Chat\BuiltIn\Command as CommandBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Plugin as PluginBuiltIn;
 use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
 use Room11\Jeeves\Chat\BuiltInCommandManager;
-use Room11\Jeeves\Chat\Plugin;
+use Room11\Jeeves\Plugin;
 use Room11\Jeeves\Chat\PluginManager;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\CredentialManager;
