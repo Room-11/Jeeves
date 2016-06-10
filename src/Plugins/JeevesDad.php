@@ -14,7 +14,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class JeevesDad extends BasePlugin
 {
-    const FREQUENCY = 10;
+    const DEFAULT_GREET_FREQUENCY = 1000;
     const JOKE_URL = 'http://niceonedad.com/assets/js/niceonedad.js';
 
     private $chatClient;
@@ -40,7 +40,7 @@ class JeevesDad extends BasePlugin
             return;
         }
 
-        if (random_int(1, self::FREQUENCY) !== 1) {
+        if (random_int(1, yield from $this->getDadGreetFrequency($message->getRoom())) !== 1) {
             return;
         }
 
@@ -58,6 +58,23 @@ class JeevesDad extends BasePlugin
     private function isDadGreetEnabled(ChatRoom $room): \Generator
     {
         return (!yield $this->storage->exists('dadgreet', $room)) || (yield $this->storage->get('dadgreet', $room));
+    }
+
+    private function setDadGreetEnabled(ChatRoom $room, bool $enabled): \Generator
+    {
+        yield $this->storage->set('dadgreet', $enabled, $room);
+    }
+
+    private function getDadGreetFrequency(ChatRoom $room): \Generator
+    {
+        return (yield $this->storage->exists('dadgreet_frequency', $room))
+            ? yield $this->storage->get('dadgreet_frequency', $room)
+            : self::DEFAULT_GREET_FREQUENCY;
+    }
+
+    private function setDadGreetFrequency(ChatRoom $room, int $frequency): \Generator
+    {
+        yield $this->storage->set('dadgreet_frequency', $frequency, $room);
     }
 
     private function refreshJokes(): \Generator
@@ -96,25 +113,42 @@ class JeevesDad extends BasePlugin
 
     public function dadGreet(Command $command): \Generator
     {
+        $room = $command->getRoom();
+
         switch (strtolower($command->getParameter(0))) {
             case 'on':
-            case 'off':
-                if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
+                if (!yield $this->admin->isAdmin($room, $command->getUserId())) {
                     return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
                 }
 
-                $enable = strtolower($command->getParameter(0)) === 'on';
-                $state = $enable ? 'enabled' : 'disabled';
+                if (preg_match('#[0-9]+#', $command->getParameter(1))) {
+                    if (1 > $frequency = (int)$command->getParameter(1)) {
+                        return $this->chatClient->postReply($command, 'Frequency cannot be less than 1');
+                    }
 
-                yield $this->storage->set('dadgreet', $enable, $command->getRoom());
-                return $this->chatClient->postMessage($command->getRoom(), 'Dad greeting is now ' . $state);
+                    yield from $this->setDadGreetFrequency($room, $frequency);
+                }
+
+                yield from $this->setDadGreetEnabled($room, true);
+                return $this->chatClient->postMessage($room, 'Dad greeting is now enabled with a frequency of ' . (yield from $this->getDadGreetFrequency($room)));
+
+            case 'off':
+                if (!yield $this->admin->isAdmin($room, $command->getUserId())) {
+                    return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+                }
+
+                yield from $this->setDadGreetEnabled($room, false);
+                return $this->chatClient->postMessage($room, 'Dad greeting is now disabled');
 
             case 'status':
-                $state = (yield from $this->isDadGreetEnabled($command->getRoom())) ? 'enabled' : 'disabled';
-                return $this->chatClient->postMessage($command->getRoom(), 'Dad greeting is currently ' . $state);
+                $state = (yield from $this->isDadGreetEnabled($room))
+                    ? 'enabled with a frequency of ' . (yield from $this->getDadGreetFrequency($room))
+                    : 'disabled';
+
+                return $this->chatClient->postMessage($room, 'Dad greeting is currently ' . $state);
         }
 
-        return $this->chatClient->postReply($command, 'Syntax: ' . $command->getCommandName() . ' on|off|status');
+        return $this->chatClient->postReply($command, 'Syntax: ' . $command->getCommandName() . ' on|off|status [frequency]');
     }
 
     public function getDescription(): string
