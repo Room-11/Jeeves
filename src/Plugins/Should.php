@@ -39,7 +39,9 @@ class Should extends BasePlugin
 
     public function should(Command $command): Promise
     {
-        if (!preg_match('~(\S+?) (.*?) or (.*?)(?:\?|$)~i', implode(" ", $command->getParameters()), $match)) {
+        static $expr = '~(\S+?)\s+(.*?)\sor\s(?:(?:should\s+\1|rather)\s+)?(.*?)(?:\?|$)~i';
+
+        if (!preg_match($expr, implode(" ", $command->getParameters()), $match)) {
             return $this->chatClient->postMessage($command->getRoom(), "Dunno.");
         }
 
