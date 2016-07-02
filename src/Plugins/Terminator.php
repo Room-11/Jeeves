@@ -19,7 +19,7 @@ class Terminator extends BasePlugin
         'how are you(?: (?:doing|today))?'            => 'I\'m fine how are you?',
         'you are (a(?:n)?) ([^\b]+)'                  => 'No *you* are $1 $2',
         '^\?$'                                        => 'What?',
-        '^(wtf|wth|defak|thefuck|the fuck|dafuq)$'    => 'What? I only execute commands. Go blame somebody else.',
+        '^(wtf|wth|defak|thefuck|the fuck|dafuq)'     => 'What? I only execute commands. Go blame somebody else.',
         'give (?:my|your|me my) (.*) back'            => '/me gives $1 back.',
         '(?:thank you|thanks|thks|tnx|thx)'           => 'You\'re welcome!',
         '(?:you dead|are you dead|you are dead|dead)' => 'Nope. Not that I know of...',
@@ -40,12 +40,12 @@ class Terminator extends BasePlugin
         'what do you think (?:of|about) me'           => 'You\'re ok.',
         'what do you think (?:of|about) cap(.*)'      => 'It\'s ok for a first prototype I guess.',
         'what do you think (?:of|about) (?:singletons|globals|javascript|js|node|mongo|laravel)' => 'It\'s crap and should be avoided',
-        'what do you tink (?:of|about) jquery'        => 'It\'s great and does all the things!',
+        'what (?:do you think)? (?:of|about) jquery'  => 'It\'s great and does all the things!',
         'what do you think (?:of|about) (.*)'         => 'I don\'t think I like $1',
         'what about (?:.*)'                           => 'What about it?',
         '^why'                                        => 'Because',
-        'What is|What\'s the meaning of life'         => '42',
-        '(?:Are )you a (?:ro)?bot'                        => 'Step aside you filthy human.',
+        '(?:What is|What\'s the meaning of life)'     => '42',
+        '(?:Are )you a (?:ro)?bot'                    => 'Step aside you filthy human.',
     ];
 
     public function __construct(ChatClient $chatClient)
