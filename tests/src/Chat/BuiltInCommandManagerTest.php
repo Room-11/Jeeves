@@ -2,11 +2,11 @@
 
 namespace Room11\Jeeves\Tests\Chat;
 
-use Room11\Jeeves\Chat\BuiltInCommandManager;
+use Room11\Jeeves\System\BuiltInCommandManager;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\Level;
-use Room11\Jeeves\Chat\BuiltInCommand;
+use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Event\MessageEvent;
 use Amp\Success;

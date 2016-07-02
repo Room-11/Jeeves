@@ -2,7 +2,6 @@
 
 namespace Room11\Jeeves\Chat\Message;
 
-use function Room11\DOMUtils\domdocument_load_html;
 use Room11\Jeeves\Chat\Event\DeleteMessage;
 use Room11\Jeeves\Chat\Event\EditMessage;
 use Room11\Jeeves\Chat\Event\MentionMessage;
@@ -10,6 +9,7 @@ use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\NewMessage;
 use Room11\Jeeves\Chat\Event\ReplyMessage;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use function Room11\DOMUtils\domdocument_load_html;
 
 class Message
 {

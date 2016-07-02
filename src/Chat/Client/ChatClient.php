@@ -11,8 +11,11 @@ use Amp\Pause;
 use Amp\Promise;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\DOMUtils\ElementNotFoundException;
+use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Client\Entities\User;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
+use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
@@ -20,7 +23,6 @@ use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
 use function Room11\DOMUtils\xpath_get_element;
 use function Room11\DOMUtils\xpath_get_elements;
-use Room11\Jeeves\MessageFetchFailureException;
 
 class ChatClient
 {
@@ -44,7 +46,37 @@ class ChatClient
         $this->starMutex  = new QueuedExclusiveMutex();
     }
 
-    public function getRoomOwners(ChatRoom $room): Promise
+    private function applyPostFlagsToText(string $text, int $flags)
+    {
+        if ($flags & PostFlags::SINGLE_LINE) {
+            $text = preg_replace('#\s+#', ' ', $text);
+        }
+        if ($flags & PostFlags::FIXED_FONT) {
+            $text = preg_replace('#(^|\r?\n)#', '$1    ', $text);
+        }
+        if (!($flags & PostFlags::ALLOW_PINGS)) {
+            $text = preg_replace('#(^|\s)@#', "$0\u{2060}", $text);
+        }
+
+        return $text;
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $arg
+     * @return ChatRoomIdentifier
+     */
+    private function getIdentifierFromArg($arg): ChatRoomIdentifier
+    {
+        if ($arg instanceof ChatRoom) {
+            return $arg->getIdentifier();
+        } else if ($arg instanceof ChatRoomIdentifier) {
+            return $arg;
+        }
+
+        throw new \InvalidArgumentException('Invalid chat room identifier');
+    }
+
+    public function getRoomOwnerIds(ChatRoom $room): Promise
     {
         return resolve(function() use($room) {
             $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_INFO_ACCESS);
@@ -76,51 +108,32 @@ class ChatClient
         });
     }
 
-    public function getChatUser(ChatRoom $room, int $id): Promise
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param int[] ...$ids
+     * @return Promise
+     */
+    public function getChatUsers($room, int ...$ids): Promise
     {
-        return resolve(function() use($room, $id) {
-            $result = ['id' => $id];
+        $identifier = $this->getIdentifierFromArg($room);
+        $url = $identifier->getEndpointUrl(ChatRoomEndpoint::CHAT_USER_INFO);
 
-            $url = $room->getEndpointURL(ChatRoomEndpoint::CHAT_USER, $id);
+        $body = (new FormBody)
+            ->addField('roomId', $identifier->getId())
+            ->addField('ids', implode(',', $ids));
 
-            /** @var HttpResponse $reponse */
-            $reponse = yield $this->httpClient->request($url);
+        $request = (new HttpRequest)
+            ->setMethod('POST')
+            ->setUri($url)
+            ->setBody($body);
 
-            $doc = domdocument_load_html($reponse->getBody());
+        return resolve(function() use($request) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($request);
 
-            $cardEl = xpath_get_element($doc, "//div[contains(concat(' ', normalize-space(@class), ' '), ' usercard-xxl ')]/table");
-
-            $result['avatar_url'] = xpath_get_element($cardEl, ".//img[contains(concat(' ', normalize-space(@class), ' '), ' user-gravatar-128 ')]")->getAttribute('src');
-            if (substr($result['avatar_url'], 0, 2) === '//') {
-                $result['avatar_url'] = 'http' . ($room->getIdentifier()->isSecure() ? 's' : '') . ':' . $result['avatar_url'];
-            }
-
-            $result['username'] = xpath_get_element($cardEl, ".//td/div[contains(concat(' ', normalize-space(@class), ' '), ' user-status ')]")->textContent;
-
-            foreach (xpath_get_elements($cardEl, './/td/table//tr') as $rowEl) {
-                $key = xpath_get_element($rowEl, "./td[contains(concat(' ', normalize-space(@class), ' '), ' user-keycell ')]")->textContent;
-                $value = xpath_get_element($rowEl, "./td[contains(concat(' ', normalize-space(@class), ' '), ' user-valuecell ')]");
-
-                switch (trim(strtolower($key))) {
-                    case 'chat user since':
-                        $result['chat_user_since'] = \DateTimeImmutable::createFromFormat('Y-m-d', $value->textContent);
-                        break;
-
-                    case 'last message':
-                        $result['last_message'] = $value->textContent;
-                        break;
-
-                    case 'last seen':
-                        $result['last_seen'] = $value->textContent;
-                        break;
-
-                    case 'about':
-                        $result['about'] = trim($value->textContent);
-                        break;
-                }
-            }
-
-            return $result;
+            return array_map(function($data) {
+                return new User($data);
+            }, json_try_decode($response->getBody(), true)['users'] ?? []);
         });
     }
 
@@ -135,7 +148,7 @@ class ChatClient
             if ($response->getStatus() !== 200) {
                 throw new MessageFetchFailureException("It doesn't working", $response->getStatus());
             }
-            
+
             return (string)$response->getBody();
         });
     }
@@ -156,11 +169,9 @@ class ChatClient
         });
     }
 
-    public function postMessage(ChatRoom $room, string $text, bool $fixedFont = false): Promise
+    public function postMessage(ChatRoom $room, string $text, int $flags = PostFlags::NONE): Promise
     {
-        if ($fixedFont) {
-            $text = preg_replace('#(^|\r?\n)#', '$1    ', $text);
-        }
+        $text = $this->applyPostFlagsToText($text, $flags);
 
         $body = (new FormBody)
             ->addField("text", rtrim($text)) // only rtrim an not trim, leading space may be legit
@@ -247,13 +258,15 @@ class ChatClient
         });
     }
 
-    public function postReply(Message $origin, string $text): Promise
+    public function postReply(Message $origin, string $text, int $flags = PostFlags::NONE): Promise
     {
-        return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}");
+        return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}", $flags & ~PostFlags::FIXED_FONT);
     }
 
-    public function editMessage(PostedMessage $message, string $text): Promise
+    public function editMessage(PostedMessage $message, string $text, int $flags = PostFlags::NONE): Promise
     {
+        $text = $this->applyPostFlagsToText($text, $flags);
+
         $body = (new FormBody)
             ->addField("text", $text)
             ->addField("fkey", (string)$message->getRoom()->getSessionInfo()->getFKey());

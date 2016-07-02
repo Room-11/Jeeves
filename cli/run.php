@@ -4,22 +4,22 @@
 namespace Room11\Jeeves;
 
 use Auryn\Injector;
-use Room11\Jeeves\Bitly\Client as BitlyClient;
-use Room11\Jeeves\Chat\BuiltIn\Admin as AdminBuiltIn;
-use Room11\Jeeves\Chat\BuiltIn\Ban as BanBuiltIn;
-use Room11\Jeeves\Chat\BuiltIn\Command as CommandBuiltIn;
-use Room11\Jeeves\Chat\BuiltIn\Plugin as PluginBuiltIn;
-use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
-use Room11\Jeeves\Chat\BuiltInCommandManager;
-use Room11\Jeeves\Chat\Plugin;
-use Room11\Jeeves\Chat\PluginManager;
+use Room11\Jeeves\External\BitlyClient;
+use Room11\Jeeves\BuiltInCommands\Admin as AdminBuiltIn;
+use Room11\Jeeves\BuiltInCommands\Ban as BanBuiltIn;
+use Room11\Jeeves\BuiltInCommands\Command as CommandBuiltIn;
+use Room11\Jeeves\BuiltInCommands\Plugin as PluginBuiltIn;
+use Room11\Jeeves\BuiltInCommands\Version as VersionBuiltIn;
+use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\Plugin;
+use Room11\Jeeves\System\PluginManager;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\CredentialManager;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
-use Room11\Jeeves\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
+use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\File\Admin as FileAdminStorage;
@@ -29,9 +29,9 @@ use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStorage;
 use Room11\Jeeves\Storage\KeyValueFactory as KeyValueStorageFactory;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
-use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
-use Room11\Jeeves\WebSocket\Handler as WebSocketHandler;
-use Room11\Jeeves\WebSocket\HandlerFactory as WebSocketHandlerFactory;
+use Room11\Jeeves\External\TwitterCredentials;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
+use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
 use Room11\OpenId\Credentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
@@ -147,7 +147,9 @@ foreach ($builtInCommands as $command) {
 }
 
 foreach ($config['plugins'] ?? [] as $pluginClass) {
-    if (!is_a($pluginClass, Plugin::class, true)) {
+    if (!class_exists($pluginClass)) {
+        throw new \LogicException("Plugin class {$pluginClass} does not exist");
+    } else if (!is_a($pluginClass, Plugin::class, true)) {
         throw new \LogicException("Plugin class {$pluginClass} does not implement " . Plugin::class);
     }
 

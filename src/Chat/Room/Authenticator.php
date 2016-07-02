@@ -5,11 +5,12 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\OpenId\Authenticator as OpenIdAuthenticator;
 use Room11\OpenId\Credentials;
+use Room11\OpenId\UriFactory;
 use function Amp\all;
 use function Room11\DOMUtils\domdocument_load_html;
-use Room11\OpenId\UriFactory;
 
 class Authenticator
 {
@@ -18,9 +19,11 @@ class Authenticator
     private $authenticator;
     private $credentialManager;
     private $uriFactory;
+    private $chatClient;
 
     public function __construct(
         HttpClient $httpClient,
+        ChatClient $chatClient,
         SessionInfoFactory $sessionInfoFactory,
         OpenIdAuthenticator $authenticator,
         UriFactory $uriFactory,
@@ -28,6 +31,7 @@ class Authenticator
     )
     {
         $this->httpClient = $httpClient;
+        $this->chatClient = $chatClient;
         $this->sessionInfoFactory = $sessionInfoFactory;
         $this->authenticator = $authenticator;
         $this->uriFactory = $uriFactory;
@@ -49,11 +53,11 @@ class Authenticator
         }
 
         $fkey = $this->getFKey($xpath);
-        $userID = $this->getUserID($xpath);
+        $user = yield from $this->getUser($identifier, $xpath);
 
         $webSocketURL = yield from $this->getWebSocketUri($identifier, $fkey);
 
-        return $this->sessionInfoFactory->build($userID, $fkey, $mainSiteURL, $webSocketURL);
+        return $this->sessionInfoFactory->build($user, $fkey, $mainSiteURL, $webSocketURL);
     }
 
     private function logInMainSite(\DOMDocument $doc, Credentials $credentials): \Generator
@@ -120,7 +124,7 @@ class Authenticator
         return $node->getAttribute('value');
     }
 
-    private function getUserID(\DOMXPath $xpath): int
+    private function getUser(Identifier $identifier, \DOMXPath $xpath): \Generator
     {
         /** @var \DOMElement $node */
 
@@ -134,7 +138,9 @@ class Authenticator
             throw new \RuntimeException('Could not find user ID for chat room: no user ID class');
         }
 
-        return (int)$match;
+        $user = yield $this->chatClient->getChatUsers($identifier, (int)$match[1]);
+
+        return $user[0];
     }
 
     private function getWebSocketUri(Identifier $identifier, string $fKey): \Generator

@@ -5,11 +5,11 @@ namespace Room11\Jeeves\Storage\File;
 use Amp\Deferred;
 use Amp\Mutex\QueuedExclusiveMutex;
 use Amp\Promise;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use function Amp\File\exists;
 use function Amp\File\get;
 use function Amp\File\put;
 use function Amp\resolve;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class JsonFileAccessor
 {

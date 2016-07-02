@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Chat\Event\Factory as EventFactory;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class Builder
 {

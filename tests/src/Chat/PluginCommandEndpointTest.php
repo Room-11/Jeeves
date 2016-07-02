@@ -2,10 +2,13 @@
 
 namespace Room11\Jeeves\Test\Chat;
 
-use Room11\Jeeves\Chat\PluginCommandEndpoint;
+use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class PluginCommandEndpointTest extends \PHPUnit_Framework_TestCase
 {
+    /**
+     * @var PluginCommandEndpoint
+     */
     private $pluginCommandEndpoint;
 
     public function setUp()

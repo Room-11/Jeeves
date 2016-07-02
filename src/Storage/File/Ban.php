@@ -3,9 +3,9 @@
 namespace Room11\Jeeves\Storage\File;
 
 use Amp\Promise;
-use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Storage\Ban as BanStorage;
 use function Amp\File\exists;
 use function Amp\File\get;
 use function Amp\File\put;

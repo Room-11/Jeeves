@@ -2,23 +2,26 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
+use Room11\Jeeves\Chat\Client\Entities\User;
+
 class SessionInfo
 {
-    private $userId;
+    private $user;
     private $fkey;
     private $mainSiteUrl;
     private $webSocketUrl;
 
-    public function __construct(int $userId, string $fkey, string $mainSiteUrl, string $webSocketUrl)
+    public function __construct(User $user, string $fkey, string $mainSiteUrl, string $webSocketUrl)
     {
+        $this->user = $user;
         $this->fkey = $fkey;
         $this->mainSiteUrl = $mainSiteUrl;
         $this->webSocketUrl = $webSocketUrl;
     }
 
-    public function getUserId(): int
+    public function getUser(): User
     {
-        return $this->userId;
+        return $this->user;
     }
 
     public function getFKey(): string

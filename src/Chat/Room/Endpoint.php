@@ -26,6 +26,8 @@ abstract class Endpoint
     const CHATROOM_INFO_FEEDS          = 305;
     const CHATROOM_INFO_ACCESS         = 306;
     const CHAT_USER                    = 307;
+    const CHAT_USER_INFO               = 308;
+    const CHAT_USER_INFO_EXTRA         = 309;
 
     // anything >500 targets the main site
 
