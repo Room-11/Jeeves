@@ -49,7 +49,7 @@ class Xkcd extends BasePlugin
             }
         }
 
-        if (preg_match('/^(\d+)$/', trim($command->getParameters()), $matches) !== 1) {
+        if (preg_match('/^(\d+)$/', trim(implode(' ', $command->getParameters())), $matches) !== 1) {
             return $this->chatClient->postMessage($command->getRoom(), self::NOT_FOUND_COMIC);
         }
 
