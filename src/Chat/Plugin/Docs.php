@@ -192,7 +192,8 @@ class Docs implements Plugin
         'visibility' => 'Class members have a [visibility](' . self::MANUAL_URL_BASE . '/language.oop5.visibility.php) modifier,'
             . ' enabling control over the scopes from which they may be accessed.',
         'yield' => 'The `yield` keyword is used to emit a value from a [generator](' . self::MANUAL_URL_BASE . '/language.generators.php).',
-
+        'variable scoping' => '[The scope of a variable](' . self::MANUAL_URL_BASE . '/language.variables.scope.php) is the context within which it is defined. For the most part all PHP variables only have a single scope..',
+        
         /* hilarity */
         'global' => 'Global ---All--- None Of The Things!',
         'javascript' => 'I think you\'re in the [wrong room](http://chat.stackoverflow.com/rooms/17/javascript).',
@@ -218,6 +219,7 @@ class Docs implements Plugin
         'yeild' => '@yield',
         'ternary' => '@?:',
         'ternarie' => '@?:',
+        'variable scope' => '@variable scoping',
     ];
 
     private $httpClient;
