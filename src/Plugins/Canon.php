@@ -36,6 +36,10 @@ class Canon extends BasePlugin
             "stackoverflow" => "http://stackoverflow.com/questions/60174/how-can-i-prevent-sql-injection-in-php",
             "bitly"         => "http://bit.ly/23LFBQb",
         ],
+        "operators" => [
+            "stackoverflow" => "http://stackoverflow.com/questions/3737139/reference-what-does-this-symbol-mean-in-php",
+            "bitly"         => "http://bit.ly/29AkAGd",
+        ],
     ];
 
     private $chatClient;
