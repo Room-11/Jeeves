@@ -198,7 +198,7 @@ if ($config['web-api']['enable'] ?? false) {
     }
 
     $bindAddr = $config['web-api']['bind-addr'] ?? '127.0.0.1';
-    $bindPort = (int)($config['web-api']['bind-port'] ?? $sslEnabled ? 1337 : 1338);
+    $bindPort = (int)($config['web-api']['bind-port'] ?? ($sslEnabled ? 1337 : 1338));
 
     $host->expose($bindAddr, $bindPort);
 
