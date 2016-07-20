@@ -21,7 +21,7 @@ class OpenGrokSearchFailureException extends \RuntimeException {}
 class PHPSrcGrok extends BasePlugin
 {
     const DEFAULT_BRANCH = 'MASTER';
-    const BASE_URL = 'http://lxr.php.net/search';
+    const BASE_URL = 'https://php-lxr.adamharvey.name/source/';
 
     private $chatClient;
     private $httpClient;
