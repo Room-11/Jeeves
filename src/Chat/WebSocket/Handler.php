@@ -99,7 +99,7 @@ class Handler implements Websocket
         $this->logger->log(Level::DEBUG, "Created timeout watcher #{$this->timeoutWatcherId}");
     }
 
-    private function processEvent(Event $event)
+    private function processEvent(Event $event): \Generator
     {
         $eventId = $event->getId();
         $this->logger->log(Level::EVENT, "Processing event #{$eventId}", $event);
@@ -181,7 +181,7 @@ class Handler implements Websocket
             $this->logger->log(Level::DEBUG, count($events) . " events targeting {$this->roomIdentifier} to process");
 
             foreach ($events as $event) {
-                $this->processEvent($event);
+                yield from $this->processEvent($event);
             }
         } catch (\Throwable $e) {
             $this->logger->log(
