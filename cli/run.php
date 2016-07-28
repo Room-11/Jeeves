@@ -5,6 +5,7 @@ namespace Room11\Jeeves;
 
 use Aerys\Bootstrapper;
 use Aerys\Host;
+use function Amp\onError;
 use Auryn\Injector;
 use Room11\Jeeves\External\BitlyClient;
 use Room11\Jeeves\BuiltInCommands\Admin as AdminBuiltIn;
@@ -215,6 +216,10 @@ if ($config['web-api']['enable'] ?? false) {
         return [$host];
     }))->init(new AerysLogger($injector->make(Logger::class)));
 }
+
+onError(function (\Throwable $e) {
+    fwrite(STDERR, "\nAn exception was not handled:\n\n{$e}\n\n");
+});
 
 try {
     run(function () use ($server, $connector, $handlerFactory, $websocketHandlers) {
