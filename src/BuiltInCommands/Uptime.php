@@ -43,7 +43,7 @@ class Uptime implements BuiltInCommand
     public function __construct(ChatClient $chatClient)
     {
         $this->chatClient = $chatClient;
-        $this->startTime = new \DateTimeImmutable(PROCESS_START_TIME);
+        $this->startTime = new \DateTimeImmutable('@' . PROCESS_START_TIME);
     }
 
     /**
