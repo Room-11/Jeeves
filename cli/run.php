@@ -12,6 +12,7 @@ use Room11\Jeeves\BuiltInCommands\Admin as AdminBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Ban as BanBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Command as CommandBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Plugin as PluginBuiltIn;
+use Room11\Jeeves\BuiltInCommands\Uptime as UptimeBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Version as VersionBuiltIn;
 use Room11\Jeeves\System\BuiltInCommandManager;
 use Room11\Jeeves\System\Plugin;
@@ -52,11 +53,14 @@ use function Amp\websocket;
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../version.php';
 
+define(__NAMESPACE__ . '\\PROCESS_START_TIME', time());
+
 $builtInCommands = [
     AdminBuiltIn::class,
     BanBuiltIn::class,
     CommandBuiltIn::class,
     PluginBuiltIn::class,
+    UptimeBuiltIn::class,
     VersionBuiltIn::class,
 ];
 

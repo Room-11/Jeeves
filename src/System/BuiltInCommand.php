@@ -3,17 +3,17 @@
 namespace Room11\Jeeves\System;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 
 interface BuiltInCommand
 {
     /**
      * Handle a command message
      *
-     * @param Command $command
+     * @param CommandMessage $command
      * @return Promise
      */
-    public function handleCommand(Command $command): Promise;
+    public function handleCommand(CommandMessage $command): Promise;
 
     /**
      * Get a list of specific commands handled by this built-in
