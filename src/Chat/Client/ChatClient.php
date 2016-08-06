@@ -245,11 +245,6 @@ class ChatClient
                 ];
 
                 $this->logger->log(Level::DEBUG, 'Error while posting message: ' . $e->getMessage(), $errorInfo);
-
-                if ($this->postRecursionDepth === 1) {
-                    yield new Pause(2000);
-                    return $this->postMessage($room, "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
-                }
             } finally {
                 $this->postRecursionDepth--;
             }
@@ -326,9 +321,6 @@ class ChatClient
                 ];
 
                 $this->logger->log(Level::ERROR, 'Error while editing message: ' . $e->getMessage(), $errorInfo);
-
-                yield new Pause(2000);
-                yield $this->postMessage($message->getRoom(), "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
             } finally {
                 $this->postRecursionDepth--;
             }
@@ -411,9 +403,6 @@ class ChatClient
                 ];
 
                 $this->logger->log(Level::ERROR, 'Error while pinning message: ' . $e->getMessage(), $errorInfo);
-
-                yield new Pause(2000);
-                yield $this->postMessage($room, "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
             } finally {
                 $this->postRecursionDepth--;
             }
@@ -496,9 +485,6 @@ class ChatClient
                 ];
 
                 $this->logger->log(Level::ERROR, 'Error while unstarring message: ' . $e->getMessage(), $errorInfo);
-
-                yield new Pause(2000);
-                yield $this->postMessage($room, "@PeeHaa error has been logged. Fix it fix it fix it fix it.");
             } finally {
                 $this->postRecursionDepth--;
             }
