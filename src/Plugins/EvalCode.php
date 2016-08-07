@@ -81,11 +81,11 @@ class EvalCode extends BasePlugin
             }
         }
 
-        for ($i = 1; isset($parsedResult["output"][0][$i]) && $i < 4; $i++) {
+        for ($i = 1; isset($parsedResult["output"][$i]) && $i < 4; $i++) {
             yield $this->chatClient->postMessage(
                 $message->getRoom(),
                 $this->getMessageText(
-                    $parsedResult["output"][0][$i]["versions"],
+                    $parsedResult["output"][$i]["versions"],
                     htmlspecialchars_decode($parsedResult["output"][0][$i]["output"]),
                     $snippetId
                 ),
