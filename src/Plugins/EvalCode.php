@@ -64,8 +64,8 @@ class EvalCode extends BasePlugin
             yield $this->chatClient->editMessage(
                 $message,
                 $this->getMessageText(
-                    $parsedResult["output"][0][0]["versions"],
-                    htmlspecialchars_decode($parsedResult["output"][0][0]["output"]),
+                    $parsedResult["output"][0]["versions"],
+                    htmlspecialchars_decode($parsedResult["output"][0]["output"]),
                     $snippetId
                 ),
                 PostFlags::SINGLE_LINE
@@ -86,7 +86,7 @@ class EvalCode extends BasePlugin
                 $message->getRoom(),
                 $this->getMessageText(
                     $parsedResult["output"][$i]["versions"],
-                    htmlspecialchars_decode($parsedResult["output"][0][$i]["output"]),
+                    htmlspecialchars_decode($parsedResult["output"][$i]["output"]),
                     $snippetId
                 ),
                 PostFlags::SINGLE_LINE
