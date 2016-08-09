@@ -37,7 +37,7 @@ class Should extends BasePlugin
         $this->chatClient = $chatClient;
     }
 
-    public function should(Command $command): Promise
+    public function should(Command $command)
     {
         static $expr = '~(\S+?)\s+(.*?)\sor\s(?:(?:should\s+\1|rather)\s+)?(.*?)(?:\?|$)~i';
 
@@ -49,15 +49,17 @@ class Should extends BasePlugin
 
         $flags = PostFlags::NONE;
         if (strtolower($match[1]) === 'i') {
-            $person = 'You';
+            $target = 'You';
         } else if ($match[1][0] === '@') {
-            $person = $match[1];
-        } else {
-            $person = "@{$match[1]}";
+            $target = $match[1];
+        } else if (null !== $pingableName = yield $this->chatClient->getPingableName($command->getRoom(), $match[1])) {
+            $target = "@{$pingableName}";
             $flags |= PostFlags::ALLOW_PINGS;
+        } else {
+            $target = $match[1];
         }
 
-        $reply = "{$person} should {$answer}.";
+        $reply = "{$target} should {$answer}.";
 
         $reply = str_ireplace("my", "your", $reply);
 

@@ -18,16 +18,19 @@ abstract class Endpoint
     const CHATROOM_GET_MESSAGE_TEXT    = 206;
     const CHATROOM_GET_MESSAGE_HISTORY = 207;
 
-    // chat info
+    // chat room data
     const CHATROOM_INFO_GENERAL        = 301;
     const CHATROOM_INFO_STARS          = 302;
     const CHATROOM_INFO_CONVERSATIONS  = 303;
     const CHATROOM_INFO_SCHEDULE       = 304;
     const CHATROOM_INFO_FEEDS          = 305;
     const CHATROOM_INFO_ACCESS         = 306;
-    const CHAT_USER                    = 307;
-    const CHAT_USER_INFO               = 308;
-    const CHAT_USER_INFO_EXTRA         = 309;
+    const CHATROOM_INFO_PINGABLE       = 307;
+
+    // chat user data
+    const CHAT_USER                    = 401;
+    const CHAT_USER_INFO               = 402;
+    const CHAT_USER_INFO_EXTRA         = 403;
 
     // anything >500 targets the main site
 

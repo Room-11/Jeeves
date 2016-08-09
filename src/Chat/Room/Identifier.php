@@ -27,6 +27,8 @@ class Identifier
         Endpoint::CHATROOM_INFO_SCHEDULE       => '%1$s://%2$s/rooms/info/%3$d?tab=schedule',
         Endpoint::CHATROOM_INFO_FEEDS          => '%1$s://%2$s/rooms/info/%3$d?tab=feeds',
         Endpoint::CHATROOM_INFO_ACCESS         => '%1$s://%2$s/rooms/info/%3$d?tab=access',
+        Endpoint::CHATROOM_INFO_PINGABLE       => '%1$s://%2$s/rooms/pingable/%3$d',
+
         Endpoint::CHAT_USER                    => '%1$s://%2$s/users/%4$d',
         Endpoint::CHAT_USER_INFO               => '%1$s://%2$s/user/info',
         Endpoint::CHAT_USER_INFO_EXTRA         => '%1$s://%2$s/users/thumbs/%4$d?showUsage=false'

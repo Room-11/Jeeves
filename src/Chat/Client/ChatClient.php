@@ -137,16 +137,62 @@ class ChatClient
         });
     }
 
-    public function getMessageHTML(ChatRoom $room, int $id): Promise
+    public function getPingableUsers(ChatRoom $room): Promise
     {
-        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_GET_MESSAGE_HTML, $id);
+        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_INFO_PINGABLE);
 
         return resolve(function() use($url) {
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($url);
 
             if ($response->getStatus() !== 200) {
-                throw new MessageFetchFailureException("It doesn't working", $response->getStatus());
+                throw new DataFetchFailureException(
+                    "Fetching pingable users list failed with response code " . $response->getStatus()
+                );
+            }
+
+            $result = [];
+
+            foreach (json_try_decode($response->getBody(), true) as $item) {
+                $result[] = [
+                    'id'       => (int)$item[0],
+                    'name'     => $item[1],
+                    'pingable' => preg_replace('~\s+~', '', $item[1]),
+                ];
+            }
+
+            return $result;
+        });
+    }
+
+    public function getPingableName(ChatRoom $room, string $name): Promise
+    {
+        return resolve(function() use($room, $name) {
+            $lower = strtolower($name);
+            $users = yield $this->getPingableUsers($room);
+
+            foreach ($users as $user) {
+                if (strtolower($user['name']) === $lower || strtolower($user['pingable']) === $lower) {
+                    return $user['pingable'];
+                }
+            }
+
+            return null;
+        });
+    }
+
+    public function getMessageHTML(ChatRoom $room, int $id): Promise
+    {
+        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_GET_MESSAGE_HTML, $id);
+
+        return resolve(function() use($url, $id) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($url);
+
+            if ($response->getStatus() !== 200) {
+                throw new MessageFetchFailureException(
+                    "Fetching message #{$id} failed with response code " . $response->getStatus()
+                );
             }
 
             return (string)$response->getBody();

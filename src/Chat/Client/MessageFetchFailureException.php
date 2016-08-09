@@ -2,6 +2,4 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
-use Room11\Jeeves\Exception;
-
-class MessageFetchFailureException extends Exception {}
+class MessageFetchFailureException extends DataFetchFailureException {}
