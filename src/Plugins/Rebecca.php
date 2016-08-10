@@ -37,7 +37,7 @@ class Rebecca extends BasePlugin
         $timeLeft = $this->getTimeUntilNextFriday();
 
         return sprintf(
-            'Only % left until Rebeccaday, OMG!',
+            'Only %s left until Rebeccaday, OMG!',
             dateinterval_to_string($timeLeft, 'i')
         );
 
