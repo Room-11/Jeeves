@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use function Room11\Jeeves\dateinterval_to_string;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Rebecca extends BasePlugin
@@ -36,13 +37,8 @@ class Rebecca extends BasePlugin
         $timeLeft = $this->getTimeUntilNextFriday();
 
         return sprintf(
-            'Only %d %s, %d %s and %d %s left until Rebeccaday, OMG!',
-            $timeLeft->days,
-            $timeLeft->days === 1 ? 'day' : 'days',
-            $timeLeft->h,
-            $timeLeft->h === 1 ? 'hour' : 'hours',
-            $timeLeft->i,
-            $timeLeft->i === 1 ? 'minute' : 'minutes'
+            'Only % left until Rebeccaday, OMG!',
+            dateinterval_to_string($timeLeft, 'i')
         );
 
     }

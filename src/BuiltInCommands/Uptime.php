@@ -5,6 +5,7 @@ namespace Room11\Jeeves\BuiltInCommands;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use function Room11\Jeeves\dateinterval_to_string;
 use Room11\Jeeves\System\BuiltInCommand;
 use const Room11\Jeeves\PROCESS_START_TIME;
 
@@ -12,33 +13,6 @@ class Uptime implements BuiltInCommand
 {
     private $chatClient;
     private $startTime;
-
-    private function makeDurationString(): string
-    {
-        $diff = (new \DateTime)->diff($this->startTime);
-        $values = [
-            'year'   => $diff->y,
-            'month'  => $diff->m,
-            'day'    => $diff->d,
-            'hour'   => $diff->h,
-            'minute' => $diff->i,
-            'second' => $diff->s,
-        ];
-
-        $duration = [];
-
-        foreach ($values as $unit => $value) {
-            if ($value) {
-                $duration[] = sprintf('%d %s%s', $value, $unit, $value === 1 ? '' : 's');
-            }
-        }
-
-        $last = array_pop($duration);
-
-        return $duration ?
-            implode(', ', $duration) . ' and ' . $last
-            : $last;
-    }
 
     public function __construct(ChatClient $chatClient)
     {
@@ -56,7 +30,7 @@ class Uptime implements BuiltInCommand
     {
         return $this->chatClient->postReply($command, sprintf(
             'I have been running for %s, since %s',
-            $this->makeDurationString(),
+            dateinterval_to_string((new \DateTime)->diff($this->startTime)),
             $this->startTime->format('Y-m-d H:i:s')
         ));
     }
