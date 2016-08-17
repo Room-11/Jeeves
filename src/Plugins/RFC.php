@@ -55,7 +55,7 @@ class RFC extends BasePlugin
 
             $rfcsInVoting[] = sprintf(
                 "[%s](%s)",
-                $href->textContent,
+                trim($href->textContent),
                 \Sabre\Uri\resolve(self::BASE_URI, $href->getAttribute("href"))
             );
         }
