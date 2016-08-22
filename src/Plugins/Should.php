@@ -45,7 +45,9 @@ class Should extends BasePlugin
             return $this->chatClient->postMessage($command->getRoom(), "Dunno.");
         }
 
-        $answer = random_int(0, 1) ? $match[2] : $match[3];
+        $yes = $match[2];
+        $no = strtolower($match[3]) === 'not' ? 'not ' . $match[2] : $match[3];
+        $answer = $this->translatePronouns(random_int(0, 1) ? $yes : $no);
 
         $flags = PostFlags::NONE;
         if (strtolower($match[1]) === 'i') {
@@ -61,9 +63,44 @@ class Should extends BasePlugin
 
         $reply = "{$target} should {$answer}.";
 
-        $reply = str_ireplace(['my', 'me'], ['your', 'you'], $reply);
-
         return $this->chatClient->postMessage($command->getRoom(), $reply, $flags);
+    }
+
+    function translatePronouns(string $text): string
+    {
+        static $replacePairs = [
+            'iyou' => ['i', 'you'],
+            'youi' => ['^you', 'i'],
+            'myyour' => ['my', 'your'],
+            'yourmy' => ['your', 'my'],
+            'meyou' => ['me', 'you'],
+            'youme' => ['you', 'me'],
+            'myselfyourself' => ['myself', 'yourself'],
+            'yourselfmyself' => ['yourself', 'myself'],
+            'mineyours' => ['mine', 'yours'],
+            'yoursmine' => ['yours', 'mine'],
+        ];
+        static $expr;
+
+        if (!isset($expr)) {
+            $parts = [];
+
+            foreach ($replacePairs as $name => $pair) {
+                $parts[] = "\\b(?P<$name>$pair[0])\\b";
+            }
+
+            $expr = '#' . implode('|', $parts) . '#i';
+        }
+
+        return preg_replace_callback($expr, function($match) use($replacePairs) {
+            foreach ($match as $name => $text) {
+                if ($text !== '' && isset($replacePairs[$name])) {
+                    return $replacePairs[$name][1];
+                }
+            }
+
+            return 'banana';
+        }, $text);
     }
 
     public function is(Command $command): Promise
