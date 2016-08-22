@@ -39,12 +39,12 @@ class Wikipedia extends BasePlugin
         }
 
         $response = yield $this->httpClient->request(
-            'https://en.wikipedia.org/w/api.php?action=query&prop=info&inprop=url&format=json&pageids=' . $result['pageid']
+            'https://en.wikipedia.org/w/api.php?action=query&prop=info&inprop=url&format=json&pageids=' . $firstHit['pageid']
         );
 
         $page = json_try_decode($response->getBody(), true);
 
-        return $this->chatClient->postMessage($command->getRoom(), $page['query']['pages'][$result['pageid']]['canonicalurl']);
+        return $this->chatClient->postMessage($command->getRoom(), $page['query']['pages'][$firstHit['pageid']]['canonicalurl']);
     }
 
     public function getDescription(): string
