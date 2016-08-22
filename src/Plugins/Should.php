@@ -61,7 +61,7 @@ class Should extends BasePlugin
 
         $reply = "{$target} should {$answer}.";
 
-        $reply = str_ireplace("my", "your", $reply);
+        $reply = str_ireplace(['my', 'me'], ['your', 'you'], $reply);
 
         return $this->chatClient->postMessage($command->getRoom(), $reply, $flags);
     }
