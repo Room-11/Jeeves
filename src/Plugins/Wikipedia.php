@@ -28,10 +28,10 @@ class Wikipedia extends BasePlugin
 
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(
-            'https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . rawurlencode(implode('%20', $command->getParameters()))
+            'https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . rawurlencode(implode(' ', $command->getParameters()))
         );
 
-        $result   = json_decode($response->getBody(), true);
+        $result   = json_try_decode($response->getBody(), true);
         $firstHit = reset($result['query']['pages']);
 
         if (!isset($firstHit['pageid'])) {
@@ -39,10 +39,10 @@ class Wikipedia extends BasePlugin
         }
 
         $response = yield $this->httpClient->request(
-            'http://en.wikipedia.org/w/api.php?action=query&prop=info&pageids=' . $result['pageid'] . '&inprop=url&format=json'
+            'https://en.wikipedia.org/w/api.php?action=query&prop=info&inprop=url&format=json&pageids=' . $result['pageid']
         );
 
-        $page = json_decode($response->getBody(), true);
+        $page = json_try_decode($response->getBody(), true);
 
         return $this->chatClient->postMessage($command->getRoom(), $page['query']['pages'][$result['pageid']]['canonicalurl']);
     }
