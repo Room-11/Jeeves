@@ -153,7 +153,7 @@ class Google extends BasePlugin
             );
         }
 
-        if (preg_match('#charset\s*=\s*([^;]+)#i', trim($response->getHeader('Content-Type')), $match)
+        if (preg_match('#charset\s*=\s*([^;]+)#i', trim(implode(', ', $response->getHeader('Content-Type'))), $match)
             && !preg_match('#^utf-?8$#i', $match[1])) {
             $body = iconv($match[1], 'UTF-8', $response->getBody());
         }
