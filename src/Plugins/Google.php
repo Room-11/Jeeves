@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
+use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
@@ -14,7 +15,8 @@ use function Room11\DOMUtils\domdocument_load_html;
 
 class Google extends BasePlugin
 {
-    const ENCODING = "UTF-8";
+    const USER_AGENT = 'Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko';
+    const ENCODING = 'UTF-8';
     const ELLIPSIS = "\xE2\x80\xA6";
     const BULLET   = "\xE2\x80\xA2";
 
@@ -136,13 +138,18 @@ class Google extends BasePlugin
 
         $uri = $this->getSearchURL($command);
 
+        $request = (new HttpRequest)
+            ->setMethod('GET')
+            ->setUri($uri)
+            ->setHeader('User-Agent', self::USER_AGENT);
+
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($uri);
+        $response = yield $this->httpClient->request($request);
 
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage(
                 $command->getRoom(),
-                "It was Google's fault, not mine."
+                "Google responded with {$response->getStatus()}"
             );
         }
 
