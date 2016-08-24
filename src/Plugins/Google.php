@@ -67,9 +67,6 @@ class Google extends BasePlugin
             /** @var \DOMElement $linkNode */
             $linkNode = $linkNodes->item(0);
 
-            if (!preg_match('~^/url\?q=([^&]*)~', $linkNode->getAttribute("href"), $matches)) {
-                continue;
-            }
 
             $descriptionNodes = $xpath->query('.//span[@class="st"]', $node);
             $description = $descriptionNodes->length !== 0
@@ -77,7 +74,7 @@ class Google extends BasePlugin
                 : 'No description available';
 
             $nodesInformation[] = [
-                "url"         => urldecode($matches[1]), // we got it from a query string param
+                "url"         => $linkNode->getAttribute("href"),
                 "title"       => $linkNode->textContent,
                 "description" => $this->formatDescription($description),
             ];
@@ -155,7 +152,7 @@ class Google extends BasePlugin
 
         if (preg_match('#charset\s*=\s*([^;]+)#i', trim(implode(', ', $response->getHeader('Content-Type'))), $match)
             && !preg_match('#^utf-?8$#i', $match[1])) {
-            $body = iconv($match[1], 'UTF-8', $response->getBody());
+            $body = iconv($match[1], self::ENCODING, $response->getBody());
         }
 
         if (empty($body)) {
