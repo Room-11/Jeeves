@@ -153,7 +153,16 @@ class Google extends BasePlugin
             );
         }
 
-        $dom = domdocument_load_html($response->getBody());
+        if (preg_match('#charset\s*=\s*([^;]+)#i', trim($response->getHeader('Content-Type')), $match)
+            && !preg_match('#^utf-?8$#i', $match[1])) {
+            $body = iconv($match[1], 'UTF-8', $response->getBody());
+        }
+
+        if (empty($body)) {
+            $body = $response->getBody();
+        }
+
+        $dom = domdocument_load_html($body);
         $xpath = new \DOMXPath($dom);
         $nodes = $this->getResultNodes($xpath);
 
