@@ -29,7 +29,7 @@ class Urban extends BasePlugin
 
         return sprintf(
             '[ [%s](%s) ] %s',
-            $result['list'][0]['word'],
+            trim($result['list'][0]['word']),
             $result['list'][0]['permalink'],
             str_replace("\r\n", ' ', $result['list'][0]['definition'])
         );
