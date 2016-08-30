@@ -403,7 +403,7 @@ class PluginManager
                 }
             }
 
-            yield any($promises);
+            yield all($promises);
         });
     }
 
@@ -414,7 +414,7 @@ class PluginManager
      */
     public function disableAllPluginsForRoom(ChatRoom $room, bool $persist = false): Promise
     {
-        return any(array_map(function(Plugin $plugin) use($room, $persist) {
+        return all(array_map(function(Plugin $plugin) use($room, $persist) {
             return $this->disablePluginForRoom($plugin, $room, $persist);
         }, $this->registeredPlugins));
     }
@@ -569,6 +569,6 @@ class PluginManager
             }
         }
 
-        return any($promises);
+        return all($promises);
     }
 }
