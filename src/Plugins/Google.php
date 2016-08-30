@@ -8,6 +8,7 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\MessageResolver;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\all;
@@ -17,6 +18,7 @@ class Google extends BasePlugin
 {
     const USER_AGENT = 'Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko';
     const ENCODING = 'UTF-8';
+    const ENCODING_REGEX = '#^utf-?8$#i';
     const ELLIPSIS = "\xE2\x80\xA6";
     const BULLET   = "\xE2\x80\xA2";
 
@@ -26,15 +28,18 @@ class Google extends BasePlugin
 
     private $httpClient;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
+    private $messageResolver;
+
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, MessageResolver $messageResolver) {
         $this->chatClient  = $chatClient;
         $this->httpClient  = $httpClient;
+        $this->messageResolver = $messageResolver;
     }
 
-    private function getSearchURL(Command $command): string
+    private function getSearchURL(string $searchTerm): string
     {
         return self::BASE_URL . '?' . http_build_query([
-            'q' => implode(' ', $command->getParameters()),
+            'q' => $searchTerm,
             'lr' => 'lang_en',
         ]);
     }
@@ -110,9 +115,7 @@ class Google extends BasePlugin
         return $description;
     }
 
-    private function getPostMessage(array $searchResults, string $searchURL, Command $command): string {
-        $searchTerm = implode(' ', $command->getParameters());
-
+    private function getPostMessage(array $searchResults, string $searchURL, string $searchTerm): string {
         $message = sprintf('Search for "%s" (%s)', $searchTerm, $searchURL);
 
         foreach ($searchResults as $result) {
@@ -133,7 +136,9 @@ class Google extends BasePlugin
             return new Success();
         }
 
-        $uri = $this->getSearchURL($command);
+        $text = implode(' ', $command->getParameters());
+        $searchTerm = yield $this->messageResolver->resolveMessageText($command->getRoom(), $text);
+        $uri = $this->getSearchURL($searchTerm);
 
         $request = (new HttpRequest)
             ->setMethod('GET')
@@ -151,7 +156,7 @@ class Google extends BasePlugin
         }
 
         if (preg_match('#charset\s*=\s*([^;]+)#i', trim(implode(', ', $response->getHeader('Content-Type'))), $match)
-            && !preg_match('#^utf-?8$#i', $match[1])) {
+            && !preg_match(self::ENCODING, $match[1])) {
             $body = iconv($match[1], self::ENCODING, $response->getBody());
         }
 
@@ -168,7 +173,7 @@ class Google extends BasePlugin
         }
 
         $searchResults = $this->getSearchResults($nodes, $xpath);
-        $postMessage   = $this->getPostMessage($searchResults, $uri, $command);
+        $postMessage   = $this->getPostMessage($searchResults, $uri, $searchTerm);
 
         return $this->chatClient->postMessage($command->getRoom(),$postMessage);
     }
