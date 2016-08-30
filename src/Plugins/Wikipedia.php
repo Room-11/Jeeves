@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
@@ -11,6 +12,8 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Wikipedia extends BasePlugin
 {
+    const BASE_URL = 'https://en.wikipedia.org/w/api.php';
+
     private $chatClient;
     private $httpClient;
 
@@ -20,6 +23,16 @@ class Wikipedia extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
+    private function makeAPIRequest(array $parameters) : Promise
+    {
+        static $defaultParameters = [
+            'action' => 'query',
+            'format' => 'json',
+        ];
+
+        return $this->httpClient->request(self::BASE_URL . '?' . http_build_query($parameters + $defaultParameters));
+    }
+
     public function search(Command $command): \Generator
     {
         if (!$command->hasParameters()) {
@@ -27,9 +40,9 @@ class Wikipedia extends BasePlugin
         }
 
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(
-            'https://en.wikipedia.org/w/api.php?format=json&action=query&titles=' . rawurlencode(implode(' ', $command->getParameters()))
-        );
+        $response = yield $this->$this->makeAPIRequest([
+            'titles' => implode(' ', $command->getParameters()),
+        ]);
 
         $result   = json_try_decode($response->getBody(), true);
         $firstHit = reset($result['query']['pages']);
@@ -38,9 +51,11 @@ class Wikipedia extends BasePlugin
             return $this->chatClient->postReply($command, 'Sorry I couldn\'t find that page.');
         }
 
-        $response = yield $this->httpClient->request(
-            'https://en.wikipedia.org/w/api.php?action=query&prop=info&inprop=url&format=json&pageids=' . $firstHit['pageid']
-        );
+        $response = yield $this->makeAPIRequest([
+            'prop' => 'info',
+            'inprop' => 'url',
+            'pageids' => $firstHit['pageid'],
+        ]);
 
         $page = json_try_decode($response->getBody(), true);
 
