@@ -45,6 +45,11 @@ class Message
         return $this->event;
     }
 
+    public function getHTML(): \DOMElement
+    {
+        return $this->event->getMessageContent()->documentElement;
+    }
+
     public function getText(): string
     {
         if (!isset($this->text)) {

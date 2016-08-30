@@ -18,6 +18,11 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
     private $messageId;
 
     /**
+     * @var string
+     */
+    private $messageContentString;
+
+    /**
      * @var \DOMDocument
      */
     private $messageContent;
@@ -32,7 +37,7 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
         $this->userName = (string)$data['user_name'];
 
         $this->messageId = (int)$data['message_id'];
-        $this->messageContent = domdocument_load_html((string)($data['content'] ?? ''), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        $this->messageContentString = (string)($data['content'] ?? '');
     }
 
     public function getMessageId(): int
@@ -42,6 +47,7 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
 
     public function getMessageContent(): \DOMDocument
     {
-        return $this->messageContent;
+        return $this->messageContent
+            ?? ($this->messageContent = domdocument_load_html($this->messageContentString, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD));
     }
 }
