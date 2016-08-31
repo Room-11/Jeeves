@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Client;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Room\Room;
 use function Amp\resolve;
+use const Room11\Jeeves\DNS_NAME_EXPR;
 
 class MessageResolver
 {
@@ -29,16 +30,19 @@ class MessageResolver
 
         return resolve(function() use($room, $text, $flags) {
             if ($flags & self::MATCH_PERMALINKS) {
-                $expr = '~\bhttps?://'
-                    . preg_quote($room->getIdentifier()->getHost())
-                    . '/transcript/message/(\d+)(?:#\1)\b~i';
+                $exprs = [
+                    '~\bhttps?://' . DNS_NAME_EXPR . '/transcript/message/(\d+)(?:#\1)\b~i',
+                    '~\bhttps?://' . DNS_NAME_EXPR . '/transcript/\d+\?m=(\d+)(?:#\1)\b~i',
+                ];
 
-                if (preg_match($expr, $text, $match)) {
-                    $text = yield $this->chatClient->getMessageText($room, (int)$match[1]);
+                foreach ($exprs as $expr) {
+                    if (preg_match($expr, $text, $match)) {
+                        $text = yield $this->chatClient->getMessageText($room, (int)$match[1]);
 
-                    return ($flags & self::RECURSE)
-                        ? $this->resolveMessageText($room, $text, $flags | self::MATCH_LITERAL_TEXT)
-                        : $text;
+                        return ($flags & self::RECURSE)
+                            ? $this->resolveMessageText($room, $text, $flags | self::MATCH_LITERAL_TEXT)
+                            : $text;
+                    }
                 }
             }
 
