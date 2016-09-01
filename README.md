@@ -16,10 +16,10 @@ Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for
 
 If you want to run the bot as a systemd service:
 
-1. Copy `config/jeeves.sample.service` to `config/jeeves.service`.
+1. Copy `config/jeeves.sample.service` to `/etc/systemd/system/jeeves.service`.
 1. Replace the path with your installation location.
-1. Symlink the service to your systemd directory
 1. Make the `cli/run.php` file executable
+1. If you want to service to automatically start run `systemctl enable jeeves`
 1. Start the service using `systemctl start jeeves`
 
 ## Documentation
