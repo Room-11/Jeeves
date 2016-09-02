@@ -27,12 +27,12 @@ class Urban extends BasePlugin
             return 'whatchoo talkin bout willis';
         }
 
-        return $this->normalizeMessage(sprintf(
+        return sprintf(
             '[ [%s](%s) ] %s',
             trim($result['list'][0]['word']),
             $result['list'][0]['permalink'],
             $result['list'][0]['definition']
-        ));
+        );
     }
 
     public function search(Command $command): \Generator

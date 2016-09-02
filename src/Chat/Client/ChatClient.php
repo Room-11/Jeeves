@@ -51,7 +51,7 @@ class ChatClient
     private function applyPostFlagsToText(string $text, int $flags)
     {
         if ($flags & PostFlags::SINGLE_LINE) {
-            $text = preg_replace('#\pZ+#u', ' ', $text);
+            $text = preg_replace('#\s+#u', ' ', $text);
         }
         if ($flags & PostFlags::FIXED_FONT) {
             $text = preg_replace('#(^|\r?\n)#', '$1    ', $text);
