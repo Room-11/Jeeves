@@ -7,6 +7,7 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
+use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\MessageResolver;
 use Room11\Jeeves\Chat\Message\Command;
@@ -19,8 +20,6 @@ class Google extends BasePlugin
     const USER_AGENT = 'Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko';
     const ENCODING = 'UTF-8';
     const ENCODING_REGEX = '#^utf-?8$#i';
-    const ELLIPSIS = "\xE2\x80\xA6";
-    const BULLET   = "\xE2\x80\xA2";
 
     const BASE_URL = 'https://www.google.com/search';
 
@@ -98,7 +97,7 @@ class Google extends BasePlugin
             return $string;
         }
 
-        return trim(mb_substr($string, 0, $length - 1, self::ENCODING)) . self::ELLIPSIS;
+        return trim(mb_substr($string, 0, $length - 1, self::ENCODING)) . Chars::ELLIPSIS;
     }
 
     private function formatDescription(string $description): string {
@@ -110,7 +109,7 @@ class Google extends BasePlugin
         $description = strip_tags($description);
         $description = preg_replace($stripDateExpr, '', $description);
         $description = preg_replace($stripLeadingSeparatorExpr, '', $description);
-        $description = str_replace('...', self::ELLIPSIS, $description);
+        $description = str_replace('...', Chars::ELLIPSIS, $description);
 
         return $description;
     }
@@ -121,7 +120,7 @@ class Google extends BasePlugin
         foreach ($searchResults as $result) {
             $message .= sprintf(
                 "\n%s %s - %s (%s)",
-                self::BULLET,
+                Chars::BULLET,
                 $this->ellipsise($result['title'], 50),
                 $this->ellipsise($result['description'], 100),
                 $result['url']

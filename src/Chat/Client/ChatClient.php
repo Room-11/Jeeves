@@ -27,6 +27,8 @@ use function Room11\DOMUtils\xpath_get_elements;
 class ChatClient
 {
     const MAX_POST_ATTEMPTS = 5;
+    const ENCODING = 'UTF-8';
+    const TRUNCATION_LIMIT = 500;
 
     private $httpClient;
     private $logger;
@@ -43,19 +45,37 @@ class ChatClient
 
         $this->postMutex = new QueuedExclusiveMutex();
         $this->editMutex = new QueuedExclusiveMutex();
-        $this->starMutex  = new QueuedExclusiveMutex();
+        $this->starMutex = new QueuedExclusiveMutex();
     }
 
     private function applyPostFlagsToText(string $text, int $flags)
     {
         if ($flags & PostFlags::SINGLE_LINE) {
-            $text = preg_replace('#\s+#', ' ', $text);
+            $text = preg_replace('#\pZ+#u', ' ', $text);
         }
         if ($flags & PostFlags::FIXED_FONT) {
             $text = preg_replace('#(^|\r?\n)#', '$1    ', $text);
         }
         if (!($flags & PostFlags::ALLOW_PINGS)) {
             $text = preg_replace('#(^|\s)@#', "$0\u{2060}", $text);
+        }
+
+        if ((($flags & ~PostFlags::SINGLE_LINE) & PostFlags::TRUNCATE)
+            && mb_strlen($text, self::ENCODING) > self::TRUNCATION_LIMIT) {
+            $text = mb_substr($text, 0, self::TRUNCATION_LIMIT, self::ENCODING);
+
+            for ($i = self::TRUNCATION_LIMIT - 1; $i >= 0; $i--) {
+                if (preg_match('#^\pZ$#u', mb_substr($text, $i, 1, self::ENCODING))) {
+                    break;
+                }
+            }
+
+            if ($i === 0) {
+                // srsly
+                throw new \Exception('This should not be caught by anything. Your code is bad and you should feel bad.');
+            }
+
+            $text = mb_substr($text, 0, $i, self::ENCODING) . Chars::ELLIPSIS;
         }
 
         return $text;
@@ -217,6 +237,10 @@ class ChatClient
 
     public function postMessage(ChatRoom $room, string $text, int $flags = PostFlags::NONE): Promise
     {
+        if (!mb_check_encoding($text, self::ENCODING)) {
+            throw new MessagePostFailureException('Message text encoding invalid');
+        }
+        
         $text = $this->applyPostFlagsToText($text, $flags);
 
         $body = (new FormBody)
@@ -306,6 +330,10 @@ class ChatClient
 
     public function editMessage(PostedMessage $message, string $text, int $flags = PostFlags::NONE): Promise
     {
+        if (!mb_check_encoding($text, self::ENCODING)) {
+            throw new MessagePostFailureException('Message text encoding invalid');
+        }
+
         $text = $this->applyPostFlagsToText($text, $flags);
 
         $body = (new FormBody)
