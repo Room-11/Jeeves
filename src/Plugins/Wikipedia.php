@@ -40,7 +40,7 @@ class Wikipedia extends BasePlugin
         }
 
         /** @var HttpResponse $response */
-        $response = yield $this->$this->makeAPIRequest([
+        $response = yield $this->makeAPIRequest([
             'titles' => implode(' ', $command->getParameters()),
         ]);
 
