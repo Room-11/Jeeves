@@ -20,8 +20,8 @@ class OpenGrokSearchFailureException extends \RuntimeException {}
 
 class PHPSrcGrok extends BasePlugin
 {
-    const DEFAULT_BRANCH = 'MASTER';
-    const BASE_URL = 'https://php-lxr.adamharvey.name/source/';
+    const DEFAULT_BRANCH = 'master';
+    const BASE_URL = 'https://php-lxr.adamharvey.name/source/search';
 
     private $chatClient;
     private $httpClient;
@@ -48,15 +48,15 @@ class PHPSrcGrok extends BasePlugin
 
     private function getOpenGrokSearchResults(string $branch, array $params): \Generator
     {
-        $branch = 'PHP_' . strtr($branch, '.', '_');
-        $url = self::BASE_URL . '?branch=' . $branch . '&n=10000&' . http_build_query($params);
+        $branch = ($branch === self::DEFAULT_BRANCH) ? $branch : $branch = 'PHP-' . $branch;
+        $url = self::BASE_URL . '?project=' . $branch . '&n=10000&' . http_build_query($params);
 
         try {
             $request = (new HttpRequest)
                 ->setMethod('GET')
                 ->setUri($url);
 
-            $this->cookieJar->store(new Cookie('OpenGrokProject', $branch, null, null, 'lxr.php.net'));
+            $this->cookieJar->store(new Cookie('OpenGrokProject', $branch, null, null, self::BASE_URL));
 
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($request);
@@ -243,7 +243,7 @@ class PHPSrcGrok extends BasePlugin
     public function getCommandEndpoints(): array
     {
         return [
-            new PluginCommandEndpoint('Def', [$this, 'getDefinition'], 'lxr', 'Retrieves and displays definition search results from lxr.php.net'),
+            new PluginCommandEndpoint('Def', [$this, 'getDefinition'], 'lxr', 'Retrieves and displays definition search results from php-lxr.adamharvey.name/source'),
 //            new PluginCommandEndpoint('Ref', [$this, 'getReference'], 'refs', 'Retrieves and displays symbol search results from lxr.php.net'),
 //            new PluginCommandEndpoint('Full', [$this, 'getFullSearch'], 'lxr', 'Retrieves and displays definition search results from lxr.php.net'),
         ];
