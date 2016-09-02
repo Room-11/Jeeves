@@ -20,6 +20,12 @@ class Urban extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
+    // @todo make this "global"
+    public function normalizeMessage(string $message): string
+    {
+        return trim(str_replace(["\r", "\n"], ' ', $message));
+    }
+
     private function getMessage(array $result): string
     {
         if ($result['result_type'] === 'no_results')
@@ -27,12 +33,12 @@ class Urban extends BasePlugin
             return 'whatchoo talkin bout willis';
         }
 
-        return sprintf(
+        return $this->normalizeMessage(sprintf(
             '[ [%s](%s) ] %s',
             trim($result['list'][0]['word']),
             $result['list'][0]['permalink'],
             str_replace("\r\n", ' ', $result['list'][0]['definition'])
-        );
+        ));
     }
 
     public function search(Command $command): \Generator
