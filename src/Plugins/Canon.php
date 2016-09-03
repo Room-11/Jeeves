@@ -40,6 +40,10 @@ class Canon extends BasePlugin
             "stackoverflow" => "http://stackoverflow.com/questions/3737139/reference-what-does-this-symbol-mean-in-php",
             "bitly"         => "http://bit.ly/29AkAGd",
         ],
+        "mysql" => [
+            "stackoverflow" => "http://stackoverflow.com/questions/12859942/why-shouldnt-i-use-mysql-functions-in-php",
+            "bitly"         => "http://bit.ly/2bUpnha",
+        ]
     ];
 
     private $chatClient;
