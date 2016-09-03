@@ -20,7 +20,6 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Chat\Room\RoomFactory as ChatRoomFactory;
 use Room11\Jeeves\Chat\Room\SessionInfo;
 use Room11\Jeeves\Chat\Room\SessionInfo as ChatRoomSessionInfo;
-use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\System\BuiltInCommandManager;
@@ -68,7 +67,7 @@ class Handler implements Websocket
         PluginManager $pluginManager,
         Logger $logger,
         ChatRoomIdentifier $roomIdentifier,
-        WebSocketHandlerFactory $devMode
+        bool $devMode
     ) {
         $this->eventFactory = $eventFactory;
         $this->messageFactory = $messageFactory;
