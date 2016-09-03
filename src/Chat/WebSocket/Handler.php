@@ -20,6 +20,7 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Chat\Room\RoomFactory as ChatRoomFactory;
 use Room11\Jeeves\Chat\Room\SessionInfo;
 use Room11\Jeeves\Chat\Room\SessionInfo as ChatRoomSessionInfo;
+use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\System\BuiltInCommandManager;
@@ -43,6 +44,7 @@ class Handler implements Websocket
     private $pluginManager;
     private $logger;
     private $roomIdentifier;
+    private $devMode;
 
     /**
      * @var SessionInfo
@@ -65,7 +67,8 @@ class Handler implements Websocket
         BuiltInCommandManager $builtInCommandManager,
         PluginManager $pluginManager,
         Logger $logger,
-        ChatRoomIdentifier $roomIdentifier
+        ChatRoomIdentifier $roomIdentifier,
+        WebSocketHandlerFactory $devMode
     ) {
         $this->eventFactory = $eventFactory;
         $this->messageFactory = $messageFactory;
@@ -76,6 +79,7 @@ class Handler implements Websocket
         $this->logger = $logger;
         $this->rooms = $rooms;
         $this->roomIdentifier = $roomIdentifier;
+        $this->devMode = $devMode;
     }
 
     private function clearTimeoutWatcher()
@@ -112,7 +116,7 @@ class Handler implements Websocket
         try {
             $chatMessage = null;
 
-            if ($event instanceof MessageEvent /*&& $event->getUserId() !== $this->room->getSessionInfo()->getUser()->getId()*/) {
+            if ($event instanceof MessageEvent && ($this->devMode || $event->getUserId() !== $this->room->getSessionInfo()->getUser()->getId())) {
                 $chatMessage = $this->messageFactory->build($event);
 
                 if ($chatMessage instanceof Command) {
