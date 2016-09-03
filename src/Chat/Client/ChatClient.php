@@ -59,23 +59,8 @@ class ChatClient
         if (!($flags & PostFlags::ALLOW_PINGS)) {
             $text = preg_replace('#(^|\s)@#', "$0\u{2060}", $text);
         }
-
-        if ((($flags & ~PostFlags::SINGLE_LINE) & PostFlags::TRUNCATE)
-            && mb_strlen($text, self::ENCODING) > self::TRUNCATION_LIMIT) {
-            $text = mb_substr($text, 0, self::TRUNCATION_LIMIT, self::ENCODING);
-
-            for ($i = self::TRUNCATION_LIMIT - 1; $i >= 0; $i--) {
-                if (preg_match('#^\pZ$#u', mb_substr($text, $i, 1, self::ENCODING))) {
-                    break;
-                }
-            }
-
-            if ($i === 0) {
-                // srsly
-                throw new \Exception('This should not be caught by anything. Your code is bad and you should feel bad.');
-            }
-
-            $text = mb_substr($text, 0, $i, self::ENCODING) . Chars::ELLIPSIS;
+        if (($flags & ~PostFlags::SINGLE_LINE) & PostFlags::TRUNCATE) {
+            $text = $this->truncateText($text);
         }
 
         return $text;
@@ -94,6 +79,27 @@ class ChatClient
         }
 
         throw new \InvalidArgumentException('Invalid chat room identifier');
+    }
+
+    public function truncateText(string $text, $length = self::TRUNCATION_LIMIT): string
+    {
+        if (mb_strlen($text, self::ENCODING) <= $length) {
+            return $text;
+        }
+
+        $text = mb_substr($text, 0, $length, self::ENCODING);
+
+        for ($pos = $length - 1; $pos >= 0; $pos--) {
+            if (preg_match('#^\s$#u', mb_substr($text, $pos, 1, self::ENCODING))) {
+                break;
+            }
+        }
+
+        if ($pos === 0) {
+            $pos = $length - 1;
+        }
+
+        return mb_substr($text, 0, $pos, self::ENCODING) . Chars::ELLIPSIS;
     }
 
     public function getRoomOwnerIds(ChatRoom $room): Promise
