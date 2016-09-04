@@ -90,7 +90,7 @@ $injector->define(TranslationAPICredentials::class, [
 ]);
 
 $injector->define(WebSocketHandlerFactory::class, [
-   ':devMode' => $config['dev-mode']['enable'] ?? '',
+   ':devMode' => $config['dev-mode']['enable'] ?? false,
 ]);
 
 $injector->delegate(Logger::class, function () use ($config) {
