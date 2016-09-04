@@ -43,6 +43,7 @@ class Handler implements Websocket
     private $pluginManager;
     private $logger;
     private $roomIdentifier;
+    private $devMode;
 
     /**
      * @var SessionInfo
@@ -65,7 +66,8 @@ class Handler implements Websocket
         BuiltInCommandManager $builtInCommandManager,
         PluginManager $pluginManager,
         Logger $logger,
-        ChatRoomIdentifier $roomIdentifier
+        ChatRoomIdentifier $roomIdentifier,
+        bool $devMode
     ) {
         $this->eventFactory = $eventFactory;
         $this->messageFactory = $messageFactory;
@@ -76,6 +78,7 @@ class Handler implements Websocket
         $this->logger = $logger;
         $this->rooms = $rooms;
         $this->roomIdentifier = $roomIdentifier;
+        $this->devMode = $devMode;
     }
 
     private function clearTimeoutWatcher()
@@ -112,7 +115,7 @@ class Handler implements Websocket
         try {
             $chatMessage = null;
 
-            if ($event instanceof MessageEvent && $event->getUserId() !== $this->room->getSessionInfo()->getUser()->getId()) {
+            if ($event instanceof MessageEvent && ($this->devMode || $event->getUserId() !== $this->room->getSessionInfo()->getUser()->getId())) {
                 $chatMessage = $this->messageFactory->build($event);
 
                 if ($chatMessage instanceof Command) {

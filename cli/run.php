@@ -89,6 +89,10 @@ $injector->define(TranslationAPICredentials::class, [
     ':clientSecret' => $config['ms-translate']['client-secret'] ?? '',
 ]);
 
+$injector->define(WebSocketHandlerFactory::class, [
+   ':devMode' => $config['dev-mode']['enable'] ?? false,
+]);
+
 $injector->delegate(Logger::class, function () use ($config) {
     $flags = array_map('trim', explode('|', $config['logging']['level'] ?? ''));
 

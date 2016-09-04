@@ -81,3 +81,6 @@ web-api:
     #cert-path: /path/to/ssl.key
     #context: # See http://php.net/context.ssl
       #disable_compression: true
+
+dev-mode:
+  enable: true
