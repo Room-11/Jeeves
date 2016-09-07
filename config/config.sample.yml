@@ -56,6 +56,7 @@ plugins:
   - Room11\Jeeves\Plugins\Wikipedia
   - Room11\Jeeves\Plugins\Wotd
   - Room11\Jeeves\Plugins\Xkcd
+  - Room11\Jeeves\Plugins\Changelog
 
 twitter:
   consumerKey: YourConsumerKey
