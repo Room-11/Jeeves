@@ -64,7 +64,7 @@ class RFC extends BasePlugin
         yield from $this->unpinPreviousMessage($command->getRoom());
 
         if (empty($rfcsInVoting)) {
-            if (yield $this->pluginData->exists('lastpinid', $room)) {
+            if (yield $this->pluginData->exists('lastpinid', $command->getRoom())) {
                 yield $this->pluginData->unset('lastpinid', $command->getRoom());
             }
             
