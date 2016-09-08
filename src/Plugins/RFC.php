@@ -6,6 +6,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
@@ -60,7 +61,10 @@ class RFC extends BasePlugin
             );
         }
 
+        yield from $this->unpinPreviousMessage($command->getRoom());
+
         if (empty($rfcsInVoting)) {
+            yield $this->pluginData->unset('lastpinid', $command->getRoom());
             return $this->chatClient->postMessage($command->getRoom(), "Sorry, but we can't have nice things.");
         }
 
@@ -73,17 +77,19 @@ class RFC extends BasePlugin
             )
         );
 
-        $pinnedMessages = yield $this->chatClient->getPinnedMessages($command->getRoom());
-        $lastPinId = (yield $this->pluginData->exists('lastpinid', $command->getRoom()))
-            ? yield $this->pluginData->get('lastpinid', $command->getRoom())
+        yield $this->pluginData->set('lastpinid', $postedMessage->getMessageId(), $command->getRoom());
+        return $this->chatClient->pinOrUnpinMessage($postedMessage->getMessageId(), $command->getRoom());
+    }
+
+    private function unpinPreviousMessage(ChatRoom $room) {
+        $pinnedMessages = yield $this->chatClient->getPinnedMessages($room);
+        $lastPinId = (yield $this->pluginData->exists('lastpinid', $room))
+            ? yield $this->pluginData->get('lastpinid', $room)
             : -1;
 
         if (in_array($lastPinId, $pinnedMessages)) {
-            yield $this->chatClient->unstarMessage($lastPinId, $command->getRoom());
+            yield $this->chatClient->unstarMessage($lastPinId, $room);
         }
-
-        yield $this->pluginData->set('lastpinid', $postedMessage->getMessageId(), $command->getRoom());
-        return $this->chatClient->pinOrUnpinMessage($postedMessage->getMessageId(), $command->getRoom());
     }
 
     public function getRFC(Command $command): \Generator {
