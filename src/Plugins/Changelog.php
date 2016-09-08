@@ -100,7 +100,7 @@ class Changelog extends BasePlugin
                 $json->html_url,
                 $json->commit->message,
                 $json->commit->author->name,
-                (new \DateTimeImmutable($json->commit->author->date))->format('d.m.Y h:i A')
+                (new \DateTimeImmutable($json->commit->author->date))->format('d.m.Y H:i')
             ),
             PostFlags::SINGLE_LINE
         );
