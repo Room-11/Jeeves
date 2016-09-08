@@ -64,7 +64,10 @@ class RFC extends BasePlugin
         yield from $this->unpinPreviousMessage($command->getRoom());
 
         if (empty($rfcsInVoting)) {
-            yield $this->pluginData->unset('lastpinid', $command->getRoom());
+            if (yield $this->pluginData->exists('lastpinid', $room)) {
+                yield $this->pluginData->unset('lastpinid', $command->getRoom());
+            }
+            
             return $this->chatClient->postMessage($command->getRoom(), "Sorry, but we can't have nice things.");
         }
 
