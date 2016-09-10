@@ -20,6 +20,7 @@ class Canon extends BasePlugin
     private $storage;
 
     const USAGE = "Usage: `!!canon [ list | add <title> <url> | remove <title> ]`";
+    const ACTIONS = ['add', 'remove', 'fire'];
 
     public function __construct(ChatClient $chatClient, KeyValueStore $storage) {
         $this->chatClient = $chatClient;
@@ -131,12 +132,21 @@ class Canon extends BasePlugin
             return $this->getSupportedCanonicals($command);
         }
 
+        if(!in_array($command->getParameter(0), self::ACTIONS)){
+            return $this->getMessage($command, implode(" ", $command->getParameters()));
+        }
+
         return resolve(function() use($command) {
+            $owners = yield $this->chatClient->getRoomOwnerIds($command->getRoom());
+
+            if (!isset($owners[$command->getUserId()])) {
+                return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+            }
+
             switch ($command->getParameter(0)) {
                 case 'add':    return yield $this->add($command, (string)$command->getParameter(1), (string)$command->getParameter(2));
                 case 'remove': return yield $this->remove($command, (string)$command->getParameter(1));
                 case 'fire': return yield $this->fire($command);
-                default: return yield $this->getMessage($command, implode(" ", $command->getParameters()));
             }
         });
     }
