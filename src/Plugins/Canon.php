@@ -39,9 +39,10 @@ class Canon extends BasePlugin
 
             foreach ($canonicals as $title => $link) {
                 $message .= sprintf(
-                    "\n%s %s - %s",
+                    "\n%s %s %s %s",
                     Chars::BULLET,
                     $title,
+                    Chars::RIGHTWARDS_ARROW,
                     $link["stackoverflow"]
                 );
             }
