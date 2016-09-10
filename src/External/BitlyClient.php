@@ -45,7 +45,8 @@ class BitlyClient
         if($content["status_code"] === 200){
             return $content['data']['url'];
         }
-        return 'Error:' . $content["status_code"] . ' - ' . $content['status_txt']; // TODO: need handle this properly
+
+        throw new \Exception('Error upon Bitly Response:' . $content["status_code"] . ' - ' . $content['status_txt']);
     }
 
     /**

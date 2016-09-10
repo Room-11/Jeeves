@@ -6,9 +6,9 @@ use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
+use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
-use Room11\Jeeves\External\BitlyClient;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\all;
 use function Amp\resolve;
@@ -18,20 +18,17 @@ class Canon extends BasePlugin
 {
     private $chatClient;
     private $storage;
-    private $bitlyClient;
 
     const USAGE = "Usage: `!!canon [ list | add <title> <url> | remove <title> ]`";
 
-    public function __construct(ChatClient $chatClient, KeyValueStore $storage, BitlyClient $bitlyClient) {
+    public function __construct(ChatClient $chatClient, KeyValueStore $storage) {
         $this->chatClient = $chatClient;
         $this->storage = $storage;
-        $this->bitlyClient = $bitlyClient;
     }
 
     private function getSupportedCanonicals(Command $command): Promise
     {
         return resolve(function() use($command) {
-            $delimiter = "";
             $message = "The following canonicals are currently supported:";
 
             $canonicals = yield $this->storage->getAll($command->getRoom());
@@ -40,9 +37,13 @@ class Canon extends BasePlugin
                 return $this->chatClient->postMessage($command->getRoom(), "There are no registered canonicals.");
             }
 
-            foreach ($canonicals as $title => $urls) {
-                $message .= sprintf("$delimiter [%s](%s)", $title, $urls["bitly"]);
-                $delimiter = " -";
+            foreach ($canonicals as $title => $link) {
+                $message .= sprintf(
+                    "\n%s %s - %s",
+                    Chars::BULLET,
+                    $title,
+                    $link["stackoverflow"]
+                );
             }
 
             return $this->chatClient->postMessage($command->getRoom(), $message);
@@ -70,6 +71,7 @@ class Canon extends BasePlugin
 
     private function add(Command $command, string $canonTitle, string $url): Promise
     {   // !!canon add mysql http://stackoverflow.com/questions/12859942
+        $url = getNormalisedStackExchangeURL($url);
 
         return resolve(function() use($command, $canonTitle, $url) {
 
@@ -83,21 +85,10 @@ class Canon extends BasePlugin
                 return $this->chatClient->postMessage($command->getRoom(), "$canonTitle is already on canonicals.");
             }
 
-            $url = getNormalisedStackExchangeURL($url);
-            $bitly = yield from $this->bitlyClient->shorten($url);
+            $value = [ 'stackoverflow' => $url ];
+            yield $this->storage->set($canonTitle, $value, $command->getRoom());
 
-            if(substr($bitly, 0, 5) !== 'Error'){
-                $value = [ 'stackoverflow' => $url, 'bitly' => $bitly ];
-
-                yield $this->storage->set($canonTitle, $value, $command->getRoom());
-
-                return $this->chatClient->postMessage($command->getRoom(), "Cannonball in place! Err, I mean.. canonical was added successfully.");
-            }
-
-            $temp = explode(" ", $bitly);
-            $status_code = $temp[1];
-            $status_text = ($temp[2]) ?? '';
-            return $this->chatClient->postMessage($command->getRoom(), "Response: $status_code $status_text.");
+            return $this->chatClient->postMessage($command->getRoom(), "Cannonball in place! I mean.. canonical was added successfully.");
         });
     }
 
@@ -130,7 +121,7 @@ class Canon extends BasePlugin
     /**
      * Handle a command message
      *
-     * @param CommandMessage $command
+     * @param Command $command
      * @return Promise
      */
     public function handleCommand(Command $command): Promise
