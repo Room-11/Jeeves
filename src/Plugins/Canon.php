@@ -5,86 +5,146 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
+use Room11\Jeeves\External\BitlyClient;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use function Amp\all;
+use function Amp\resolve;
 
 class Canon extends BasePlugin
 {
-    // we need shortened links because otherwise we will hit the chat message length
-    const CANONS = [
-        "errors" => [
-            "stackoverflow" => "http://stackoverflow.com/questions/845021/how-to-get-useful-error-messages-in-php",
-            "bitly"         => "http://bit.ly/1SvLc9Q",
-        ],
-        "headers" => [
-            "stackoverflow" => "http://stackoverflow.com/questions/8028957/how-to-fix-headers-already-sent-error-in-php",
-            "bitly"         => "http://bit.ly/1Gh6mzN",
-        ],
-        "globals" => [
-            "stackoverflow" => "http://stackoverflow.com/questions/5166087/php-global-in-functions",
-            "bitly"         => "http://bit.ly/1VRfwcu",
-        ],
-        "utf8" => [
-            "stackoverflow" => "http://stackoverflow.com/questions/279170/utf-8-all-the-way-through",
-            "bitly"         => "http://bit.ly/20JrAA4",
-        ],
-        "parse html" => [
-            "stackoverflow" => "http://stackoverflow.com/questions/3577641/how-do-you-parse-and-process-html-xml-in-php",
-            "bitly"         => "http://bit.ly/1SLCXET",
-        ],
-        "sqli" => [
-            "stackoverflow" => "http://stackoverflow.com/questions/60174/how-can-i-prevent-sql-injection-in-php",
-            "bitly"         => "http://bit.ly/23LFBQb",
-        ],
-        "operators" => [
-            "stackoverflow" => "http://stackoverflow.com/questions/3737139/reference-what-does-this-symbol-mean-in-php",
-            "bitly"         => "http://bit.ly/29AkAGd",
-        ],
-        "mysql" => [
-            "stackoverflow" => "http://stackoverflow.com/questions/12859942/why-shouldnt-i-use-mysql-functions-in-php",
-            "bitly"         => "http://bit.ly/2bUpnha",
-        ]
-    ];
-
     private $chatClient;
+    private $storage;
+    private $bitlyClient;
 
-    public function __construct(ChatClient $chatClient) {
+    const USAGE = "Usage: `!!canon [ list | add <title> <url> | remove <title> ]`";
+
+    public function __construct(ChatClient $chatClient, KeyValueStore $storage, BitlyClient $bitlyClient) {
         $this->chatClient = $chatClient;
+        $this->storage = $storage;
+        $this->bitlyClient = $bitlyClient;
     }
 
-     private function getSupportedCanonicalsMessage(): string {
-        $delimiter = "";
-        $message = "The following canonicals are currently supported:";
-
-        foreach (self::CANONS as $parameter => $urls) {
-            $message .= sprintf("$delimiter [%s](%s)", $parameter, $urls["bitly"]);
-
-            $delimiter = " -";
-        }
-
-        return $message;
-    }
-
-    private function getMessage(string $keyword): string {
-        if (!array_key_exists(strtolower($keyword), self::CANONS)) {
-            return "Cannot find the canon for you... :-( Use `!!canon list` to list all supported canonicals.";
-        }
-
-        return self::CANONS[strtolower($keyword)]["stackoverflow"];
-    }
-
-    public function getCanonical(Command $command): Promise
+    private function getSupportedCanonicals(Command $command): Promise
     {
-        if (!$command->hasParameters()) {
-            return new Success();
+        return resolve(function() use($command) {
+            $delimiter = "";
+            $message = "The following canonicals are currently supported:";
+
+            $canonicals = yield $this->storage->getAll($command->getRoom());
+
+            if ($canonicals === []) {
+                return $this->chatClient->postMessage($command->getRoom(), "There are no registered canonicals.");
+            }
+
+            foreach ($canonicals as $title => $urls) {
+                $message .= sprintf("$delimiter [%s](%s)", $title, $urls["bitly"]);
+                $delimiter = " -";
+            }
+
+            return $this->chatClient->postMessage($command->getRoom(), $message);
+        });
+    }
+
+    private function getMessage(Command $command, string $keyword): Promise
+    {
+        return resolve(function() use($command, $keyword) {
+            if ($command->hasParameters() === false) {
+                return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+            }
+
+            if (false === yield $this->storage->exists(strtolower($keyword), $command->getRoom())) {
+                return $this->chatClient->postMessage($command->getRoom(), "Cannot find the canon for you... :-( Use `!!canon list` to list all supported canonicals.");
+            }
+
+            if ($canon = yield $this->storage->get(strtolower($keyword), $command->getRoom())) {
+                return $this->chatClient->postMessage($command->getRoom(), $canon["stackoverflow"]);
+            }
+
+            throw new \LogicException('Operation ' . $command->getParameter(0) . ' was considered valid but not handled??');
+        });
+    }
+
+    private function add(Command $command, string $canonTitle, string $url): Promise
+    {   // !!canon add mysql http://stackoverflow.com/questions/12859942
+
+        return resolve(function() use($command, $canonTitle, $url) {
+
+            if(!$command->hasParameters(3)){
+                return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+            }
+
+            $canonicals = yield $this->storage->getKeys($command->getRoom());
+
+            if (in_array($canonTitle, $canonicals)) {
+                return $this->chatClient->postMessage($command->getRoom(), "$canonTitle is already on canonicals.");
+            }
+
+            $bitly = yield from $this->bitlyClient->shorten($url);
+
+            if(substr($bitly, 0, 5) !== 'Error'){
+                $value = [ 'stackoverflow' => $url, 'bitly' => $bitly ];
+
+                yield $this->storage->set($canonTitle, $value, $command->getRoom());
+
+                return $this->chatClient->postMessage($command->getRoom(), "Cannonball in place! Err, I mean.. canonical was added successfully.");
+            }
+
+            $temp = explode(" ", $bitly);
+            $status_code = $temp[1];
+            $status_text = ($temp[2]) ?? '';
+            return $this->chatClient->postMessage($command->getRoom(), "Response: $status_code $status_text.");
+        });
+    }
+
+    private function remove(Command $command, string $canonTitle): Promise
+    {   // !!canon remove mysql
+
+        return resolve(function() use($command, $canonTitle) {
+            if(!$command->hasParameters(2)){
+                return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+            }
+
+            $canonicals = yield $this->storage->getAll($command->getRoom());
+
+            if (!in_array($canonTitle, array_keys($canonicals))) {
+                return $this->chatClient->postMessage($command->getRoom(), "Canonical is not on the list.");
+            }
+
+            yield $this->storage->unset($canonTitle, $command->getRoom());
+
+            return $this->chatClient->postMessage($command->getRoom(), "Canonical removed from the list.");
+        });
+    }
+
+    public function fire(Command $command): Promise
+    {  // !!canon fire
+        return resolve(function () use($command){
+            return $this->chatClient->postMessage($command->getRoom(), "http://i.imgur.com/s7gEZZC.gif");
+        });
+    }
+    /**
+     * Handle a command message
+     *
+     * @param CommandMessage $command
+     * @return Promise
+     */
+    public function handleCommand(Command $command): Promise
+    {
+        if ($command->getParameter(0) === "list") {
+            return $this->getSupportedCanonicals($command);
         }
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            $command->getParameter(0) === "list"
-                ? $this->getSupportedCanonicalsMessage()
-                : $this->getMessage(implode(" ", $command->getParameters()))
-        );
+        return resolve(function() use($command) {
+            switch ($command->getParameter(0)) {
+                case 'add':    return yield $this->add($command, (string)$command->getParameter(1), (string)$command->getParameter(2));
+                case 'remove': return yield $this->remove($command, (string)$command->getParameter(1));
+                case 'fire': return yield $this->fire($command);
+                default: return yield $this->getMessage($command, implode(" ", $command->getParameters()));
+            }
+        });
     }
 
     public function getName(): string
@@ -99,6 +159,6 @@ class Canon extends BasePlugin
 
     public function getCommandEndpoints(): array
     {
-        return [new PluginCommandEndpoint('canon', [$this, 'getCanonical'], 'canon')];
+        return [new PluginCommandEndpoint('canon', [$this, 'handleCommand'], 'canon')];
     }
 }

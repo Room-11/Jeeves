@@ -38,7 +38,14 @@ class BitlyClient
     {
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($this->getAPIRequestURL($longURL));
-        return json_try_decode($response->getBody(), true)["data"]["url"];
+
+        $jsonBody = $response->getBody();
+        $content  = json_try_decode($jsonBody, true);
+
+        if($content["status_code"] === 200){
+            return $content['data']['url'];
+        }
+        return 'Error:' . $content["status_code"] . ' - ' . $content['status_txt']; // TODO: need handle this properly
     }
 
     /**
