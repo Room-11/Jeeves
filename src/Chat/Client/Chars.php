@@ -6,4 +6,5 @@ class Chars
 {
     const ELLIPSIS = "\xE2\x80\xA6";
     const BULLET   = "\xE2\x80\xA2";
+    const RIGHTWARDS_ARROW = "\xE2\x86\x92";
 }
