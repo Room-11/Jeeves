@@ -12,6 +12,7 @@ use Room11\Jeeves\External\BitlyClient;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\all;
 use function Amp\resolve;
+use function Room11\Jeeves\getNormalisedStackExchangeURL;
 
 class Canon extends BasePlugin
 {
@@ -82,6 +83,7 @@ class Canon extends BasePlugin
                 return $this->chatClient->postMessage($command->getRoom(), "$canonTitle is already on canonicals.");
             }
 
+            $url = getNormalisedStackExchangeURL($url);
             $bitly = yield from $this->bitlyClient->shorten($url);
 
             if(substr($bitly, 0, 5) !== 'Error'){

@@ -41,3 +41,28 @@ function dateinterval_to_string(\DateInterval $interval, string $precision = 's'
         implode(', ', $parts) . ' and ' . $last
         : $last;
 }
+
+function getNormalisedStackExchangeURL(string $url): string
+{
+    static $domains, $questionExpr, $answerExpr;
+
+    $domains = $domains ?? [
+            'stackoverflow\.com',
+            'superuser\.com',
+            'serverfault\.com',
+            '[a-z0-9]+\.stackexchange\.com',
+        ];
+
+    $questionExpr = $questionExpr ?? '#^https?://(?:www\.)?(' . implode('|', $domains) . ')/q(?:uestions)?/([0-9]+)#';
+    $answerExpr = $answerExpr ?? '#^https?://(?:www\.)?(' . implode('|', $domains) . ')/a/([0-9]+)#';
+
+    if (preg_match($questionExpr, $url, $match)) {
+        return 'https://' . $match[1] . '/q/' . $match[2];
+    }
+
+    if (preg_match($answerExpr, $url, $match)) {
+        return 'https://' . $match[1] . '/a/' . $match[2];
+    }
+
+    throw new \Exception('Unrecognised SE URL format');
+}
