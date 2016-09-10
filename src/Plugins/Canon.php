@@ -5,10 +5,10 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
+use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\all;
 use function Amp\resolve;
@@ -18,13 +18,15 @@ class Canon extends BasePlugin
 {
     private $chatClient;
     private $storage;
+    private $admin;
 
     const USAGE = "Usage: `!!canon [ list | add <title> <url> | remove <title> ]`";
     const ACTIONS = ['add', 'remove', 'fire'];
 
-    public function __construct(ChatClient $chatClient, KeyValueStore $storage) {
+    public function __construct(ChatClient $chatClient, KeyValueStore $storage, AdminStorage $admin) {
         $this->chatClient = $chatClient;
         $this->storage = $storage;
+        $this->admin = $admin;
     }
 
     private function getSupportedCanonicals(Command $command): Promise
@@ -137,10 +139,8 @@ class Canon extends BasePlugin
         }
 
         return resolve(function() use($command) {
-            $owners = yield $this->chatClient->getRoomOwnerIds($command->getRoom());
-
-            if (!isset($owners[$command->getUserId()])) {
-                return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+            if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
+                return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that.");
             }
 
             switch ($command->getParameter(0)) {
