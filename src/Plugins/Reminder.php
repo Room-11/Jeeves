@@ -208,3 +208,4 @@ class Reminder extends BasePlugin
         return [new PluginCommandEndpoint('reminder', [$this, 'handleCommand'], 'reminder')];
     }
 }
+
