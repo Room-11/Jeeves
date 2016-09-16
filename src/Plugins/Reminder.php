@@ -3,7 +3,6 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use Amp\Success;
 use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
@@ -56,15 +55,16 @@ REGEX;
         $this->admin = $admin;
     }
 
-    private function flush(Command $command) {
+    private function nuke(Command $command) {
         return resolve(function() use($command) {
             if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
                 return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
             }
 
             $reminders = yield $this->storage->getKeys($command->getRoom());
-            if ($reminders !== []) {
+            if ($reminders) {
                 foreach ($reminders as $key){
+                    $key = (string) $key;
                     yield $this->storage->unset($key, $command->getRoom());
                 }
             }
@@ -73,27 +73,24 @@ REGEX;
     }
 
     private function unset(Command $command) {
-        $messageId = $command->getParameter(1) ?? false;
+        $messageId = (string) $command->getParameter(1);
 
         return resolve(function() use($command, $messageId) {
             if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
                 return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
             }
 
-            if(!$messageId){ return $this->chatClient->postMessage($command->getRoom(), self::USAGE); }
-            $key = $messageId;
-
-            if (yield $this->storage->exists($key, $command->getRoom())) {
-                yield $this->storage->unset($key, $command->getRoom());
+            if (yield $this->storage->exists($messageId, $command->getRoom())) {
+                yield $this->storage->unset($messageId, $command->getRoom());
                 return $this->chatClient->postMessage($command->getRoom(), "Reminder unset.");
             }
+
             return $this->chatClient->postReply($command, "I'm sorry, I couldn't find that key.");
         });
     }
 
-    private function setReminder(Command $command): Promise
+    private function setReminder(Command $command, string $commandName): Promise
     {
-        $commandName = $command->getCommandName();
         return resolve(function() use($command, $commandName) {
 
             switch ($commandName){
@@ -105,12 +102,15 @@ REGEX;
                     break;
                 case 'at':
                     $time = $command->getParameter(0) ?? false; // 24hrs
-                    if($time && preg_match(self::TIME_FORMAT_REGEX, $time)){ // !!at 16:00 remind | !!at monday next week remind?
+
+                    if($time && preg_match(self::TIME_FORMAT_REGEX, $time)){ // maybe @TODO support !!at monday next week remind?
                         $text = implode(" ", array_diff($command->getParameters(), array($time)));
                     }
+
                     break;
-                case 'reminder':case 'remind':
+                case 'reminder':
                     $parameters = implode(" ", $command->getParameters());
+
                     if(!preg_match(self::REMINDER_REGEX, $parameters, $matches)){
                         return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
                     }
@@ -120,16 +120,16 @@ REGEX;
                     break;
             }
 
-            if(!isset($time) || !$time): return $this->chatClient->postMessage($command->getRoom(), "Have a look at the time again, yo!"); endif;
-            if(!isset($text) || !$text): return $this->chatClient->postMessage($command->getRoom(), self::USAGE); endif;
+            if(!isset($time) || !$time) return $this->chatClient->postMessage($command->getRoom(), "Have a look at the time again, yo!");
+            if(!isset($text) || !$text) return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
 
             $timestamp = strtotime($time) ?: strtotime("+{$time}"); // false|int
-            if (!$timestamp): return $this->chatClient->postMessage($command->getRoom(), "Have a look at the time again, yo!"); endif;
 
-            $messageId = $command->getId();
-            $key = base_convert($messageId, 10, 36);
+            if (!$timestamp) return $this->chatClient->postMessage($command->getRoom(), "Have a look at the time again, yo!");
+
+            $key = (string) $command->getId();
             $value = [
-                'id' => $messageId,
+                'id' => $key,
                 'text' => $text,
                 'delay' => $time,
                 'userId' => $command->getUserId(),
@@ -138,9 +138,9 @@ REGEX;
             ];
 
             $seconds = $timestamp - time();
-            if ($seconds <= 0): return $this->chatClient->postReply($command, "I guess I'm late: " . $text); endif;
+            if ($seconds <= 0) return $this->chatClient->postReply($command, "I guess I'm late: " . $text);
 
-            if( yield $this->storage->set($key, $value, $command->getRoom()) ){
+            if(yield $this->storage->set($key, $value, $command->getRoom())){
 
                 $watcher = once(function () use ($command, $value, $key) {
                     yield $this->storage->unset($key, $command->getRoom());
@@ -161,20 +161,15 @@ REGEX;
             $message = "Registered reminders are:";
 
             $reminders = yield $this->storage->getAll($command->getRoom());
-            if($reminders === []){
+            if(!$reminders){
                 return $this->chatClient->postMessage($command->getRoom(), "There aren't any scheduled reminders.");
             }
 
             $timeouts = [];
-            foreach ($reminders as $item => $value) {
+            foreach ($reminders as $key => $value) {
                 $text = $value['text'];
                 $user = $value['username'];
-                $key  = base_convert($value['id'], 10, 36);
                 $timestamp = $value['timestamp'];
-
-                if (!$timestamp) {
-                    return $this->chatClient->postMessage($command->getRoom(), "Have a look at the time again, yo!");
-                }
                 $seconds = $timestamp - time();
 
                 if ($seconds <= 0) {
@@ -187,7 +182,7 @@ REGEX;
                     Chars::BULLET,
                     $text,
                     Chars::RIGHTWARDS_ARROW,
-                    "Id: " . $key,
+                    "Id: :" . $key,
                     Chars::RIGHTWARDS_ARROW,
                     date('l, dS F Y H:i (e)', $timestamp),
                     'Set by ' . $user,
@@ -223,16 +218,24 @@ REGEX;
             /* $command->getParameter(0) can be: list | examples | flush | unset | <text> | <time> */
             $textOrCommand = $command->getParameter(0);
             $commandName = $command->getCommandName(); // <reminder|in|at>
+
             switch ($commandName){
-                case 'reminder': case 'remind': break;
-                case 'in': case 'at': return yield $this->setReminder($command); break;
+                case 'in':
+                    return yield $this->setReminder($command, 'in');
+                case 'at':
+                    return yield $this->setReminder($command, 'at');
+                case 'reminder':
+                    break;
             }
 
-            if ( count(array_diff($command->getParameters(), array($textOrCommand))) < 1 ){
+            if (count(array_diff($command->getParameters(), array($textOrCommand))) < 1){
                 switch ($textOrCommand){
-                    case 'list': return yield $this->getAllReminders($command); break;
-                    case 'examples': return yield $this->getExamples($command); break;
-                    case 'flush': return yield $this->flush($command);
+                    case 'list':
+                        return yield $this->getAllReminders($command);
+                    case 'examples':
+                        return yield $this->getExamples($command);
+                    case 'nuke': // nukes all reminders
+                        return yield $this->nuke($command);
                 }
             }
 
@@ -241,81 +244,80 @@ REGEX;
                 && count($command->getParameters()) <= 2
             ){ return yield $this->unset($command); }
 
-            return yield $this->setReminder($command);
+            return yield $this->setReminder($command, 'reminder');
         });
     }
 
-    public function apologize(ChatRoom $room, $timedOutReminders): \Generator
+    public function apologizeForExpiredReminders(ChatRoom $room, array $reminders): \Generator
     {
-        if(count($timedOutReminders) > 0){
-            foreach ($timedOutReminders as $key){
-                $value = yield $this->storage->get($key,$room);
-                $text = $value['text'];
-                $name = $value['username'];
+        if(!$reminders) return;
 
-                if (null !== $pingableName = yield $this->chatClient->getPingableName($room, $name)) {
-                    $target = "@{$pingableName}";
-                    $reply = $target . " I guess I'm late: " . $text;
-                    yield $this->storage->unset($key, $room);
-                    return $this->chatClient->postMessage($room, $reply, PostFlags::ALLOW_PINGS);
-                }
+        foreach ($reminders as $key) {
+            $key = (string) $key;
+            $value = yield $this->storage->get($key, $room);
+            $text = $value['text'];
+            $name = $value['username'];
+            $stamp = $value['timestamp'];
+            $seconds = $stamp - time();
+
+            if($seconds > 0) continue;
+
+            if (null !== $pingableName = yield $this->chatClient->getPingableName($room, $name)) {
+                $target = "@{$pingableName}";
+                $reply = $target . " I guess I'm late: " . $text;
+
+                yield $this->storage->unset($key, $room);
+                return $this->chatClient->postMessage($room, $reply, PostFlags::ALLOW_PINGS);
             }
         }
     }
 
-    public function reschedule(ChatRoom $room, array $upcomingReminders): \Generator
+    public function rescheduleUpcomingReminders(ChatRoom $room, array $reminders): \Generator
     {
-        if(count($upcomingReminders) > 0){
-            $this->watchers = [];
+        if(!$reminders) return;
 
-            foreach ($upcomingReminders as $key){
-                $value = yield $this->storage->get($key,$room);
-                $text  = $value['text'];
-                $name  = $value['username'];
-                $stamp = $value['timestamp'];
-                $seconds = $stamp - time();
+        $this->watchers = $timedOutReminders = [];
 
-                if (null !== $pingableName = yield $this->chatClient->getPingableName($room, $name)) {
-                    $target = "@{$pingableName}";
-                    $reply = ($seconds <= 0) ? $target ." I guess I'm late: " . $text : $target . " " . $text;
+        foreach ($reminders as $key){
+            $key = (string) $key;
+            $value = yield $this->storage->get($key, $room);
+            $text  = $value['text'];
+            $name  = $value['username'];
+            $stamp = $value['timestamp'];
+            $seconds = $stamp - time();
 
-                    if ($seconds <= 0): return $this->chatClient->postMessage($room, $reply); endif;
-
-                    $this->watchers[] = once(function () use ($room, $key, $value, $reply) {
-                        yield $this->storage->unset($key, $room);
-                        return $this->chatClient->postMessage($room, $reply);
-                    }, $seconds * 1000);
-                }
+            if ($seconds <= 0){
+                $timedOutReminders[] = $key;
+                continue;
             }
+
+            if (null !== $pingableName = yield $this->chatClient->getPingableName($room, $name)) {
+                $target = "@{$pingableName}";
+                $reply = ($seconds <= 0) ? $target ." I guess I'm late: " . $text : $target . " " . $text;
+
+                $this->watchers[] = once(function () use ($room, $key, $value, $reply) {
+                    yield $this->storage->unset($key, $room);
+                    return $this->chatClient->postMessage($room, $reply);
+                }, $seconds * 1000);
+            }
+        }
+
+        if($timedOutReminders){
+            yield from $this->apologizeForExpiredReminders($room, $timedOutReminders);
         }
     }
 
     public function enableForRoom(ChatRoom $room, bool $persist = true){
-        $timedOutReminders = $upcomingReminders = [];
-        $reminders = yield $this->storage->getAll($room);
-
-        if(count($reminders) > 0){
-            foreach ($reminders as $key => $value){
-                $timestamp = $value['timestamp'];
-                $seconds = $timestamp - time();
-
-                if ($seconds <= 0){
-                    $timedOutReminders[] = base_convert($value['id'], 10, 36);
-                } else {
-                    $upcomingReminders[] = base_convert($value['id'], 10, 36);
-                }
-            }
-        }
-        yield from $this->reschedule($room, $upcomingReminders);
-        yield from $this->apologize($room, $timedOutReminders);
+        $reminders = yield $this->storage->getKeys($room);
+        yield from $this->rescheduleUpcomingReminders($room, $reminders);
+        yield from $this->apologizeForExpiredReminders($room, $reminders);
     }
 
     public function disableForRoom(ChatRoom $room, bool $persist = false){
-        $watchers = $this->watchers;
-        if(count($watchers) > 0){
-            foreach ($watchers as $key => $id){
-                Amp\cancel($id);
-            }
+        if(!$this->watchers) return;
+
+        foreach ($this->watchers as $key => $id){
+            Amp\cancel($id);
         }
     }
 
@@ -335,7 +337,7 @@ REGEX;
             . Chars::BULLET . " !!reminder foo at 18:00 \n"
             . Chars::BULLET . " With timezone: (ie. UTC-3) !!reminder foo at 18:00-3:00 \n"
             . Chars::BULLET . " !!reminder bar in 2 hours \n"
-            . Chars::BULLET . " !!reminder unset jisy6 \n"
+            . Chars::BULLET . " !!reminder unset 32901146 \n"
             . Chars::BULLET . " !!reminder list \n"
             . Chars::BULLET . " !!in 2 days 42 hours 42 minutes 42 seconds 42! \n"
             . Chars::BULLET . " !!at 22:00 Grab a beer!";
