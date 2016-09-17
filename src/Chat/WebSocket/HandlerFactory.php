@@ -33,7 +33,6 @@ class HandlerFactory
         PluginManager $pluginManager,
         Logger $logger,
         bool $devMode
-
     ) {
         $this->eventBuilder = $eventBuilder;
         $this->messageFactory = $messageFactory;
