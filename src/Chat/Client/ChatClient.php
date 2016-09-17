@@ -6,13 +6,11 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
-use Amp\Mutex\QueuedExclusiveMutex;
-use Amp\Pause;
 use Amp\Promise;
-use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\DOMUtils\ElementNotFoundException;
 use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\Entities\User;
+use Room11\Jeeves\Chat\Client\Actions\ActionFactory;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
@@ -32,24 +30,25 @@ class ChatClient
 
     private $httpClient;
     private $logger;
+    private $actionExecutor;
+    private $actionFactory;
 
-    private $postMutex;
-    private $editMutex;
-    private $starMutex;
-
-    private $postRecursionDepth = 0;
-
-    public function __construct(HttpClient $httpClient, Logger $logger) {
+    public function __construct(
+        HttpClient $httpClient,
+        Logger $logger,
+        ActionExecutor $actionExecutor,
+        ActionFactory $actionFactory
+    ) {
         $this->httpClient = $httpClient;
         $this->logger = $logger;
-
-        $this->postMutex = new QueuedExclusiveMutex();
-        $this->editMutex = new QueuedExclusiveMutex();
-        $this->starMutex = new QueuedExclusiveMutex();
+        $this->actionExecutor = $actionExecutor;
+        $this->actionFactory = $actionFactory;
     }
 
     private function applyPostFlagsToText(string $text, int $flags)
     {
+        $text = rtrim($text);
+
         if ($flags & PostFlags::SINGLE_LINE) {
             $text = preg_replace('#\s+#u', ' ', $text);
         }
@@ -250,8 +249,8 @@ class ChatClient
         $text = $this->applyPostFlagsToText($text, $flags);
 
         $body = (new FormBody)
-            ->addField("text", rtrim($text)) // only rtrim an not trim, leading space may be legit
-            ->addField("fkey", (string) $room->getSessionInfo()->getFKey());
+            ->addField("text", $text)
+            ->addField("fkey", (string)$room->getSessionInfo()->getFKey());
 
         $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_POST_MESSAGE);
 
@@ -260,73 +259,10 @@ class ChatClient
             ->setMethod("POST")
             ->setBody($body);
 
-        return $this->postMutex->withLock(function() use($request, $room) {
-            $attempt = 0;
+        $action = $this->actionFactory->createPostMessageAction($request, $room);
+        $this->actionExecutor->enqueue($action);
 
-            try {
-                $this->postRecursionDepth++;
-
-                while ($attempt++ < self::MAX_POST_ATTEMPTS) {
-                    /** @var HttpResponse $response */
-                    $this->logger->log(Level::DEBUG, 'Post attempt ' . $attempt);
-                    $response = yield $this->httpClient->request($request);
-                    $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());
-
-                    try {
-                        $decoded = json_try_decode($response->getBody(), true);
-
-                        if (isset($decoded["id"], $decoded["time"])) {
-                            return new PostedMessage($room, $decoded["id"], $decoded["time"]);
-                        }
-
-                        if ($attempt >= self::MAX_POST_ATTEMPTS) {
-                            break;
-                        }
-
-                        if (!array_key_exists('id', $decoded)) {
-                            throw new \RuntimeException('A JSON response that I don\'t understand was received');
-                        }
-
-                        // sometimes we can get {"id":null,"time":null}
-                        // I think this happens when we repeat ourselves too quickly
-                        $delay = $attempt * 1000;
-                        $this->logger->log(Level::DEBUG, "Got a null message post response, waiting for {$delay}ms before trying again");
-                    } catch (JSONDecodeErrorException $e) {
-                        if ($attempt >= self::MAX_POST_ATTEMPTS) {
-                            break;
-                        }
-
-                        if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
-                            throw new \RuntimeException(
-                                'A response that could not be decoded as JSON or otherwise handled was received'
-                                . ' (JSON decode error: ' . $e->getMessage() . ')'
-                            );
-                        }
-
-                        $this->logger->log(Level::DEBUG, "Backing off message posting for {$delay}ms");
-                    }
-
-                    yield new Pause($delay);
-                }
-
-                $attempt--;
-                throw new \RuntimeException(
-                    'Sending the message failed after ' . self::MAX_POST_ATTEMPTS . ' attempts and I know when to quit'
-                );
-            } catch (\Throwable $e) {
-                $errorInfo = [
-                    'attempt' => $attempt,
-                    'postRecursionDepth' => $this->postRecursionDepth,
-                    'responseBody' => isset($response) ? $response->getBody() : 'No response data',
-                ];
-
-                $this->logger->log(Level::DEBUG, 'Error while posting message: ' . $e->getMessage(), $errorInfo);
-            } finally {
-                $this->postRecursionDepth--;
-            }
-
-            return null;
-        });
+        return $action->getPromisor()->promise();
     }
 
     public function postReply(Message $origin, string $text, int $flags = PostFlags::NONE): Promise
@@ -353,60 +289,10 @@ class ChatClient
             ->setMethod("POST")
             ->setBody($body);
 
-        return $this->editMutex->withLock(function() use($request, $message) {
-            $attempt = 0;
+        $action = $this->actionFactory->createEditMessageAction($request);
+        $this->actionExecutor->enqueue($action);
 
-            try {
-                $this->postRecursionDepth++;
-
-                while ($attempt++ < self::MAX_POST_ATTEMPTS) {
-                    /** @var HttpResponse $response */
-                    $this->logger->log(Level::DEBUG, 'Edit attempt ' . $attempt);
-                    $response = yield $this->httpClient->request($request);
-                    $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());
-
-                    try {
-                        $decoded = json_try_decode($response->getBody(), true);
-
-                        if ($decoded === 'ok') {
-                            return true;
-                        }
-
-                        throw new \RuntimeException('A JSON response that I don\'t understand was received');
-                    } catch (JSONDecodeErrorException $e) {
-                        if ($attempt >= self::MAX_POST_ATTEMPTS) {
-                            break;
-                        }
-
-                        if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
-                            throw new \RuntimeException(
-                                'A response that could not be decoded as JSON or otherwise handled was received'
-                                . ' (JSON decode error: ' . $e->getMessage() . ')'
-                            );
-                        }
-
-                        $this->logger->log(Level::DEBUG, "Backing off message posting for {$delay}ms");
-                        yield new Pause($delay);
-                    }
-                }
-
-                $attempt--;
-                throw new \RuntimeException(
-                    'Editing the message failed after ' . self::MAX_POST_ATTEMPTS . ' attempts and I know when to quit'
-                );
-            } catch (\Throwable $e) {
-                $errorInfo = [
-                    'attempt' => $attempt,
-                    'responseBody' => isset($response) ? $response->getBody() : 'No response data',
-                ];
-
-                $this->logger->log(Level::ERROR, 'Error while editing message: ' . $e->getMessage(), $errorInfo);
-            } finally {
-                $this->postRecursionDepth--;
-            }
-
-            return false;
-        });
+        return $action->getPromisor()->promise();
     }
 
     /**
@@ -435,60 +321,10 @@ class ChatClient
             ->setMethod("POST")
             ->setBody($body);
 
-        return $this->starMutex->withLock(function() use($request, $room) {
-            $attempt = 0;
+        $action = $this->actionFactory->createPinOrUnpinMessageAction($request);
+        $this->actionExecutor->enqueue($action);
 
-            try {
-                $this->postRecursionDepth++;
-
-                while ($attempt++ < self::MAX_POST_ATTEMPTS) {
-                    /** @var HttpResponse $response */
-                    $this->logger->log(Level::DEBUG, 'Pin attempt ' . $attempt);
-                    $response = yield $this->httpClient->request($request);
-                    $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());
-
-                    try {
-                        $decoded = json_try_decode($response->getBody(), true);
-
-                        if ($decoded === 'ok') {
-                            return true;
-                        }
-
-                        throw new \RuntimeException('A JSON response that I don\'t understand was received');
-                    } catch (JSONDecodeErrorException $e) {
-                        if ($attempt >= self::MAX_POST_ATTEMPTS) {
-                            break;
-                        }
-
-                        if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
-                            throw new \RuntimeException(
-                                'A response that could not be decoded as JSON or otherwise handled was received'
-                                . ' (JSON decode error: ' . $e->getMessage() . ')'
-                            );
-                        }
-
-                        $this->logger->log(Level::DEBUG, "Backing off message pinning for {$delay}ms");
-                        yield new Pause($delay);
-                    }
-                }
-
-                $attempt--;
-                throw new \RuntimeException(
-                    'Pinning the message failed after ' . self::MAX_POST_ATTEMPTS . ' attempts and I know when to quit'
-                );
-            } catch (\Throwable $e) {
-                $errorInfo = [
-                    'attempt' => $attempt,
-                    'responseBody' => isset($response) ? $response->getBody() : 'No response data',
-                ];
-
-                $this->logger->log(Level::ERROR, 'Error while pinning message: ' . $e->getMessage(), $errorInfo);
-            } finally {
-                $this->postRecursionDepth--;
-            }
-
-            return false;
-        });
+        return $action->getPromisor()->promise();
     }
 
     /**
@@ -517,60 +353,10 @@ class ChatClient
             ->setMethod("POST")
             ->setBody($body);
 
-        return $this->starMutex->withLock(function() use($request, $room) {
-            $attempt = 0;
+        $action = $this->actionFactory->createUnstarMessageAction($request);
+        $this->actionExecutor->enqueue($action);
 
-            try {
-                $this->postRecursionDepth++;
-
-                while ($attempt++ < self::MAX_POST_ATTEMPTS) {
-                    /** @var HttpResponse $response */
-                    $this->logger->log(Level::DEBUG, 'Unstar attempt ' . $attempt);
-                    $response = yield $this->httpClient->request($request);
-                    $this->logger->log(Level::DEBUG, 'Got response from server: ' . $response->getBody());
-
-                    try {
-                        $decoded = json_try_decode($response->getBody(), true);
-
-                        if ($decoded === 'ok') {
-                            return true;
-                        }
-
-                        throw new \RuntimeException('A JSON response that I don\'t understand was received');
-                    } catch (JSONDecodeErrorException $e) {
-                        if ($attempt >= self::MAX_POST_ATTEMPTS) {
-                            break;
-                        }
-
-                        if (0 === $delay = $this->getBackOffDelay($response->getBody())) {
-                            throw new \RuntimeException(
-                                'A response that could not be decoded as JSON or otherwise handled was received'
-                                . ' (JSON decode error: ' . $e->getMessage() . ')'
-                            );
-                        }
-
-                        $this->logger->log(Level::DEBUG, "Backing off message pinning for {$delay}ms");
-                        yield new Pause($delay);
-                    }
-                }
-
-                $attempt--;
-                throw new \RuntimeException(
-                    'Unstarring the message failed after ' . self::MAX_POST_ATTEMPTS . ' attempts and I know when to quit'
-                );
-            } catch (\Throwable $e) {
-                $errorInfo = [
-                    'attempt' => $attempt,
-                    'responseBody' => isset($response) ? $response->getBody() : 'No response data',
-                ];
-
-                $this->logger->log(Level::ERROR, 'Error while unstarring message: ' . $e->getMessage(), $errorInfo);
-            } finally {
-                $this->postRecursionDepth--;
-            }
-
-            return false;
-        });
+        return $action->getPromisor()->promise();
     }
 
     public function getPinnedMessages(ChatRoom $room): Promise
@@ -596,14 +382,5 @@ class ChatClient
             $this->logger->log(Level::DEBUG, 'Got pinned messages: ' . implode(',', $result));
             return $result;
         });
-    }
-
-    private function getBackOffDelay(string $body): int
-    {
-        if (!preg_match('/You can perform this action again in (\d+) seconds/i', $body, $matches)) {
-            return 0;
-        }
-
-        return (int)(($matches[1] + 1.1) * 1000);
     }
 }
