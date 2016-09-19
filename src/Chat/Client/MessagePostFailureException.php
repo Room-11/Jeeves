@@ -2,6 +2,4 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
-use Room11\Jeeves\Exception;
-
-class MessagePostFailureException extends Exception {}
+class MessagePostFailureException extends ActionExecutionFailureException {}
