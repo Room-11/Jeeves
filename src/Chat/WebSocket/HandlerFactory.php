@@ -21,6 +21,7 @@ class HandlerFactory
     private $logger;
     private $builtInCommandManager;
     private $pluginManager;
+    private $globalEventDispatcher;
     private $devMode;
 
     public function __construct(
@@ -31,6 +32,7 @@ class HandlerFactory
         ChatRoomCollection $rooms,
         BuiltInCommandManager $builtInCommandManager,
         PluginManager $pluginManager,
+        GlobalEventDispatcher $globalEventDispatcher,
         Logger $logger,
         bool $devMode
     ) {
@@ -42,6 +44,7 @@ class HandlerFactory
         $this->logger = $logger;
         $this->builtInCommandManager = $builtInCommandManager;
         $this->pluginManager = $pluginManager;
+        $this->globalEventDispatcher = $globalEventDispatcher;
         $this->devMode = $devMode;
     }
 
@@ -49,7 +52,8 @@ class HandlerFactory
     {
         return new Handler(
             $this->eventBuilder, $this->messageFactory, $this->roomConnector, $this->roomFactory, $this->rooms,
-            $this->builtInCommandManager, $this->pluginManager, $this->logger, $identifier, $this->devMode
+            $this->builtInCommandManager, $this->pluginManager, $this->globalEventDispatcher, $this->logger,
+            $identifier, $this->devMode
         );
     }
 }

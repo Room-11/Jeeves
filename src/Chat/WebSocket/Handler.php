@@ -9,6 +9,7 @@ use Amp\Websocket\Message as WebSocketMessage;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\Event\Builder as EventBuilder;
 use Room11\Jeeves\Chat\Event\Event;
+use Room11\Jeeves\Chat\Event\GlobalEvent;
 use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\Unknown;
 use Room11\Jeeves\Chat\Message\Command;
@@ -41,6 +42,7 @@ class Handler implements Websocket
     private $rooms;
     private $builtInCommandManager;
     private $pluginManager;
+    private $globalEventDispatcher;
     private $logger;
     private $roomIdentifier;
     private $devMode;
@@ -65,6 +67,7 @@ class Handler implements Websocket
         ChatRoomCollection $rooms,
         BuiltInCommandManager $builtInCommandManager,
         PluginManager $pluginManager,
+        GlobalEventDispatcher $globalEventDispatcher,
         Logger $logger,
         ChatRoomIdentifier $roomIdentifier,
         bool $devMode
@@ -79,6 +82,7 @@ class Handler implements Websocket
         $this->rooms = $rooms;
         $this->roomIdentifier = $roomIdentifier;
         $this->devMode = $devMode;
+        $this->globalEventDispatcher = $globalEventDispatcher;
     }
 
     private function clearTimeoutWatcher()
@@ -184,7 +188,9 @@ class Handler implements Websocket
             $this->logger->log(Level::DEBUG, count($events) . " events targeting {$this->roomIdentifier} to process");
 
             foreach ($events as $event) {
-                yield from $this->processEvent($event);
+                yield from ($event instanceof GlobalEvent)
+                    ? $this->globalEventDispatcher->processEvent($event)
+                    : $this->processEvent($event);
             }
         } catch (\Throwable $e) {
             $this->logger->log(

@@ -7,6 +7,7 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Event\Filter\Builder as EventFilterBuilder;
 use Room11\Jeeves\Chat\Event\Filter\Filter;
+use Room11\Jeeves\Chat\Event\GlobalEvent;
 use Room11\Jeeves\Chat\Event\RoomSourcedEvent;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Message;
@@ -569,5 +570,10 @@ class PluginManager
         }
 
         return all($promises);
+    }
+
+    public function handleGlobalEvent(GlobalEvent $event): Promise
+    {
+        return all($this->invokeHandlersForEvent($event));
     }
 }

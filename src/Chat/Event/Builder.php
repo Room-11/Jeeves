@@ -34,6 +34,7 @@ class Builder
             $event = $this->eventFactory->build((int)($eventData['event_type'] ?? 0), $eventData, $room);
 
             if ($event instanceof RoomSourcedEvent && $eventData['room_id'] !== $room->getIdentifier()->getId()) {
+                // todo: wtf this cannot be right
                 continue;
             }
 

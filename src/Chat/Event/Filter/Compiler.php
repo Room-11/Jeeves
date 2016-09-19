@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Event\Filter;
 
 use Room11\Jeeves\Chat\Event\Event;
+use Room11\Jeeves\Chat\Event\GlobalEvent;
 use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\RoomSourcedEvent;
 use Room11\Jeeves\Chat\Event\UserSourcedEvent;
@@ -127,6 +128,7 @@ class Compiler
         static $classMap = [
             'user'    => UserSourcedEvent::class,
             'room'    => RoomSourcedEvent::class,
+            'global'  => GlobalEvent::class,
             'message' => MessageEvent::class,
         ];
 
