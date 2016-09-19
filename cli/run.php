@@ -42,13 +42,8 @@ use Room11\OpenId\Credentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
 use Symfony\Component\Yaml\Yaml;
-use function Aerys\router;
 use function Amp\all;
-use function Amp\info;
-use function Amp\resolve;
 use function Amp\run;
-use function Amp\wait;
-use function Amp\websocket;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../version.php';
