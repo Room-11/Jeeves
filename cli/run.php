@@ -237,7 +237,7 @@ onError(function (\Throwable $e) {
 });
 
 try {
-    run(function () use ($server, $connector, $handlerFactory, $websocketHandlers) {
+    run(function () use ($server, $connector, $websocketHandlers) {
         $promises = $server ? [$server->start()] : [];
 
         foreach ($websocketHandlers as $handler) {
