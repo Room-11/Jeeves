@@ -266,8 +266,10 @@ REGEX;
                 $target = "@{$pingableName}";
                 $reply = $target . " I guess I'm late: " . $text;
 
-                yield $this->storage->unset($key, $room);
-                return $this->chatClient->postMessage($room, $reply, PostFlags::ALLOW_PINGS);
+                $this->watchers[] = once(function () use ($room, $key, $reply) {
+                    yield $this->storage->unset($key, $room);
+                    return $this->chatClient->postMessage($room, $reply);
+                }, 1000);
             }
         }
     }
@@ -276,7 +278,7 @@ REGEX;
     {
         if(!$reminders) return;
 
-        $this->watchers = $timedOutReminders = [];
+        $this->watchers = [];
 
         foreach ($reminders as $key){
             $key = (string) $key;
@@ -286,24 +288,17 @@ REGEX;
             $stamp = $value['timestamp'];
             $seconds = $stamp - time();
 
-            if ($seconds <= 0){
-                $timedOutReminders[] = $key;
-                continue;
-            }
+            if ($seconds <= 0) continue;
 
             if (null !== $pingableName = yield $this->chatClient->getPingableName($room, $name)) {
                 $target = "@{$pingableName}";
-                $reply = ($seconds <= 0) ? $target ." I guess I'm late: " . $text : $target . " " . $text;
+                $reply = $target . " " . $text;
 
-                $this->watchers[] = once(function () use ($room, $key, $value, $reply) {
+                $this->watchers[] = once(function () use ($room, $key, $reply) {
                     yield $this->storage->unset($key, $room);
                     return $this->chatClient->postMessage($room, $reply);
                 }, $seconds * 1000);
             }
-        }
-
-        if($timedOutReminders){
-            yield from $this->apologizeForExpiredReminders($room, $timedOutReminders);
         }
     }
 
