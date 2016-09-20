@@ -28,11 +28,11 @@ class GlobalEventDispatcher
     {
         $eventId = $event->getId();
 
-        if (in_array($event->getId(), $this->recentGlobalEventBuffer)) {
+        if (in_array($eventId, $this->recentGlobalEventBuffer)) {
             return;
         }
 
-        $this->recentGlobalEventBuffer[] = $event->getId();
+        $this->recentGlobalEventBuffer[] = $eventId;
         if (count($this->recentGlobalEventBuffer) > self::BUFFER_SIZE) {
             array_shift($this->recentGlobalEventBuffer);
         }
