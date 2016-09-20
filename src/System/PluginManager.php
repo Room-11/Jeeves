@@ -27,7 +27,7 @@ class PluginManager
     private $pluginStorage;
     private $logger;
     private $filterBuilder;
-    private $builtInCommandManager;
+    private $builtInActionManager;
     private $rooms;
 
     /**
@@ -183,14 +183,14 @@ class PluginManager
         PluginStorage $pluginStorage,
         Logger $logger,
         EventFilterBuilder $filterBuilder,
-        BuiltInCommandManager $builtInCommandManager,
+        BuiltInActionManager $builtInActionManager,
         ChatRoomCollection $rooms
     ) {
         $this->banStorage = $banStorage;
         $this->pluginStorage = $pluginStorage;
         $this->logger = $logger;
         $this->filterBuilder = $filterBuilder;
-        $this->builtInCommandManager = $builtInCommandManager;
+        $this->builtInActionManager = $builtInActionManager;
         $this->rooms = $rooms;
     }
 
@@ -323,7 +323,7 @@ class PluginManager
      */
     public function mapCommandForRoom(ChatRoom $room, $plugin, string $endpoint, string $command): Promise
     {
-        if (in_array($command, $this->builtInCommandManager->getRegisteredCommands())) {
+        if (in_array($command, $this->builtInActionManager->getRegisteredCommands())) {
             throw new \LogicException("Command '{$command}' is built in");
         }
 
@@ -358,7 +358,7 @@ class PluginManager
      */
     public function unmapCommandForRoom(ChatRoom $room, string $command): Promise
     {
-        if (in_array($command, $this->builtInCommandManager->getRegisteredCommands())) {
+        if (in_array($command, $this->builtInActionManager->getRegisteredCommands())) {
             throw new \LogicException("Command '{$command}' is built in");
         }
 

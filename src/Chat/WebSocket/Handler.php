@@ -23,7 +23,7 @@ use Room11\Jeeves\Chat\Room\SessionInfo;
 use Room11\Jeeves\Chat\Room\SessionInfo as ChatRoomSessionInfo;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
 use function Amp\cancel;
 use function Amp\info;
@@ -65,7 +65,7 @@ class Handler implements Websocket
         ChatRoomConnector $roomConnector,
         ChatRoomFactory $roomFactory,
         ChatRoomCollection $rooms,
-        BuiltInCommandManager $builtInCommandManager,
+        BuiltInActionManager $builtInCommandManager,
         PluginManager $pluginManager,
         GlobalEventDispatcher $globalEventDispatcher,
         Logger $logger,

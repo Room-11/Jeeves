@@ -9,7 +9,7 @@ use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use function Amp\resolve;
 
-class BuiltInCommandManager
+class BuiltInActionManager
 {
     private $banStorage;
     private $logger;
@@ -25,7 +25,7 @@ class BuiltInCommandManager
         $this->logger = $logger;
     }
 
-    public function register(BuiltInCommand $command): BuiltInCommandManager
+    public function register(BuiltInCommand $command): BuiltInActionManager
     {
         $className = get_class($command);
 

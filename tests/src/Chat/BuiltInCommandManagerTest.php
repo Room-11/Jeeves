@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Tests\Chat;
 
-use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\Level;
@@ -36,14 +36,14 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             )
         ;
 
-        $builtInCommandManager = new BuiltInCommandManager($this->getMock(BanStorage::class), $logger);
+        $builtInCommandManager = new BuiltInActionManager($this->getMock(BanStorage::class), $logger);
 
         $this->assertSame($builtInCommandManager, $builtInCommandManager->register($command));
     }
 
     public function testGetRegisteredCommands()
     {
-        $builtInCommandManager = new BuiltInCommandManager(
+        $builtInCommandManager = new BuiltInActionManager(
             $this->getMock(BanStorage::class),
             $this->getMock(Logger::class)
         );
@@ -63,7 +63,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
 
     public function testHandleCommandDoesntMatch()
     {
-        $builtInCommandManager = new BuiltInCommandManager(
+        $builtInCommandManager = new BuiltInActionManager(
             $this->getMock(BanStorage::class),
             $this->getMock(Logger::class)
         );
@@ -111,7 +111,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->willReturn(new Success(true))
         ;
 
-        $builtInCommandManager = new BuiltInCommandManager($banStorage, $logger);
+        $builtInCommandManager = new BuiltInActionManager($banStorage, $logger);
 
         $builtInCommandManager->register($registeredCommand);
 
@@ -222,7 +222,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->willReturn(new Success(false))
         ;
 
-        $builtInCommandManager = new BuiltInCommandManager($banStorage, $logger);
+        $builtInCommandManager = new BuiltInActionManager($banStorage, $logger);
 
         $builtInCommandManager->register($registeredCommand);
 

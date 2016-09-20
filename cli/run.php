@@ -16,7 +16,7 @@ use Room11\Jeeves\BuiltInCommands\Command as CommandBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Plugin as PluginBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Uptime as UptimeBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Version as VersionBuiltIn;
-use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginManager;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
@@ -160,7 +160,7 @@ $websocketHandlers = array_map(function($room) use($handlerFactory) {
     ));
 }, $config['rooms']);
 
-$builtInCommandManager = $injector->make(BuiltInCommandManager::class);
+$builtInCommandManager = $injector->make(BuiltInActionManager::class);
 $pluginManager = $injector->make(PluginManager::class);
 
 foreach ($builtInCommands as $command) {

@@ -8,7 +8,7 @@ use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\RoomFactory as ChatRoomFactory;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
 
 class HandlerFactory
@@ -30,7 +30,7 @@ class HandlerFactory
         ChatRoomConnector $roomConnector,
         ChatRoomFactory $roomFactory,
         ChatRoomCollection $rooms,
-        BuiltInCommandManager $builtInCommandManager,
+        BuiltInActionManager $builtInCommandManager,
         PluginManager $pluginManager,
         GlobalEventDispatcher $globalEventDispatcher,
         Logger $logger,

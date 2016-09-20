@@ -26,7 +26,7 @@ use Room11\Jeeves\Storage\File\KeyValueFactory as FileKeyValueStorageFactory;
 use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
 use Room11\Jeeves\Storage\KeyValueFactory as KeyValueStorageFactory;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
-use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
 use Room11\Jeeves\WebAPI\Server as WebAPIServer;
 use Room11\OpenId\Authenticator as OpenIdAuthenticator;
@@ -48,7 +48,7 @@ $injector->define(FileKeyValueStorageFactory::class, [":dataFileTemplate" => DAT
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);
 $injector->share(BitlyClient::class);
-$injector->share(BuiltInCommandManager::class);
+$injector->share(BuiltInActionManager::class);
 $injector->share(ChatClient::class);
 $injector->share(ChatRoomCollection::class);
 $injector->share(ChatRoomConnector::class);
