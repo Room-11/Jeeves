@@ -14,7 +14,7 @@ class Invitation extends BaseEvent implements UserSourcedEvent, GlobalEvent
 {
     use UserSource;
 
-    const TYPE_ID = 17;
+    const TYPE_ID = EventType::INVITATION;
 
     private $roomId;
     private $roomName;

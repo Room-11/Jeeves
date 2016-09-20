@@ -8,10 +8,9 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class RoomEdit extends BaseEvent implements RoomSourcedEvent, UserSourcedEvent
 {
-    const TYPE_ID = 5;
+    use RoomSource, UserSource;
 
-    use RoomSource;
-    use UserSource;
+    const TYPE_ID = EventType::ROOM_INFO_UPDATED;
 
     private $content;
 

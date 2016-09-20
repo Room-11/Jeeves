@@ -6,7 +6,7 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class MentionMessage extends MessageEvent
 {
-    const TYPE_ID = 8;
+    const TYPE_ID = EventType::USER_MENTIONED;
 
     private $parentId;
 

@@ -8,10 +8,9 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class UserEnter extends BaseEvent implements RoomSourcedEvent, UserSourcedEvent
 {
-    use RoomSource;
-    use UserSource;
+    use RoomSource, UserSource;
 
-    const TYPE_ID = 3;
+    const TYPE_ID = EventType::USER_JOINED;
 
     public function __construct(array $data, ChatRoom $room)
     {

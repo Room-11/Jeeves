@@ -9,7 +9,7 @@ class StarMessage extends BaseEvent implements RoomSourcedEvent
 {
     use RoomSource;
 
-    const TYPE_ID = 6;
+    const TYPE_ID = EventType::MESSAGE_STARRED;
 
     private $messageId;
 

@@ -9,8 +9,7 @@ use function Room11\DOMUtils\domdocument_load_html;
 
 abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomSourcedEvent
 {
-    use RoomSource;
-    use UserSource;
+    use RoomSource, UserSource;
 
     /**
      * @var int
