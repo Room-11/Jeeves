@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Client;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Pause;
+use Ds\Queue;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\Client\Actions\Action;
 use Room11\Jeeves\Log\Level;
@@ -19,7 +20,7 @@ class ActionExecutor
     /**
      * @var Action[]
      */
-    private $actionQueue = [];
+    private $actionQueue;
 
     private $haveLoop = false;
 
@@ -27,6 +28,8 @@ class ActionExecutor
     {
         $this->httpClient = $httpClient;
         $this->logger = $logger;
+
+        $this->actionQueue = new Queue;
     }
 
     private function executeMessageAction(Action $action): \Generator
@@ -103,9 +106,9 @@ class ActionExecutor
         $this->haveLoop = true;
         $this->logger->log(Level::DEBUG, 'Starting action executor loop');
 
-        while (count($this->actionQueue) > 0) {
+        while ($this->actionQueue->count() > 0) {
             try {
-                yield from $this->executeMessageAction(array_shift($this->actionQueue));
+                yield from $this->executeMessageAction($this->actionQueue->pop());
             } catch (\Throwable $e) {
                 $this->logger->log(Level::DEBUG, 'Unhandled exception while executing ChatAction: ' . $e->getMessage(), $e);
             }
@@ -117,7 +120,7 @@ class ActionExecutor
 
     public function enqueue(Action $action)
     {
-        $this->actionQueue[] = $action;
+        $this->actionQueue->push($action);
 
         if (!$this->haveLoop) {
             resolve($this->executeActionsFromQueue());

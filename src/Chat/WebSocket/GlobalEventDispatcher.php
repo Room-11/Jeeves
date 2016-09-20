@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\WebSocket;
 
+use Ds\Deque;
 use Room11\Jeeves\Chat\Event\GlobalEvent;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
@@ -14,7 +15,7 @@ class GlobalEventDispatcher
     private $pluginManager;
     private $logger;
 
-    private $recentGlobalEventBuffer = [];
+    private $recentGlobalEventBuffer;
 
     public function __construct(
         PluginManager $pluginManager,
@@ -22,19 +23,21 @@ class GlobalEventDispatcher
     ) {
         $this->pluginManager = $pluginManager;
         $this->logger = $logger;
+
+        $this->recentGlobalEventBuffer = new Deque;
     }
 
     public function processEvent(GlobalEvent $event): \Generator
     {
         $eventId = $event->getId();
 
-        if (in_array($eventId, $this->recentGlobalEventBuffer)) {
+        if ($this->recentGlobalEventBuffer->contains($eventId)) {
             return;
         }
 
         $this->recentGlobalEventBuffer[] = $eventId;
-        if (count($this->recentGlobalEventBuffer) > self::BUFFER_SIZE) {
-            array_shift($this->recentGlobalEventBuffer);
+        if ($this->recentGlobalEventBuffer->count() > self::BUFFER_SIZE) {
+            $this->recentGlobalEventBuffer->shift();
         }
 
         $this->logger->log(Level::DEBUG, "Processing global event #{$eventId} for plugins");
