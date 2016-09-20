@@ -130,7 +130,7 @@ class BetterTweet extends BasePlugin
 
     public function getName(): string
     {
-        return 'Tweeter';
+        return 'BetterTweet';
     }
 
     public function getDescription(): string
@@ -143,6 +143,6 @@ class BetterTweet extends BasePlugin
      */
     public function getCommandEndpoints(): array
     {
-        return [new PluginCommandEndpoint('Better tweet', [$this, 'tweet'], 'tweet2')];
+        return [new PluginCommandEndpoint('BetterTweet', [$this, 'tweet'], 'tweet2')];
     }
 }
