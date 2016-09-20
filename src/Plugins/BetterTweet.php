@@ -14,7 +14,7 @@ use PeeHaa\AsyncTwitter\Api\Client as ApiClient;
 use PeeHaa\AsyncTwitter\Api\Status\Update;
 use function Room11\DOMUtils\domdocument_load_html;
 
-class Tweet extends BasePlugin
+class BetterTweet extends BasePlugin
 {
     const BASE_URI = "https://api.twitter.com/1.1";
 
