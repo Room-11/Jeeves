@@ -8,6 +8,8 @@ use Aerys\Host;
 use function Amp\onError;
 use Auryn\Injector;
 use Room11\Jeeves\External\BitlyClient;
+use PeeHaa\AsyncTwitter\Credentials\AccessToken as TwitterAccessToken;
+use PeeHaa\AsyncTwitter\Credentials\Application as TwitterApplicationCredentials;
 use Room11\Jeeves\BuiltInCommands\Admin as AdminBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Ban as BanBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Command as CommandBuiltIn;
@@ -77,6 +79,16 @@ $injector->define(TwitterCredentials::class, [
     ':consumerSecret' => $config['twitter']['consumerSecret'],
     ':accessToken' => $config['twitter']['accessToken'],
     ':accessTokenSecret' => $config['twitter']['accessTokenSecret'],
+]);
+
+$injector->define(TwitterApplicationCredentials::class, [
+    ':key' => $config['twitter']['consumerKey'],
+    ':secret' => $config['twitter']['consumerSecret'],
+]);
+
+$injector->define(TwitterAccessToken::class, [
+    ':token' => $config['twitter']['accessToken'],
+    ':secret' => $config['twitter']['accessTokenSecret'],
 ]);
 
 $injector->define(TranslationAPICredentials::class, [
