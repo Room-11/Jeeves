@@ -35,7 +35,8 @@
         "sebastian/version": "^1.0",
         "symfony/yaml": "^3.0",
         "lib-libxml": ">=2.7.8",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "peehaa/async-twitter": "~0.1"
     },
     "require-dev": {
         "phpunit/phpunit": "5.3.*"
