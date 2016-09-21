@@ -6,6 +6,7 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
+use PeeHaa\AsyncTwitter\Api\Status\Retweet;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -39,6 +40,38 @@ class BetterTweet extends BasePlugin
     private function isMessageValid(string $url): bool
     {
         return (bool) preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~', $url);
+    }
+
+    private function getRawMessage(Command $command, string $url): \Generator
+    {
+        preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
+
+        $messageInfo = yield $this->chatClient->getMessageHTML($command->getRoom(), (int) $matches[1]);
+
+        $messageBody = html_entity_decode($messageInfo, ENT_QUOTES);
+
+        return domdocument_load_html($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    }
+
+    private function isRetweet(Command $command, string $url): \Generator
+    {
+        $dom   = yield from $this->getRawMessage($command, $url);
+        $xpath = new \DOMXPath($dom);
+
+        return (bool) $xpath->evaluate("//*[contains(concat(' ', normalize-space(@class), ' '), ' ob-tweet ')]");
+    }
+
+    private function getRetweetId(Command $command, string $url): \Generator
+    {
+        $dom = yield from $this->getRawMessage($command, $url);
+
+        foreach ($dom->getElementsByTagName('a') as $node) {
+            if (preg_match('~https://twitter.com/[^/]+/status/(\d+)~', $node->getAttribute('href'), $matches)) {
+                continue;
+            }
+
+            return $matches[1];
+        }
     }
 
     private function getMessage(Command $command, string $url): \Generator
@@ -118,6 +151,20 @@ class BetterTweet extends BasePlugin
 
         if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+        }
+
+        $isRetweet = yield from $this->isRetweet($command, $command->getParameters()[0]);
+
+        if ($isRetweet) {
+            /** @var HttpResponse $result */
+            $result    = yield (new Retweet(
+                $this->apiClient,
+                yield from $this->getRetweetId($command, $command->getParameters()[0])
+            ))->post();
+            $tweetInfo = json_decode($result->getBody(), true);
+            $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
+
+            return $this->chatClient->postMessage($command->getRoom(), $tweetUri);
         }
 
         $tweetText = yield from $this->getMessage($command, $command->getParameters()[0]);
