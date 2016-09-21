@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
-use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
@@ -16,32 +16,33 @@ use function Room11\DOMUtils\domdocument_load_html;
 
 class BetterTweet extends BasePlugin
 {
-    const BASE_URI = "https://api.twitter.com/1.1";
-
     private $chatClient;
 
     private $admin;
 
     private $apiClient;
 
-    private $twitterConfig = [];
-
     private $httpClient;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $admin, ApiClient $apiClient) {
+    public function __construct(
+        ChatClient $chatClient,
+        HttpClient $httpClient,
+        AdminStorage $admin,
+        ApiClient $apiClient
+    ) {
         $this->chatClient = $chatClient;
         $this->admin      = $admin;
         $this->apiClient  = $apiClient;
         $this->httpClient = $httpClient;
     }
 
-    private function isMessageValid(string $url): bool {
+    private function isMessageValid(string $url): bool
+    {
         return (bool) preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~', $url);
     }
 
-    // @todo convert URLs to shortened URLs
-    // @todo handle twitter's character limit. perhaps we can do some clever replacing when above the limit?
-    private function getMessage(Command $command, string $url): \Generator {
+    private function getMessage(Command $command, string $url): \Generator
+    {
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
         $messageInfo = yield $this->chatClient->getMessageHTML($command->getRoom(), (int) $matches[1]);
@@ -57,7 +58,8 @@ class BetterTweet extends BasePlugin
         return $this->removePings($dom->textContent);
     }
 
-    private function replaceEmphasizeTags(\DOMDocument $dom) {
+    private function replaceEmphasizeTags(\DOMDocument $dom)
+    {
         $xpath = new \DOMXPath($dom);
 
         foreach ($xpath->evaluate("//i|//b") as $node) {
@@ -67,7 +69,8 @@ class BetterTweet extends BasePlugin
         }
     }
 
-    private function replaceStrikeTags(\DOMDocument $dom) {
+    private function replaceStrikeTags(\DOMDocument $dom)
+    {
         foreach ($dom->getElementsByTagName('strike') as $node) {
             $formattedNode = $dom->createTextNode("<strike>" . $node->textContent . "</strike>");
 
@@ -77,16 +80,17 @@ class BetterTweet extends BasePlugin
 
     private function replaceImages(\DOMDocument $dom)
     {
-        foreach ($dom->getElementsByTagName('img') as $node) {
+        foreach ($dom->getElementsByTagName('img') as $node)
+        {
             /** @var \DOMElement $node */
-
             $formattedNode = $dom->createTextNode($node->getAttribute('src'));
 
             $node->parentNode->parentNode->replaceChild($formattedNode, $node->parentNode);
         }
     }
 
-    private function replaceHrefs(\DOMDocument $dom) {
+    private function replaceHrefs(\DOMDocument $dom)
+    {
         foreach ($dom->getElementsByTagName('a') as $node) {
             /** @var \DOMElement $node */
             $linkText = "";
@@ -101,11 +105,13 @@ class BetterTweet extends BasePlugin
         }
     }
 
-    private function removePings(string $text) {
+    private function removePings(string $text): string
+    {
         return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
     }
 
-    public function tweet(Command $command): \Generator {
+    public function tweet(Command $command): Promise
+    {
         if (!$this->isMessageValid($command->getParameter(0))) {
             return new Success();
         }
