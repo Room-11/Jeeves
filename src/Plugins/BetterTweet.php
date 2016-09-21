@@ -66,11 +66,11 @@ class BetterTweet extends BasePlugin
         $dom = yield from $this->getRawMessage($command, $url);
 
         foreach ($dom->getElementsByTagName('a') as $node) {
-            if (preg_match('~https://twitter.com/[^/]+/status/(\d+)~', $node->getAttribute('href'), $matches)) {
+            if (!preg_match('~https://twitter.com/[^/]+/status/(\d+)~', $node->getAttribute('href'), $matches)) {
                 continue;
             }
 
-            return $matches[1];
+            return (int) $matches[1];
         }
     }
 
@@ -156,11 +156,10 @@ class BetterTweet extends BasePlugin
         $isRetweet = yield from $this->isRetweet($command, $command->getParameters()[0]);
 
         if ($isRetweet) {
+            $tweetId = yield from $this->getRetweetId($command, $command->getParameters()[0]);
+
             /** @var HttpResponse $result */
-            $result    = yield (new Retweet(
-                $this->apiClient,
-                yield from $this->getRetweetId($command, $command->getParameters()[0])
-            ))->post();
+            $result    = yield (new Retweet($this->apiClient, $tweetId))->post();
             $tweetInfo = json_decode($result->getBody(), true);
             $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
