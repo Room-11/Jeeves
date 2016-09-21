@@ -110,7 +110,7 @@ class BetterTweet extends BasePlugin
         return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
     }
 
-    public function tweet(Command $command): Promise
+    public function tweet(Command $command): \Generator
     {
         if (!$this->isMessageValid($command->getParameter(0))) {
             return new Success();
