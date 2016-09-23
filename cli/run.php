@@ -5,28 +5,28 @@ namespace Room11\Jeeves;
 
 use Aerys\Bootstrapper;
 use Aerys\Host;
-use function Amp\onError;
 use Auryn\Injector;
-use Room11\Jeeves\External\BitlyClient;
 use PeeHaa\AsyncTwitter\Credentials\AccessToken as TwitterAccessToken;
 use PeeHaa\AsyncTwitter\Credentials\Application as TwitterApplicationCredentials;
-use Room11\Jeeves\BuiltInCommands\Admin as AdminBuiltIn;
-use Room11\Jeeves\BuiltInCommands\Ban as BanBuiltIn;
-use Room11\Jeeves\BuiltInCommands\Command as CommandBuiltIn;
-use Room11\Jeeves\BuiltInCommands\Plugin as PluginBuiltIn;
-use Room11\Jeeves\BuiltInCommands\Uptime as UptimeBuiltIn;
-use Room11\Jeeves\BuiltInCommands\Version as VersionBuiltIn;
-use Room11\Jeeves\System\BuiltInActionManager;
-use Room11\Jeeves\System\Plugin;
-use Room11\Jeeves\System\PluginManager;
+use Room11\Jeeves\BuiltIn\Commands\Admin as AdminBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Ban as BanBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Command as CommandBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Plugin as PluginBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Uptime as UptimeBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Version as VersionBuiltIn;
+use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\CredentialManager;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
+use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
+use Room11\Jeeves\External\BitlyClient;
+use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
+use Room11\Jeeves\External\TwitterCredentials;
 use Room11\Jeeves\Log\AerysLogger;
 use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
-use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\File\Admin as FileAdminStorage;
@@ -36,15 +36,16 @@ use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStorage;
 use Room11\Jeeves\Storage\KeyValueFactory as KeyValueStorageFactory;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
-use Room11\Jeeves\External\TwitterCredentials;
-use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
-use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
+use Room11\Jeeves\System\BuiltInActionManager;
+use Room11\Jeeves\System\Plugin;
+use Room11\Jeeves\System\PluginManager;
 use Room11\Jeeves\WebAPI\Server as WebAPIServer;
 use Room11\OpenId\Credentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
 use Symfony\Component\Yaml\Yaml;
 use function Amp\all;
+use function Amp\onError;
 use function Amp\run;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -59,6 +60,10 @@ $builtInCommands = [
     PluginBuiltIn::class,
     UptimeBuiltIn::class,
     VersionBuiltIn::class,
+];
+
+$builtInEventHandlers = [
+    Invite::class,
 ];
 
 $config = Yaml::parse(file_get_contents(__DIR__ . '/../config/config.yml'));
@@ -160,12 +165,18 @@ $websocketHandlers = array_map(function($room) use($handlerFactory) {
     ));
 }, $config['rooms']);
 
-$builtInCommandManager = $injector->make(BuiltInActionManager::class);
-$pluginManager = $injector->make(PluginManager::class);
+/** @var BuiltInActionManager $builtInActionManager */
+$builtInActionManager = $injector->make(BuiltInActionManager::class);
 
-foreach ($builtInCommands as $command) {
-    $builtInCommandManager->register($injector->make($command));
+foreach ($builtInCommands as $className) {
+    $builtInActionManager->registerCommand($injector->make($className));
 }
+
+foreach ($builtInEventHandlers as $className) {
+    $builtInActionManager->registerEventHandler($injector->make($className));
+}
+
+$pluginManager = $injector->make(PluginManager::class);
 
 foreach ($config['plugins'] ?? [] as $pluginClass) {
     if (!class_exists($pluginClass)) {

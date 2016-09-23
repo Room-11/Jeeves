@@ -27,7 +27,7 @@ class Invitation extends BaseEvent implements UserSourcedEvent, GlobalEvent
         $this->userName = (string)$data['user_name'];
 
         $this->roomId = (int)$data['room_id'];
-        $this->roomName = (string)$data['room_id'];
+        $this->roomName = (string)$data['room_name'];
     }
 
     public function getTypeId(): int

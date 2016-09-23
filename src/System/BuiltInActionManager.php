@@ -2,7 +2,10 @@
 
 namespace Room11\Jeeves\System;
 
+use function Amp\all;
 use Amp\Promise;
+use Amp\Success;
+use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
@@ -19,13 +22,18 @@ class BuiltInActionManager
      */
     private $commands = [];
 
+    /**
+     * @var BuiltInEventHandler[][]
+     */
+    private $eventHandlers = [];
+
     public function __construct(BanStorage $banStorage, Logger $logger)
     {
         $this->banStorage = $banStorage;
         $this->logger = $logger;
     }
 
-    public function register(BuiltInCommand $command): BuiltInActionManager
+    public function registerCommand(BuiltInCommand $command): BuiltInActionManager
     {
         $className = get_class($command);
 
@@ -37,12 +45,35 @@ class BuiltInActionManager
         return $this;
     }
 
+    public function registerEventHandler(BuiltInEventHandler $handler)
+    {
+        $className = get_class($handler);
+
+        foreach ($handler->getEventTypes() as $eventType) {
+            $this->logger->log(Level::DEBUG, "Registering event type {$eventType} with built in handler {$className}");
+            $this->eventHandlers[$eventType][] = $handler;
+        }
+
+        return $this;
+    }
+    
     /**
      * @return string[]
      */
     public function getRegisteredCommands(): array
     {
         return array_keys($this->commands);
+    }
+
+    public function handleEvent(Event $event): Promise
+    {
+        if (!isset($this->eventHandlers[$event->getTypeId()])) {
+            return new Success();
+        }
+
+        return all(array_map(function(BuiltInEventHandler $handler) use($event) {
+            return $handler->handleEvent($event);
+        }, $this->eventHandlers[$event->getTypeId()]));
     }
 
     public function handleCommand(Command $command): Promise
