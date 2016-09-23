@@ -17,16 +17,21 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
     private $messageId;
 
     /**
-     * @var string
-     */
-    private $messageContentString;
-
-    /**
      * @var \DOMDocument
      */
     private $messageContent;
 
-    protected function __construct(array $data, ChatRoom $room)
+    /**
+     * @var int
+     */
+    private $parentId;
+
+    /**
+     * @var bool
+     */
+    private $showParent;
+
+    public function __construct(array $data, ChatRoom $room)
     {
         parent::__construct($data);
 
@@ -36,7 +41,13 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
         $this->userName = (string)$data['user_name'];
 
         $this->messageId = (int)$data['message_id'];
-        $this->messageContentString = (string)($data['content'] ?? '');
+        $this->messageContent = domdocument_load_html(
+            (string)($data['content'] ?? ''),
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
+
+        $this->parentId = (int)($data['parent_id'] ?? -1);
+        $this->showParent = (bool)($data['show_parent'] ?? false);
     }
 
     public function getMessageId(): int
@@ -46,7 +57,16 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
 
     public function getMessageContent(): \DOMDocument
     {
-        return $this->messageContent
-            ?? ($this->messageContent = domdocument_load_html($this->messageContentString, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD));
+        return $this->messageContent;
+    }
+
+    public function getParentId(): int
+    {
+        return $this->parentId;
+    }
+
+    public function shouldShowParent(): bool
+    {
+        return $this->showParent;
     }
 }

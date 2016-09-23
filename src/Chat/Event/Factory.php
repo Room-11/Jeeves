@@ -17,7 +17,7 @@ class Factory
         UserLeave::TYPE_ID => UserLeave::class,
         RoomEdit::TYPE_ID => RoomEdit::class,
         StarMessage::TYPE_ID => StarMessage::class,
-        MentionMessage::TYPE_ID => MentionMessage::class,
+        Mention::TYPE_ID => Mention::class,
         DeleteMessage::TYPE_ID => DeleteMessage::class,
         Invitation::TYPE_ID => Invitation::class,
         ReplyMessage::TYPE_ID => ReplyMessage::class,
