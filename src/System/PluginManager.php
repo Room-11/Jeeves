@@ -18,7 +18,6 @@ use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use function Amp\all;
-use function Amp\any;
 use function Amp\resolve;
 
 class PluginManager

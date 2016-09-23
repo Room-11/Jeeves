@@ -8,6 +8,8 @@ use Aerys\Host;
 use function Amp\onError;
 use Auryn\Injector;
 use Room11\Jeeves\External\BitlyClient;
+use PeeHaa\AsyncTwitter\Credentials\AccessToken as TwitterAccessToken;
+use PeeHaa\AsyncTwitter\Credentials\Application as TwitterApplicationCredentials;
 use Room11\Jeeves\BuiltInCommands\Admin as AdminBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Ban as BanBuiltIn;
 use Room11\Jeeves\BuiltInCommands\Command as CommandBuiltIn;
@@ -42,13 +44,8 @@ use Room11\OpenId\Credentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
 use Symfony\Component\Yaml\Yaml;
-use function Aerys\router;
 use function Amp\all;
-use function Amp\info;
-use function Amp\resolve;
 use function Amp\run;
-use function Amp\wait;
-use function Amp\websocket;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../version.php';
@@ -82,6 +79,16 @@ $injector->define(TwitterCredentials::class, [
     ':consumerSecret' => $config['twitter']['consumerSecret'],
     ':accessToken' => $config['twitter']['accessToken'],
     ':accessTokenSecret' => $config['twitter']['accessTokenSecret'],
+]);
+
+$injector->define(TwitterApplicationCredentials::class, [
+    ':key' => $config['twitter']['consumerKey'],
+    ':secret' => $config['twitter']['consumerSecret'],
+]);
+
+$injector->define(TwitterAccessToken::class, [
+    ':token' => $config['twitter']['accessToken'],
+    ':secret' => $config['twitter']['accessTokenSecret'],
 ]);
 
 $injector->define(TranslationAPICredentials::class, [
