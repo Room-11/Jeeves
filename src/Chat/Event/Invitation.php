@@ -9,6 +9,7 @@
 namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 
 class Invitation extends BaseEvent implements UserSourcedEvent, GlobalEvent
 {
@@ -19,9 +20,9 @@ class Invitation extends BaseEvent implements UserSourcedEvent, GlobalEvent
     private $roomId;
     private $roomName;
 
-    public function __construct(array $data)
+    public function __construct(array $data, WebSocketHandler $handler)
     {
-        parent::__construct($data);
+        parent::__construct($data, $handler);
 
         $this->userId = (int)$data['user_id'];
         $this->userName = (string)$data['user_name'];

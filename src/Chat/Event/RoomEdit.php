@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\Traits\RoomSource;
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 
 class RoomEdit extends BaseEvent implements RoomSourcedEvent, UserSourcedEvent
 {
@@ -14,11 +14,11 @@ class RoomEdit extends BaseEvent implements RoomSourcedEvent, UserSourcedEvent
 
     private $content;
 
-    public function __construct(array $data, ChatRoom $room)
+    public function __construct(array $data, WebSocketHandler $handler)
     {
-        parent::__construct($data);
+        parent::__construct($data, $handler);
 
-        $this->room      = $room;
+        $this->room      = $handler->getRoom();
 
         $this->userId    = $data['user_id'];
         $this->userName  = $data['user_name'];

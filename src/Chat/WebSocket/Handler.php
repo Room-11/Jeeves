@@ -140,6 +140,11 @@ class Handler implements Websocket
         return $this->roomIdentifier;
     }
 
+    public function getRoom(): ChatRoom
+    {
+        return $this->room;
+    }
+
     public function setSessionInfo(ChatRoomSessionInfo $sessionInfo)
     {
         $this->sessionInfo = $sessionInfo;
@@ -182,7 +187,7 @@ class Handler implements Websocket
             }
 
             /** @var Event[] $events */
-            $events = yield from $this->eventFactory->build($data, $this->room);
+            $events = yield from $this->eventFactory->build($data, $this);
             $this->logger->log(Level::DEBUG, count($events) . " events targeting {$this->roomIdentifier} to process");
 
             foreach ($events as $event) {
