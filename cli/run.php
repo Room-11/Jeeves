@@ -33,9 +33,11 @@ use Room11\Jeeves\Storage\File\Admin as FileAdminStorage;
 use Room11\Jeeves\Storage\File\Ban as FileBanStorage;
 use Room11\Jeeves\Storage\File\KeyValue as FileKeyValueStorage;
 use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
+use Room11\Jeeves\Storage\File\Room as FileRoomStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStorage;
 use Room11\Jeeves\Storage\KeyValueFactory as KeyValueStorageFactory;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
+use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginManager;
@@ -76,6 +78,7 @@ $injector->alias(BanStorage::class,      $config['storage']['ban']      ?? FileB
 $injector->alias(KeyValueStorage::class, $config['storage']['keyvalue'] ?? FileKeyValueStorage::class);
 $injector->alias(KeyValueStorageFactory::class, ($config['storage']['keyvalue'] ?? FileKeyValueStorage::class) . 'Factory');
 $injector->alias(PluginStorage::class,   $config['storage']['plugin']   ?? FilePluginStorage::class);
+$injector->alias(RoomStorage::class,     $config['storage']['room']     ?? FileRoomStorage::class);
 
 $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);
 

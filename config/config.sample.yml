@@ -28,6 +28,7 @@ storage:
   ban: Room11\Jeeves\Storage\File\Ban
   keyvalue: Room11\Jeeves\Storage\File\KeyValue
   plugin: Room11\Jeeves\Storage\File\Plugin
+  room: Room11\Jeeves\Storage\File\Room
 
 plugins:
   - Room11\Jeeves\Plugins\Canon

@@ -24,8 +24,10 @@ use Room11\Jeeves\Storage\File\Ban as FileBanStorage;
 use Room11\Jeeves\Storage\File\JsonFileAccessor;
 use Room11\Jeeves\Storage\File\KeyValueFactory as FileKeyValueStorageFactory;
 use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
+use Room11\Jeeves\Storage\File\Plugin as FileRoomStorage;
 use Room11\Jeeves\Storage\KeyValueFactory as KeyValueStorageFactory;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
+use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
 use Room11\Jeeves\WebAPI\Server as WebAPIServer;
@@ -44,6 +46,7 @@ $injector->define(FileAdminStorage::class, [":dataFile" => DATA_BASE_DIR . "/adm
 $injector->define(FileBanStorage::class, [":dataFile" => DATA_BASE_DIR . "/bans.%s.json"]);
 $injector->define(FilePluginStorage::class, [":dataFile" => DATA_BASE_DIR . "/plugins.%s.json"]);
 $injector->define(FileKeyValueStorageFactory::class, [":dataFileTemplate" => DATA_BASE_DIR . "/keyvalue.%s.json"]);
+$injector->define(FileRoomStorage::class, [":dataFile" => DATA_BASE_DIR . "/plugins.%s.json"]);
 
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);
@@ -64,6 +67,7 @@ $injector->share(MessageResolver::class);
 $injector->share(OpenIdAuthenticator::class);
 $injector->share(PluginManager::class);
 $injector->share(PluginStorage::class);
+$injector->share(RoomStorage::class);
 $injector->share(UriFactory::class);
 $injector->share(WebAPIServer::class);
 $injector->share(WebSocketHandlerFactory::class);
