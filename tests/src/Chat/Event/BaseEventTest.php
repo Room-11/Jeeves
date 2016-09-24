@@ -16,7 +16,7 @@ class BaseEventTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->handler = $this->getMock(WebSocketHandler::class);
+        $this->handler = $this->getMockWithoutInvokingTheOriginalConstructor(WebSocketHandler::class);
 
         $this->event = new class(['id' => 2, 'time_stamp' => 1005], $this->handler) extends BaseEvent {
             public function __construct(array $data, WebSocketHandler $handler) {
