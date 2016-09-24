@@ -19,10 +19,10 @@ abstract class BaseEvent implements Event, \JsonSerializable
     protected function __construct(array $data, WebSocketHandler $handler)
     {
         $this->data = $data;
+        $this->handler = $handler;
 
         $this->eventId   = (int)$data['id'];
         $this->timestamp = new \DateTimeImmutable('@' . ((int)$data['time_stamp']));
-        $this->handler = $handler;
     }
 
     public function getTypeId(): int
