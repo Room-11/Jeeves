@@ -27,7 +27,7 @@ class Admin implements AdminStorage
     public function getAll(ChatRoom $room): Promise
     {
         return resolve(function() use($room) {
-            $owners = array_keys(yield $this->chatClient->getRoomOwnerIds($room));
+            $owners = array_keys(yield $this->chatClient->getRoomOwners($room));
 
             $admins = yield $this->accessor->writeCallback(function($data) use($owners) {
                 return array_values(array_diff($data, $owners));

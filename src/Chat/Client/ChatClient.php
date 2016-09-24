@@ -12,6 +12,7 @@ use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\Entities\User;
 use Room11\Jeeves\Chat\Client\Actions\ActionFactory;
 use Room11\Jeeves\Chat\Message\Message;
+use Room11\Jeeves\Chat\Room\AccessType as ChatRoomAccessType;
 use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
@@ -65,10 +66,6 @@ class ChatClient
         return $text;
     }
 
-    /**
-     * @param ChatRoom|ChatRoomIdentifier $arg
-     * @return ChatRoomIdentifier
-     */
     private function getIdentifierFromArg($arg): ChatRoomIdentifier
     {
         if ($arg instanceof ChatRoom) {
@@ -101,11 +98,29 @@ class ChatClient
         return mb_substr($text, 0, $pos, self::ENCODING) . Chars::ELLIPSIS;
     }
 
+    private function parseRoomAccessSection(\DOMElement $section): array
+    {
+        $userEls = xpath_get_elements($section, ".//div[contains(concat(' ', normalize-space(@class), ' '), ' usercard ')]");
+        $users = [];
+
+        foreach ($userEls as $userEl) {
+            $profileAnchor = xpath_get_element($userEl, ".//a[contains(concat(' ', normalize-space(@class), ' '), ' username ')]");
+
+            if (!preg_match('#^/users/([0-9]+)/#', $profileAnchor->getAttribute('href'), $match)) {
+                continue;
+            }
+
+            $users[(int)$match[1]] = trim($profileAnchor->textContent);
+        }
+
+        return $users;
+    }
+
     /**
      * @param ChatRoom|ChatRoomIdentifier $room
-     * @return Promise
+     * @return Promise<string[][]>
      */
-    public function getRoomOwnerIds($room): Promise
+    public function getRoomAccess($room)
     {
         $identifier = $this->getIdentifierFromArg($room);
         $url = $identifier->getEndpointURL(ChatRoomEndpoint::CHATROOM_INFO_ACCESS);
@@ -116,25 +131,45 @@ class ChatClient
 
             $doc = domdocument_load_html($response->getBody());
 
-            $ownerSection = $doc->getElementById('access-section-owner');
-            if ($ownerSection === null) {
-                throw new \RuntimeException('Could not find the access-section-owner container div');
-            }
+            $result = [];
 
-            $userEls = xpath_get_elements($ownerSection, ".//div[contains(concat(' ', normalize-space(@class), ' '), ' usercard ')]");
-            $users = [];
+            foreach ([ChatRoomAccessType::READ_ONLY, ChatRoomAccessType::READ_WRITE, ChatRoomAccessType::OWNER] as $accessType) {
+                $sectionId = 'access-section-' . $accessType;
+                $sectionEl = $doc->getElementById($sectionId);
 
-            foreach ($userEls as $userEl) {
-                $profileAnchor = xpath_get_element($userEl, ".//a[contains(concat(' ', normalize-space(@class), ' '), ' username ')]");
-
-                if (!preg_match('#^/users/([0-9]+)/#', $profileAnchor->getAttribute('href'), $match)) {
-                    continue;
+                if ($sectionEl === null) {
+                    throw new \RuntimeException('Could not find the ' . $sectionId . ' container element');
                 }
 
-                $users[(int)$match[1]] = trim($profileAnchor->textContent);
+                $result[$accessType] = $this->parseRoomAccessSection($sectionEl);
             }
 
-            return $users;
+            return $result;
+        });
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @return Promise<string[]>
+     */
+    public function getRoomOwners($room): Promise
+    {
+        return resolve(function() use($room) {
+            $users = yield $this->getRoomAccess($room);
+            return $users[ChatRoomAccessType::OWNER];
+        });
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param int $userId
+     * @return Promise<bool>
+     */
+    public function isRoomOwner($room, int $userId)
+    {
+        return resolve(function() use($room, $userId) {
+            $users = yield $this->getRoomOwners($room);
+            return isset($users[$userId]);
         });
     }
 
@@ -218,6 +253,38 @@ class ChatClient
             }
 
             return null;
+        });
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @return Promise
+     */
+    public function getPinnedMessages(ChatRoom $room): Promise
+    {
+        $identifier = $this->getIdentifierFromArg($room);
+        $url = $identifier->getEndpointURL(ChatRoomEndpoint::CHATROOM_STARS_LIST);
+
+        return resolve(function() use($url) {
+            /** @var HttpResponse $response */
+            $this->logger->log(Level::DEBUG, 'Getting pinned messages');
+            $response = yield $this->httpClient->request($url);
+
+            $doc = domdocument_load_html($response->getBody());
+
+            try {
+                $pinnedEls = xpath_get_elements($doc, ".//li[./span[contains(concat(' ', normalize-space(@class), ' '), ' owner-star ')]]");
+            } catch (ElementNotFoundException $e) {
+                return [];
+            }
+
+            $result = [];
+            foreach ($pinnedEls as $el) {
+                $result[] = (int)explode('_', $el->getAttribute('id'))[1];
+            }
+
+            $this->logger->log(Level::DEBUG, 'Got pinned messages: ' . implode(',', $result));
+            return $result;
         });
     }
 
@@ -384,37 +451,5 @@ class ChatClient
         $this->actionExecutor->enqueue($action);
 
         return $action->getPromisor()->promise();
-    }
-
-    /**
-     * @param ChatRoom|ChatRoomIdentifier $room
-     * @return Promise
-     */
-    public function getPinnedMessages(ChatRoom $room): Promise
-    {
-        $identifier = $this->getIdentifierFromArg($room);
-        $url = $identifier->getEndpointURL(ChatRoomEndpoint::CHATROOM_STARS_LIST);
-
-        return resolve(function() use($url) {
-            /** @var HttpResponse $response */
-            $this->logger->log(Level::DEBUG, 'Getting pinned messages');
-            $response = yield $this->httpClient->request($url);
-
-            $doc = domdocument_load_html($response->getBody());
-
-            try {
-                $pinnedEls = xpath_get_elements($doc, ".//li[./span[contains(concat(' ', normalize-space(@class), ' '), ' owner-star ')]]");
-            } catch (ElementNotFoundException $e) {
-                return [];
-            }
-
-            $result = [];
-            foreach ($pinnedEls as $el) {
-                $result[] = (int)explode('_', $el->getAttribute('id'))[1];
-            }
-
-            $this->logger->log(Level::DEBUG, 'Got pinned messages: ' . implode(',', $result));
-            return $result;
-        });
     }
 }

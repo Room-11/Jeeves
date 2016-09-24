@@ -48,7 +48,7 @@ class RePinner extends BasePlugin
 
     public function repin(Command $command): \Generator
     {
-        $owners = yield $this->chatClient->getRoomOwnerIds($command->getRoom());
+        $owners = yield $this->chatClient->getRoomOwners($command->getRoom());
 
         if (!isset($owners[$command->getUserId()])) {
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
@@ -85,7 +85,7 @@ class RePinner extends BasePlugin
 
     public function unpin(Command $command)
     {
-        $owners = yield $this->chatClient->getRoomOwnerIds($command->getRoom());
+        $owners = yield $this->chatClient->getRoomOwners($command->getRoom());
 
         if (!isset($owners[$command->getUserId()])) {
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
