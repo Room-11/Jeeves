@@ -2,46 +2,85 @@
 
 namespace Room11\Jeeves\BuiltIn\EventHandlers;
 
+use Amp\Pause;
 use Amp\Promise;
+use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\DataFetchFailureException;
 use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Event\EventType;
 use Room11\Jeeves\Chat\Event\Invitation;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
-use Room11\Jeeves\Chat\Room\Identifier;
+use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
+use Room11\Jeeves\Chat\Room\IdentifierFactory as ChatRoomIdentifierFactory;
 use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\System\BuiltInEventHandler;
+use Room11\Jeeves\Storage\Room as RoomStorage;
 use function Amp\resolve;
 
 class Invite implements BuiltInEventHandler
 {
+    private $identifierFactory;
     private $handlerFactory;
     private $connector;
+    private $chatClient;
+    private $storage;
     private $logger;
 
-    public function __construct(WebSocketHandlerFactory $handlerFactory, ChatRoomConnector $connector, Logger $logger)
-    {
+    public function __construct(
+        ChatRoomIdentifierFactory $identifierFactory,
+        WebSocketHandlerFactory $handlerFactory,
+        ChatRoomConnector $connector,
+        ChatClient $chatClient,
+        RoomStorage $storage,
+        Logger $logger
+    ) {
+        $this->identifierFactory = $identifierFactory;
         $this->handlerFactory = $handlerFactory;
         $this->connector = $connector;
+        $this->chatClient = $chatClient;
+        $this->storage = $storage;
         $this->logger = $logger;
+    }
+
+    private function determineWhetherInvitingUserIsRoomOwner(ChatRoomIdentifier $identifier, int $userId): \Generator
+    {
+        for ($i = 1; $i <= 3; $i++) {
+            try {
+                return yield $this->chatClient->isRoomOwner($identifier, $userId);
+            } catch (DataFetchFailureException $e) {
+                yield new Pause($i * 1000);
+            }
+        }
+
+        return false;
     }
 
     public function handleEvent(Event $event): Promise
     {
         /** @var Invitation $event */
-        $this->logger->log(Level::DEBUG, "Got invited to {$event->getRoomName()} by {$event->getUserName()}");
+        $userId = $event->getUserId();
+
+        $this->logger->log(Level::DEBUG, "Invited to {$event->getRoomName()} by {$event->getUserName()} (#{$userId})");
 
         $sourceIdentifier = $event->getSourceHandler()->getRoomIdentifier();
-        $destIdentifier = new Identifier(
+        $destIdentifier = $this->identifierFactory->create(
             $event->getRoomId(),
             $sourceIdentifier->getHost(),
-            $sourceIdentifier->isSecure()
+            true
         );
 
-        $handler = $this->handlerFactory->build($destIdentifier);
+        return resolve(function() use($destIdentifier, $userId) {
+            yield $this->storage->addRoom($destIdentifier, time());
 
-        return resolve($this->connector->connect($handler));
+            $handler = $this->handlerFactory->build($destIdentifier);
+            yield from $this->connector->connect($handler);
+
+            if (yield from $this->determineWhetherInvitingUserIsRoomOwner($destIdentifier, $userId)) {
+                yield $this->storage->addApproveVote($destIdentifier, $userId);
+            }
+        });
     }
 
     public function getEventTypes(): array

@@ -4,17 +4,24 @@ namespace Room11\Jeeves\Storage;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 interface Room
 {
-    public function addWelcomeVote(ChatRoomIdentifier $room, int $userId): Promise;
+    public function addRoom(ChatRoomIdentifier $room, int $inviteTimestamp): Promise;
 
-    public function getWelcomeVotes(ChatRoomIdentifier $room): Promise;
+    public function removeRoom(ChatRoomIdentifier $room): Promise;
+
+    public function getAllRooms(ChatRoomIdentifier $room): Promise;
+
+    public function getInviteTimestamp(ChatRoomIdentifier $room): Promise;
+
+    public function addApproveVote(ChatRoomIdentifier $room, int $userId): Promise;
+
+    public function getApproveVotes(ChatRoomIdentifier $room): Promise;
 
     public function addLeaveVote(ChatRoomIdentifier $room, int $userId): Promise;
 
     public function getLeaveVotes(ChatRoomIdentifier $room): Promise;
 
-    public function clear(ChatRoomIdentifier $room);
+    public function isApproved(ChatRoomIdentifier $room): Promise;
 }

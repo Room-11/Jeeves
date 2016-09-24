@@ -7,6 +7,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\PluginManager;
 use function Amp\resolve;
@@ -16,12 +17,14 @@ class Plugin implements BuiltInCommand
     private $pluginManager;
     private $chatClient;
     private $adminStorage;
+    private $roomStorage;
 
-    public function __construct(PluginManager $pluginManager, ChatClient $chatClient, AdminStorage $adminStorage)
+    public function __construct(PluginManager $pluginManager, ChatClient $chatClient, AdminStorage $adminStorage, RoomStorage $roomStorage)
     {
         $this->pluginManager = $pluginManager;
         $this->chatClient = $chatClient;
         $this->adminStorage = $adminStorage;
+        $this->roomStorage = $roomStorage;
     }
 
     private function listPlugins(CommandMessage $command): \Generator
@@ -143,14 +146,12 @@ class Plugin implements BuiltInCommand
         return $this->chatClient->postMessage($command->getRoom(), $message);
     }
 
-    /**
-     * Handle a command message
-     *
-     * @param CommandMessage $command
-     * @return Promise
-     */
-    public function handleCommand(CommandMessage $command): Promise
+    private function execute(CommandMessage $command): \Generator
     {
+        if (!yield $this->roomStorage->isApproved($command->getRoom()->getIdentifier())) {
+            return;
+        }
+
         switch ($command->getParameter(0)) {
             case 'list':    return $this->list($command);
             case 'enable':  return $this->enable($command);
@@ -159,6 +160,17 @@ class Plugin implements BuiltInCommand
         }
 
         return $this->chatClient->postReply($command, "Syntax: plugin [list|disable|enable] [plugin-name]");
+    }
+
+    /**
+     * Handle a command message
+     *
+     * @param CommandMessage $command
+     * @return Promise
+     */
+    public function handleCommand(CommandMessage $command): Promise
+    {
+        return resolve($this->execute($command));
     }
 
     /**

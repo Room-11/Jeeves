@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Room;
 
 use Amp\Websocket\Endpoint as WebsocketEndpoint;
 use Room11\Jeeves\Storage\KeyValueFactory as KeyValueStorageFactory;
+use Room11\Jeeves\Storage\Room as RoomStorage;
 
 class RoomFactory
 {
@@ -14,10 +15,10 @@ class RoomFactory
         $this->keyValueStorageFactory = $keyValueStorageFactory;
     }
 
-    public function build(Identifier $identifier, SessionInfo $sessionInfo, WebsocketEndpoint $endpoint)
+    public function build(Identifier $identifier, SessionInfo $sessionInfo, RoomStorage $storage, bool $permanent, WebsocketEndpoint $endpoint)
     {
         $keyValueStore = $this->keyValueStorageFactory->build($identifier->getIdentString());
 
-        return new Room($identifier, $sessionInfo, $endpoint, $keyValueStore);
+        return new Room($identifier, $sessionInfo, $storage, $permanent, $endpoint, $keyValueStore);
     }
 }

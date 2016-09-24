@@ -9,4 +9,5 @@ class PostFlags
     const ALLOW_PINGS = 0b00000010;
     const SINGLE_LINE = 0b00000100;
     const TRUNCATE    = 0b00001100; // truncate implies single line
+    const FORCE       = 0b00010000; // override isApproved
 }

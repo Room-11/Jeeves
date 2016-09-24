@@ -8,46 +8,49 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use function Amp\resolve;
 
 class Ban implements BuiltInCommand
 {
     private $chatClient;
+    private $adminStorage;
+    private $banStorage;
+    private $roomStorage;
 
-    private $admin;
-
-    private $storage;
-
-    public function __construct(ChatClient $chatClient, AdminStorage $admin, BanStorage $storage) {
-        $this->chatClient = $chatClient;
-        $this->admin      = $admin;
-        $this->storage    = $storage;
+    public function __construct(ChatClient $chatClient, AdminStorage $adminStorage, BanStorage $banStorage, RoomStorage $roomStorage) {
+        $this->chatClient   = $chatClient;
+        $this->adminStorage = $adminStorage;
+        $this->banStorage   = $banStorage;
+        $this->roomStorage  = $roomStorage;
     }
 
     private function execute(CommandMessage $command): \Generator {
-        if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
+        if (!yield $this->roomStorage->isApproved($command->getRoom()->getIdentifier())) {
+            return;
+        }
+
+        if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
         }
 
         if ($command->getCommandName() === "ban" && $command->getParameter(0) === 'list') {
             yield from $this->list($command);
-        } elseif ($command->getCommandName() === "ban") {
+        } else if ($command->getCommandName() === "ban") {
             if (!$command->hasParameters(2)) {
                 return $this->chatClient->postReply($command, "Ban length must be specified");
             }
 
             yield from $this->add($command, (int)$command->getParameter(0), $command->getParameter(1));
-        } elseif ($command->getCommandName() === "unban") {
+        } else if ($command->getCommandName() === "unban") {
             yield from $this->remove($command, (int)$command->getParameter(0));
         }
-
-        return new Success();
     }
 
     private function list(CommandMessage $command): \Generator
     {
-        $bans = yield $this->storage->getAll($command->getRoom());
+        $bans = yield $this->banStorage->getAll($command->getRoom());
 
         if (!$bans) {
             yield $this->chatClient->postMessage($command->getRoom(), "No users are currently on the naughty list.");
@@ -62,13 +65,13 @@ class Ban implements BuiltInCommand
     }
 
     private function add(CommandMessage $command, int $userId, string $duration): \Generator {
-        yield $this->storage->add($command->getRoom(), $userId, $duration);
+        yield $this->banStorage->add($command->getRoom(), $userId, $duration);
 
         yield $this->chatClient->postMessage($command->getRoom(), "User is banned.");
     }
 
     private function remove(CommandMessage $command, int $userId): \Generator {
-        yield $this->storage->remove($command->getRoom(), $userId);
+        yield $this->banStorage->remove($command->getRoom(), $userId);
 
         yield $this->chatClient->postMessage($command->getRoom(), "User is unbanned.");
     }

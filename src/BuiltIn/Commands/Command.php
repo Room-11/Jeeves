@@ -7,6 +7,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
@@ -40,6 +41,7 @@ class Command implements BuiltInCommand
     private $chatClient;
     private $adminStorage;
     private $builtInCommandManager;
+    private $roomStorage;
 
     private static function message(string $name, ...$args) {
         return vsprintf(self::RESPONSE_MESSAGES[$name], $args);
@@ -269,12 +271,35 @@ class Command implements BuiltInCommand
         PluginManager $pluginManager,
         BuiltInActionManager $builtInCommandManager,
         ChatClient $chatClient,
-        AdminStorage $adminStorage
+        AdminStorage $adminStorage,
+        RoomStorage $roomStorage
     ) {
         $this->pluginManager = $pluginManager;
         $this->chatClient = $chatClient;
         $this->adminStorage = $adminStorage;
         $this->builtInCommandManager = $builtInCommandManager;
+        $this->roomStorage = $roomStorage;
+    }
+
+    private function execute(CommandMessage $command): \Generator
+    {
+        if (!yield $this->roomStorage->isApproved($command->getRoom()->getIdentifier())) {
+            return;
+        }
+
+        try {
+            switch ($command->getParameter(0)) {
+                case 'alias': return yield from $this->alias($command);
+                case 'list':  return $this->list($command);
+                case 'map':   return yield from $this->map($command);
+                case 'remap': return yield from $this->remap($command);
+                case 'unmap': return yield from $this->unmap($command);
+            }
+        } catch (\Throwable $e) {
+            return $this->chatClient->postReply($command, self::message('unexpected_error', $e->getMessage()));
+        }
+
+        return $this->chatClient->postMessage($command->getRoom(), self::message('syntax'));
     }
 
     /**
@@ -285,19 +310,7 @@ class Command implements BuiltInCommand
      */
     public function handleCommand(CommandMessage $command): Promise
     {
-        try {
-            switch ($command->getParameter(0)) {
-                case 'alias': return resolve($this->alias($command));
-                case 'list':  return $this->list($command);
-                case 'map':   return resolve($this->map($command));
-                case 'remap': return resolve($this->remap($command));
-                case 'unmap': return resolve($this->unmap($command));
-            }
-        } catch (\Throwable $e) {
-            return $this->chatClient->postReply($command, self::message('unexpected_error', $e->getMessage()));
-        }
-
-        return $this->chatClient->postMessage($command->getRoom(), self::message('syntax'));
+        return resolve($this->execute($command));
     }
 
     /**

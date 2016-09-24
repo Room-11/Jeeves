@@ -16,7 +16,7 @@ class UserLeave extends BaseEvent implements RoomSourcedEvent, UserSourcedEvent
     {
         parent::__construct($data, $handler);
 
-        $this->room     = $handler;
+        $this->room     = $handler->getRoom();
 
         $this->userId   = $data['user_id'];
         $this->userName = $data['user_name'];

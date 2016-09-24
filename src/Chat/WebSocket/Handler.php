@@ -11,6 +11,7 @@ use Room11\Jeeves\Chat\Event\Builder as EventBuilder;
 use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Event\GlobalEvent;
 use Room11\Jeeves\Chat\Event\MessageEvent;
+use Room11\Jeeves\Chat\Event\RoomSourcedEvent;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
@@ -22,6 +23,7 @@ use Room11\Jeeves\Chat\Room\SessionInfo;
 use Room11\Jeeves\Chat\Room\SessionInfo as ChatRoomSessionInfo;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
 use function Amp\cancel;
@@ -34,7 +36,7 @@ class Handler implements Websocket
 
     const HEARTBEAT_TIMEOUT_SECONDS = 40;
 
-    private $eventFactory;
+    private $eventBuilder;
     private $messageFactory;
     private $roomConnector;
     private $roomFactory;
@@ -44,6 +46,8 @@ class Handler implements Websocket
     private $globalEventDispatcher;
     private $logger;
     private $roomIdentifier;
+    private $roomStorage;
+    private $permanent;
     private $devMode;
 
     /**
@@ -59,7 +63,7 @@ class Handler implements Websocket
     private $timeoutWatcherId;
 
     public function __construct(
-        EventBuilder $eventFactory,
+        EventBuilder $eventBuilder,
         MessageFactory $messageFactory,
         ChatRoomConnector $roomConnector,
         ChatRoomFactory $roomFactory,
@@ -69,19 +73,23 @@ class Handler implements Websocket
         GlobalEventDispatcher $globalEventDispatcher,
         Logger $logger,
         ChatRoomIdentifier $roomIdentifier,
+        RoomStorage $roomStorage,
+        bool $permanent,
         bool $devMode
     ) {
-        $this->eventFactory = $eventFactory;
+        $this->eventBuilder = $eventBuilder;
         $this->messageFactory = $messageFactory;
         $this->roomConnector = $roomConnector;
         $this->roomFactory = $roomFactory;
-        $this->pluginManager = $pluginManager;
-        $this->builtInActionManager = $builtInActionManager;
-        $this->logger = $logger;
         $this->rooms = $rooms;
-        $this->roomIdentifier = $roomIdentifier;
-        $this->devMode = $devMode;
+        $this->builtInActionManager = $builtInActionManager;
+        $this->pluginManager = $pluginManager;
         $this->globalEventDispatcher = $globalEventDispatcher;
+        $this->logger = $logger;
+        $this->roomIdentifier = $roomIdentifier;
+        $this->roomStorage = $roomStorage;
+        $this->permanent = $permanent;
+        $this->devMode = $devMode;
     }
 
     private function clearTimeoutWatcher()
@@ -127,6 +135,10 @@ class Handler implements Websocket
                 }
             }
 
+            if (!$event instanceof RoomSourcedEvent) { // probably an Unknown event
+                return;
+            }
+
             $this->logger->log(Level::DEBUG, "Processing room event #{$eventId} for plugins");
             yield $this->pluginManager->handleRoomEvent($event, $chatMessage);
             $this->logger->log(Level::DEBUG, "Event #{$eventId} processed for plugins");
@@ -159,7 +171,7 @@ class Handler implements Websocket
             // probably us)
             $this->setTimeoutWatcher(2);
 
-            $this->room = $this->roomFactory->build($this->roomIdentifier, $this->sessionInfo, $endpoint);
+            $this->room = $this->roomFactory->build($this->roomIdentifier, $this->sessionInfo, $this->roomStorage, $this->permanent, $endpoint);
             $this->rooms->add($this->room);
 
             yield $this->pluginManager->enableAllPluginsForRoom($this->room);
@@ -187,7 +199,7 @@ class Handler implements Websocket
             }
 
             /** @var Event[] $events */
-            $events = yield from $this->eventFactory->build($data, $this);
+            $events = yield from $this->eventBuilder->build($data, $this);
             $this->logger->log(Level::DEBUG, count($events) . " events targeting {$this->roomIdentifier} to process");
 
             foreach ($events as $event) {

@@ -100,7 +100,12 @@ class ChatClient
 
     private function parseRoomAccessSection(\DOMElement $section): array
     {
-        $userEls = xpath_get_elements($section, ".//div[contains(concat(' ', normalize-space(@class), ' '), ' usercard ')]");
+        try {
+            $userEls = xpath_get_elements($section, ".//div[contains(concat(' ', normalize-space(@class), ' '), ' usercard ')]");
+        } catch (ElementNotFoundException $e) {
+            return [];
+        }
+
         $users = [];
 
         foreach ($userEls as $userEl) {
@@ -138,7 +143,7 @@ class ChatClient
                 $sectionEl = $doc->getElementById($sectionId);
 
                 if ($sectionEl === null) {
-                    throw new \RuntimeException('Could not find the ' . $sectionId . ' container element');
+                    throw new DataFetchFailureException('Could not find the ' . $sectionId . ' container element');
                 }
 
                 $result[$accessType] = $this->parseRoomAccessSection($sectionEl);
@@ -336,27 +341,33 @@ class ChatClient
 
     public function postMessage(ChatRoom $room, string $text, int $flags = PostFlags::NONE): Promise
     {
-        if (!mb_check_encoding($text, self::ENCODING)) {
-            throw new MessagePostFailureException('Message text encoding invalid');
-        }
-        
-        $text = $this->applyPostFlagsToText($text, $flags);
+        return resolve(function() use ($room, $text, $flags) {
+            if (!($flags & PostFlags::FORCE) && !yield $room->isApproved()) {
+                throw new NotApprovedException('Bot is not approved for message posting in this room');
+            }
 
-        $body = (new FormBody)
-            ->addField("text", $text)
-            ->addField("fkey", (string)$room->getSessionInfo()->getFKey());
+            if (!mb_check_encoding($text, self::ENCODING)) {
+                throw new MessagePostFailureException('Message text encoding invalid');
+            }
 
-        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_POST_MESSAGE);
+            $text = $this->applyPostFlagsToText($text, $flags);
 
-        $request = (new HttpRequest)
-            ->setUri($url)
-            ->setMethod("POST")
-            ->setBody($body);
+            $body = (new FormBody)
+                ->addField("text", $text)
+                ->addField("fkey", (string)$room->getSessionInfo()->getFKey());
 
-        $action = $this->actionFactory->createPostMessageAction($request, $room);
-        $this->actionExecutor->enqueue($action);
+            $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_POST_MESSAGE);
 
-        return $action->getPromisor()->promise();
+            $request = (new HttpRequest)
+                ->setUri($url)
+                ->setMethod("POST")
+                ->setBody($body);
+
+            $action = $this->actionFactory->createPostMessageAction($request, $room);
+            $this->actionExecutor->enqueue($action);
+
+            return $action->getPromisor()->promise();
+        });
     }
 
     public function postReply(Message $origin, string $text, int $flags = PostFlags::NONE): Promise

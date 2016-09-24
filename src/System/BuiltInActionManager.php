@@ -5,6 +5,7 @@ namespace Room11\Jeeves\System;
 use function Amp\all;
 use Amp\Promise;
 use Amp\Success;
+use Room11\Jeeves\Chat\Client\NotApprovedException;
 use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Log\Level;
