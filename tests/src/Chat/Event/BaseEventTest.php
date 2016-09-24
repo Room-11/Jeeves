@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Test\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\BaseEvent;
 use Room11\Jeeves\Chat\Event\Event;
+use Room11\Jeeves\Chat\WebSocket\Handler;
 
 class BaseEventTest extends \PHPUnit_Framework_TestCase
 {
@@ -13,8 +14,8 @@ class BaseEventTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->event = new class(['id' => 2, 'time_stamp' => 1005]) extends BaseEvent {
-            public function __construct(array $data) {
-                parent::__construct($data);
+            public function __construct(array $data, Handler $handler) {
+                parent::__construct($data, $handler);
             }
         };
     }
