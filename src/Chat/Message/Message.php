@@ -8,7 +8,6 @@ use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\NewMessage;
 use Room11\Jeeves\Chat\Event\ReplyMessage;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use function Room11\DOMUtils\domdocument_load_html;
 
 class Message
 {
@@ -87,5 +86,22 @@ class Message
     public function getType(): int
     {
         return $this->type;
+    }
+
+    public function getParentMessageId()
+    {
+        return $this->getEvent()->getParentId();
+    }
+
+    public function isConversation()
+    {
+        if ($this->event instanceof ReplyMessage) {
+            return true;
+        }
+
+        $userName = preg_quote($this->event->getRoom()->getSessionInfo()->getUser()->getName(), '#');
+        $expr = '#(?:^|\s)@' . $userName . '(?:\s|$)#i';
+
+        return (bool)preg_match($expr, $this->getText());
     }
 }

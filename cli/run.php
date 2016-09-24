@@ -165,7 +165,7 @@ $websocketHandlers = array_map(function($room) use($handlerFactory) {
         $room['id'],
         $room['hostname'] ?? 'chat.stackoverflow.com',
         $room['secure'] ?? true
-    ));
+    ), true);
 }, $config['rooms']);
 
 /** @var BuiltInActionManager $builtInActionManager */

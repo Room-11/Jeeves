@@ -12,28 +12,10 @@ class Factory
         return strpos($event->getMessageContent()->textContent, '!!') === 0;
     }
 
-    private function isConversationMessage(MessageEvent $event)
-    {
-        if ($event instanceof ReplyMessage) {
-            return true;
-        }
-
-        $expr = '#(?:^|\s)@' . preg_quote($event->getRoom()->getSessionInfo()->getUser()->getName(), '#') . '(?:\s|$)#i';
-        $text = $event->getMessageContent()->textContent;
-
-        return (bool)preg_match($expr, $text);
-    }
-
     public function build(MessageEvent $event): Message
     {
-        if ($this->isCommandMessage($event)) {
-            return new Command($event, $event->getRoom());
-        }
-
-        if ($this->isConversationMessage($event)) {
-            return new Conversation($event, $event->getRoom());
-        }
-
-        return new Message($event, $event->getRoom());
+        return $this->isCommandMessage($event)
+            ? new Command($event, $event->getRoom())
+            : new Message($event, $event->getRoom());
     }
 }

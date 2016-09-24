@@ -5,7 +5,6 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Conversation;
 use Room11\Jeeves\Chat\Message\Message;
 
 class Terminator extends BasePlugin
@@ -53,10 +52,14 @@ class Terminator extends BasePlugin
         $this->chatClient = $chatClient;
     }
 
-    private function isMatch(Conversation $conversation): bool
+    private function isMatch(Message $message): bool
     {
-         foreach ($this->patterns as $pattern => $response) {
-            if (preg_match('/' . $pattern . '/iu', $this->normalizeText($conversation->getText())) === 1) {
+        if (!$message->isConversation()) {
+            return false;
+        }
+
+        foreach ($this->patterns as $pattern => $response) {
+            if (preg_match('/' . $pattern . '/iu', $this->normalizeText($message->getText())) === 1) {
                 return true;
             }
         }
@@ -64,11 +67,11 @@ class Terminator extends BasePlugin
         return false;
     }
 
-    private function getResponse(Conversation $conversation): string
+    private function getResponse(Message $message): string
     {
         foreach ($this->patterns as $pattern => $response) {
-            if (preg_match('/' . $pattern . '/iu', $this->normalizeText($conversation->getText())) === 1) {
-                return $this->buildResponse($pattern, $response, $conversation->getText());
+            if (preg_match('/' . $pattern . '/iu', $this->normalizeText($message->getText())) === 1) {
+                return $this->buildResponse($pattern, $response, $message->getText());
             }
         }
 
@@ -91,7 +94,7 @@ class Terminator extends BasePlugin
 
     public function handleMessage(Message $message): Promise
     {
-        return $message instanceof Conversation && $this->isMatch($message)
+        return $this->isMatch($message)
             ? $this->chatClient->postReply($message, $this->getResponse($message))
             : new Success();
     }

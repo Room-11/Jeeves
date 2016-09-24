@@ -5,7 +5,6 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Conversation;
 use Room11\Jeeves\Chat\Message\Message;
 
 class SwordFight extends BasePlugin
@@ -73,10 +72,14 @@ class SwordFight extends BasePlugin
         $this->chatClient = $chatClient;
     }
 
-    private function isMatch(Conversation $conversation): bool
+    private function isMatch(Message $message): bool
     {
-         foreach ($this->matches as $insult => $response) {
-            if ($this->getMatchingPercentage($insult, $conversation->getText()) >= self::MINIMUM_MATCH_PERCENTAGE) {
+        if (!$message->isConversation()) {
+            return false;
+        }
+
+        foreach ($this->matches as $insult => $response) {
+            if ($this->getMatchingPercentage($insult, $message->getText()) >= self::MINIMUM_MATCH_PERCENTAGE) {
                 return true;
             }
         }
@@ -100,13 +103,13 @@ class SwordFight extends BasePlugin
         return trim(preg_replace('/\s+/', ' ', $text));
     }
 
-    private function getResponse(Conversation $conversation): string
+    private function getResponse(Message $message): string
     {
         $bestMatchPercentage = 0;
         $bestMatchResponse   = null;
 
         foreach ($this->matches as $insult => $response) {
-            $matchPercentage = $this->getMatchingPercentage($insult, $conversation->getText());
+            $matchPercentage = $this->getMatchingPercentage($insult, $message->getText());
 
             if ($matchPercentage > $bestMatchPercentage) {
                 $bestMatchPercentage = $matchPercentage;
@@ -114,12 +117,16 @@ class SwordFight extends BasePlugin
             }
         }
 
-        return $bestMatchResponse;
+        if ($bestMatchResponse === null) {
+            throw new \LogicException('Could not get a match response!');
+        }
+
+        return (string)$bestMatchResponse;
     }
 
     public function handleMessage(Message $message): Promise
     {
-        return $message instanceof Conversation && $this->isMatch($message)
+        return $this->isMatch($message)
             ? $this->chatClient->postReply($message, $this->getResponse($message))
             : new Success();
     }
