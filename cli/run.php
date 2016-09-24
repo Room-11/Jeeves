@@ -63,7 +63,7 @@ $builtInCommands = [
 ];
 
 $builtInEventHandlers = [
-    Invite::class,
+    //Invite::class,
 ];
 
 $config = Yaml::parse(file_get_contents(__DIR__ . '/../config/config.yml'));
