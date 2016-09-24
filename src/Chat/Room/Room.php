@@ -51,7 +51,7 @@ class Room
     public function getEndpointURL(int $endpoint, ...$extraData): string
     {
         if ($endpoint < 500) {
-            return $this->identifier->getEndpointUrl($endpoint, ...$extraData);
+            return $this->identifier->getEndpointURL($endpoint, ...$extraData);
         }
 
         if (!isset(self::$endpointURLTemplates[$endpoint])) {

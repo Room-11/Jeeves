@@ -101,11 +101,16 @@ class ChatClient
         return mb_substr($text, 0, $pos, self::ENCODING) . Chars::ELLIPSIS;
     }
 
-    public function getRoomOwnerIds(ChatRoom $room): Promise
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @return Promise
+     */
+    public function getRoomOwnerIds($room): Promise
     {
-        return resolve(function() use($room) {
-            $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_INFO_ACCESS);
+        $identifier = $this->getIdentifierFromArg($room);
+        $url = $identifier->getEndpointURL(ChatRoomEndpoint::CHATROOM_INFO_ACCESS);
 
+        return resolve(function() use($url) {
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($url);
 
@@ -141,7 +146,7 @@ class ChatClient
     public function getChatUsers($room, int ...$ids): Promise
     {
         $identifier = $this->getIdentifierFromArg($room);
-        $url = $identifier->getEndpointUrl(ChatRoomEndpoint::CHAT_USER_INFO);
+        $url = $identifier->getEndpointURL(ChatRoomEndpoint::CHAT_USER_INFO);
 
         $body = (new FormBody)
             ->addField('roomId', $identifier->getId())
@@ -162,9 +167,14 @@ class ChatClient
         });
     }
 
-    public function getPingableUsers(ChatRoom $room): Promise
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @return Promise
+     */
+    public function getPingableUsers($room): Promise
     {
-        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_INFO_PINGABLE);
+        $identifier = $this->getIdentifierFromArg($room);
+        $url = $identifier->getEndpointURL(ChatRoomEndpoint::CHATROOM_INFO_PINGABLE);
 
         return resolve(function() use($url) {
             /** @var HttpResponse $response */
@@ -190,7 +200,12 @@ class ChatClient
         });
     }
 
-    public function getPingableName(ChatRoom $room, string $name): Promise
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param string $name
+     * @return Promise
+     */
+    public function getPingableName($room, string $name): Promise
     {
         return resolve(function() use($room, $name) {
             $lower = strtolower($name);
@@ -206,9 +221,15 @@ class ChatClient
         });
     }
 
-    public function getMessageHTML(ChatRoom $room, int $id): Promise
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param int $id
+     * @return Promise
+     */
+    public function getMessageHTML($room, int $id): Promise
     {
-        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_GET_MESSAGE_HTML, $id);
+        $identifier = $this->getIdentifierFromArg($room);
+        $url = $identifier->getEndpointURL(ChatRoomEndpoint::CHATROOM_GET_MESSAGE_HTML, $id);
 
         return resolve(function() use($url, $id) {
             /** @var HttpResponse $response */
@@ -224,9 +245,15 @@ class ChatClient
         });
     }
 
-    public function getMessageText(ChatRoom $room, int $id): Promise
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param int $id
+     * @return Promise
+     */
+    public function getMessageText($room, int $id): Promise
     {
-        $url = $room->getEndpointURL(ChatRoomEndpoint::CHATROOM_GET_MESSAGE_TEXT, $id);
+        $identifier = $this->getIdentifierFromArg($room);
+        $url = $identifier->getEndpointURL(ChatRoomEndpoint::CHATROOM_GET_MESSAGE_HTML, $id);
 
         return resolve(function() use($url) {
             /** @var HttpResponse $response */
@@ -359,12 +386,19 @@ class ChatClient
         return $action->getPromisor()->promise();
     }
 
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @return Promise
+     */
     public function getPinnedMessages(ChatRoom $room): Promise
     {
-        return resolve(function() use($room) {
+        $identifier = $this->getIdentifierFromArg($room);
+        $url = $identifier->getEndpointURL(ChatRoomEndpoint::CHATROOM_STARS_LIST);
+
+        return resolve(function() use($url) {
             /** @var HttpResponse $response */
             $this->logger->log(Level::DEBUG, 'Getting pinned messages');
-            $response = yield $this->httpClient->request($room->getEndpointURL(ChatRoomEndpoint::CHATROOM_STARS_LIST));
+            $response = yield $this->httpClient->request($url);
 
             $doc = domdocument_load_html($response->getBody());
 

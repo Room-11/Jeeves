@@ -41,7 +41,7 @@ class Authenticator
     public function getRoomSessionInfo(Identifier $identifier): \Generator
     {
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($identifier->getEndpointUrl(Endpoint::CHATROOM_UI));
+        $response = yield $this->httpClient->request($identifier->getEndpointURL(Endpoint::CHATROOM_UI));
 
         $doc = domdocument_load_html($response->getBody());
         $xpath = new \DOMXPath($doc);
@@ -157,11 +157,11 @@ class Authenticator
 
         $requests = [
             'auth' => (new HttpRequest)
-                ->setUri($identifier->getEndpointUrl(Endpoint::CHATROOM_WEBSOCKET_AUTH))
+                ->setUri($identifier->getEndpointURL(Endpoint::CHATROOM_WEBSOCKET_AUTH))
                 ->setMethod("POST")
                 ->setBody($authBody),
             'history' => (new HttpRequest)
-                ->setUri($identifier->getEndpointUrl(Endpoint::CHATROOM_EVENT_HISTORY))
+                ->setUri($identifier->getEndpointURL(Endpoint::CHATROOM_EVENT_HISTORY))
                 ->setMethod("POST")
                 ->setBody($historyBody),
         ];

@@ -56,7 +56,7 @@ class Identifier
         return $this->isSecure;
     }
 
-    public function getEndpointUrl(int $endpoint, ...$extraData): string {
+    public function getEndpointURL(int $endpoint, ...$extraData): string {
         if (!isset(self::$endpointURLTemplates[$endpoint])) {
             throw new \LogicException('Invalid endpoint ID');
         }
