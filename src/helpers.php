@@ -4,6 +4,7 @@ namespace Room11\Jeeves;
 
 const DNS_NAME_EXPR = '(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)\.)*(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)';
 const ROOM_IDENTIFIER_EXPR = '(' . DNS_NAME_EXPR . ')#([0-9]+)';
+define(__NAMESPACE__ . '\\APP_BASE', realpath(__DIR__ . '/..'));
 
 function dateinterval_to_string(\DateInterval $interval, string $precision = 's'): string
 {
