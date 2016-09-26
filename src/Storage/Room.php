@@ -11,7 +11,7 @@ interface Room
 
     public function removeRoom(ChatRoomIdentifier $room): Promise;
 
-    public function getAllRooms(ChatRoomIdentifier $room): Promise;
+    public function getAllRooms(): Promise;
 
     public function getInviteTimestamp(ChatRoomIdentifier $room): Promise;
 

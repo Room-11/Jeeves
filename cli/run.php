@@ -156,18 +156,6 @@ $injector->delegate(CredentialManager::class, function () use ($config) {
     return $manager;
 });
 
-/** @var WebSocketHandlerFactory $handlerFactory */
-$handlerFactory = $injector->make(WebSocketHandlerFactory::class);
-
-/** @var WebSocketHandler[] $websocketHandlers */
-$websocketHandlers = array_map(function($room) use($handlerFactory) {
-    return $handlerFactory->build(new ChatRoomIdentifier(
-        $room['id'],
-        $room['hostname'] ?? 'chat.stackoverflow.com',
-        $room['secure'] ?? true
-    ), true);
-}, $config['rooms']);
-
 /** @var BuiltInActionManager $builtInActionManager */
 $builtInActionManager = $injector->make(BuiltInActionManager::class);
 
@@ -195,9 +183,6 @@ foreach ($config['plugins'] ?? [] as $pluginClass) {
 
     $pluginManager->registerPlugin($injector->make($pluginClass));
 }
-
-/** @var ChatRoomConnector $connector */
-$connector = $injector->make(ChatRoomConnector::class);
 
 $server = null;
 if ($config['web-api']['enable'] ?? false) {
@@ -250,8 +235,30 @@ onError(function (\Throwable $e) {
     fwrite(STDERR, "\nAn exception was not handled:\n\n{$e}\n\n");
 });
 
+/** @var WebSocketHandlerFactory $handlerFactory */
+$handlerFactory = $injector->make(WebSocketHandlerFactory::class);
+
+/** @var WebSocketHandler[] $websocketHandlers */
+$websocketHandlers = array_map(function($room) use($handlerFactory) {
+    return $handlerFactory->build(new ChatRoomIdentifier(
+        $room['id'],
+        $room['hostname'] ?? 'chat.stackoverflow.com',
+        $room['secure'] ?? true
+    ), true);
+}, $config['rooms']);
+
+/** @var ChatRoomConnector $connector */
+$connector = $injector->make(ChatRoomConnector::class);
+
+/** @var RoomStorage $roomStorage */
+$roomStorage = $injector->make(RoomStorage::class);
+
 try {
-    run(function () use ($server, $connector, $websocketHandlers) {
+    run(function () use ($server, $connector, $websocketHandlers, $handlerFactory, $roomStorage) {
+        $websocketHandlers = array_merge($websocketHandlers, array_map(function($ident) use($handlerFactory) {
+            return $handlerFactory->build(ChatRoomIdentifier::createFromIdentString($ident, true));
+        }, yield $roomStorage->getAllRooms()));
+
         $promises = $server ? [$server->start()] : [];
 
         foreach ($websocketHandlers as $handler) {

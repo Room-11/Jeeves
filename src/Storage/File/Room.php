@@ -59,11 +59,10 @@ class Room implements RoomStorage
         }, $this->dataFileTemplate);
     }
 
-    public function getAllRooms(ChatRoomIdentifier $room): Promise
+    public function getAllRooms(): Promise
     {
-        return resolve(function() use($room) {
-            $data = yield $this->accessor->read($this->dataFileTemplate);
-            return array_keys($data[$room->getIdentString()]);
+        return resolve(function() {
+            return array_keys(yield $this->accessor->read($this->dataFileTemplate));
         });
     }
 
