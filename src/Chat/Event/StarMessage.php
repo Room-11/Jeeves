@@ -3,13 +3,13 @@
 namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\Traits\RoomSource;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 
 class StarMessage extends BaseEvent implements RoomSourcedEvent
 {
     use RoomSource;
 
-    const TYPE_ID = 6;
+    const TYPE_ID = EventType::MESSAGE_STARRED;
 
     private $messageId;
 
@@ -19,11 +19,11 @@ class StarMessage extends BaseEvent implements RoomSourcedEvent
 
     private $pinned;
 
-    public function __construct(array $data, ChatRoom $room)
+    public function __construct(array $data, WebSocketHandler $handler)
     {
-        parent::__construct($data);
+        parent::__construct($data, $handler);
 
-        $this->room          = $room;
+        $this->room          = $handler->getRoom();
 
         $this->messageId     = $data['message_id'];
         $this->content       = $data['content'];

@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Event;
 
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 
 class Factory
 {
@@ -17,21 +17,16 @@ class Factory
         UserLeave::TYPE_ID => UserLeave::class,
         RoomEdit::TYPE_ID => RoomEdit::class,
         StarMessage::TYPE_ID => StarMessage::class,
-        MentionMessage::TYPE_ID => MentionMessage::class,
+        Mention::TYPE_ID => Mention::class,
         DeleteMessage::TYPE_ID => DeleteMessage::class,
+        Invitation::TYPE_ID => Invitation::class,
         ReplyMessage::TYPE_ID => ReplyMessage::class,
     ];
 
-    /**
-     * @param int $eventType
-     * @param array $data
-     * @param ChatRoom $room
-     * @return Event
-     */
-    public function build(int $eventType, array $data, ChatRoom $room): Event
+    public function build(int $eventType, array $data, WebSocketHandler $handler): Event
     {
         return isset($this->classes[$eventType])
-            ? new $this->classes[$eventType]($data, $room)
+            ? new $this->classes[$eventType]($data, $handler)
             : new Unknown($data);
     }
 }

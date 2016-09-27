@@ -2,6 +2,8 @@
 
 namespace Room11\Jeeves\Chat\Event;
 
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
+
 abstract class BaseEvent implements Event, \JsonSerializable
 {
     const TYPE_ID = 0;
@@ -12,9 +14,12 @@ abstract class BaseEvent implements Event, \JsonSerializable
 
     private $data;
 
-    protected function __construct(array $data)
+    private $handler;
+
+    protected function __construct(array $data, WebSocketHandler $handler)
     {
         $this->data = $data;
+        $this->handler = $handler;
 
         $this->eventId   = (int)$data['id'];
         $this->timestamp = new \DateTimeImmutable('@' . ((int)$data['time_stamp']));
@@ -38,6 +43,11 @@ abstract class BaseEvent implements Event, \JsonSerializable
     public function getTimestamp(): \DateTimeImmutable
     {
         return $this->timestamp;
+    }
+
+    public function getSourceHandler(): WebSocketHandler
+    {
+        return $this->handler;
     }
 
     public function jsonSerialize()

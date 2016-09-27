@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\BuiltInCommands;
+namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
@@ -8,7 +8,7 @@ use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
-use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
 use function Amp\resolve;
 
@@ -267,7 +267,7 @@ class Command implements BuiltInCommand
 
     public function __construct(
         PluginManager $pluginManager,
-        BuiltInCommandManager $builtInCommandManager,
+        BuiltInActionManager $builtInCommandManager,
         ChatClient $chatClient,
         AdminStorage $adminStorage
     ) {

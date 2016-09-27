@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\BuiltInCommands;
+namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;

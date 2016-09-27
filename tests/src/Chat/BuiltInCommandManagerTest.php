@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Tests\Chat;
 
-use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\Level;
@@ -36,14 +36,14 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             )
         ;
 
-        $builtInCommandManager = new BuiltInCommandManager($this->getMock(BanStorage::class), $logger);
+        $builtInCommandManager = new BuiltInActionManager($this->getMock(BanStorage::class), $logger);
 
-        $this->assertSame($builtInCommandManager, $builtInCommandManager->register($command));
+        $this->assertSame($builtInCommandManager, $builtInCommandManager->registerCommand($command));
     }
 
     public function testGetRegisteredCommands()
     {
-        $builtInCommandManager = new BuiltInCommandManager(
+        $builtInCommandManager = new BuiltInActionManager(
             $this->getMock(BanStorage::class),
             $this->getMock(Logger::class)
         );
@@ -56,14 +56,14 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(['foo', 'bar']))
         ;
 
-        $builtInCommandManager->register($command);
+        $builtInCommandManager->registerCommand($command);
 
         $this->assertSame(['foo', 'bar'], $builtInCommandManager->getRegisteredCommands());
     }
 
     public function testHandleCommandDoesntMatch()
     {
-        $builtInCommandManager = new BuiltInCommandManager(
+        $builtInCommandManager = new BuiltInActionManager(
             $this->getMock(BanStorage::class),
             $this->getMock(Logger::class)
         );
@@ -111,9 +111,9 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->willReturn(new Success(true))
         ;
 
-        $builtInCommandManager = new BuiltInCommandManager($banStorage, $logger);
+        $builtInCommandManager = new BuiltInActionManager($banStorage, $logger);
 
-        $builtInCommandManager->register($registeredCommand);
+        $builtInCommandManager->registerCommand($registeredCommand);
 
         $event = $this->getMockBuilder(MessageEvent::class)
             ->disableOriginalConstructor()
@@ -222,9 +222,9 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->willReturn(new Success(false))
         ;
 
-        $builtInCommandManager = new BuiltInCommandManager($banStorage, $logger);
+        $builtInCommandManager = new BuiltInActionManager($banStorage, $logger);
 
-        $builtInCommandManager->register($registeredCommand);
+        $builtInCommandManager->registerCommand($registeredCommand);
 
         $this->assertNull(wait($builtInCommandManager->handleCommand($userCommand)));
     }

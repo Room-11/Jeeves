@@ -9,8 +9,8 @@ use Amp\Websocket\Message as WebSocketMessage;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\Event\Builder as EventBuilder;
 use Room11\Jeeves\Chat\Event\Event;
+use Room11\Jeeves\Chat\Event\GlobalEvent;
 use Room11\Jeeves\Chat\Event\MessageEvent;
-use Room11\Jeeves\Chat\Event\Unknown;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
@@ -22,7 +22,7 @@ use Room11\Jeeves\Chat\Room\SessionInfo;
 use Room11\Jeeves\Chat\Room\SessionInfo as ChatRoomSessionInfo;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\System\BuiltInCommandManager;
+use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
 use function Amp\cancel;
 use function Amp\info;
@@ -39,8 +39,9 @@ class Handler implements Websocket
     private $roomConnector;
     private $roomFactory;
     private $rooms;
-    private $builtInCommandManager;
+    private $builtInActionManager;
     private $pluginManager;
+    private $globalEventDispatcher;
     private $logger;
     private $roomIdentifier;
     private $devMode;
@@ -63,8 +64,9 @@ class Handler implements Websocket
         ChatRoomConnector $roomConnector,
         ChatRoomFactory $roomFactory,
         ChatRoomCollection $rooms,
-        BuiltInCommandManager $builtInCommandManager,
+        BuiltInActionManager $builtInActionManager,
         PluginManager $pluginManager,
+        GlobalEventDispatcher $globalEventDispatcher,
         Logger $logger,
         ChatRoomIdentifier $roomIdentifier,
         bool $devMode
@@ -74,11 +76,12 @@ class Handler implements Websocket
         $this->roomConnector = $roomConnector;
         $this->roomFactory = $roomFactory;
         $this->pluginManager = $pluginManager;
-        $this->builtInCommandManager = $builtInCommandManager;
+        $this->builtInActionManager = $builtInActionManager;
         $this->logger = $logger;
         $this->rooms = $rooms;
         $this->roomIdentifier = $roomIdentifier;
         $this->devMode = $devMode;
+        $this->globalEventDispatcher = $globalEventDispatcher;
     }
 
     private function clearTimeoutWatcher()
@@ -105,27 +108,26 @@ class Handler implements Websocket
     private function processEvent(Event $event): \Generator
     {
         $eventId = $event->getId();
-        $this->logger->log(Level::EVENT, "Processing event #{$eventId}", $event);
-
-        if ($event instanceof Unknown) {
-            $this->logger->log(Level::UNKNOWN_EVENT, "Unknown event received", $event);
-            return;
-        }
+        $this->logger->log(Level::EVENT, "Processing room event #{$eventId}", $event);
 
         try {
+            $this->logger->log(Level::DEBUG, "Processing room event #{$eventId} for built in event handlers");
+            yield $this->builtInActionManager->handleEvent($event);
+            $this->logger->log(Level::DEBUG, "Event #{$eventId} processed for built in event handlers");
+
             $chatMessage = null;
 
             if ($event instanceof MessageEvent && ($this->devMode || $event->getUserId() !== $this->room->getSessionInfo()->getUser()->getId())) {
                 $chatMessage = $this->messageFactory->build($event);
 
                 if ($chatMessage instanceof Command) {
-                    $this->logger->log(Level::DEBUG, "Processing event #{$eventId} for built in commands");
-                    yield $this->builtInCommandManager->handleCommand($chatMessage);
+                    $this->logger->log(Level::DEBUG, "Processing room event #{$eventId} for built in commands");
+                    yield $this->builtInActionManager->handleCommand($chatMessage);
                     $this->logger->log(Level::DEBUG, "Event #{$eventId} processed for built in commands");
                 }
             }
 
-            $this->logger->log(Level::DEBUG, "Processing event #{$eventId} for plugins");
+            $this->logger->log(Level::DEBUG, "Processing room event #{$eventId} for plugins");
             yield $this->pluginManager->handleRoomEvent($event, $chatMessage);
             $this->logger->log(Level::DEBUG, "Event #{$eventId} processed for plugins");
         } catch (\Throwable $e) {
@@ -136,6 +138,11 @@ class Handler implements Websocket
     public function getRoomIdentifier(): ChatRoomIdentifier
     {
         return $this->roomIdentifier;
+    }
+
+    public function getRoom(): ChatRoom
+    {
+        return $this->room;
     }
 
     public function setSessionInfo(ChatRoomSessionInfo $sessionInfo)
@@ -180,11 +187,13 @@ class Handler implements Websocket
             }
 
             /** @var Event[] $events */
-            $events = yield from $this->eventFactory->build($data, $this->room);
+            $events = yield from $this->eventFactory->build($data, $this);
             $this->logger->log(Level::DEBUG, count($events) . " events targeting {$this->roomIdentifier} to process");
 
             foreach ($events as $event) {
-                yield from $this->processEvent($event);
+                yield from ($event instanceof GlobalEvent)
+                    ? $this->globalEventDispatcher->processEvent($event)
+                    : $this->processEvent($event);
             }
         } catch (\Throwable $e) {
             $this->logger->log(

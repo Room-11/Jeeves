@@ -4,17 +4,23 @@ namespace Room11\Jeeves\Test\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\BaseEvent;
 use Room11\Jeeves\Chat\Event\Event;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 
 class BaseEventTest extends \PHPUnit_Framework_TestCase
 {
     /** @var BaseEvent */
     private $event;
 
+    /** @var WebSocketHandler */
+    private $handler;
+
     public function setUp()
     {
-        $this->event = new class(['id' => 2, 'time_stamp' => 1005]) extends BaseEvent {
-            public function __construct(array $data) {
-                parent::__construct($data);
+        $this->handler = $this->getMockWithoutInvokingTheOriginalConstructor(WebSocketHandler::class);
+
+        $this->event = new class(['id' => 2, 'time_stamp' => 1005], $this->handler) extends BaseEvent {
+            public function __construct(array $data, WebSocketHandler $handler) {
+                parent::__construct($data, $handler);
             }
         };
     }
@@ -32,6 +38,11 @@ class BaseEventTest extends \PHPUnit_Framework_TestCase
     public function testGetId()
     {
         $this->assertSame(2, $this->event->getId());
+    }
+
+    public function testGetSourceHandler()
+    {
+        $this->assertSame($this->handler, $this->event->getSourceHandler());
     }
 
     public function testGetTimestamp()

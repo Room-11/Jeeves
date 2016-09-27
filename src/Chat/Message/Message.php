@@ -4,7 +4,6 @@ namespace Room11\Jeeves\Chat\Message;
 
 use Room11\Jeeves\Chat\Event\DeleteMessage;
 use Room11\Jeeves\Chat\Event\EditMessage;
-use Room11\Jeeves\Chat\Event\MentionMessage;
 use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\NewMessage;
 use Room11\Jeeves\Chat\Event\ReplyMessage;
@@ -21,7 +20,6 @@ class Message
         NewMessage::TYPE_ID => self::TYPE_NEW,
         DeleteMessage::TYPE_ID => self::TYPE_DELETE,
         EditMessage::TYPE_ID => self::TYPE_EDIT,
-        MentionMessage::TYPE_ID => self::TYPE_NEW,
         ReplyMessage::TYPE_ID => self::TYPE_NEW,
     ];
 

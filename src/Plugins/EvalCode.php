@@ -6,16 +6,19 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
-use Amp\Mutex\QueuedExclusiveMutex;
+use Amp\Deferred;
 use Amp\Pause;
 use Amp\Promise;
+use Amp\Promisor;
 use Amp\Success;
+use Ds\Queue;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use function Room11\DOMUtils\domdocument_load_html;
+use function Amp\resolve;
 
 class EvalCode extends BasePlugin
 {
@@ -26,13 +29,14 @@ class EvalCode extends BasePlugin
 
     private $httpClient;
 
-    private $mutex;
+    private $queue;
+    private $haveLoop = false;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
 
-        $this->mutex = new QueuedExclusiveMutex();
+        $this->queue = new Queue;
     }
 
     private function normalizeCode($code) {
@@ -98,6 +102,41 @@ class EvalCode extends BasePlugin
         return sprintf('[ [%s](%s) ] %s', $title, 'https://3v4l.org' . $url, $output);
     }
 
+    private function doEval(HttpRequest $request, ChatRoom $room): \Generator
+    {
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request($request);
+
+        $location = $response->getPreviousResponse()->getHeader("Location")[0];
+        $text = $this->getMessageText('Waiting for results', '', $location);
+
+        /** @var PostedMessage $chatMessage */
+        $chatMessage = yield $this->chatClient->postMessage($room, $text, PostFlags::SINGLE_LINE);
+
+        yield from $this->pollUntilDone($location, $chatMessage);
+    }
+
+    private function executeActionsFromQueue()
+    {
+        $this->haveLoop = true;
+
+        while ($this->queue->count() > 0) {
+            /** @var HttpRequest $request */
+            /** @var ChatRoom $room */
+            /** @var Promisor $promisor */
+            list($request, $room, $promisor) = $this->queue->pop();
+
+            try {
+                yield from $this->doEval($request, $room);
+                $promisor->succeed();
+            } catch (\Throwable $e) {
+                $promisor->fail($e);
+            }
+        }
+
+        $this->haveLoop = false;
+    }
+
     public function eval(Command $command): Promise
     {
         if (!$command->hasParameters()) {
@@ -118,25 +157,14 @@ class EvalCode extends BasePlugin
             ->setBody($body)
         ;
 
-        return $this->mutex->withLock(function() use($request, $command) {
-            /** @var HttpResponse $response */
-            $response = yield $this->httpClient->request($request);
+        $deferred = new Deferred;
 
-            /** @var PostedMessage $chatMessage */
-            $chatMessage = yield $this->chatClient->postMessage(
-                $command->getRoom(),
-                $this->getMessageText(
-                    "Waiting for results",
-                    "",
-                    $response->getPreviousResponse()->getHeader("Location")[0]),
-                PostFlags::SINGLE_LINE
-            );
+        $this->queue->push([$request, $command->getRoom(), $deferred]);
+        if (!$this->haveLoop) {
+            resolve($this->executeActionsFromQueue());
+        }
 
-            yield from $this->pollUntilDone(
-                $response->getPreviousResponse()->getHeader("Location")[0],
-                $chatMessage
-            );
-        });
+        return $deferred->promise();
     }
 
     public function getName(): string

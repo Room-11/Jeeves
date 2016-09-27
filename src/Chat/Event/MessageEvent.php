@@ -4,13 +4,12 @@ namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\Traits\RoomSource;
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 use function Room11\DOMUtils\domdocument_load_html;
 
 abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomSourcedEvent
 {
-    use RoomSource;
-    use UserSource;
+    use RoomSource, UserSource;
 
     /**
      * @var int
@@ -18,26 +17,37 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
     private $messageId;
 
     /**
-     * @var string
-     */
-    private $messageContentString;
-
-    /**
      * @var \DOMDocument
      */
     private $messageContent;
 
-    protected function __construct(array $data, ChatRoom $room)
-    {
-        parent::__construct($data);
+    /**
+     * @var int
+     */
+    private $parentId;
 
-        $this->room = $room;
+    /**
+     * @var bool
+     */
+    private $showParent;
+
+    public function __construct(array $data, WebSocketHandler $handler)
+    {
+        parent::__construct($data, $handler);
+
+        $this->room = $handler->getRoom();
 
         $this->userId = (int)$data['user_id'];
         $this->userName = (string)$data['user_name'];
 
         $this->messageId = (int)$data['message_id'];
-        $this->messageContentString = (string)($data['content'] ?? '');
+        $this->messageContent = domdocument_load_html(
+            (string)($data['content'] ?? ''),
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
+
+        $this->parentId = (int)($data['parent_id'] ?? -1);
+        $this->showParent = (bool)($data['show_parent'] ?? false);
     }
 
     public function getMessageId(): int
@@ -47,7 +57,16 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
 
     public function getMessageContent(): \DOMDocument
     {
-        return $this->messageContent
-            ?? ($this->messageContent = domdocument_load_html($this->messageContentString, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD));
+        return $this->messageContent;
+    }
+
+    public function getParentId(): int
+    {
+        return $this->parentId;
+    }
+
+    public function shouldShowParent(): bool
+    {
+        return $this->showParent;
     }
 }
