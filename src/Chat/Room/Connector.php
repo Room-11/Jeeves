@@ -2,8 +2,10 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
+use Amp\Promise;
 use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 use Room11\Jeeves\Chat\WebSocket\HandshakeFactory as WebSocketHandshakeFactory;
+use function Amp\resolve;
 use function Amp\websocket;
 
 class Connector
@@ -19,15 +21,19 @@ class Connector
         $this->handshakeFactory = $handshakeFactory;
     }
 
-    public function connect(WebSocketHandler $handler): \Generator
+    public function connect(WebSocketHandler $handler): Promise
     {
-        /** @var SessionInfo $sessionInfo */
-        $sessionInfo = yield from $this->authenticator->getRoomSessionInfo($handler->getRoomIdentifier());
-        $handler->setSessionInfo($sessionInfo);
+        return resolve(function() use($handler) {
+            /** @var SessionInfo $sessionInfo */
+            $sessionInfo = yield $this->authenticator->getRoomSessionInfo($handler->getRoomIdentifier());
+            $handler->setSessionInfo($sessionInfo);
 
-        $handshake = $this->handshakeFactory->build($sessionInfo->getWebSocketUrl())
-            ->setHeader('Origin', $handler->getRoomIdentifier()->getOriginURL('http'));
+            $handshake = $this->handshakeFactory->build($sessionInfo->getWebSocketUrl())
+                ->setHeader('Origin', $handler->getRoomIdentifier()->getOriginURL('http'));
 
-        return websocket($handler, $handshake);
+            yield websocket($handler, $handshake);
+
+            return $handler->getRoom();
+        });
     }
 }

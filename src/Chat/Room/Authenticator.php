@@ -5,10 +5,13 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Deferred;
+use Amp\Promise;
+use function Amp\resolve;
+use Ds\Queue;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\OpenId\Authenticator as OpenIdAuthenticator;
 use Room11\OpenId\Credentials;
-use Room11\OpenId\UriFactory;
 use function Amp\all;
 use function Room11\DOMUtils\domdocument_load_html;
 
@@ -18,30 +21,62 @@ class Authenticator
     private $sessionInfoFactory;
     private $authenticator;
     private $credentialManager;
-    private $uriFactory;
     private $chatClient;
     private $urlResolver;
+
+    private $haveLoop = false;
+    private $queue;
 
     public function __construct(
         HttpClient $httpClient,
         ChatClient $chatClient,
         SessionInfoFactory $sessionInfoFactory,
         OpenIdAuthenticator $authenticator,
-        UriFactory $uriFactory,
         CredentialManager $credentialManager,
         EndpointURLResolver $urlResolver
-    )
-    {
+    ) {
         $this->httpClient = $httpClient;
         $this->chatClient = $chatClient;
         $this->sessionInfoFactory = $sessionInfoFactory;
         $this->authenticator = $authenticator;
-        $this->uriFactory = $uriFactory;
         $this->credentialManager = $credentialManager;
         $this->urlResolver = $urlResolver;
+
+        $this->queue = new Queue;
     }
 
-    public function getRoomSessionInfo(Identifier $identifier): \Generator
+    public function getRoomSessionInfo(Identifier $identifier): Promise
+    {
+        $deferred = new Deferred;
+        $this->queue->push([$identifier, $deferred]);
+
+        if (!$this->haveLoop) {
+            resolve($this->executeActionsFromQueue());
+        }
+
+        return $deferred->promise();
+    }
+
+    private function executeActionsFromQueue(): \Generator
+    {
+        $this->haveLoop = true;
+
+        while ($this->queue->count() > 0) {
+            /** @var Identifier $identifier */
+            /** @var Deferred $deferred */
+            list($identifier, $deferred) = $this->queue->pop();
+
+            try {
+                $deferred->succeed(yield from $this->getSessionInfoForIdentifier($identifier));
+            } catch (\Throwable $e) {
+                $deferred->fail($e);
+            }
+        }
+
+        $this->haveLoop = false;
+    }
+
+    private function getSessionInfoForIdentifier(Identifier $identifier): \Generator
     {
         /** @var HttpResponse $response */
         $url = $this->urlResolver->getEndpointURL($identifier, Endpoint::CHATROOM_UI);
@@ -53,7 +88,8 @@ class Authenticator
         $mainSiteURL = $this->getMainSiteUrl($xpath);
 
         if (!$this->isLoggedInMainSite($doc)) {
-            $xpath = yield from $this->logInMainSite($doc, $this->getOpenIdCredentials($mainSiteURL));
+            $credentials = $this->credentialManager->getCredentialsForDomain($identifier->getHost());
+            $xpath = yield from $this->logInMainSite($doc, $credentials);
         }
 
         $fkey = $this->getFKey($xpath);
@@ -77,11 +113,6 @@ class Authenticator
         }
 
         return new \DOMXPath($doc);
-    }
-
-    private function getOpenIdCredentials(string $url): Credentials
-    {
-        return $this->credentialManager->getCredentialsForDomain($this->uriFactory->build($url)->getHost());
     }
 
     private function isLoggedInMainSite(\DOMDocument $doc)

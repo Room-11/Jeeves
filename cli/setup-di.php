@@ -34,7 +34,6 @@ use Room11\Jeeves\System\PluginManager;
 use Room11\Jeeves\WebAPI\Server as WebAPIServer;
 use Room11\OpenId\Authenticator as OpenIdAuthenticator;
 use Room11\OpenId\StackExchangeAuthenticator;
-use Room11\OpenId\UriFactory;
 
 const DATA_BASE_DIR = __DIR__ . '/../data';
 
@@ -70,6 +69,5 @@ $injector->share(OpenIdAuthenticator::class);
 $injector->share(PluginManager::class);
 $injector->share(PluginStorage::class);
 $injector->share(RoomStorage::class);
-$injector->share(UriFactory::class);
 $injector->share(WebAPIServer::class);
 $injector->share(WebSocketHandlerFactory::class);

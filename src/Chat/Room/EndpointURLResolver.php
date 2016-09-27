@@ -95,6 +95,7 @@ class EndpointURLResolver
     public function getEndpointURL($room, int $endpoint, ...$extraData): string
     {
         if (!isset(self::$endpointURLTemplates[$endpoint])) {
+            var_dump(self::$endpointURLTemplates[$endpoint]);
             throw new \LogicException('Invalid endpoint ID');
         }
 

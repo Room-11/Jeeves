@@ -233,7 +233,7 @@ class Handler implements Websocket
             do {
                 try {
                     $this->logger->log(Level::DEBUG, "Attempting to reconnect to {$this->roomIdentifier}");
-                    yield from $this->roomConnector->connect($this);
+                    yield $this->roomConnector->connect($this);
                     return;
                 } catch (\Exception $e) { // *not* Throwable on purpose! If we get one of those we should probably just bail.
                     $retryIn = min($attempt * 5, 60);
