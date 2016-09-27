@@ -337,7 +337,7 @@ class ChatClient
     public function postMessage(ChatRoom $room, string $text, int $flags = PostFlags::NONE): Promise
     {
         return resolve(function() use ($room, $text, $flags) {
-            if (!yield $room->isApproved() && !($flags & PostFlags::FORCE)) {
+            if (!(yield $room->isApproved()) && !($flags & PostFlags::FORCE)) {
                 throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
             }
 

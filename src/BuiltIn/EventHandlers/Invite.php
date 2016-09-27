@@ -2,21 +2,18 @@
 
 namespace Room11\Jeeves\BuiltIn\EventHandlers;
 
-use Amp\Pause;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\DataFetchFailureException;
 use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Event\EventType;
 use Room11\Jeeves\Chat\Event\Invitation;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
-use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\IdentifierFactory as ChatRoomIdentifierFactory;
+use Room11\Jeeves\Chat\Room\PresenceManager;
 use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\System\BuiltInEventHandler;
-use Room11\Jeeves\Storage\Room as RoomStorage;
 use function Amp\resolve;
 
 class Invite implements BuiltInEventHandler
@@ -25,7 +22,7 @@ class Invite implements BuiltInEventHandler
     private $handlerFactory;
     private $connector;
     private $chatClient;
-    private $storage;
+    private $presenceManager;
     private $logger;
 
     public function __construct(
@@ -33,14 +30,14 @@ class Invite implements BuiltInEventHandler
         WebSocketHandlerFactory $handlerFactory,
         ChatRoomConnector $connector,
         ChatClient $chatClient,
-        RoomStorage $storage,
+        PresenceManager $presenceManager,
         Logger $logger
     ) {
         $this->identifierFactory = $identifierFactory;
         $this->handlerFactory = $handlerFactory;
         $this->connector = $connector;
         $this->chatClient = $chatClient;
-        $this->storage = $storage;
+        $this->presenceManager = $presenceManager;
         $this->logger = $logger;
     }
 
@@ -58,15 +55,10 @@ class Invite implements BuiltInEventHandler
             true
         );
 
-        return resolve(function() use($destIdentifier, $userId) {
-            yield $this->storage->addRoom($destIdentifier, time());
+        $handler = $this->handlerFactory->build($destIdentifier);
 
-            $handler = $this->handlerFactory->build($destIdentifier);
-            yield from $this->connector->connect($handler);
-
-            if (yield $this->chatClient->isRoomOwner($destIdentifier, $userId)) {
-                yield $this->storage->addApproveVote($destIdentifier, $userId);
-            }
+        return resolve(function() use($handler, $userId) {
+            return $this->presenceManager->addRoom(yield $this->connector->connect($handler), $userId);
         });
     }
 

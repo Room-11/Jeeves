@@ -262,7 +262,7 @@ try {
         $promises = $server ? [$server->start()] : [];
 
         foreach ($websocketHandlers as $handler) {
-            $promises[] = yield from $connector->connect($handler);
+            $promises[] = $connector->connect($handler);
         }
 
         return all($promises);

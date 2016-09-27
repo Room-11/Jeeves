@@ -23,5 +23,7 @@ interface Room
 
     public function getLeaveVotes(ChatRoomIdentifier $room): Promise;
 
+    public function setApproved(ChatRoomIdentifier $room): Promise;
+
     public function isApproved(ChatRoomIdentifier $room): Promise;
 }

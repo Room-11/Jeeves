@@ -4,4 +4,4 @@ namespace Room11\Jeeves\Chat\Client;
 
 use Room11\Jeeves\Exception;
 
-class NotApprovedException extends Exception {}
+class RoomNotApprovedException extends Exception {}
