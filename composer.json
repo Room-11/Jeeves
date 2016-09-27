@@ -33,6 +33,7 @@
         "daverandom/mutex": "~0.0",
         "php-ds/php-ds": "*",
         "peehaa/async-twitter": "~0.1",
+        "ekinhbayar/interval-parser": "^0.1",
         "rdlowrey/auryn": "^1.1",
         "room11/openid": "~0.0",
         "room11/dom-utils": "~1.0",

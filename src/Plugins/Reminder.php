@@ -5,12 +5,12 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\Storage\Admin as AdminStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use IntervalParser\IntervalParser;
 use function Amp\resolve;
 use function Amp\once;
 use function Amp\all;
@@ -25,28 +25,6 @@ class Reminder extends BasePlugin
     const USAGE = "Usage: `!!reminder [ examples | list | <text> [ at <time> | in <delay> ] | unset <id> ]` Try `!!reminder examples`" ;
     const REMINDER_REGEX = "/(.*)\s+(?:in|at)\s+(.*)/ui";
     const TIME_FORMAT_REGEX = "/(?<time>(?:\d|[01]\d|2[0-3]):[0-5]\d)[+-]?(?&time)?/ui";
-    const TIME_STRING_REGEX = <<<'REGEX'
-    /(?(DEFINE)
-      (?<int>
-        (\s*\b)?
-        (\d{1,5})?
-        (\s*)?
-      )
-      (?<timepart>
-        (?&int)
-          ( s(ec(ond)?s?)?
-          | m(in(ute)?s?)?
-          | h(rs?|ours?)?
-          | d(ays?)?
-          )
-          \b
-      )
-    )
-    
-    ^(?<time>(?:(?&timepart)(*SKIP).)+)(?<string>.+)$
-    /uix
-REGEX;
-
 
     public function __construct(ChatClient $chatClient, KeyValueStore $storage, AdminStore $admin, array $watchers = []) {
         $this->chatClient = $chatClient;
@@ -93,11 +71,17 @@ REGEX;
     {
         return resolve(function() use($command, $commandName) {
 
+            $intervalParser = new IntervalParser();
+
             switch ($commandName){
                 case 'in':
-                    if(preg_match(self::TIME_STRING_REGEX, implode(" ", $command->getParameters()), $matches)){
-                        $time = $matches['time'] ?? false;
-                        $text = $matches['string'] ?? false;
+                    $parameters = $intervalParser->normalizeTimeInterval(implode(" ", $command->getParameters()));
+
+                    $expression = IntervalParser::$intervalSeparatorDefinitions . IntervalParser::$intervalWithTrailingData;
+
+                    if(preg_match($expression, $parameters, $matches)){
+                        $time = $matches['interval'] ?? false;
+                        $text = $matches['trailing'] ?? false;
                     }
                     break;
                 case 'at':
@@ -117,6 +101,10 @@ REGEX;
 
                     $time = $matches[2] ?? false;
                     $text = $matches[1] ?? false;
+
+                    if($time){
+                        $time = $intervalParser->normalizeTimeInterval($time);
+                    }
                     break;
             }
 
