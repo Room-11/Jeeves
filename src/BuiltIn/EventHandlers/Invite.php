@@ -44,19 +44,6 @@ class Invite implements BuiltInEventHandler
         $this->logger = $logger;
     }
 
-    private function determineWhetherInvitingUserIsRoomOwner(ChatRoomIdentifier $identifier, int $userId): \Generator
-    {
-        for ($i = 1; $i <= 3; $i++) {
-            try {
-                return yield $this->chatClient->isRoomOwner($identifier, $userId);
-            } catch (DataFetchFailureException $e) {
-                yield new Pause($i * 1000);
-            }
-        }
-
-        return false;
-    }
-
     public function handleEvent(Event $event): Promise
     {
         /** @var Invitation $event */
@@ -77,7 +64,7 @@ class Invite implements BuiltInEventHandler
             $handler = $this->handlerFactory->build($destIdentifier);
             yield from $this->connector->connect($handler);
 
-            if (yield from $this->determineWhetherInvitingUserIsRoomOwner($destIdentifier, $userId)) {
+            if (yield $this->chatClient->isRoomOwner($destIdentifier, $userId)) {
                 yield $this->storage->addApproveVote($destIdentifier, $userId);
             }
         });

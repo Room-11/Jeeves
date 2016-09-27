@@ -139,14 +139,8 @@ class ChatClient
             $result = [];
 
             foreach ([ChatRoomAccessType::READ_ONLY, ChatRoomAccessType::READ_WRITE, ChatRoomAccessType::OWNER] as $accessType) {
-                $sectionId = 'access-section-' . $accessType;
-                $sectionEl = $doc->getElementById($sectionId);
-
-                if ($sectionEl === null) {
-                    throw new DataFetchFailureException('Could not find the ' . $sectionId . ' container element');
-                }
-
-                $result[$accessType] = $this->parseRoomAccessSection($sectionEl);
+                $sectionEl = $doc->getElementById('access-section-' . $accessType);
+                $result[$accessType] = $sectionEl !== null ? $this->parseRoomAccessSection($sectionEl) : [];
             }
 
             return $result;
