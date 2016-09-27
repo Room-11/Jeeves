@@ -53,7 +53,6 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
 
     /**
      * @param Room|Identifier|string $identifier
-     * @return Room|null
      */
     public function remove($identifier)
     {

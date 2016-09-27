@@ -20,6 +20,7 @@ class Authenticator
     private $credentialManager;
     private $uriFactory;
     private $chatClient;
+    private $urlResolver;
 
     public function __construct(
         HttpClient $httpClient,
@@ -27,7 +28,8 @@ class Authenticator
         SessionInfoFactory $sessionInfoFactory,
         OpenIdAuthenticator $authenticator,
         UriFactory $uriFactory,
-        CredentialManager $credentialManager
+        CredentialManager $credentialManager,
+        EndpointURLResolver $urlResolver
     )
     {
         $this->httpClient = $httpClient;
@@ -36,12 +38,14 @@ class Authenticator
         $this->authenticator = $authenticator;
         $this->uriFactory = $uriFactory;
         $this->credentialManager = $credentialManager;
+        $this->urlResolver = $urlResolver;
     }
 
     public function getRoomSessionInfo(Identifier $identifier): \Generator
     {
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($identifier->getEndpointURL(Endpoint::CHATROOM_UI));
+        $url = $this->urlResolver->getEndpointURL($identifier, Endpoint::CHATROOM_UI);
+        $response = yield $this->httpClient->request($url);
 
         $doc = domdocument_load_html($response->getBody());
         $xpath = new \DOMXPath($doc);
@@ -157,11 +161,11 @@ class Authenticator
 
         $requests = [
             'auth' => (new HttpRequest)
-                ->setUri($identifier->getEndpointURL(Endpoint::CHATROOM_WEBSOCKET_AUTH))
+                ->setUri($this->urlResolver->getEndpointURL($identifier, Endpoint::CHATROOM_WEBSOCKET_AUTH))
                 ->setMethod("POST")
                 ->setBody($authBody),
             'history' => (new HttpRequest)
-                ->setUri($identifier->getEndpointURL(Endpoint::CHATROOM_EVENT_HISTORY))
+                ->setUri($this->urlResolver->getEndpointURL($identifier, Endpoint::CHATROOM_EVENT_HISTORY))
                 ->setMethod("POST")
                 ->setBody($historyBody),
         ];

@@ -24,7 +24,6 @@ class Room
     private $approved = false;
 
     private static $endpointURLTemplates = [
-        Endpoint::MAINSITE_USER => '%1$s/users/%2$d',
     ];
 
     public function __construct(
@@ -66,23 +65,6 @@ class Room
     public function getKeyValueStore(): KeyValueStore
     {
         return $this->keyValueStore;
-    }
-
-    public function getEndpointURL(int $endpoint, ...$extraData): string
-    {
-        if ($endpoint < 500) {
-            return $this->identifier->getEndpointURL($endpoint, ...$extraData);
-        }
-
-        if (!isset(self::$endpointURLTemplates[$endpoint])) {
-            throw new \LogicException('Invalid endpoint ID');
-        }
-
-        return sprintf(
-            self::$endpointURLTemplates[$endpoint],
-            rtrim($this->sessionInfo->getMainSiteUrl(), '/'),
-            ...$extraData
-        );
     }
 
     public function isApproved(): Promise

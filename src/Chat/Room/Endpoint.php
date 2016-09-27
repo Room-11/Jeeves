@@ -35,5 +35,6 @@ abstract class Endpoint
     // anything >500 targets the main site
 
     // main site info
+    const MAINSITE_URLS_START          = 500;
     const MAINSITE_USER                = 501;
 }
