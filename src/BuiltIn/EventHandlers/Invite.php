@@ -39,7 +39,7 @@ class Invite implements BuiltInEventHandler
 
         $this->logger->log(Level::DEBUG, "Invited to {$event->getRoomName()} by {$event->getUserName()} (#{$userId})");
 
-        $sourceIdentifier = $event->getSourceHandler()->getRoomIdentifier();
+        $sourceIdentifier = $event->getSourceHandler()->getRoom()->getIdentifier();
         $destIdentifier = $this->identifierFactory->create(
             $event->getRoomId(),
             $sourceIdentifier->getHost(),

@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Room;
 use function Amp\all;
 use Amp\Deferred;
 use Amp\Promise;
+use Amp\Success;
 use Ds\Queue;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\Entities\User;
@@ -270,7 +271,7 @@ class PresenceManager
         }
     }
 
-    private function checkIsApproved(Identifier $identifier)
+    private function checkIfRoomIsApproved(Identifier $identifier)
     {
         return yield $this->storage->isApproved($identifier);
     }
@@ -280,13 +281,17 @@ class PresenceManager
         return $this->enqueueAction([$this, 'checkAndAddRoom'], $identifier, $invitingUserID);
     }
 
+    private $permanentRooms = [];
+
     public function restoreRooms(array $permanentRoomIdentifiers): Promise
     {
         return resolve(function() use($permanentRoomIdentifiers) {
+            /** @var Identifier $identifier */
             $promises = [];
 
             foreach ($permanentRoomIdentifiers as $identifier) {
                 $promises[] = $this->connectRoom($identifier, true);
+                $this->permanentRooms[$identifier->getIdentString()] = true;
             }
 
             $transientRoomIdentifiers = array_map(function($ident) {
@@ -297,7 +302,7 @@ class PresenceManager
                 $promises[] = resolve($this->restoreTransientRoom($identifier));
             }
 
-            return all($promises);
+            yield all($promises);
         });
     }
 
@@ -308,6 +313,8 @@ class PresenceManager
 
     public function isApproved(Identifier $identifier): Promise
     {
-        return $this->enqueueAction([$this, 'checkIsApproved'], $identifier);
+        return isset($this->permanentRooms[$identifier->getIdentString()])
+            ? new Success(true)
+            : $this->enqueueAction([$this, 'checkIfRoomIsApproved'], $identifier);
     }
 }

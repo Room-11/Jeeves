@@ -18,7 +18,7 @@ use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
 use Room11\Jeeves\Chat\Room\CredentialManager;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\PresenceManager;
-use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
+use Room11\Jeeves\Chat\WebSocket\EventDispatcher as WebSocketEventDispatcher;
 use Room11\Jeeves\External\BitlyClient;
 use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\External\TwitterCredentials;
@@ -102,7 +102,7 @@ $injector->define(TranslationAPICredentials::class, [
     ':clientSecret' => $config['ms-translate']['client-secret'] ?? '',
 ]);
 
-$injector->define(WebSocketHandlerFactory::class, [
+$injector->define(WebSocketEventDispatcher::class, [
    ':devMode' => $config['dev-mode']['enable'] ?? false,
 ]);
 

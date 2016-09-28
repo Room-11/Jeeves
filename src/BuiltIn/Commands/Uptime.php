@@ -3,32 +3,29 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
-use function Amp\resolve;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
-use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use const Room11\Jeeves\PROCESS_START_TIME;
+use function Amp\resolve;
 use function Room11\Jeeves\dateinterval_to_string;
 
 class Uptime implements BuiltInCommand
 {
     private $chatClient;
-    private $roomStorage;
 
     private $startTime;
 
-    public function __construct(ChatClient $chatClient, RoomStorage $roomStorage)
+    public function __construct(ChatClient $chatClient)
     {
         $this->chatClient = $chatClient;
-        $this->roomStorage = $roomStorage;
 
         $this->startTime = new \DateTimeImmutable('@' . PROCESS_START_TIME);
     }
 
     private function execute(CommandMessage $command): \Generator
     {
-        if (!yield $this->roomStorage->isApproved($command->getRoom()->getIdentifier())) {
+        if (!yield $command->getRoom()->isApproved()) {
             return;
         }
 

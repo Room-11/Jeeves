@@ -4,7 +4,6 @@ namespace Room11\Jeeves\Chat\Room;
 
 use Amp\Websocket\Endpoint as WebsocketEndpoint;
 use Room11\Jeeves\Storage\KeyValueFactory as KeyValueStorageFactory;
-use Room11\Jeeves\Storage\Room as RoomStorage;
 
 class RoomFactory
 {

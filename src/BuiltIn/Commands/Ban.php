@@ -8,7 +8,6 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
-use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use function Amp\resolve;
 
@@ -17,17 +16,16 @@ class Ban implements BuiltInCommand
     private $chatClient;
     private $adminStorage;
     private $banStorage;
-    private $roomStorage;
 
-    public function __construct(ChatClient $chatClient, AdminStorage $adminStorage, BanStorage $banStorage, RoomStorage $roomStorage) {
+    public function __construct(ChatClient $chatClient, AdminStorage $adminStorage, BanStorage $banStorage)
+    {
         $this->chatClient   = $chatClient;
         $this->adminStorage = $adminStorage;
         $this->banStorage   = $banStorage;
-        $this->roomStorage  = $roomStorage;
     }
 
     private function execute(CommandMessage $command): \Generator {
-        if (!yield $this->roomStorage->isApproved($command->getRoom()->getIdentifier())) {
+        if (!yield $command->getRoom()->isApproved()) {
             return;
         }
 

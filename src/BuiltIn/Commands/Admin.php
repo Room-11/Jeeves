@@ -8,7 +8,6 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\Entities\User;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
-use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use function Amp\resolve;
 
@@ -19,13 +18,12 @@ class Admin implements BuiltInCommand
     private $chatClient;
     private $httpClient;
     private $storage;
-    private $roomStorage;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $storage, RoomStorage $roomStorage) {
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $storage)
+    {
         $this->chatClient = $chatClient;
         $this->storage    = $storage;
         $this->httpClient = $httpClient;
-        $this->roomStorage = $roomStorage;
     }
 
     private function list(CommandMessage $command): \Generator
@@ -84,7 +82,7 @@ class Admin implements BuiltInCommand
 
     private function execute(CommandMessage $command): \Generator
     {
-        if (!yield $this->roomStorage->isApproved($command->getRoom()->getIdentifier())) {
+        if (!yield $command->getRoom()->isApproved()) {
             return;
         }
 

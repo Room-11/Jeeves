@@ -7,9 +7,8 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
-use Room11\Jeeves\Storage\Room as RoomStorage;
-use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInActionManager;
+use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\PluginManager;
 use function Amp\resolve;
 
@@ -41,7 +40,6 @@ class Command implements BuiltInCommand
     private $chatClient;
     private $adminStorage;
     private $builtInCommandManager;
-    private $roomStorage;
 
     private static function message(string $name, ...$args) {
         return vsprintf(self::RESPONSE_MESSAGES[$name], $args);
@@ -271,19 +269,17 @@ class Command implements BuiltInCommand
         PluginManager $pluginManager,
         BuiltInActionManager $builtInCommandManager,
         ChatClient $chatClient,
-        AdminStorage $adminStorage,
-        RoomStorage $roomStorage
+        AdminStorage $adminStorage
     ) {
         $this->pluginManager = $pluginManager;
         $this->chatClient = $chatClient;
         $this->adminStorage = $adminStorage;
         $this->builtInCommandManager = $builtInCommandManager;
-        $this->roomStorage = $roomStorage;
     }
 
     private function execute(CommandMessage $command): \Generator
     {
-        if (!yield $this->roomStorage->isApproved($command->getRoom()->getIdentifier())) {
+        if (!yield $command->getRoom()->isApproved()) {
             return;
         }
 
