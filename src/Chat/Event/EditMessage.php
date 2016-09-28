@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Event;
 
-use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class EditMessage extends MessageEvent
 {
@@ -10,9 +10,9 @@ class EditMessage extends MessageEvent
 
     private $numberOfEdits;
 
-    public function __construct(array $data, WebSocketHandler $handler)
+    public function __construct(array $data, ChatRoom $room)
     {
-        parent::__construct($data, $handler);
+        parent::__construct($data, $room);
 
         $this->numberOfEdits = (int)$data['message_edits'];
     }

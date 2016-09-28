@@ -2,21 +2,14 @@
 
 namespace Room11\Jeeves\Chat\WebSocket;
 
-use Amp\Pause;
 use Amp\Websocket;
 use Amp\Websocket\Endpoint as WebSocketEndpoint;
 use Amp\Websocket\Message as WebSocketMessage;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\Event\Builder as EventBuilder;
 use Room11\Jeeves\Chat\Event\Event;
-use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
-use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\PresenceManager;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\Chat\Room\RoomFactory as ChatRoomFactory;
-use Room11\Jeeves\Chat\Room\SessionInfo;
-use Room11\Jeeves\Chat\Room\SessionInfo as ChatRoomSessionInfo;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use function Amp\cancel;
@@ -25,14 +18,9 @@ use function Amp\once;
 
 class Handler implements Websocket
 {
-    const MAX_RECONNECT_ATTEMPTS = 1500; // a little over 1 day, in practice
-
     const HEARTBEAT_TIMEOUT_SECONDS = 40;
 
     private $eventBuilder;
-    private $roomConnector;
-    private $roomFactory;
-    private $rooms;
     private $eventDispatcher;
     private $logger;
     private $presenceManager;
@@ -44,33 +32,17 @@ class Handler implements Websocket
      */
     private $endpoint;
 
-    /**
-     * @var SessionInfo
-     */
-    private $sessionInfo;
-
-    /**
-     * @var ChatRoom
-     */
-    private $room;
-
     private $timeoutWatcherId;
 
     public function __construct(
         EventBuilder $eventBuilder,
         EventDispatcher $globalEventDispatcher,
         Logger $logger,
-        ChatRoomConnector $roomConnector,
-        ChatRoomFactory $roomFactory,
-        ChatRoomCollection $rooms,
         PresenceManager $presenceManager,
         ChatRoomIdentifier $roomIdentifier,
         bool $permanent
     ) {
         $this->eventBuilder = $eventBuilder;
-        $this->roomConnector = $roomConnector;
-        $this->roomFactory = $roomFactory;
-        $this->rooms = $rooms;
         $this->eventDispatcher = $globalEventDispatcher;
         $this->logger = $logger;
         $this->presenceManager = $presenceManager;
@@ -104,16 +76,6 @@ class Handler implements Websocket
         return $this->roomIdentifier;
     }
 
-    public function getRoom(): ChatRoom
-    {
-        return $this->room;
-    }
-
-    public function setSessionInfo(ChatRoomSessionInfo $sessionInfo)
-    {
-        $this->sessionInfo = $sessionInfo;
-    }
-
     public function onOpen(WebsocketEndpoint $endpoint, array $headers)
     {
         try {
@@ -124,9 +86,6 @@ class Handler implements Websocket
             // this seems to happen a lot while testing, I'm not sure if it's an issue with the server or us (it's
             // probably us)
             $this->setTimeoutWatcher(2);
-
-            $this->room = $this->roomFactory->build($this->roomIdentifier, $this->sessionInfo, $this->permanent, $endpoint, $this->presenceManager);
-            $this->rooms->add($this->room);
 
             yield $this->eventDispatcher->processConnect($this->roomIdentifier);
         } catch (\Throwable $e) {
@@ -173,28 +132,9 @@ class Handler implements Websocket
             $this->clearTimeoutWatcher();
 
             $this->logger->log(Level::DEBUG, "Connection to {$this->roomIdentifier} closed", info());
+
             yield $this->eventDispatcher->processDisconnect($this->roomIdentifier);
-
-            if (!$this->rooms->contains($this->roomIdentifier)) {
-                return;
-            }
-
-            $this->rooms->remove($this->roomIdentifier);
-            $this->sessionInfo = $this->room = null;
-
-            $attempt = 1;
-
-            do {
-                try {
-                    $this->logger->log(Level::DEBUG, "Attempting to reconnect to {$this->roomIdentifier}");
-                    yield $this->roomConnector->connect($this);
-                    return;
-                } catch (\Exception $e) { // *not* Throwable on purpose! If we get one of those we should probably just bail.
-                    $retryIn = min($attempt * 5, 60);
-                    $this->logger->log(Level::DEBUG, "Connection attempt #{$attempt} failed! Retrying in {$retryIn} seconds. The error was: " . trim($e->getMessage()));
-                    yield new Pause($retryIn * 1000);
-                }
-            } while ($attempt++ < self::MAX_RECONNECT_ATTEMPTS);
+            yield $this->presenceManager->reconnectRoomIfNotLeft($this->roomIdentifier);
         } catch (\Throwable $e) {
             $this->logger->log(
                 Level::DEBUG, "Something went generally wrong while handling closure of connection to {$this->roomIdentifier}: $e"

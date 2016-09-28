@@ -4,25 +4,29 @@ namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Event\Factory as EventFactory;
+use Room11\Jeeves\Chat\Room\Collection as RoomCollection;
 use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 
 class Builder
 {
     private $eventFactory;
     private $chatClient;
+    private $rooms;
 
-    public function __construct(EventFactory $eventFactory, ChatClient $chatClient)
+    public function __construct(EventFactory $eventFactory, ChatClient $chatClient, RoomCollection $rooms)
     {
         $this->eventFactory = $eventFactory;
         $this->chatClient = $chatClient;
+        $this->rooms = $rooms;
     }
 
-    public function build(array $data, WebSocketHandler $handler): \Generator
+    public function build(array $data, WebSocketHandler $handler)
     {
         $result = [];
-        
-        $room = $handler->getRoom();
-        $roomId = $room->getIdentifier()->getId();
+
+        $identifier = $handler->getRoomIdentifier();
+        $room = $this->rooms->get($identifier);
+        $roomId = $identifier->getId();
 
         foreach ($data['r' . $roomId]['e'] ?? [] as $eventData) {
             if (!isset($eventData['id'])) {
@@ -34,7 +38,7 @@ class Builder
                 continue;
             }
 
-            $event = $this->eventFactory->build((int)($eventData['event_type'] ?? 0), $eventData, $handler);
+            $event = $this->eventFactory->build((int)($eventData['event_type'] ?? 0), $eventData, $room);
 
             if ($event instanceof RoomSourcedEvent && $eventData['room_id'] !== $roomId) {
                 continue;
