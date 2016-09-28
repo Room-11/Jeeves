@@ -6,6 +6,7 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\Storage\Admin as AdminStore;
@@ -256,7 +257,7 @@ class Reminder extends BasePlugin
 
                 $this->watchers[] = once(function () use ($room, $key, $reply) {
                     yield $this->storage->unset($key, $room);
-                    return $this->chatClient->postMessage($room, $reply);
+                    return $this->chatClient->postMessage($room, $reply, PostFlags::ALLOW_PINGS);
                 }, 1000);
             }
         }
@@ -284,7 +285,7 @@ class Reminder extends BasePlugin
 
                 $this->watchers[] = once(function () use ($room, $key, $reply) {
                     yield $this->storage->unset($key, $room);
-                    return $this->chatClient->postMessage($room, $reply);
+                    return $this->chatClient->postMessage($room, $reply, PostFlags::ALLOW_PINGS);
                 }, $seconds * 1000);
             }
         }
