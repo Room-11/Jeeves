@@ -10,6 +10,7 @@ use Room11\Jeeves\Chat\Event\MessageEvent;
 use Room11\Jeeves\Chat\Event\RoomSourcedEvent;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
+use Room11\Jeeves\Chat\Room\Identifier;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\System\BuiltInActionManager;
@@ -111,5 +112,15 @@ class EventDispatcher
                 ? $this->processGlobalEvent($event)
                 : $this->processRoomEvent($event)
         );
+    }
+
+    public function processConnect(Identifier $identifier): Promise
+    {
+        return $this->pluginManager->enableAllPluginsForRoom($identifier);
+    }
+
+    public function processDisconnect(Identifier $identifier): Promise
+    {
+        return $this->pluginManager->disableAllPluginsForRoom($identifier);
     }
 }

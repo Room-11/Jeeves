@@ -19,7 +19,6 @@ use Room11\Jeeves\Chat\Room\SessionInfo;
 use Room11\Jeeves\Chat\Room\SessionInfo as ChatRoomSessionInfo;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\System\PluginManager;
 use function Amp\cancel;
 use function Amp\info;
 use function Amp\once;
@@ -34,12 +33,16 @@ class Handler implements Websocket
     private $roomConnector;
     private $roomFactory;
     private $rooms;
-    private $pluginManager;
     private $eventDispatcher;
     private $logger;
     private $presenceManager;
     private $roomIdentifier;
     private $permanent;
+
+    /**
+     * @var WebsocketEndpoint
+     */
+    private $endpoint;
 
     /**
      * @var SessionInfo
@@ -55,12 +58,11 @@ class Handler implements Websocket
 
     public function __construct(
         EventBuilder $eventBuilder,
+        EventDispatcher $globalEventDispatcher,
+        Logger $logger,
         ChatRoomConnector $roomConnector,
         ChatRoomFactory $roomFactory,
         ChatRoomCollection $rooms,
-        PluginManager $pluginManager,
-        EventDispatcher $globalEventDispatcher,
-        Logger $logger,
         PresenceManager $presenceManager,
         ChatRoomIdentifier $roomIdentifier,
         bool $permanent
@@ -69,7 +71,6 @@ class Handler implements Websocket
         $this->roomConnector = $roomConnector;
         $this->roomFactory = $roomFactory;
         $this->rooms = $rooms;
-        $this->pluginManager = $pluginManager;
         $this->eventDispatcher = $globalEventDispatcher;
         $this->logger = $logger;
         $this->presenceManager = $presenceManager;
@@ -92,7 +93,7 @@ class Handler implements Websocket
         $this->timeoutWatcherId = once(function() {
             $this->logger->log(Level::DEBUG, "Connection to {$this->roomIdentifier} timed out");
 
-            $this->room->getWebsocketEndpoint()->close();
+            $this->endpoint->close();
         }, $secs * 1000);
 
         $this->logger->log(Level::DEBUG, "Created timeout watcher #{$this->timeoutWatcherId}");
@@ -117,6 +118,7 @@ class Handler implements Websocket
     {
         try {
             $this->logger->log(Level::DEBUG, "Connection to {$this->roomIdentifier} established");
+            $this->endpoint = $endpoint;
 
             // we expect a heartbeat message from the server immediately on connect, if we don't get one then try again
             // this seems to happen a lot while testing, I'm not sure if it's an issue with the server or us (it's
@@ -126,7 +128,7 @@ class Handler implements Websocket
             $this->room = $this->roomFactory->build($this->roomIdentifier, $this->sessionInfo, $this->permanent, $endpoint, $this->presenceManager);
             $this->rooms->add($this->room);
 
-            yield $this->pluginManager->enableAllPluginsForRoom($this->room);
+            yield $this->eventDispatcher->processConnect($this->roomIdentifier);
         } catch (\Throwable $e) {
             $this->logger->log(
                 Level::DEBUG, "Something went generally wrong while opening connection to {$this->roomIdentifier}: $e"
@@ -171,13 +173,13 @@ class Handler implements Websocket
             $this->clearTimeoutWatcher();
 
             $this->logger->log(Level::DEBUG, "Connection to {$this->roomIdentifier} closed", info());
-            $this->pluginManager->disableAllPluginsForRoom($this->room);
+            yield $this->eventDispatcher->processDisconnect($this->roomIdentifier);
 
-            if (!$this->rooms->contains($this->room)) {
+            if (!$this->rooms->contains($this->roomIdentifier)) {
                 return;
             }
 
-            $this->rooms->remove($this->room);
+            $this->rooms->remove($this->roomIdentifier);
             $this->sessionInfo = $this->room = null;
 
             $attempt = 1;
