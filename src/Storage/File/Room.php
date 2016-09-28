@@ -18,29 +18,40 @@ class Room implements RoomStorage
         $this->dataFileTemplate = $dataFile;
     }
 
-    private function reconcileVotes(array $votes, int $addUserId = null): array
+    private function reconcileLeaveVotes(string $ident, int $addUserId = null): Promise
     {
         $now = time();
-        $deleteOlderThan = $now - 86400; // -1 day
-        $result = [];
+        $deleteOlderThan = $now - self::MAX_LEAVE_VOTE_AGE;
 
-        foreach ($votes as $userId => $timestamp) {
-            if ($timestamp >= $deleteOlderThan) {
-                $result[$userId] = $timestamp;
+        return $this->accessor->writeCallback(function($data) use($ident, $addUserId, $now, $deleteOlderThan) {
+            $result = [];
+
+            foreach ($data[$ident]['leave_votes'] ?? [] as $userId => $timestamp) {
+                if ($timestamp >= $deleteOlderThan) {
+                    $result[$userId] = $timestamp;
+                }
             }
-        }
 
-        if ($addUserId !== null) {
-            $result[$addUserId] = $now;
-        }
+            if ($addUserId !== null) {
+                $result[$addUserId] = $now;
+            }
 
-        return $result;
+            $data[$ident]['leave_votes'] = $result;
+            return $data;
+        }, $this->dataFileTemplate);
     }
 
-    public function addRoom(ChatRoomIdentifier $room, int $inviteTimestamp): Promise
+    public function containsRoom(ChatRoomIdentifier $identifier): Promise
     {
-        return $this->accessor->writeCallback(function($data) use($room, $inviteTimestamp) {
-            $data[$room->getIdentString()] = [
+        return resolve(function() use($identifier) {
+            return array_key_exists($identifier->getIdentString(), yield $this->accessor->read($this->dataFileTemplate));
+        });
+    }
+
+    public function addRoom(ChatRoomIdentifier $identifier, int $inviteTimestamp): Promise
+    {
+        return $this->accessor->writeCallback(function($data) use($identifier, $inviteTimestamp) {
+            $data[$identifier->getIdentString()] = [
                 'approve_votes'    => [],
                 'leave_votes'      => [],
                 'is_approved'      => false,
@@ -51,10 +62,10 @@ class Room implements RoomStorage
         }, $this->dataFileTemplate);
     }
 
-    public function removeRoom(ChatRoomIdentifier $room): Promise
+    public function removeRoom(ChatRoomIdentifier $identifier): Promise
     {
-        return $this->accessor->writeCallback(function($data) use($room) {
-            unset($data[$room->getIdentString()]);
+        return $this->accessor->writeCallback(function($data) use($identifier) {
+            unset($data[$identifier->getIdentString()]);
             return $data;
         }, $this->dataFileTemplate);
     }
@@ -66,79 +77,80 @@ class Room implements RoomStorage
         });
     }
 
-    public function getInviteTimestamp(ChatRoomIdentifier $room): Promise
+    public function getInviteTimestamp(ChatRoomIdentifier $identifier): Promise
     {
-        return resolve(function() use($room) {
+        return resolve(function() use($identifier) {
             $data = yield $this->accessor->read($this->dataFileTemplate);
-            return $data[$room->getIdentString()]['invite_timestamp'] ?? 0;
+            return $data[$identifier->getIdentString()]['invite_timestamp'] ?? 0;
         });
     }
 
-    public function addApproveVote(ChatRoomIdentifier $room, int $userId): Promise
+    public function addApproveVote(ChatRoomIdentifier $identifier, int $userId): Promise
     {
-        return $this->accessor->writeCallback(function($data) use($room, $userId) {
-            $ident = $room->getIdentString();
-
-            $data[$ident]['approve_votes'] = $this->reconcileVotes($data[$ident]['approve_votes'], $userId);
-
+        return $this->accessor->writeCallback(function($data) use($identifier, $userId) {
+            $data[$identifier->getIdentString()]['approve_votes'][(string)$userId] = time();
             return $data;
         }, $this->dataFileTemplate);
     }
 
-    public function getApproveVotes(ChatRoomIdentifier $room): Promise
+    public function containsApproveVote(ChatRoomIdentifier $identifier, int $userId): Promise
     {
-        return resolve(function() use($room) {
-            $ident = $room->getIdentString();
-
-            yield $this->accessor->writeCallback(function($data) use($ident) {
-                $data[$ident]['approve_votes'] = $this->reconcileVotes($data[$ident]['approve_votes'] ?? []);
-                return $data;
-            }, $this->dataFileTemplate);
-
+        return resolve(function() use($identifier, $userId) {
             $data = yield $this->accessor->read($this->dataFileTemplate);
-            return $data[$ident]['approve_votes'] ?? [];
+            return isset($data[$identifier->getIdentString()]['approve_votes'][(string)$userId]);
         });
     }
 
-    public function addLeaveVote(ChatRoomIdentifier $room, int $userId): Promise
+    public function getApproveVotes(ChatRoomIdentifier $identifier): Promise
     {
-        return $this->accessor->writeCallback(function($data) use($userId, $room) {
-            $ident = $room->getIdentString();
-
-            $data[$ident]['leave_votes'] = $this->reconcileVotes($data[$ident]['leave_votes'], $userId);
-
-            return $data;
-        }, $this->dataFileTemplate);
+        return resolve(function() use($identifier) {
+            $data = yield $this->accessor->read($this->dataFileTemplate);
+            return $data[$identifier->getIdentString()]['approve_votes'] ?? [];
+        });
     }
 
-    public function getLeaveVotes(ChatRoomIdentifier $room): Promise
+    public function containsLeaveVote(ChatRoomIdentifier $identifier, int $userId): Promise
     {
-        return resolve(function() use($room) {
-            $ident = $room->getIdentString();
+        return resolve(function() use($identifier, $userId) {
+            $ident = $identifier->getIdentString();
 
-            yield $this->accessor->writeCallback(function($data) use($ident) {
-                $data[$ident]['leave_votes'] = $this->reconcileVotes($data[$ident]['leave_votes'] ?? []);
-                return $data;
-            }, $this->dataFileTemplate);
-
+            yield $this->reconcileLeaveVotes($ident);
             $data = yield $this->accessor->read($this->dataFileTemplate);
+
+            return isset($data[$ident]['leave_votes'][(string)$userId]);
+        });
+    }
+
+    public function addLeaveVote(ChatRoomIdentifier $identifier, int $userId): Promise
+    {
+        return $this->reconcileLeaveVotes($identifier->getIdentString(), $userId);
+    }
+
+    public function getLeaveVotes(ChatRoomIdentifier $identifier): Promise
+    {
+        return resolve(function() use($identifier) {
+            $ident = $identifier->getIdentString();
+
+            yield $this->reconcileLeaveVotes($ident);
+            $data = yield $this->accessor->read($this->dataFileTemplate);
+
             return $data[$ident]['leave_votes'] ?? [];
         });
     }
 
-    public function setApproved(ChatRoomIdentifier $room): Promise
+    public function setApproved(ChatRoomIdentifier $identifier): Promise
     {
-        return $this->accessor->writeCallback(function($data) use($room) {
-            $data[$room->getIdentString()]['is_approved'] = true;
+        return $this->accessor->writeCallback(function($data) use($identifier) {
+            $data[$identifier->getIdentString()]['is_approved'] = true;
             return $data;
         }, $this->dataFileTemplate);
     }
 
-    public function isApproved(ChatRoomIdentifier $room): Promise
+    public function isApproved(ChatRoomIdentifier $identifier): Promise
     {
-        return resolve(function() use($room) {
+        return resolve(function() use($identifier) {
             $data = yield $this->accessor->read($this->dataFileTemplate);
-            return $data[$room->getIdentString()]['is_approved'] ?? false;
+            return $data[$identifier->getIdentString()]['is_approved'] ?? false;
         });
     }
 }

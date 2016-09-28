@@ -7,23 +7,31 @@ use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 
 interface Room
 {
-    public function addRoom(ChatRoomIdentifier $room, int $inviteTimestamp): Promise;
+    const MAX_LEAVE_VOTE_AGE = 3600; // -1 day
 
-    public function removeRoom(ChatRoomIdentifier $room): Promise;
+    public function containsRoom(ChatRoomIdentifier $identifier): Promise;
+
+    public function addRoom(ChatRoomIdentifier $identifier, int $inviteTimestamp): Promise;
+
+    public function removeRoom(ChatRoomIdentifier $identifier): Promise;
 
     public function getAllRooms(): Promise;
 
-    public function getInviteTimestamp(ChatRoomIdentifier $room): Promise;
+    public function getInviteTimestamp(ChatRoomIdentifier $identifier): Promise;
 
-    public function addApproveVote(ChatRoomIdentifier $room, int $userId): Promise;
+    public function containsApproveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
 
-    public function getApproveVotes(ChatRoomIdentifier $room): Promise;
+    public function addApproveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
 
-    public function addLeaveVote(ChatRoomIdentifier $room, int $userId): Promise;
+    public function getApproveVotes(ChatRoomIdentifier $identifier): Promise;
 
-    public function getLeaveVotes(ChatRoomIdentifier $room): Promise;
+    public function containsLeaveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
 
-    public function setApproved(ChatRoomIdentifier $room): Promise;
+    public function addLeaveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
 
-    public function isApproved(ChatRoomIdentifier $room): Promise;
+    public function getLeaveVotes(ChatRoomIdentifier $identifier): Promise;
+
+    public function setApproved(ChatRoomIdentifier $identifier): Promise;
+
+    public function isApproved(ChatRoomIdentifier $identifier): Promise;
 }

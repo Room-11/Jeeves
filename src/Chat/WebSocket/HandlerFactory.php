@@ -6,8 +6,8 @@ use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
+use Room11\Jeeves\Chat\Room\PresenceManager;
 use Room11\Jeeves\Chat\Room\RoomFactory as ChatRoomFactory;
-use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
@@ -24,7 +24,6 @@ class HandlerFactory
     private $pluginManager;
     private $globalEventDispatcher;
     private $devMode;
-    private $roomStorage;
 
     public function __construct(
         EventBuilder $eventBuilder,
@@ -35,7 +34,6 @@ class HandlerFactory
         BuiltInActionManager $builtInCommandManager,
         PluginManager $pluginManager,
         GlobalEventDispatcher $globalEventDispatcher,
-        RoomStorage $roomStorage,
         Logger $logger,
         bool $devMode
     ) {
@@ -49,15 +47,14 @@ class HandlerFactory
         $this->pluginManager = $pluginManager;
         $this->globalEventDispatcher = $globalEventDispatcher;
         $this->devMode = $devMode;
-        $this->roomStorage = $roomStorage;
     }
 
-    public function build(ChatRoomIdentifier $identifier, bool $permanent = false)
+    public function build(ChatRoomIdentifier $identifier, PresenceManager $presenceManager, bool $permanent)
     {
         return new Handler(
             $this->eventBuilder, $this->messageFactory, $this->roomConnector, $this->roomFactory, $this->rooms,
             $this->builtInCommandManager, $this->pluginManager, $this->globalEventDispatcher, $this->logger,
-            $identifier, $this->roomStorage, $permanent, $this->devMode
+            $presenceManager, $identifier, $permanent, $this->devMode
         );
     }
 }

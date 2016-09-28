@@ -17,13 +17,13 @@ use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
 use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
+use Room11\Jeeves\Chat\Room\PresenceManager;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Chat\Room\RoomFactory as ChatRoomFactory;
 use Room11\Jeeves\Chat\Room\SessionInfo;
 use Room11\Jeeves\Chat\Room\SessionInfo as ChatRoomSessionInfo;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
 use function Amp\cancel;
@@ -45,8 +45,8 @@ class Handler implements Websocket
     private $pluginManager;
     private $globalEventDispatcher;
     private $logger;
+    private $presenceManager;
     private $roomIdentifier;
-    private $roomStorage;
     private $permanent;
     private $devMode;
 
@@ -72,8 +72,8 @@ class Handler implements Websocket
         PluginManager $pluginManager,
         GlobalEventDispatcher $globalEventDispatcher,
         Logger $logger,
+        PresenceManager $presenceManager,
         ChatRoomIdentifier $roomIdentifier,
-        RoomStorage $roomStorage,
         bool $permanent,
         bool $devMode
     ) {
@@ -86,8 +86,8 @@ class Handler implements Websocket
         $this->pluginManager = $pluginManager;
         $this->globalEventDispatcher = $globalEventDispatcher;
         $this->logger = $logger;
+        $this->presenceManager = $presenceManager;
         $this->roomIdentifier = $roomIdentifier;
-        $this->roomStorage = $roomStorage;
         $this->permanent = $permanent;
         $this->devMode = $devMode;
     }
@@ -113,7 +113,7 @@ class Handler implements Websocket
         $this->logger->log(Level::DEBUG, "Created timeout watcher #{$this->timeoutWatcherId}");
     }
 
-    private function processEvent(Event $event): \Generator
+    private function processEvent(Event $event)
     {
         $eventId = $event->getId();
         $this->logger->log(Level::EVENT, "Processing room event #{$eventId}", $event);
@@ -162,7 +162,8 @@ class Handler implements Websocket
         $this->sessionInfo = $sessionInfo;
     }
 
-    public function onOpen(WebsocketEndpoint $endpoint, array $headers): \Generator {
+    public function onOpen(WebsocketEndpoint $endpoint, array $headers)
+    {
         try {
             $this->logger->log(Level::DEBUG, "Connection to {$this->roomIdentifier} established");
 
@@ -171,7 +172,7 @@ class Handler implements Websocket
             // probably us)
             $this->setTimeoutWatcher(2);
 
-            $this->room = $this->roomFactory->build($this->roomIdentifier, $this->sessionInfo, $this->roomStorage, $this->permanent, $endpoint);
+            $this->room = $this->roomFactory->build($this->roomIdentifier, $this->sessionInfo, $this->permanent, $endpoint, $this->presenceManager);
             $this->rooms->add($this->room);
 
             yield $this->pluginManager->enableAllPluginsForRoom($this->room);
@@ -182,7 +183,8 @@ class Handler implements Websocket
         }
     }
 
-    public function onData(WebsocketMessage $websocketMessage): \Generator {
+    public function onData(WebsocketMessage $websocketMessage)
+    {
         try {
             $rawWebsocketMessage = yield $websocketMessage;
 
@@ -214,7 +216,8 @@ class Handler implements Websocket
         }
     }
 
-    public function onClose($code, $reason) {
+    public function onClose($code, $reason)
+    {
         try {
             $this->clearTimeoutWatcher();
 

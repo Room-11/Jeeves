@@ -15,10 +15,10 @@ class RoomFactory
         $this->keyValueStorageFactory = $keyValueStorageFactory;
     }
 
-    public function build(Identifier $identifier, SessionInfo $sessionInfo, RoomStorage $storage, bool $permanent, WebsocketEndpoint $endpoint)
+    public function build(Identifier $identifier, SessionInfo $sessionInfo, bool $permanent, WebsocketEndpoint $endpoint, PresenceManager $presenceManager)
     {
         $keyValueStore = $this->keyValueStorageFactory->build($identifier->getIdentString());
 
-        return new Room($identifier, $sessionInfo, $storage, $permanent, $endpoint, $keyValueStore);
+        return new Room($identifier, $sessionInfo, $presenceManager, $permanent, $endpoint, $keyValueStore);
     }
 }

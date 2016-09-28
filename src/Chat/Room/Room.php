@@ -3,33 +3,23 @@
 namespace Room11\Jeeves\Chat\Room;
 
 use Amp\Promise;
-use function Amp\resolve;
 use Amp\Success;
 use Amp\Websocket\Endpoint as WebsocketEndpoint;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
-use Room11\Jeeves\Storage\Room as RoomStorage;
 
 class Room
 {
     private $identifier;
     private $sessionInfo;
-    private $roomStorage;
+    private $presenceManager;
     private $permanent;
     private $websocketEndpoint;
     private $keyValueStore;
 
-    /**
-     * @var bool
-     */
-    private $approved = false;
-
-    private static $endpointURLTemplates = [
-    ];
-
     public function __construct(
         Identifier $identifier,
         SessionInfo $sessionInfo,
-        RoomStorage $roomStorage,
+        PresenceManager $presenceManager,
         bool $permanent,
         WebsocketEndpoint $websocketEndpoint,
         KeyValueStore $keyValueStore
@@ -38,7 +28,7 @@ class Room
         $this->sessionInfo = $sessionInfo;
         $this->websocketEndpoint = $websocketEndpoint;
         $this->keyValueStore = $keyValueStore;
-        $this->roomStorage = $roomStorage;
+        $this->presenceManager = $presenceManager;
         $this->permanent = $permanent;
     }
 
@@ -69,13 +59,9 @@ class Room
 
     public function isApproved(): Promise
     {
-        if ($this->permanent || $this->approved) {
-            return new Success(true);
-        }
-
-        return resolve(function() {
-            return $this->approved = yield $this->roomStorage->isApproved($this->identifier);
-        });
+        return $this->permanent
+            ? new Success(true)
+            : $this->presenceManager->isApproved($this->identifier);
     }
 
     public function __debugInfo()

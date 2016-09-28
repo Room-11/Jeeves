@@ -17,6 +17,7 @@ use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\Room\EndpointURLResolver;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\Room\NotApprovedException as RoomNotApprovedException;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use function Amp\resolve;

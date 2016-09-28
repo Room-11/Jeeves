@@ -15,10 +15,9 @@ use Room11\Jeeves\BuiltIn\Commands\Plugin as PluginBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Uptime as UptimeBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Version as VersionBuiltIn;
 use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
-use Room11\Jeeves\Chat\Room\Connector as ChatRoomConnector;
 use Room11\Jeeves\Chat\Room\CredentialManager;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
-use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
+use Room11\Jeeves\Chat\Room\PresenceManager;
 use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
 use Room11\Jeeves\External\BitlyClient;
 use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
@@ -46,7 +45,6 @@ use Room11\OpenId\Credentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
 use Symfony\Component\Yaml\Yaml;
-use function Amp\all;
 use function Amp\onError;
 use function Amp\run;
 
@@ -184,7 +182,14 @@ foreach ($config['plugins'] ?? [] as $pluginClass) {
     $pluginManager->registerPlugin($injector->make($pluginClass));
 }
 
-$server = null;
+$injector->make(PresenceManager::class)->restoreRooms(array_map(function($room) {
+    return new ChatRoomIdentifier(
+        $room['id'],
+        $room['hostname'] ?? 'chat.stackoverflow.com',
+        $room['secure'] ?? true
+    );
+}, $config['rooms']));
+
 if ($config['web-api']['enable'] ?? false) {
     $host = new Host;
 
@@ -226,47 +231,17 @@ if ($config['web-api']['enable'] ?? false) {
 
     $host->use($api->getRouter());
 
-    $server = (new Bootstrapper(function() use($host) {
-        return [$host];
-    }))->init(new AerysLogger($injector->make(Logger::class)));
+    (new Bootstrapper(function() use($host) { return [$host]; }))
+        ->init(new AerysLogger($injector->make(Logger::class)))
+        ->start();
 }
 
 onError(function (\Throwable $e) {
     fwrite(STDERR, "\nAn exception was not handled:\n\n{$e}\n\n");
 });
 
-/** @var WebSocketHandlerFactory $handlerFactory */
-$handlerFactory = $injector->make(WebSocketHandlerFactory::class);
-
-/** @var WebSocketHandler[] $websocketHandlers */
-$websocketHandlers = array_map(function($room) use($handlerFactory) {
-    return $handlerFactory->build(new ChatRoomIdentifier(
-        $room['id'],
-        $room['hostname'] ?? 'chat.stackoverflow.com',
-        $room['secure'] ?? true
-    ), true);
-}, $config['rooms']);
-
-/** @var ChatRoomConnector $connector */
-$connector = $injector->make(ChatRoomConnector::class);
-
-/** @var RoomStorage $roomStorage */
-$roomStorage = $injector->make(RoomStorage::class);
-
 try {
-    run(function () use ($server, $connector, $websocketHandlers, $handlerFactory, $roomStorage) {
-        $websocketHandlers = array_merge($websocketHandlers, array_map(function($ident) use($handlerFactory) {
-            return $handlerFactory->build(ChatRoomIdentifier::createFromIdentString($ident, true));
-        }, yield $roomStorage->getAllRooms()));
-
-        $promises = $server ? [$server->start()] : [];
-
-        foreach ($websocketHandlers as $handler) {
-            $promises[] = $connector->connect($handler);
-        }
-
-        return all($promises);
-    });
+    run();
 } catch (\Throwable $e) {
     fwrite(STDERR, "\nSomething went badly wrong:\n\n{$e}\n\n");
 }
