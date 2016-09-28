@@ -285,8 +285,9 @@ class PluginManager
      * @param ChatRoom|ChatRoomIdentifier|string $room
      * @return array
      */
-    public function getMappedCommandsForRoom(ChatRoom $room): array
+    public function getMappedCommandsForRoom($room): array
     {
+        $room = $this->rooms->get($room);
         $result = [];
 
         /**
@@ -305,24 +306,26 @@ class PluginManager
     }
 
     /**
-     * @param ChatRoom $room
+     * @param ChatRoom|ChatRoomIdentifier|string $room
      * @param string $command
      * @return bool
      */
-    public function isCommandMappedForRoom(ChatRoom $room, string $command): bool
+    public function isCommandMappedForRoom($room, string $command): bool
     {
-        return isset($this->commandMap[$room->getIdentifier()->getIdentString()][$command]);
+        return isset($this->commandMap[$this->rooms->get($room)->getIdentifier()->getIdentString()][$command]);
     }
 
     /**
-     * @param ChatRoom $room
+     * @param ChatRoom|ChatRoomIdentifier|string $room
      * @param Plugin|string $plugin
      * @param string $endpoint
      * @param string $command
      * @return Promise
      */
-    public function mapCommandForRoom(ChatRoom $room, $plugin, string $endpoint, string $command): Promise
+    public function mapCommandForRoom($room, $plugin, string $endpoint, string $command): Promise
     {
+        $room = $this->rooms->get($room);
+
         if (in_array($command, $this->builtInActionManager->getRegisteredCommands())) {
             throw new \LogicException("Command '{$command}' is built in");
         }
@@ -352,12 +355,14 @@ class PluginManager
     }
 
     /**
-     * @param ChatRoom $room
+     * @param ChatRoom|ChatRoomIdentifier|string $room
      * @param string $command
      * @return Promise
      */
-    public function unmapCommandForRoom(ChatRoom $room, string $command): Promise
+    public function unmapCommandForRoom($room, string $command): Promise
     {
+        $room = $this->rooms->get($room);
+
         if (in_array($command, $this->builtInActionManager->getRegisteredCommands())) {
             throw new \LogicException("Command '{$command}' is built in");
         }
@@ -377,23 +382,25 @@ class PluginManager
 
     /**
      * @param Plugin|string $plugin
-     * @param ChatRoom $room
+     * @param ChatRoom|ChatRoomIdentifier|string $room
      * @return bool
      */
-    public function isPluginEnabledForRoom($plugin, ChatRoom $room): bool
+    public function isPluginEnabledForRoom($plugin, $room): bool
     {
         list($pluginName) = $this->resolvePluginFromNameOrObject($plugin);
 
-        return isset($this->enabledPlugins[$room->getIdentifier()->getIdentString()][$pluginName]);
+        return isset($this->enabledPlugins[$this->rooms->get($room)->getIdentifier()->getIdentString()][$pluginName]);
     }
 
     /**
-     * @param ChatRoom $room
+     * @param ChatRoom|ChatRoomIdentifier|string $room
      * @param bool $persist
      * @return Promise
      */
-    public function enableAllPluginsForRoom(ChatRoom $room, bool $persist = false): Promise
+    public function enableAllPluginsForRoom($room, bool $persist = false): Promise
     {
+        $room = $this->rooms->get($room);
+
         return resolve(function () use ($room, $persist) {
             $promises = [];
 
@@ -408,12 +415,14 @@ class PluginManager
     }
 
     /**
-     * @param ChatRoom $room
+     * @param ChatRoom|ChatRoomIdentifier|string $room
      * @param bool $persist
      * @return Promise
      */
-    public function disableAllPluginsForRoom(ChatRoom $room, bool $persist = false): Promise
+    public function disableAllPluginsForRoom($room, bool $persist = false): Promise
     {
+        $room = $this->rooms->get($room);
+
         return all(array_map(function(Plugin $plugin) use($room, $persist) {
             return $this->disablePluginForRoom($plugin, $room, $persist);
         }, $this->registeredPlugins));
@@ -421,12 +430,14 @@ class PluginManager
 
     /**
      * @param Plugin|string $plugin
-     * @param ChatRoom $room
+     * @param ChatRoom|ChatRoomIdentifier|string $room
      * @param bool $persist
      * @return Promise
      */
-    public function disablePluginForRoom($plugin, ChatRoom $room, bool $persist = true): Promise
+    public function disablePluginForRoom($plugin, $room, bool $persist = true): Promise
     {
+        $room = $this->rooms->get($room);
+
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
         $roomId = $room->getIdentifier()->getIdentString();
 
@@ -456,12 +467,14 @@ class PluginManager
 
     /**
      * @param Plugin|string $plugin
-     * @param ChatRoom $room
+     * @param ChatRoom|ChatRoomIdentifier|string $room
      * @param bool $persist
      * @return Promise
      */
-    public function enablePluginForRoom($plugin, ChatRoom $room, bool $persist = true): Promise
+    public function enablePluginForRoom($plugin, $room, bool $persist = true): Promise
     {
+        $room = $this->rooms->get($room);
+
         return resolve(function() use($plugin, $room, $persist) {
             list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
             $roomId = $room->getIdentifier()->getIdentString();
@@ -528,8 +541,15 @@ class PluginManager
         return $this->registeredPlugins[$name];
     }
 
-    public function getPluginCommandEndpoints($plugin, ChatRoom $room = null): array
+    /**
+     * @param $plugin
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @return array
+     */
+    public function getPluginCommandEndpoints($plugin, $room = null): array
     {
+        $room = $this->rooms->get($room);
+
         /** @var Plugin $plugin */
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
         $roomId = $room !== null ? $room->getIdentifier()->getIdentString() : null;
