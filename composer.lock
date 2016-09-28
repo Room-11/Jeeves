@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "95990be6813c3a91c39be071cea9a02f",
-    "content-hash": "80669ccde2228a4122c8ab2e87d24405",
+    "hash": "a32d0ea46f87c71a056423f1564c9082",
+    "content-hash": "a5a6ebcfd239ca5a86a76b31fcf7d839",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -594,6 +594,49 @@
             ],
             "description": "Basic common mutex framework for amp",
             "time": "2016-05-19 22:28:27"
+        },
+        {
+            "name": "ekinhbayar/interval-parser",
+            "version": "0.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ekinhbayar/IntervalParser.git",
+                "reference": "e03a00603b1ab62bb71c761844b71350d05754d7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ekinhbayar/IntervalParser/zipball/e03a00603b1ab62bb71c761844b71350d05754d7",
+                "reference": "e03a00603b1ab62bb71c761844b71350d05754d7",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "IntervalParser\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ekin H. Bayar",
+                    "email": "ekin@coproductivity.com",
+                    "role": "Lead Developer"
+                }
+            ],
+            "description": "Interval Parser. Still a work in progress.",
+            "homepage": "https://github.com/ekinhbayar/IntervalParser",
+            "keywords": [
+                "interval",
+                "parser",
+                "time"
+            ],
+            "time": "2016-09-27 15:46:47"
         },
         {
             "name": "league/climate",
