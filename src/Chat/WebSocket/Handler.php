@@ -72,11 +72,6 @@ class Handler implements Websocket
         return $this->endpoint;
     }
 
-    public function getRoomIdentifier(): ChatRoomIdentifier
-    {
-        return $this->roomIdentifier;
-    }
-
     public function onOpen(WebsocketEndpoint $endpoint, array $headers)
     {
         try {
@@ -112,7 +107,7 @@ class Handler implements Websocket
             }
 
             /** @var Event[] $events */
-            $events = yield from $this->eventBuilder->build($data, $this);
+            $events = yield from $this->eventBuilder->build($data, $this->roomIdentifier);
             $this->logger->log(Level::DEBUG, count($events) . " events targeting {$this->roomIdentifier} to process");
 
             foreach ($events as $event) {

@@ -5,7 +5,7 @@ namespace Room11\Jeeves\Chat\Event;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Event\Factory as EventFactory;
 use Room11\Jeeves\Chat\Room\Collection as RoomCollection;
-use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
+use Room11\Jeeves\Chat\Room\Identifier;
 
 class Builder
 {
@@ -20,11 +20,10 @@ class Builder
         $this->rooms = $rooms;
     }
 
-    public function build(array $data, WebSocketHandler $handler)
+    public function build(array $data, Identifier $identifier)
     {
         $result = [];
 
-        $identifier = $handler->getRoomIdentifier();
         $room = $this->rooms->get($identifier);
         $roomId = $identifier->getId();
 
