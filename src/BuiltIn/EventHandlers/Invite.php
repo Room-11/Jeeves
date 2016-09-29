@@ -36,17 +36,13 @@ class Invite implements BuiltInEventHandler
     {
         /** @var Invitation $event */
         $userId = $event->getUserId();
+        $roomName = $event->getRoomName();
+        $userName = $event->getUserName();
+        $identifier = $this->identifierFactory->create($event->getRoomId(), $event->getHost());
 
-        $this->logger->log(Level::DEBUG, "Invited to {$event->getRoomName()} by {$event->getUserName()} (#{$userId})");
+        $this->logger->log(Level::DEBUG, "Invited to {$roomName} ({$identifier}) by {$userName} (#{$userId})");
 
-        $sourceIdentifier = $event->getSourceHandler()->getRoomIdentifier();
-        $destIdentifier = $this->identifierFactory->create(
-            $event->getRoomId(),
-            $sourceIdentifier->getHost(),
-            true
-        );
-
-        return $this->presenceManager->addRoom($destIdentifier, $userId);
+        return $this->presenceManager->addRoom($identifier, $userId);
     }
 
     public function getEventTypes(): array

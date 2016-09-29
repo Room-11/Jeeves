@@ -9,4 +9,6 @@ interface Event
     public function getId(): int;
 
     public function getTimestamp(): \DateTimeImmutable;
+
+    public function getHost(): string;
 }

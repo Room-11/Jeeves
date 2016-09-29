@@ -190,11 +190,10 @@ class Server
             'identifier' => [
                 'host' => $room->getIdentifier()->getHost(),
                 'room_id' => $room->getIdentifier()->getId(),
-                'secure' => $room->getIdentifier()->isSecure(),
             ],
             'session' => [
                 'main_site_url' => $room->getSessionInfo()->getMainSiteUrl(),
-                'user_id' => $room->getSessionInfo()->getUserId(),
+                'user_id' => $room->getSessionInfo()->getUser()->getId(),
             ],
         ]));
     }

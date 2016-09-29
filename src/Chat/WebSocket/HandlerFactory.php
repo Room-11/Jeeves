@@ -22,11 +22,11 @@ class HandlerFactory
         $this->logger = $logger;
     }
 
-    public function build(ChatRoomIdentifier $identifier, PresenceManager $presenceManager, bool $permanent)
+    public function build(ChatRoomIdentifier $identifier, PresenceManager $presenceManager)
     {
         return new Handler(
             $this->eventBuilder, $this->eventDispatcher, $this->logger,
-            $presenceManager, $identifier, $permanent
+            $presenceManager, $identifier
         );
     }
 }

@@ -10,11 +10,14 @@ abstract class BaseEvent implements Event, \JsonSerializable
 
     private $timestamp;
 
+    private $host;
+
     private $data;
 
-    public function __construct(array $data)
+    protected function __construct(array $data, string $host)
     {
         $this->data = $data;
+        $this->host = $host;
 
         $this->eventId   = (int)$data['id'];
         $this->timestamp = new \DateTimeImmutable('@' . ((int)$data['time_stamp']));
@@ -38,6 +41,11 @@ abstract class BaseEvent implements Event, \JsonSerializable
     public function getTimestamp(): \DateTimeImmutable
     {
         return $this->timestamp;
+    }
+
+    public function getHost(): string
+    {
+        return $this->host;
     }
 
     public function jsonSerialize()

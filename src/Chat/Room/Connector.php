@@ -32,13 +32,14 @@ class Connector
         return resolve(function() use($identifier, $presenceManager, $permanent) {
             /** @var SessionInfo $sessionInfo */
             $sessionInfo = yield $this->authenticator->getRoomSessionInfo($identifier);
+
             $handshake = $this->handshakeFactory->build($sessionInfo->getWebSocketUrl())
-                ->setHeader('Origin', $identifier->getOriginURL('http'));
-            $handler = $this->handlerFactory->build($identifier, $presenceManager, $permanent);
+                ->setHeader('Origin', 'https://' . $identifier->getHost());
+            $handler = $this->handlerFactory->build($identifier, $presenceManager);
 
-            $endpoint = yield websocket($handler, $handshake);
+            yield websocket($handler, $handshake);
 
-            return $this->roomFactory->build($identifier, $sessionInfo, $permanent, $endpoint, $presenceManager);
+            return $this->roomFactory->build($identifier, $sessionInfo, $handler, $presenceManager, $permanent);
         });
     }
 }

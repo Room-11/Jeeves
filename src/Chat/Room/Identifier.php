@@ -7,41 +7,45 @@ class Identifier
 {
     private $id;
     private $host;
-    private $isSecure;
 
-    public static function createFromIdentString(string $ident, bool $isSecure): Identifier
+    public static function createFromIdentString(string $ident): Identifier
     {
         if (!preg_match('/^' . ROOM_IDENTIFIER_EXPR . '$/i', $ident, $matches)) {
             throw new \InvalidArgumentException('Invalid ident string: ' . $ident);
         }
 
-        return new self((int)$matches[2], $matches[1], $isSecure);
+        return new self((int)$matches[2], $matches[1]);
     }
 
-    public function __construct(int $id, string $host, bool $isSecure) {
+    public function __construct(int $id, string $host)
+    {
         $this->id = $id;
         $this->host = strtolower($host);
-        $this->isSecure = $isSecure;
     }
 
-    public function getId(): int {
+    public function getId(): int
+    {
         return $this->id;
     }
 
-    public function getHost(): string {
+    public function getHost(): string
+    {
         return $this->host;
     }
 
-    public function getIdentString(): string {
+    public function getIdentString(): string
+    {
         return $this->host . '#' . $this->id;
     }
 
-    public function isSecure(): bool {
+    public function isSecure(): bool
+    {
         return $this->isSecure;
     }
 
-    public function getOriginURL(string $protocol): string {
-        return sprintf('%s://%s', $this->isSecure ? $protocol . 's' : $protocol, $this->host);
+    public function getOriginURL(): string
+    {
+        return sprintf('https://%s', $this->host);
     }
 
     public function __toString()

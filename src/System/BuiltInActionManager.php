@@ -87,15 +87,20 @@ class BuiltInActionManager
             $eventId = $command->getEvent()->getId();
 
             $userId = $command->getUserId();
-            $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
 
-            if ($userIsBanned) {
-                $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
-                return;
+            try {
+                $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
+
+                if ($userIsBanned) {
+                    $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
+                    return;
+                }
+
+                $this->logger->log(Level::DEBUG, "Passing event #{$eventId} to built in command handler " . get_class($this->commands[$commandName]));
+                yield $this->commands[$commandName]->handleCommand($command);
+            } catch (\Throwable $e) {
+                $this->logger->log(Level::ERROR, "Something went wrong while handling #{$eventId} for built-in commands: {$e}");
             }
-
-            $this->logger->log(Level::DEBUG, "Passing event #{$eventId} to built in command handler " . get_class($this->commands[$commandName]));
-            yield $this->commands[$commandName]->handleCommand($command);
         });
     }
 }

@@ -2,7 +2,6 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
-use function Amp\all;
 use Amp\Deferred;
 use Amp\Pause;
 use Amp\Promise;
@@ -11,11 +10,14 @@ use Ds\Queue;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\Entities\User;
 use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
+use Room11\Jeeves\Chat\WebSocket\EventDispatcher;
+use Room11\Jeeves\Log\Level;
+use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Room as RoomStorage;
-use function Amp\resolve;
-use function Amp\once;
+use function Amp\all;
 use function Amp\cancel;
+use function Amp\once;
+use function Amp\resolve;
 
 class PresenceManager
 {
@@ -24,26 +26,30 @@ class PresenceManager
     private $storage;
     private $chatClient;
     private $urlResolver;
-    private $handlerFactory;
     private $connector;
+    private $eventDispatcher;
+    private $logger;
 
     private $actionQueues = [];
     private $timerWatchers = [];
+    private $permanentRooms = [];
 
     public function __construct(
         RoomStorage $storage,
         ChatClient $chatClient,
         EndpointURLResolver $urlResolver,
-        WebSocketHandlerFactory $handlerFactory,
         Connector $connector,
-        Collection $rooms
+        Collection $rooms,
+        EventDispatcher $eventDispatcher,
+        Logger $logger
     ) {
         $this->storage = $storage;
         $this->chatClient = $chatClient;
         $this->urlResolver = $urlResolver;
-        $this->handlerFactory = $handlerFactory;
         $this->connector = $connector;
         $this->rooms = $rooms;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->logger = $logger;
     }
 
     private function executeActionsFromQueue(Identifier $identifier)
@@ -63,6 +69,7 @@ class PresenceManager
             try {
                 $deferred->succeed(yield from $callable($identifier, ...$args));
             } catch (\Throwable $e) {
+                $this->logger->log(Level::ERROR, "Error thrown while handling action from queue: {$e}");
                 $deferred->fail($e);
             }
         }
@@ -184,9 +191,9 @@ class PresenceManager
             );
         }
 
-        if (!yield $this->storage->containsApproveVote($identifier, $userID)) {
+        if (yield $this->storage->containsApproveVote($identifier, $userID)) {
             throw new UserAlreadyVotedException(
-                "User #{$userID} have already cast an approve vote for {$identifier->getIdentString()}"
+                "User #{$userID} has already cast an approve vote for {$identifier->getIdentString()}"
             );
         }
 
@@ -208,17 +215,19 @@ class PresenceManager
         return true;
     }
 
-    private function connectRoom(Identifier $identifier, bool $permanent)
+    private function connectRoom(Identifier $identifier)
     {
-        $room = yield $this->connector->connect($identifier, $this, $permanent);
+        $room = yield $this->connector->connect($identifier, $this, isset($permanentRooms[$identifier->getIdentString()]));
         $this->rooms->add($room);
+
+        yield $this->eventDispatcher->processConnect($identifier);
 
         return $room;
     }
 
     private function restoreTransientRoom(Identifier $identifier)
     {
-        yield from $this->connectRoom($identifier, false);
+        yield from $this->connectRoom($identifier);
 
         if (!yield $this->storage->isApproved($identifier)) {
             yield from $this->scheduleActionsForUnapprovedRoom($identifier);
@@ -232,7 +241,7 @@ class PresenceManager
         }
 
         /** @var Room $room */
-        $room = yield from $this->connectRoom($identifier, false);
+        $room = yield from $this->connectRoom($identifier);
         yield $this->storage->addRoom($identifier, time());
         yield from $this->scheduleActionsForUnapprovedRoom($identifier);
 
@@ -282,12 +291,41 @@ class PresenceManager
         return yield $this->storage->isApproved($identifier);
     }
 
+    private function processDisconnectAndReconnectIfNecessary(Identifier $identifier)
+    {
+        yield $this->eventDispatcher->processDisconnect($identifier);
+
+        assert(
+            $this->rooms->contains($identifier),
+            new \LogicException("Got disconnect from unknown room {$identifier}")
+        );
+
+        $room = $this->rooms->get($identifier);
+        $this->rooms->remove($identifier);
+
+        if (!$room->isPermanent() || !yield $this->storage->containsRoom($identifier)) {
+            return;
+        }
+
+        $attempt = 1;
+
+        do {
+            try {
+                $this->logger->log(Level::DEBUG, "Attempting to reconnect to {$identifier}");
+                yield from $this->connectRoom($identifier);
+                return;
+            } catch (\Exception $e) { // *not* Throwable on purpose! If we get one of those we should probably just bail.
+                $retryIn = min($attempt * 5, 60);
+                $this->logger->log(Level::DEBUG, "Connection attempt #{$attempt} failed! Retrying in {$retryIn} seconds. The error was: " . trim($e->getMessage()));
+                yield new Pause($retryIn * 1000);
+            }
+        } while ($attempt++ < self::MAX_RECONNECT_ATTEMPTS);
+    }
+
     public function addRoom(Identifier $identifier, int $invitingUserID): Promise
     {
         return $this->enqueueAction([$this, 'checkAndAddRoom'], $identifier, $invitingUserID);
     }
-
-    private $permanentRooms = [];
 
     public function restoreRooms(array $permanentRoomIdentifiers): Promise
     {
@@ -296,12 +334,12 @@ class PresenceManager
             $promises = [];
 
             foreach ($permanentRoomIdentifiers as $identifier) {
-                $promises[] = resolve($this->connectRoom($identifier, true));
                 $this->permanentRooms[$identifier->getIdentString()] = true;
+                $promises[] = resolve($this->connectRoom($identifier));
             }
 
             $transientRoomIdentifiers = array_map(function($ident) {
-                return Identifier::createFromIdentString($ident, true);
+                return Identifier::createFromIdentString($ident);
             }, yield $this->storage->getAllRooms());
 
             foreach ($transientRoomIdentifiers as $identifier) {
@@ -317,28 +355,9 @@ class PresenceManager
         return $this->enqueueAction([$this, 'checkAndAddApproveVote'], $identifier, $userID);
     }
 
-    public function reconnectRoomIfNotLeft(Identifier $identifier)
+    public function processDisconnect(Identifier $identifier): Promise
     {
-        // todo
-        if (!$this->rooms->contains($identifier)) {
-            return;
-        }
-
-        $this->rooms->remove($identifier);
-
-        $attempt = 1;
-
-        do {
-            try {
-       //         $this->logger->log(Level::DEBUG, "Attempting to reconnect to {$this->identifier}");
-                yield $this->connector->connect($identifier, $this, isset($permanentRooms[$identifier->getIdentString()]));
-                return;
-            } catch (\Exception $e) { // *not* Throwable on purpose! If we get one of those we should probably just bail.
-                $retryIn = min($attempt * 5, 60);
-       //         $this->logger->log(Level::DEBUG, "Connection attempt #{$attempt} failed! Retrying in {$retryIn} seconds. The error was: " . trim($e->getMessage()));
-                yield new Pause($retryIn * 1000);
-            }
-        } while ($attempt++ < self::MAX_RECONNECT_ATTEMPTS);
+        return $this->enqueueAction([$this, 'processDisconnectAndReconnectIfNecessary'], $identifier);
     }
 
     public function isApproved(Identifier $identifier): Promise

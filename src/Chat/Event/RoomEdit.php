@@ -16,7 +16,7 @@ class RoomEdit extends BaseEvent implements RoomSourcedEvent, UserSourcedEvent
 
     public function __construct(array $data, ChatRoom $room)
     {
-        parent::__construct($data);
+        parent::__construct($data, $room->getIdentifier()->getHost());
 
         $this->room      = $room;
 

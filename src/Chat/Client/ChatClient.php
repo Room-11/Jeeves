@@ -338,7 +338,8 @@ class ChatClient
     public function postMessage(ChatRoom $room, string $text, int $flags = PostFlags::NONE): Promise
     {
         return resolve(function() use ($room, $text, $flags) {
-            if (!(yield $room->isApproved()) && !($flags & PostFlags::FORCE)) {
+            // the order of these two conditions is very important! MUST short circuit on $flags or new rooms will block on the welcome message!
+            if (!($flags & PostFlags::FORCE) && !(yield $room->isApproved())) {
                 throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
             }
 

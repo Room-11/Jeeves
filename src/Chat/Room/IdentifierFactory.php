@@ -4,8 +4,8 @@ namespace Room11\Jeeves\Chat\Room;
 
 class IdentifierFactory
 {
-    public function create(int $id, string $host, bool $isSecure): Identifier
+    public function create(int $id, string $host): Identifier
     {
-        return new Identifier($id, $host, $isSecure);
+        return new Identifier($id, $host);
     }
 }

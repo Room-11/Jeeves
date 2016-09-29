@@ -9,6 +9,7 @@
 namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class Invitation extends BaseEvent implements UserSourcedEvent, GlobalEvent
 {
@@ -19,9 +20,9 @@ class Invitation extends BaseEvent implements UserSourcedEvent, GlobalEvent
     private $roomId;
     private $roomName;
 
-    public function __construct(array $data)
+    public function __construct(array $data, ChatRoom $room)
     {
-        parent::__construct($data);
+        parent::__construct($data, $room->getIdentifier()->getHost());
 
         $this->userId = (int)$data['user_id'];
         $this->userName = (string)$data['user_name'];

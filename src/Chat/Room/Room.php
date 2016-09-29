@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Room;
 
 use Amp\Promise;
 use Amp\Success;
-use Amp\Websocket\Endpoint as WebsocketEndpoint;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 
 class Room
@@ -13,20 +13,20 @@ class Room
     private $sessionInfo;
     private $presenceManager;
     private $permanent;
-    private $websocketEndpoint;
+    private $websocketHandler;
     private $keyValueStore;
 
     public function __construct(
         Identifier $identifier,
         SessionInfo $sessionInfo,
+        WebSocketHandler $websocketHandler,
         PresenceManager $presenceManager,
-        bool $permanent,
-        WebsocketEndpoint $websocketEndpoint,
-        KeyValueStore $keyValueStore
+        KeyValueStore $keyValueStore,
+        bool $permanent
     ) {
         $this->identifier = $identifier;
         $this->sessionInfo = $sessionInfo;
-        $this->websocketEndpoint = $websocketEndpoint;
+        $this->websocketHandler = $websocketHandler;
         $this->keyValueStore = $keyValueStore;
         $this->presenceManager = $presenceManager;
         $this->permanent = $permanent;
@@ -47,9 +47,9 @@ class Room
         return $this->permanent;
     }
 
-    public function getWebsocketEndpoint(): WebsocketEndpoint
+    public function getWebsocketHandler(): WebSocketHandler
     {
-        return $this->websocketEndpoint;
+        return $this->websocketHandler;
     }
 
     public function getKeyValueStore(): KeyValueStore
@@ -69,7 +69,7 @@ class Room
         return [
             'identifier' => $this->identifier,
             'sessionInfo' => $this->sessionInfo,
-            'websocketEndpoint' => $this->websocketEndpoint->getInfo(),
+            'websocketEndpoint' => $this->websocketHandler->getEndpoint()->getInfo(),
         ];
     }
 }

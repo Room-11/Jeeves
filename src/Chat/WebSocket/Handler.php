@@ -25,7 +25,6 @@ class Handler implements Websocket
     private $logger;
     private $presenceManager;
     private $roomIdentifier;
-    private $permanent;
 
     /**
      * @var WebsocketEndpoint
@@ -39,15 +38,13 @@ class Handler implements Websocket
         EventDispatcher $globalEventDispatcher,
         Logger $logger,
         PresenceManager $presenceManager,
-        ChatRoomIdentifier $roomIdentifier,
-        bool $permanent
+        ChatRoomIdentifier $roomIdentifier
     ) {
         $this->eventBuilder = $eventBuilder;
         $this->eventDispatcher = $globalEventDispatcher;
         $this->logger = $logger;
         $this->presenceManager = $presenceManager;
         $this->roomIdentifier = $roomIdentifier;
-        $this->permanent = $permanent;
     }
 
     private function clearTimeoutWatcher()
@@ -71,6 +68,11 @@ class Handler implements Websocket
         $this->logger->log(Level::DEBUG, "Created timeout watcher #{$this->timeoutWatcherId}");
     }
 
+    public function getEndpoint(): WebsocketEndpoint
+    {
+        return $this->endpoint;
+    }
+
     public function getRoomIdentifier(): ChatRoomIdentifier
     {
         return $this->roomIdentifier;
@@ -86,8 +88,6 @@ class Handler implements Websocket
             // this seems to happen a lot while testing, I'm not sure if it's an issue with the server or us (it's
             // probably us)
             $this->setTimeoutWatcher(2);
-
-            yield $this->eventDispatcher->processConnect($this->roomIdentifier);
         } catch (\Throwable $e) {
             $this->logger->log(
                 Level::DEBUG, "Something went generally wrong while opening connection to {$this->roomIdentifier}: $e"
@@ -117,7 +117,7 @@ class Handler implements Websocket
             $this->logger->log(Level::DEBUG, count($events) . " events targeting {$this->roomIdentifier} to process");
 
             foreach ($events as $event) {
-                yield $this->eventDispatcher->processEvent($event);
+                yield $this->eventDispatcher->processWebSocketEvent($event);
             }
         } catch (\Throwable $e) {
             $this->logger->log(
@@ -131,10 +131,8 @@ class Handler implements Websocket
         try {
             $this->clearTimeoutWatcher();
 
-            $this->logger->log(Level::DEBUG, "Connection to {$this->roomIdentifier} closed", info());
-
-            yield $this->eventDispatcher->processDisconnect($this->roomIdentifier);
-            yield $this->presenceManager->reconnectRoomIfNotLeft($this->roomIdentifier);
+            $this->logger->log(Level::DEBUG, "Connection to {$this->roomIdentifier} closed");
+            yield $this->presenceManager->processDisconnect($this->roomIdentifier);
         } catch (\Throwable $e) {
             $this->logger->log(
                 Level::DEBUG, "Something went generally wrong while handling closure of connection to {$this->roomIdentifier}: $e"

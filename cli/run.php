@@ -185,8 +185,7 @@ foreach ($config['plugins'] ?? [] as $pluginClass) {
 $injector->make(PresenceManager::class)->restoreRooms(array_map(function($room) {
     return new ChatRoomIdentifier(
         $room['id'],
-        $room['hostname'] ?? 'chat.stackoverflow.com',
-        $room['secure'] ?? true
+        $room['hostname'] ?? 'chat.stackoverflow.com'
     );
 }, $config['rooms']));
 

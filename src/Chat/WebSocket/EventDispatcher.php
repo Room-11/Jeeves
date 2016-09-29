@@ -105,7 +105,7 @@ class EventDispatcher
         }
     }
 
-    public function processEvent(Event $event): Promise
+    public function processWebSocketEvent(Event $event): Promise
     {
         return resolve(
             $event instanceof GlobalEvent

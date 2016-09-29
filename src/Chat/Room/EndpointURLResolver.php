@@ -9,30 +9,30 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 class EndpointURLResolver
 {
     private static $endpointURLTemplates = [
-        Endpoint::CHATROOM_UI                  => '%1$s://%2$s/rooms/%3$d',
-        Endpoint::CHATROOM_WEBSOCKET_AUTH      => '%1$s://%2$s/ws-auth',
-        Endpoint::CHATROOM_EVENT_HISTORY       => '%1$s://%2$s/chats/%3$d/events',
-        Endpoint::CHATROOM_STARS_LIST          => '%1$s://%2$s/chats/stars/%3$d?count=0',
+        Endpoint::CHATROOM_UI                  => 'https://%1$s/rooms/%2$d',
+        Endpoint::CHATROOM_WEBSOCKET_AUTH      => 'https://%1$s/ws-auth',
+        Endpoint::CHATROOM_EVENT_HISTORY       => 'https://%1$s/chats/%2$d/events',
+        Endpoint::CHATROOM_STARS_LIST          => 'https://%1$s/chats/stars/%2$d?count=0',
 
-        Endpoint::CHATROOM_GET_MESSAGE_HTML    => '%1$s://%2$s/message/%4$d',
-        Endpoint::CHATROOM_POST_MESSAGE        => '%1$s://%2$s/chats/%3$d/messages/new',
-        Endpoint::CHATROOM_EDIT_MESSAGE        => '%1$s://%2$s/messages/%4$d',
-        Endpoint::CHATROOM_PIN_MESSAGE         => '%1$s://%2$s/messages/%4$d/owner-star',
-        Endpoint::CHATROOM_UNSTAR_MESSAGE      => '%1$s://%2$s/messages/%4$d/unstar',
-        Endpoint::CHATROOM_GET_MESSAGE_TEXT    => '%1$s://%2$s/messages/%3$d/%4$d',
-        Endpoint::CHATROOM_GET_MESSAGE_HISTORY => '%1$s://%2$s/messages/%4$d/history',
+        Endpoint::CHATROOM_GET_MESSAGE_HTML    => 'https://%1$s/message/%3$d',
+        Endpoint::CHATROOM_POST_MESSAGE        => 'https://%1$s/chats/%2$d/messages/new',
+        Endpoint::CHATROOM_EDIT_MESSAGE        => 'https://%1$s/messages/%3$d',
+        Endpoint::CHATROOM_PIN_MESSAGE         => 'https://%1$s/messages/%3$d/owner-star',
+        Endpoint::CHATROOM_UNSTAR_MESSAGE      => 'https://%1$s/messages/%3$d/unstar',
+        Endpoint::CHATROOM_GET_MESSAGE_TEXT    => 'https://%1$s/messages/%2$d/%3$d',
+        Endpoint::CHATROOM_GET_MESSAGE_HISTORY => 'https://%1$s/messages/%3$d/history',
 
-        Endpoint::CHATROOM_INFO_GENERAL        => '%1$s://%2$s/rooms/info/%3$d?tab=general',
-        Endpoint::CHATROOM_INFO_STARS          => '%1$s://%2$s/rooms/info/%3$d?tab=stars',
-        Endpoint::CHATROOM_INFO_CONVERSATIONS  => '%1$s://%2$s/rooms/info/%3$d?tab=conversations',
-        Endpoint::CHATROOM_INFO_SCHEDULE       => '%1$s://%2$s/rooms/info/%3$d?tab=schedule',
-        Endpoint::CHATROOM_INFO_FEEDS          => '%1$s://%2$s/rooms/info/%3$d?tab=feeds',
-        Endpoint::CHATROOM_INFO_ACCESS         => '%1$s://%2$s/rooms/info/%3$d?tab=access',
-        Endpoint::CHATROOM_INFO_PINGABLE       => '%1$s://%2$s/rooms/pingable/%3$d',
+        Endpoint::CHATROOM_INFO_GENERAL        => 'https://%1$s/rooms/info/%2$d?tab=general',
+        Endpoint::CHATROOM_INFO_STARS          => 'https://%1$s/rooms/info/%2$d?tab=stars',
+        Endpoint::CHATROOM_INFO_CONVERSATIONS  => 'https://%1$s/rooms/info/%2$d?tab=conversations',
+        Endpoint::CHATROOM_INFO_SCHEDULE       => 'https://%1$s/rooms/info/%2$d?tab=schedule',
+        Endpoint::CHATROOM_INFO_FEEDS          => 'https://%1$s/rooms/info/%2$d?tab=feeds',
+        Endpoint::CHATROOM_INFO_ACCESS         => 'https://%1$s/rooms/info/%2$d?tab=access',
+        Endpoint::CHATROOM_INFO_PINGABLE       => 'https://%1$s/rooms/pingable/%2$d',
 
-        Endpoint::CHAT_USER                    => '%1$s://%2$s/users/%4$d',
-        Endpoint::CHAT_USER_INFO               => '%1$s://%2$s/user/info',
-        Endpoint::CHAT_USER_INFO_EXTRA         => '%1$s://%2$s/users/thumbs/%4$d?showUsage=false',
+        Endpoint::CHAT_USER                    => 'https://%1$s/users/%3$d',
+        Endpoint::CHAT_USER_INFO               => 'https://%1$s/user/info',
+        Endpoint::CHAT_USER_INFO_EXTRA         => 'https://%1$s/users/thumbs/%3$d?showUsage=false',
 
         Endpoint::MAINSITE_USER                => '%1$s/users/%2$d',
     ];
@@ -65,7 +65,6 @@ class EndpointURLResolver
     {
         return sprintf(
             self::$endpointURLTemplates[$endpoint],
-            $identifier->isSecure() ? "https" : "http",
             $identifier->getHost(),
             $identifier->getId(),
             ...$extraData
