@@ -79,7 +79,7 @@ class RoomPresence implements BuiltInCommand
             yield $this->presenceManager->addRoom($identifier, $userId);
             yield $this->chatClient->postReply($command, "See you there shortly! :-)");
         } catch (RoomAlreadyExistsException $e) {
-            yield $this->chatClient->postReply($command, "I'm already there, I don't need to be be invited again");
+            yield $this->chatClient->postReply($command, "I'm already there, I don't need to be invited again");
         } catch (\Throwable $e) {
             yield $this->chatClient->postReply($command, "Something went pretty badly wrong there, please report this issue to my maintainers.");
         }
