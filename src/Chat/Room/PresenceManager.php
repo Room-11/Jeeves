@@ -323,7 +323,7 @@ class PresenceManager
 
     private function checkAndAddRoom(Identifier $identifier, int $invitingUserID)
     {
-        if (yield $this->storage->containsRoom($identifier)) {
+        if (isset($this->permanentRooms[$identifier->getIdentString()]) || yield $this->storage->containsRoom($identifier)) {
             throw new RoomAlreadyExistsException("Already present in {$identifier->getIdentString()}");
         }
 
