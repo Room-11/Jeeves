@@ -107,9 +107,9 @@ class RoomPresence implements BuiltInCommand
         } catch (AlreadyApprovedException $e) {
             yield $this->chatClient->postReply($command, "I've already been activated in this room, but it's nice you know you approve of me :-)");
         } catch (UserNotAcceptableException $e) {
-            yield $this->chatClient->postReply($command, "Sorry, only room owners can vote");
+            yield $this->chatClient->postReply($command, "Sorry, only room owners can vote", PostFlags::FORCE);
         } catch (UserAlreadyVotedException $e) {
-            yield $this->chatClient->postReply($command, "Sorry, you've already voted, you can't vote again");
+            yield $this->chatClient->postReply($command, "Sorry, you've already voted, you can't vote again", PostFlags::FORCE);
         }
     }
 
