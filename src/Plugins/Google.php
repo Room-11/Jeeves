@@ -154,7 +154,7 @@ class Google extends BasePlugin
         }
 
         if (preg_match('#charset\s*=\s*([^;]+)#i', trim(implode(', ', $response->getHeader('Content-Type'))), $match)
-            && !preg_match(self::ENCODING, $match[1])) {
+            && !preg_match('/' . preg_quote(self::ENCODING, '/') . '/i', $match[1])) {
             $body = iconv($match[1], self::ENCODING, $response->getBody());
         }
 
