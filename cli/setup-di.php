@@ -49,7 +49,7 @@ $injector->define(FileAdminStorage::class, [":dataFile" => DATA_BASE_DIR . "/adm
 $injector->define(FileBanStorage::class, [":dataFile" => DATA_BASE_DIR . "/bans.%s.json"]);
 $injector->define(FilePluginStorage::class, [":dataFile" => DATA_BASE_DIR . "/plugins.%s.json"]);
 $injector->define(FileKeyValueStorageFactory::class, [":dataFileTemplate" => DATA_BASE_DIR . "/keyvalue.%s.json"]);
-$injector->define(FileRoomStorage::class, [":dataFile" => DATA_BASE_DIR . "/rooms.%s.json"]);
+$injector->define(FileRoomStorage::class, [":dataFile" => DATA_BASE_DIR . "/rooms.json"]);
 
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);
