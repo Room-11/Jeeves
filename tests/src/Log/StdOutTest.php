@@ -11,12 +11,12 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
 {
     public function testImplementsCorrectInterface()
     {
-        $this->assertInstanceof(Logger::class, new StdOut(0));
+        $this->assertInstanceOf(Logger::class, new StdOut(0));
     }
 
     public function testExtendsBaseClass()
     {
-        $this->assertInstanceof(BaseLogger::class, new StdOut(0));
+        $this->assertInstanceOf(BaseLogger::class, new StdOut(0));
     }
 
     public function testLogWithoutMeetingTheLoglevel()
@@ -36,6 +36,15 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function testLogWithoutExtraDataNoTimestamp()
+    {
+        ob_start();
+
+        (new StdOut(Level::DEBUG, false))->log(Level::DEBUG, 'foo');
+
+        $this->assertSame('foo', ob_get_clean());
+    }
+
     public function testLogWithExtraDataWithoutExtraDataLevel()
     {
         ob_start();
@@ -46,6 +55,15 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
             '~^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] foo$~',
             ob_get_clean()
         );
+    }
+
+    public function testLogWithExtraDataWithoutExtraDataLevelNoTimestamp()
+    {
+        ob_start();
+
+        (new StdOut(Level::DEBUG, false))->log(Level::DEBUG, 'foo', 'bar');
+
+        $this->assertSame('foo', ob_get_clean());
     }
 
     public function testLogWithExtraData()
@@ -62,6 +80,23 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
             '~^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] foo$~',
             $logLines[0]
         );
+
+        $this->assertSame('string(3) "bar"', $logLines[1]);
+
+        $this->assertSame('', $logLines[2]);
+    }
+
+    public function testLogWithExtraDataNoTimestamp()
+    {
+        ob_start();
+
+        (new StdOut(Level::DEBUG | Level::EXTRA_DATA))->log(Level::DEBUG, 'foo', 'bar');
+
+        $logLines = explode("\n", ob_get_clean());
+
+        $this->assertSame(3, count($logLines));
+
+        $this->assertSame('foo', $logLines[0]);
 
         $this->assertSame('string(3) "bar"', $logLines[1]);
 
