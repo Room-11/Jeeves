@@ -4,15 +4,14 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Amp\Promise;
 use Amp\Success;
+use PeeHaa\AsyncTwitter\Api\Client as ApiClient;
 use PeeHaa\AsyncTwitter\Api\Status\Retweet;
+use PeeHaa\AsyncTwitter\Api\Status\Update;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use PeeHaa\AsyncTwitter\Api\Client as ApiClient;
-use PeeHaa\AsyncTwitter\Api\Status\Update;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class BetterTweet extends BasePlugin
@@ -42,7 +41,7 @@ class BetterTweet extends BasePlugin
         return (bool) preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~', $url);
     }
 
-    private function getRawMessage(Command $command, string $url): \Generator
+    private function getRawMessage(Command $command, string $url)
     {
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
@@ -53,7 +52,7 @@ class BetterTweet extends BasePlugin
         return domdocument_load_html($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
     }
 
-    private function isRetweet(Command $command, string $url): \Generator
+    private function isRetweet(Command $command, string $url)
     {
         $dom   = yield from $this->getRawMessage($command, $url);
         $xpath = new \DOMXPath($dom);
@@ -61,20 +60,24 @@ class BetterTweet extends BasePlugin
         return (bool) $xpath->evaluate("//*[contains(concat(' ', normalize-space(@class), ' '), ' ob-tweet ')]");
     }
 
-    private function getRetweetId(Command $command, string $url): \Generator
+    private function getRetweetId(Command $command, string $url)
     {
+        /** @var \DOMDocument $dom */
         $dom = yield from $this->getRawMessage($command, $url);
 
+        /** @var \DOMElement $node */
         foreach ($dom->getElementsByTagName('a') as $node) {
             if (!preg_match('~https://twitter.com/[^/]+/status/(\d+)~', $node->getAttribute('href'), $matches)) {
                 continue;
             }
 
-            return (int) $matches[1];
+            return (int)$matches[1];
         }
+
+        throw new \LogicException("ID not found");
     }
 
-    private function getMessage(Command $command, string $url): \Generator
+    private function getMessage(Command $command, string $url)
     {
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
@@ -143,7 +146,7 @@ class BetterTweet extends BasePlugin
         return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
     }
 
-    public function tweet(Command $command): \Generator
+    public function tweet(Command $command)
     {
         if (!$this->isMessageValid($command->getParameter(0))) {
             return new Success();

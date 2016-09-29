@@ -12,7 +12,6 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\MessageResolver;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use function Amp\all;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Google extends BasePlugin

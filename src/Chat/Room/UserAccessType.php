@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
-class AccessType
+class UserAccessType
 {
     const READ_ONLY = 'read-only';
     const READ_WRITE = 'read-write';

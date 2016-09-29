@@ -38,11 +38,6 @@ class Identifier
         return $this->host . '#' . $this->id;
     }
 
-    public function isSecure(): bool
-    {
-        return $this->isSecure;
-    }
-
     public function getOriginURL(): string
     {
         return sprintf('https://%s', $this->host);

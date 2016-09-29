@@ -6,9 +6,6 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
-use function Amp\File\exists;
-use function Amp\File\get;
-use function Amp\File\put;
 use function Amp\resolve;
 
 class Admin implements AdminStorage

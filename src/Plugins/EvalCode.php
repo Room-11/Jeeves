@@ -13,7 +13,7 @@ use Amp\Promisor;
 use Amp\Success;
 use Ds\Queue;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;

@@ -33,6 +33,7 @@ class BitlyClient
     /**
      * @param string $longURL
      * @return \Generator|string
+     * @throws \Exception
      */
     public function shorten(string $longURL): \Generator
     {

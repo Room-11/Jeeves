@@ -32,7 +32,7 @@ class ActionExecutor
         $this->actionQueue = new Queue;
     }
 
-    private function executeMessageAction(Action $action): \Generator
+    private function executeMessageAction(Action $action)
     {
         $attempt = 0;
 

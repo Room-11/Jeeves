@@ -2,16 +2,15 @@
 
 namespace Room11\Jeeves\WebAPI;
 
-use function Aerys\parseBody;
 use Aerys\Request as AerysRequest;
 use Aerys\Response as AerysResponse;
 use Aerys\Router as AerysRouter;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Storage\Ban as BanStorage;
 use const Room11\Jeeves\DNS_NAME_EXPR;
 use function Aerys\router;
-use Room11\Jeeves\Storage\Ban as BanStorage;
 
 class Server
 {
@@ -192,8 +191,8 @@ class Server
                 'room_id' => $room->getIdentifier()->getId(),
             ],
             'session' => [
-                'main_site_url' => $room->getSessionInfo()->getMainSiteUrl(),
-                'user_id' => $room->getSessionInfo()->getUser()->getId(),
+                'main_site_url' => $room->getSession()->getMainSiteUrl(),
+                'user_id' => $room->getSession()->getUser()->getId(),
             ],
         ]));
     }

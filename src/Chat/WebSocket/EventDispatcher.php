@@ -81,7 +81,7 @@ class EventDispatcher
 
             $chatMessage = null;
 
-            if ($event instanceof MessageEvent && ($this->devMode || $event->getUserId() !== $event->getRoom()->getSessionInfo()->getUser()->getId())) {
+            if ($event instanceof MessageEvent && ($this->devMode || $event->getUserId() !== $event->getRoom()->getSession()->getUser()->getId())) {
                 $chatMessage = $this->messageFactory->build($event);
 
                 if ($chatMessage instanceof Command) {

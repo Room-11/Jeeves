@@ -3,14 +3,12 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\Chars;
+use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use function Amp\all;
 use function Amp\resolve;
 use function Room11\Jeeves\getNormalisedStackExchangeURL;
 

@@ -3,6 +3,8 @@
 namespace Room11\Jeeves\Chat\Room;
 
 use Amp\Promise;
+use Room11\Jeeves\Chat\Auth\Authenticator;
+use Room11\Jeeves\Chat\Auth\Session;
 use Room11\Jeeves\Chat\WebSocket\HandlerFactory as WebSocketHandlerFactory;
 use Room11\Jeeves\Chat\WebSocket\HandshakeFactory as WebSocketHandshakeFactory;
 use function Amp\resolve;
@@ -30,7 +32,7 @@ class Connector
     public function connect(Identifier $identifier, PresenceManager $presenceManager, bool $permanent): Promise
     {
         return resolve(function() use($identifier, $presenceManager, $permanent) {
-            /** @var SessionInfo $sessionInfo */
+            /** @var Session $sessionInfo */
             $sessionInfo = yield $this->authenticator->getRoomSessionInfo($identifier);
 
             $handshake = $this->handshakeFactory->build($sessionInfo->getWebSocketUrl())

@@ -5,7 +5,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Artax\HttpClient;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\Entities\User;
+use Room11\Jeeves\Chat\Entities\User;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
@@ -26,7 +26,7 @@ class Admin implements BuiltInCommand
         $this->httpClient = $httpClient;
     }
 
-    private function list(CommandMessage $command): \Generator
+    private function list(CommandMessage $command)
     {
         $admins = yield $this->storage->getAll($command->getRoom());
 
@@ -36,7 +36,8 @@ class Admin implements BuiltInCommand
 
         $userIds = array_merge($admins['owners'], $admins['admins']);
 
-        $users = yield $this->chatClient->getChatUsers($command->getRoom(), ...$userIds);
+        $users = /** @noinspection PhpStrictTypeCheckingInspection */
+            yield $this->chatClient->getChatUsers($command->getRoom(), ...$userIds);
         usort($users, function (User $a, User $b) { return strcasecmp($a->getName(), $b->getName()); });
 
         $list = implode(', ', array_map(function(User $user) use($admins) {
@@ -48,7 +49,7 @@ class Admin implements BuiltInCommand
         return $this->chatClient->postMessage($command->getRoom(), $list);
     }
 
-    private function add(CommandMessage $command, int $userId): \Generator
+    private function add(CommandMessage $command, int $userId)
     {
         $admins = yield $this->storage->getAll($command->getRoom());
 
@@ -64,7 +65,7 @@ class Admin implements BuiltInCommand
         return $this->chatClient->postMessage($command->getRoom(), "User added to the admin list.");
     }
 
-    private function remove(CommandMessage $command, int $userId): \Generator
+    private function remove(CommandMessage $command, int $userId)
     {
         $admins = yield $this->storage->getAll($command->getRoom());
 
@@ -80,7 +81,7 @@ class Admin implements BuiltInCommand
         return $this->chatClient->postMessage($command->getRoom(), "User removed from the admin list.");
     }
 
-    private function execute(CommandMessage $command): \Generator
+    private function execute(CommandMessage $command)
     {
         if (!yield $command->getRoom()->isApproved()) {
             return;

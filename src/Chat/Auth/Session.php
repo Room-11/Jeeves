@@ -1,10 +1,10 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\Chat\Room;
+namespace Room11\Jeeves\Chat\Auth;
 
-use Room11\Jeeves\Chat\Client\Entities\User;
+use Room11\Jeeves\Chat\Entities\User;
 
-class SessionInfo
+class Session
 {
     private $user;
     private $fkey;

@@ -3,7 +3,6 @@
 namespace Room11\Jeeves\Chat\Message;
 
 use Room11\Jeeves\Chat\Event\MessageEvent;
-use Room11\Jeeves\Chat\Event\ReplyMessage;
 
 class Factory
 {

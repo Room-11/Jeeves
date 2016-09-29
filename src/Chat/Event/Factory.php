@@ -3,7 +3,6 @@
 namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 
 class Factory
 {
@@ -28,6 +27,6 @@ class Factory
     {
         return isset($this->classes[$eventType])
             ? new $this->classes[$eventType]($data, $room)
-            : new Unknown($data);
+            : new Unknown($data, $room);
     }
 }

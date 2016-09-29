@@ -1,5 +1,5 @@
 <?php  declare(strict_types=1);
-namespace Room11\Jeeves\Chat\Room;
+namespace Room11\Jeeves\Chat;
 
 abstract class Endpoint
 {

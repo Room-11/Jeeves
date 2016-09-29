@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\Chat\Room;
+namespace Room11\Jeeves\Chat;
 
 use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
@@ -75,7 +75,7 @@ class EndpointURLResolver
     {
         return sprintf(
             self::$endpointURLTemplates[$endpoint],
-            rtrim($room->getSessionInfo()->getMainSiteUrl(), '/'),
+            rtrim($room->getSession()->getMainSiteUrl(), '/'),
             ...$extraData
         );
     }

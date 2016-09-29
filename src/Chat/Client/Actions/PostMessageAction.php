@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Client\Actions;
 
 use Amp\Deferred;
 use Amp\Artax\Request as HttpRequest;
-use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\MessagePostFailureException;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;

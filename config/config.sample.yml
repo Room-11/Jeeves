@@ -10,11 +10,9 @@ openids:
 rooms:
   -
     hostname: chat.stackoverflow.com
-    secure: true
     id: 110670
   -
     hostname: chat.stackoverflow.com
-    secure: true
     id: 100286
 
 logging:

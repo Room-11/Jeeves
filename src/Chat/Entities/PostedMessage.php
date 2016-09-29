@@ -1,10 +1,11 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\Chat\Client\Entities;
+namespace Room11\Jeeves\Chat\Entities;
 
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
-class PostedMessage {
+class PostedMessage
+{
     private $room;
 
     private $messageId;

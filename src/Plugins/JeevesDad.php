@@ -46,7 +46,7 @@ class JeevesDad extends BasePlugin
 
         $fullName = strtoupper(substr($match[1], 0, 1)) . substr($match[1], 1);
 
-        $reply = sprintf('Hello %s. I am %s.', $fullName, $message->getRoom()->getSessionInfo()->getUser()->getName());
+        $reply = sprintf('Hello %s. I am %s.', $fullName, $message->getRoom()->getSession()->getUser()->getName());
 
         if (preg_match('#^(\S+)\s+\S#', $fullName, $match)) {
             $reply .= sprintf(' Do you mind if I just call you %s?', $match[1]);

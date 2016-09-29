@@ -4,13 +4,14 @@ namespace Room11\Jeeves\Chat\Room;
 
 use Amp\Promise;
 use Amp\Success;
+use Room11\Jeeves\Chat\Auth\Session;
 use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 
 class Room
 {
     private $identifier;
-    private $sessionInfo;
+    private $session;
     private $presenceManager;
     private $permanent;
     private $websocketHandler;
@@ -18,14 +19,14 @@ class Room
 
     public function __construct(
         Identifier $identifier,
-        SessionInfo $sessionInfo,
+        Session $sessionInfo,
         WebSocketHandler $websocketHandler,
         PresenceManager $presenceManager,
         KeyValueStore $keyValueStore,
         bool $permanent
     ) {
         $this->identifier = $identifier;
-        $this->sessionInfo = $sessionInfo;
+        $this->session = $sessionInfo;
         $this->websocketHandler = $websocketHandler;
         $this->keyValueStore = $keyValueStore;
         $this->presenceManager = $presenceManager;
@@ -37,9 +38,9 @@ class Room
         return $this->identifier;
     }
 
-    public function getSessionInfo(): SessionInfo
+    public function getSession(): Session
     {
-        return $this->sessionInfo;
+        return $this->session;
     }
 
     public function isPermanent(): bool
@@ -68,7 +69,7 @@ class Room
     {
         return [
             'identifier' => $this->identifier,
-            'sessionInfo' => $this->sessionInfo,
+            'sessionInfo' => $this->session,
             'websocketEndpoint' => $this->websocketHandler->getEndpoint()->getInfo(),
         ];
     }

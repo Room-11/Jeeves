@@ -13,7 +13,6 @@ use Room11\Jeeves\Chat\Room\PresenceManager;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use function Amp\cancel;
-use function Amp\info;
 use function Amp\once;
 
 class Handler implements Websocket

@@ -1,5 +1,6 @@
-<?php  declare(strict_types=1);
-namespace Room11\Jeeves\Chat\Room;
+<?php declare(strict_types=1);
+
+namespace Room11\Jeeves\Chat\Auth;
 
 use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
@@ -7,12 +8,16 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Deferred;
 use Amp\Promise;
-use function Amp\resolve;
 use Ds\Queue;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Endpoint;
+use Room11\Jeeves\Chat\EndpointURLResolver;
+use Room11\Jeeves\Chat\Room\CredentialManager;
+use Room11\Jeeves\Chat\Room\Identifier;
 use Room11\OpenId\Authenticator as OpenIdAuthenticator;
 use Room11\OpenId\Credentials;
 use function Amp\all;
+use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Authenticator
@@ -30,7 +35,7 @@ class Authenticator
     public function __construct(
         HttpClient $httpClient,
         ChatClient $chatClient,
-        SessionInfoFactory $sessionInfoFactory,
+        SessionFactory $sessionInfoFactory,
         OpenIdAuthenticator $authenticator,
         CredentialManager $credentialManager,
         EndpointURLResolver $urlResolver
@@ -76,7 +81,7 @@ class Authenticator
         $this->haveLoop = false;
     }
 
-    private function getSessionInfoForIdentifier(Identifier $identifier): \Generator
+    private function getSessionInfoForIdentifier(Identifier $identifier)
     {
         /** @var HttpResponse $response */
         $url = $this->urlResolver->getEndpointURL($identifier, Endpoint::CHATROOM_UI);
@@ -100,7 +105,7 @@ class Authenticator
         return $this->sessionInfoFactory->build($user, $fkey, $mainSiteURL, $webSocketURL);
     }
 
-    private function logInMainSite(\DOMDocument $doc, Credentials $credentials): \Generator
+    private function logInMainSite(\DOMDocument $doc, Credentials $credentials)
     {
         $url = $this->getLogInURL(new \DOMXPath($doc));
 
@@ -159,7 +164,7 @@ class Authenticator
         return $node->getAttribute('value');
     }
 
-    private function getUser(Identifier $identifier, \DOMXPath $xpath): \Generator
+    private function getUser(Identifier $identifier, \DOMXPath $xpath)
     {
         /** @var \DOMElement $node */
 
@@ -178,7 +183,7 @@ class Authenticator
         return $user[0];
     }
 
-    private function getWebSocketUri(Identifier $identifier, string $fKey): \Generator
+    private function getWebSocketUri(Identifier $identifier, string $fKey)
     {
         $authBody = (new FormBody)
             ->addField("roomid", $identifier->getId())

@@ -8,13 +8,13 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\DOMUtils\ElementNotFoundException;
-use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Client\Entities\User;
+use Room11\Jeeves\Chat\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Entities\User;
 use Room11\Jeeves\Chat\Client\Actions\ActionFactory;
 use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Chat\Room\AccessType as ChatRoomAccessType;
-use Room11\Jeeves\Chat\Room\Endpoint as ChatRoomEndpoint;
-use Room11\Jeeves\Chat\Room\EndpointURLResolver;
+use Room11\Jeeves\Chat\Room\UserAccessType as ChatRoomAccessType;
+use Room11\Jeeves\Chat\Endpoint as ChatRoomEndpoint;
+use Room11\Jeeves\Chat\EndpointURLResolver;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Chat\Room\NotApprovedException as RoomNotApprovedException;
@@ -351,7 +351,7 @@ class ChatClient
 
             $body = (new FormBody)
                 ->addField("text", $text)
-                ->addField("fkey", (string)$room->getSessionInfo()->getFKey());
+                ->addField("fkey", (string)$room->getSession()->getFKey());
 
             $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::CHATROOM_POST_MESSAGE);
 
@@ -382,7 +382,7 @@ class ChatClient
 
         $body = (new FormBody)
             ->addField("text", $text)
-            ->addField("fkey", (string)$message->getRoom()->getSessionInfo()->getFKey());
+            ->addField("fkey", (string)$message->getRoom()->getSession()->getFKey());
 
         $url = $this->urlResolver->getEndpointURL($message->getRoom(), ChatRoomEndpoint::CHATROOM_EDIT_MESSAGE, $message->getMessageId());
 
@@ -414,7 +414,7 @@ class ChatClient
         }
 
         $body = (new FormBody)
-            ->addField("fkey", $room->getSessionInfo()->getFKey());
+            ->addField("fkey", $room->getSession()->getFKey());
 
         $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::CHATROOM_PIN_MESSAGE, $messageId);
 
@@ -446,7 +446,7 @@ class ChatClient
         }
 
         $body = (new FormBody)
-            ->addField("fkey", $room->getSessionInfo()->getFKey());
+            ->addField("fkey", $room->getSession()->getFKey());
 
         $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::CHATROOM_UNSTAR_MESSAGE, $messageId);
 

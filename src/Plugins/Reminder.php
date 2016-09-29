@@ -3,18 +3,18 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
+use IntervalParser\IntervalParser;
 use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Client\PostFlags;
+use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\Storage\Admin as AdminStore;
+use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use IntervalParser\IntervalParser;
-use function Amp\resolve;
+use function Amp\cancel;
 use function Amp\once;
-use function Amp\all;
+use function Amp\resolve;
 
 class Reminder extends BasePlugin
 {
@@ -100,12 +100,13 @@ class Reminder extends BasePlugin
                         return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
                     }
 
-                    $time = $matches[2] ?? false;
+                    $time = $matches[2] ?? '';
                     $text = $matches[1] ?? false;
 
-                    if($time){
+                    if ($time !== '') {
                         $time = $intervalParser->normalizeTimeInterval($time);
                     }
+
                     break;
             }
 
@@ -301,7 +302,7 @@ class Reminder extends BasePlugin
         if(!$this->watchers) return;
 
         foreach ($this->watchers as $key => $id){
-            Amp\cancel($id);
+            cancel($id);
         }
     }
 

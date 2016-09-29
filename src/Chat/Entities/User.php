@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\Chat\Client\Entities;
+namespace Room11\Jeeves\Chat\Entities;
 
 class User
 {

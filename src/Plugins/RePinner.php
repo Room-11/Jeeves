@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\MessageFetchFailureException;
 use Room11\Jeeves\Chat\Event\StarMessage as StarMessageEvent;
 use Room11\Jeeves\Chat\Message\Command;
