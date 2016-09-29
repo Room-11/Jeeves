@@ -17,6 +17,7 @@ abstract class Endpoint
     const CHATROOM_UNSTAR_MESSAGE      = 205;
     const CHATROOM_GET_MESSAGE_TEXT    = 206;
     const CHATROOM_GET_MESSAGE_HISTORY = 207;
+    const CHATROOM_LEAVE               = 208;
 
     // chat room data
     const CHATROOM_INFO_GENERAL        = 301;

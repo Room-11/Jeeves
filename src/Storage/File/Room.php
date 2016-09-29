@@ -138,10 +138,10 @@ class Room implements RoomStorage
         });
     }
 
-    public function setApproved(ChatRoomIdentifier $identifier): Promise
+    public function setApproved(ChatRoomIdentifier $identifier, bool $approved): Promise
     {
-        return $this->accessor->writeCallback(function($data) use($identifier) {
-            $data[$identifier->getIdentString()]['is_approved'] = true;
+        return $this->accessor->writeCallback(function($data) use($identifier, $approved) {
+            $data[$identifier->getIdentString()]['is_approved'] = $approved;
             return $data;
         }, $this->dataFileTemplate);
     }

@@ -40,7 +40,7 @@ class Plugin implements BuiltInCommand
     {
         if (!$this->pluginManager->isPluginRegistered($plugin)) {
             yield $this->chatClient->postReply($command, "Invalid plugin name");
-            return;
+            return null;
         }
 
         $plugin = $this->pluginManager->getPluginByName($plugin);
@@ -143,10 +143,10 @@ class Plugin implements BuiltInCommand
         return $this->chatClient->postMessage($command->getRoom(), $message);
     }
 
-    private function execute(CommandMessage $command): \Generator
+    private function execute(CommandMessage $command)
     {
         if (!yield $command->getRoom()->isApproved()) {
-            return;
+            return null;
         }
 
         switch ($command->getParameter(0)) {

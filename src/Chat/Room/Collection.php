@@ -25,13 +25,13 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
             }
         } else if (is_string($identifier)) {
             if (!preg_match('/^' . ROOM_IDENTIFIER_EXPR . '$/i', $identifier, $match)) {
-                throw new \LogicException('Invalid identifier string format');
+                throw new InvalidRoomIdentifierException('Invalid identifier string format');
             }
 
             return [$match[1], (int)$match[2]];
         }
 
-        throw new \LogicException('Identifier must be a string or identifiable object');
+        throw new InvalidRoomIdentifierException('Identifier must be a string or identifiable object');
     }
 
     /**
@@ -53,13 +53,14 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
 
     /**
      * @param Room|Identifier|string $identifier
+     * @throws InvalidRoomException
      */
     public function remove($identifier)
     {
         list($host, $id) = $this->normalizeIdentifier($identifier);
 
         if (!isset($this->rooms[$host][$id])) {
-            throw new \LogicException("Unknown room identifier: {$host}#{$id}");
+            throw new InvalidRoomException("Unknown room identifier: {$host}#{$id}");
         }
 
         unset($this->rooms[$host][$id]);
@@ -68,14 +69,15 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
 
     /**
      * @param Room|Identifier|string $identifier
-     * @return Room|null
+     * @return null|Room
+     * @throws InvalidRoomException
      */
     public function get($identifier)
     {
         list($host, $id) = $this->normalizeIdentifier($identifier);
 
         if (!isset($this->rooms[$host][$id])) {
-            throw new \LogicException("Unknown room identifier: {$host}#{$id}");
+            throw new InvalidRoomException("Unknown room identifier: {$host}#{$id}");
         }
 
         return $this->rooms[$host][$id] ?? null;
@@ -166,12 +168,12 @@ class Collection implements \Iterator, \ArrayAccess, \Countable
     public function offsetSet($identifier, $room)
     {
         if (!$room instanceof Room) {
-            throw new \LogicException("Rooms must be instances of " . Room::class);
+            throw new InvalidRoomException("Rooms must be instances of " . Room::class);
         }
 
         list($host, $id) = $this->normalizeIdentifier($identifier);
         if ($host !== $room->getIdentifier()->getHost() || $id !== $room->getIdentifier()->getId()) {
-            throw new \LogicException("Identifying key must match room identifier");
+            throw new InvalidRoomException("Identifying key must match room identifier");
         }
 
         $this->add($room);

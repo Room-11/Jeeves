@@ -21,6 +21,7 @@ class EndpointURLResolver
         Endpoint::CHATROOM_UNSTAR_MESSAGE      => 'https://%1$s/messages/%3$d/unstar',
         Endpoint::CHATROOM_GET_MESSAGE_TEXT    => 'https://%1$s/messages/%2$d/%3$d',
         Endpoint::CHATROOM_GET_MESSAGE_HISTORY => 'https://%1$s/messages/%3$d/history',
+        Endpoint::CHATROOM_LEAVE               => 'https://%1$s/chats/leave/%2$d',
 
         Endpoint::CHATROOM_INFO_GENERAL        => 'https://%1$s/rooms/info/%2$d?tab=general',
         Endpoint::CHATROOM_INFO_STARS          => 'https://%1$s/rooms/info/%2$d?tab=stars',

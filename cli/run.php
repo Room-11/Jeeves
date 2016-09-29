@@ -12,6 +12,7 @@ use Room11\Jeeves\BuiltIn\Commands\Admin as AdminBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Ban as BanBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Command as CommandBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Plugin as PluginBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\RoomPresence;
 use Room11\Jeeves\BuiltIn\Commands\Uptime as UptimeBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Version as VersionBuiltIn;
 use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
@@ -58,6 +59,7 @@ $builtInCommands = [
     BanBuiltIn::class,
     CommandBuiltIn::class,
     PluginBuiltIn::class,
+    RoomPresence::class,
     UptimeBuiltIn::class,
     VersionBuiltIn::class,
 ];

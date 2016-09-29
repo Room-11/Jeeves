@@ -43,6 +43,11 @@ class Identifier
         return sprintf('https://%s', $this->host);
     }
 
+    public function equals(Identifier $identifier): bool
+    {
+        return $this->host === $identifier->getHost() && $this->id === $identifier->getId();
+    }
+
     public function __toString()
     {
         return $this->getIdentString();
