@@ -6,12 +6,12 @@ use Amp\Deferred;
 use Amp\Promise;
 use Amp\Success;
 use Ds\Queue;
-use function Amp\File\put;
+use function Amp\File\open as openFile;
 use function Amp\resolve;
 
 class File extends BaseLogger
 {
-    private $filename;
+    private $handle;
 
     private $writeQueue = false;
     private $haveWriteLoop = false;
@@ -20,7 +20,7 @@ class File extends BaseLogger
     {
         parent::__construct($logLevel);
 
-        $this->filename = $filename;
+        $this->handle = openFile($filename, 'a');
         $this->writeQueue = new Queue;
     }
 
@@ -28,13 +28,17 @@ class File extends BaseLogger
     {
         $this->haveWriteLoop = true;
 
+        if ($this->handle instanceof Promise) {
+            $this->handle = yield $this->handle;
+        }
+
         while ($this->writeQueue->count()) {
             /** @var Deferred $deferred */
             list($timestamp, $messages, $deferred) = $this->writeQueue->pop();
 
             try {
                 foreach ($messages as $message) {
-                    yield put($this->filename, sprintf("[%s] %s\n", $timestamp, $message));
+                    yield $this->handle->write(sprintf("[%s] %s\n", $timestamp, $message));
                 }
 
                 $deferred->succeed();

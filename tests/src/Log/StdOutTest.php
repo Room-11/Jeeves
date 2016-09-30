@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Tests\Log;
 
+use Amp\Promise;
 use Room11\Jeeves\Log\StdOut;
 use Room11\Jeeves\Log\BaseLogger;
 use Room11\Jeeves\Log\Logger;
@@ -21,7 +22,7 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
 
     public function testLogWithoutMeetingTheLoglevel()
     {
-        $this->assertNull((new StdOut(Level::ERROR))->log(Level::DEBUG, 'foo'));
+        $this->assertInstanceOf(Promise::class, (new StdOut(Level::ERROR))->log(Level::DEBUG, 'foo'));
     }
 
     public function testLogWithoutExtraData()
@@ -42,7 +43,7 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
 
         (new StdOut(Level::DEBUG, false))->log(Level::DEBUG, 'foo');
 
-        $this->assertSame('foo', ob_get_clean());
+        $this->assertSame("foo\n", ob_get_clean());
     }
 
     public function testLogWithExtraDataWithoutExtraDataLevel()
@@ -63,7 +64,7 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
 
         (new StdOut(Level::DEBUG, false))->log(Level::DEBUG, 'foo', 'bar');
 
-        $this->assertSame('foo', ob_get_clean());
+        $this->assertSame("foo\n", ob_get_clean());
     }
 
     public function testLogWithExtraData()
@@ -90,7 +91,7 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
     {
         ob_start();
 
-        (new StdOut(Level::DEBUG | Level::EXTRA_DATA))->log(Level::DEBUG, 'foo', 'bar');
+        (new StdOut(Level::DEBUG | Level::EXTRA_DATA, false))->log(Level::DEBUG, 'foo', 'bar');
 
         $logLines = explode("\n", ob_get_clean());
 

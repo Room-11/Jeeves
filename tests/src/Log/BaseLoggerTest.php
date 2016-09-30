@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Tests\Log;
 
+use Amp\Promise;
 use Room11\Jeeves\Log\BaseLogger;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\Level;
@@ -13,7 +14,7 @@ class BaseLoggerTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->logger = new class(Level::EVENT) extends BaseLogger {
-            public function log(int $level, string $message, $extraData = null) { }
+            public function log(int $level, string $message, $extraData = null): Promise { }
 
             public function testMeetsLogLevel(int $messageLogLevel)
             {
@@ -24,7 +25,7 @@ class BaseLoggerTest extends \PHPUnit_Framework_TestCase
 
     public function testImplementsCorrectInterface()
     {
-        $this->assertInstanceof(Logger::class, $this->logger);
+        $this->assertInstanceOf(Logger::class, $this->logger);
     }
 
     public function testMeetsLogLevelDoesntMeet()
