@@ -548,11 +548,14 @@ class PluginManager
      */
     public function getPluginCommandEndpoints($plugin, $room = null): array
     {
-        $room = $this->rooms->get($room);
-
         /** @var Plugin $plugin */
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
-        $roomId = $room !== null ? $room->getIdentifier()->getIdentString() : null;
+
+        $roomId = null;
+        if ($room !== null) {
+            $room = $this->rooms->get($room);
+            $roomId = $this->rooms->get($room)->getIdentifier()->getIdentString();
+        }
 
         $endpoints = [];
 
