@@ -292,7 +292,6 @@ class Command implements BuiltInCommand
                 case 'unmap': return yield from $this->unmap($command);
             }
         } catch (\Throwable $e) {
-            echo $e;
             return $this->chatClient->postReply($command, self::message('unexpected_error', $e->getMessage()));
         }
 
