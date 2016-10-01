@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "a32d0ea46f87c71a056423f1564c9082",
-    "content-hash": "a5a6ebcfd239ca5a86a76b31fcf7d839",
+    "hash": "a1836722356688a70c417d89ea2db384",
+    "content-hash": "3b7e69c47577ceb60c382569a0d00b9e",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -735,16 +735,16 @@
         },
         {
             "name": "peehaa/async-twitter",
-            "version": "v0.1.0",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PeeHaa/AsyncTwitter.git",
-                "reference": "6b39fc2a1c830bc7ca6c702f077e89c5fea1a87d"
+                "reference": "f726ec63b588d6a642de87db21151db81675a8d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/6b39fc2a1c830bc7ca6c702f077e89c5fea1a87d",
-                "reference": "6b39fc2a1c830bc7ca6c702f077e89c5fea1a87d",
+                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/f726ec63b588d6a642de87db21151db81675a8d2",
+                "reference": "f726ec63b588d6a642de87db21151db81675a8d2",
                 "shasum": ""
             },
             "require": {
@@ -769,7 +769,7 @@
                 }
             ],
             "description": "Asynchronous parallel Twitter client built on the Amp concurrency framework",
-            "homepage": "https://github.com/peehaa/async-twitter",
+            "homepage": "https://github.com/peehaa/AsyncTwitter",
             "keywords": [
                 "async",
                 "client",
@@ -778,7 +778,7 @@
                 "parallel",
                 "twitter"
             ],
-            "time": "2016-09-20 21:52:34"
+            "time": "2016-10-01 18:46:05"
         },
         {
             "name": "php-ds/php-ds",
@@ -2400,7 +2400,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "amphp/websocket": 20
+        "amphp/websocket": 20,
+        "peehaa/async-twitter": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

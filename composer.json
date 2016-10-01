@@ -32,7 +32,7 @@
         "daverandom/exceptional-json": "^1.0",
         "daverandom/mutex": "~0.0",
         "php-ds/php-ds": "*",
-        "peehaa/async-twitter": "~0.1",
+        "peehaa/async-twitter": "dev-master",
         "ekinhbayar/interval-parser": "^0.1",
         "rdlowrey/auryn": "^1.1",
         "room11/openid": "~0.0",
