@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "a32d0ea46f87c71a056423f1564c9082",
-    "content-hash": "a5a6ebcfd239ca5a86a76b31fcf7d839",
+    "hash": "a1836722356688a70c417d89ea2db384",
+    "content-hash": "3b7e69c47577ceb60c382569a0d00b9e",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -320,16 +320,16 @@
         },
         {
             "name": "amphp/file",
-            "version": "v0.1.2",
+            "version": "v0.1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/amphp/file.git",
-                "reference": "7e04d6badea1f904cb1b894771f9c7e073799874"
+                "reference": "6612ae6757d4719492ed8b34ea6181ff67cfbed1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/amphp/file/zipball/7e04d6badea1f904cb1b894771f9c7e073799874",
-                "reference": "7e04d6badea1f904cb1b894771f9c7e073799874",
+                "url": "https://api.github.com/repos/amphp/file/zipball/6612ae6757d4719492ed8b34ea6181ff67cfbed1",
+                "reference": "6612ae6757d4719492ed8b34ea6181ff67cfbed1",
                 "shasum": ""
             },
             "require": {
@@ -337,13 +337,14 @@
                 "php": ">=5.5"
             },
             "require-dev": {
-                "fabpot/php-cs-fixer": "~1.9",
+                "friendsofphp/php-cs-fixer": "~1.9",
                 "phpunit/phpunit": "~4.8"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "0.1.0-dev"
+                    "dev-master": "0.1.0-dev",
+                    "dev-amp_v2": "0.2.0-dev"
                 }
             },
             "autoload": {
@@ -375,7 +376,7 @@
                 "non-blocking",
                 "static"
             ],
-            "time": "2016-03-24 17:31:44"
+            "time": "2016-10-01 17:43:52"
         },
         {
             "name": "amphp/socket",
@@ -734,16 +735,16 @@
         },
         {
             "name": "peehaa/async-twitter",
-            "version": "v0.1.0",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PeeHaa/AsyncTwitter.git",
-                "reference": "6b39fc2a1c830bc7ca6c702f077e89c5fea1a87d"
+                "reference": "f726ec63b588d6a642de87db21151db81675a8d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/6b39fc2a1c830bc7ca6c702f077e89c5fea1a87d",
-                "reference": "6b39fc2a1c830bc7ca6c702f077e89c5fea1a87d",
+                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/f726ec63b588d6a642de87db21151db81675a8d2",
+                "reference": "f726ec63b588d6a642de87db21151db81675a8d2",
                 "shasum": ""
             },
             "require": {
@@ -768,7 +769,7 @@
                 }
             ],
             "description": "Asynchronous parallel Twitter client built on the Amp concurrency framework",
-            "homepage": "https://github.com/peehaa/async-twitter",
+            "homepage": "https://github.com/peehaa/AsyncTwitter",
             "keywords": [
                 "async",
                 "client",
@@ -777,7 +778,7 @@
                 "parallel",
                 "twitter"
             ],
-            "time": "2016-09-20 21:52:34"
+            "time": "2016-10-01 18:46:05"
         },
         {
             "name": "php-ds/php-ds",
@@ -1348,16 +1349,16 @@
         },
         {
             "name": "phpdocumentor/reflection-docblock",
-            "version": "3.1.0",
+            "version": "3.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpDocumentor/ReflectionDocBlock.git",
-                "reference": "9270140b940ff02e58ec577c237274e92cd40cdd"
+                "reference": "8331b5efe816ae05461b7ca1e721c01b46bafb3e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/9270140b940ff02e58ec577c237274e92cd40cdd",
-                "reference": "9270140b940ff02e58ec577c237274e92cd40cdd",
+                "url": "https://api.github.com/repos/phpDocumentor/ReflectionDocBlock/zipball/8331b5efe816ae05461b7ca1e721c01b46bafb3e",
+                "reference": "8331b5efe816ae05461b7ca1e721c01b46bafb3e",
                 "shasum": ""
             },
             "require": {
@@ -1389,7 +1390,7 @@
                 }
             ],
             "description": "With this component, a library can provide support for annotations via DocBlocks or otherwise retrieve information that is embedded in a DocBlock.",
-            "time": "2016-06-10 09:48:41"
+            "time": "2016-09-30 07:12:33"
         },
         {
             "name": "phpdocumentor/type-resolver",
@@ -2399,7 +2400,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "amphp/websocket": 20
+        "amphp/websocket": 20,
+        "peehaa/async-twitter": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

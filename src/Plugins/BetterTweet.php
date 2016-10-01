@@ -5,14 +5,21 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Success;
-use PeeHaa\AsyncTwitter\Api\Client as ApiClient;
+use PeeHaa\AsyncTwitter\Api\Client;
+use PeeHaa\AsyncTwitter\Credentials\AccessTokenFactory as AccessTokenFactory;
+use PeeHaa\AsyncTwitter\Api\ClientFactory as ApiClientFactory;
 use PeeHaa\AsyncTwitter\Api\Status\Retweet;
 use PeeHaa\AsyncTwitter\Api\Status\Update;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Room\Room;
+use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
+
+class NotConfiguredException extends Exception {}
 
 class BetterTweet extends BasePlugin
 {
@@ -20,7 +27,11 @@ class BetterTweet extends BasePlugin
 
     private $admin;
 
-    private $apiClient;
+    private $keyValueStore;
+
+    private $apiClientFactory;
+
+    private $accessTokenFactory;
 
     private $httpClient;
 
@@ -28,12 +39,16 @@ class BetterTweet extends BasePlugin
         ChatClient $chatClient,
         HttpClient $httpClient,
         AdminStorage $admin,
-        ApiClient $apiClient
+        KeyValueStore $keyValueStore,
+        ApiClientFactory $apiClientFactory,
+        AccessTokenFactory $accessTokenFactory
     ) {
-        $this->chatClient = $chatClient;
-        $this->admin      = $admin;
-        $this->apiClient  = $apiClient;
-        $this->httpClient = $httpClient;
+        $this->chatClient         = $chatClient;
+        $this->admin              = $admin;
+        $this->keyValueStore      = $keyValueStore;
+        $this->apiClientFactory   = $apiClientFactory;
+        $this->accessTokenFactory = $accessTokenFactory;
+        $this->httpClient         = $httpClient;
     }
 
     private function isMessageValid(string $url): bool
@@ -57,7 +72,7 @@ class BetterTweet extends BasePlugin
         $dom   = yield from $this->getRawMessage($command, $url);
         $xpath = new \DOMXPath($dom);
 
-        return (bool) $xpath->evaluate("//*[contains(concat(' ', normalize-space(@class), ' '), ' ob-tweet ')]");
+        return (bool) $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' ob-tweet ')]")->length;
     }
 
     private function getRetweetId(Command $command, string $url)
@@ -98,7 +113,7 @@ class BetterTweet extends BasePlugin
     {
         $xpath = new \DOMXPath($dom);
 
-        foreach ($xpath->evaluate("//i|//b") as $node) {
+        foreach ($xpath->query("//i|//b") as $node) {
             $formattedNode = $dom->createTextNode("*" . $node->textContent . "*");
 
             $node->parentNode->replaceChild($formattedNode, $node);
@@ -146,6 +161,31 @@ class BetterTweet extends BasePlugin
         return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
     }
 
+    private $clients = [];
+
+    private function getClientForRoom(Room $room)
+    {
+        if (isset($this->clients[$room->getIdentifier()->getIdentString()])) {
+            return $this->clients[$room->getIdentifier()->getIdentString()];
+        }
+
+        $keys = ['oauth.access_token', 'oauth.access_token_secret'];
+        $config = [];
+
+        foreach ($keys as $key) {
+            if (!yield $this->keyValueStore->exists($key, $room)) {
+                throw new NotConfiguredException('Missing config key: ' . $key);
+            }
+
+            $config[$key] = yield $this->keyValueStore->get($key, $room);
+        }
+
+        $accessToken = $this->accessTokenFactory->create($config['oauth.access_token'], $config['oauth.access_token_secret']);
+        $this->clients[$room->getIdentifier()->getIdentString()] = $this->apiClientFactory->create($accessToken);
+
+        return $this->clients[$room->getIdentifier()->getIdentString()];
+    }
+
     public function tweet(Command $command)
     {
         if (!$this->isMessageValid($command->getParameter(0))) {
@@ -156,28 +196,36 @@ class BetterTweet extends BasePlugin
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
         }
 
-        $isRetweet = yield from $this->isRetweet($command, $command->getParameters()[0]);
+        try {
+            /** @var Client $client */
+            $client = yield from $this->getClientForRoom($command->getRoom());
+        } catch (NotConfiguredException $e) {
+            return $this->chatClient->postReply($command, "I'm not currently configured for tweeting :-(");
+        }
+
+        $isRetweet = yield from $this->isRetweet($command, $command->getParameter(0));
 
         if ($isRetweet) {
-            $tweetId = yield from $this->getRetweetId($command, $command->getParameters()[0]);
+            $tweetId = yield from $this->getRetweetId($command, $command->getParameter(0));
 
             /** @var HttpResponse $result */
-            $result    = yield (new Retweet($this->apiClient, $tweetId))->post();
+            $result    = yield $client->request(new Retweet($tweetId));
             $tweetInfo = json_decode($result->getBody(), true);
             $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
             return $this->chatClient->postMessage($command->getRoom(), $tweetUri);
         }
 
-        $tweetText = yield from $this->getMessage($command, $command->getParameters()[0]);
+        $tweetText = yield from $this->getMessage($command, $command->getParameter(0));
 
         if (mb_strlen($tweetText, "UTF-8") > 140) {
             return $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
         }
 
         /** @var HttpResponse $result */
-        $result    = yield (new Update($this->apiClient, $tweetText))->post();
+        $result    = yield $client->request(new Update($tweetText));
         $tweetInfo = json_decode($result->getBody(), true);
+        var_dump($tweetText, $result, $tweetInfo);
         $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
         return $this->chatClient->postMessage($command->getRoom(), $tweetUri);
