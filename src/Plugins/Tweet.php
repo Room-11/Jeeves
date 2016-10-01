@@ -121,14 +121,20 @@ class Tweet extends BasePlugin
             return $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
         }
 
-        $consumerKey = yield $this->storage->get('oauth.consumer_key', $command->getRoom());
-        $accessToken = yield $this->storage->get('oauth.access_token', $command->getRoom());
-        $consumerSecret = yield $this->storage->get('oauth.consumer_secret', $command->getRoom());
-        $accessTokenSecret = yield $this->storage->get('oauth.access_token_secret', $command->getRoom());
+        $keys = ['oauth.consumer_key', 'oauth.access_token', 'oauth.consumer_secret', 'oauth.access_token_secret'];
+        $config = [];
+
+        foreach ($keys as $key) {
+            if (!yield $this->storage->exists($key, $command->getRoom())) {
+                return $this->chatClient->postReply($command, "I'm not currently configured for tweeting :-(");
+            }
+
+            $config[$key] = yield $this->storage->get($key, $command->getRoom());
+        }
 
         $oauthParameters = [
-            "oauth_consumer_key"     => $consumerKey,
-            "oauth_token"            => $accessToken,
+            "oauth_consumer_key"     => $config['oauth.consumer_key'],
+            "oauth_token"            => $config['oauth.access_token'],
             "oauth_nonce"            => $this->getNonce(),
             "oauth_timestamp"        => (new \DateTimeImmutable)->format("U"),
             "oauth_signature_method" => "HMAC-SHA1",
@@ -144,7 +150,7 @@ class Tweet extends BasePlugin
         $queryString = urldecode(http_build_query($oauthParameters, '', '&'));
 
         $baseString = "POST&" . rawurlencode(self::BASE_URI . "/statuses/update.json") . "&" . rawurlencode($queryString);
-        $key        = "{$consumerSecret}&{$accessTokenSecret}";
+        $key        = $config['oauth.consumer_secret'] . "&" . $config['oauth.access_token_secret'];
         $signature  = rawurlencode(base64_encode(hash_hmac('sha1', $baseString, $key, true)));
 
         $oauthParameters["oauth_signature"] = $signature;
