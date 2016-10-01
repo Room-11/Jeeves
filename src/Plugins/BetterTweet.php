@@ -72,7 +72,7 @@ class BetterTweet extends BasePlugin
         $dom   = yield from $this->getRawMessage($command, $url);
         $xpath = new \DOMXPath($dom);
 
-        return (bool) $xpath->evaluate("//*[contains(concat(' ', normalize-space(@class), ' '), ' ob-tweet ')]");
+        return (bool) $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' ob-tweet ')]")->length;
     }
 
     private function getRetweetId(Command $command, string $url)
@@ -113,7 +113,7 @@ class BetterTweet extends BasePlugin
     {
         $xpath = new \DOMXPath($dom);
 
-        foreach ($xpath->evaluate("//i|//b") as $node) {
+        foreach ($xpath->query("//i|//b") as $node) {
             $formattedNode = $dom->createTextNode("*" . $node->textContent . "*");
 
             $node->parentNode->replaceChild($formattedNode, $node);
@@ -203,10 +203,10 @@ class BetterTweet extends BasePlugin
             return $this->chatClient->postReply($command, "I'm not currently configured for tweeting :-(");
         }
 
-        $isRetweet = yield from $this->isRetweet($command, $command->getParameters()[0]);
+        $isRetweet = yield from $this->isRetweet($command, $command->getParameter(0));
 
         if ($isRetweet) {
-            $tweetId = yield from $this->getRetweetId($command, $command->getParameters()[0]);
+            $tweetId = yield from $this->getRetweetId($command, $command->getParameter(0));
 
             /** @var HttpResponse $result */
             $result    = yield $client->request(new Retweet($tweetId));
@@ -216,7 +216,7 @@ class BetterTweet extends BasePlugin
             return $this->chatClient->postMessage($command->getRoom(), $tweetUri);
         }
 
-        $tweetText = yield from $this->getMessage($command, $command->getParameters()[0]);
+        $tweetText = yield from $this->getMessage($command, $command->getParameter(0));
 
         if (mb_strlen($tweetText, "UTF-8") > 140) {
             return $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
@@ -225,6 +225,7 @@ class BetterTweet extends BasePlugin
         /** @var HttpResponse $result */
         $result    = yield $client->request(new Update($tweetText));
         $tweetInfo = json_decode($result->getBody(), true);
+        var_dump($tweetText, $result, $tweetInfo);
         $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
         return $this->chatClient->postMessage($command->getRoom(), $tweetUri);

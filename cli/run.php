@@ -82,21 +82,9 @@ $injector->alias(RoomStorage::class,     $config['storage']['room']     ?? FileR
 
 $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);
 
-$injector->define(TwitterCredentials::class, [
-    ':consumerKey' => $config['twitter']['consumerKey'],
-    ':consumerSecret' => $config['twitter']['consumerSecret'],
-    ':accessToken' => $config['twitter']['accessToken'],
-    ':accessTokenSecret' => $config['twitter']['accessTokenSecret'],
-]);
-
 $injector->define(TwitterApplicationCredentials::class, [
     ':key' => $config['twitter']['consumerKey'],
     ':secret' => $config['twitter']['consumerSecret'],
-]);
-
-$injector->define(TwitterAccessToken::class, [
-    ':token' => $config['twitter']['accessToken'],
-    ':secret' => $config['twitter']['accessTokenSecret'],
 ]);
 
 $injector->define(TranslationAPICredentials::class, [
