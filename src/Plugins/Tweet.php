@@ -8,8 +8,8 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\External\TwitterCredentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Room11\DOMUtils\domdocument_load_html;
 
@@ -21,16 +21,14 @@ class Tweet extends BasePlugin
 
     private $admin;
 
-    private $credentials;
-
-    private $twitterConfig = [];
+    private $storage;
 
     private $httpClient;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $admin, TwitterCredentials $credentials) {
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $admin, KeyValueStore $keyValueStorage) {
         $this->chatClient  = $chatClient;
         $this->admin       = $admin;
-        $this->credentials = $credentials;
+        $this->storage = $keyValueStorage;
         $this->httpClient = $httpClient;
     }
 
@@ -44,7 +42,7 @@ class Tweet extends BasePlugin
 
     // @todo convert URLs to shortened URLs
     // @todo handle twitter's character limit. perhaps we can do some clever replacing when above the limit?
-    private function getMessage(Command $command, string $url): \Generator {
+    private function getMessage(Command $command, string $url) {
         preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
 
         $messageInfo = yield $this->chatClient->getMessageHTML($command->getRoom(), (int) $matches[1]);
@@ -108,62 +106,7 @@ class Tweet extends BasePlugin
         return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
     }
 
-    // @todo move the oauth request making to a separate class to prevent code duplication and 110 responsibilities
-    private function updateConfigWhenNeeded(): \Generator {
-        if (array_key_exists("expiration", $this->twitterConfig) && $this->twitterConfig["expiration"] > new \DateTimeImmutable()) {
-            return;
-        }
-
-        $oauthParameters = [
-            "oauth_consumer_key"     => $this->credentials->getConsumerKey(),
-            "oauth_token"            => $this->credentials->getAccessToken(),
-            "oauth_nonce"            => $this->getNonce(),
-            "oauth_timestamp"        => (new \DateTimeImmutable())->format("U"),
-            "oauth_signature_method" => "HMAC-SHA1",
-            "oauth_version"          => "1.0",
-        ];
-
-        $oauthParameters = array_map("rawurlencode", $oauthParameters);
-
-        asort($oauthParameters);
-        ksort($oauthParameters);
-
-        $queryString = urldecode(http_build_query($oauthParameters, '', '&'));
-
-        $baseString = "GET&" . rawurlencode(self::BASE_URI . "/help/configuration.json") . "&" . rawurlencode($queryString);
-        $key        = $this->credentials->getConsumerSecret() . "&" . $this->credentials->getAccessTokenSecret();
-        $signature  = rawurlencode(base64_encode(hash_hmac('sha1', $baseString, $key, true)));
-
-        $oauthParameters["oauth_signature"] = $signature;
-        $oauthParameters = array_map(function($value){
-            return '"'. $value . '"';
-        }, $oauthParameters);
-
-        unset($oauthParameters["status"]);
-
-        asort($oauthParameters);
-        ksort($oauthParameters);
-
-        $authorizationHeader = $auth = "OAuth " . urldecode(http_build_query($oauthParameters, '', ', '));
-
-        $request = (new HttpRequest)
-            ->setUri(self::BASE_URI . "/help/configuration.json")
-            ->setMethod('GET')
-            ->setProtocol('1.1')
-            ->setAllHeaders([
-                'Authorization' => $authorizationHeader,
-                'Content-Type'  => 'application/x-www-form-urlencoded',
-            ])
-        ;
-
-        /** @var HttpResponse $result */
-        $result = yield $this->httpClient->request($request);
-
-        $this->twitterConfig = json_decode($result->getBody(), true);
-        $this->twitterConfig["expiration"] = (new \DateTimeImmutable())->add(new \DateInterval("P1D"));
-    }
-
-    public function tweet(Command $command): \Generator {
+    public function tweet(Command $command) {
         if (!$this->isMessageValid($command->getParameter(0))) {
             return new Success();
         }
@@ -172,19 +115,22 @@ class Tweet extends BasePlugin
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
         }
 
-        yield from $this->updateConfigWhenNeeded();
-
         $tweetText = yield from $this->getMessage($command, $command->getParameters()[0]);
 
         if (mb_strlen($tweetText, "UTF-8") > 140) {
             return $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
         }
 
+        $consumerKey = yield $this->storage->get('oauth.consumer_key', $command->getRoom());
+        $accessToken = yield $this->storage->get('oauth.access_token', $command->getRoom());
+        $consumerSecret = yield $this->storage->get('oauth.consumer_secret', $command->getRoom());
+        $accessTokenSecret = yield $this->storage->get('oauth.access_token_secret', $command->getRoom());
+
         $oauthParameters = [
-            "oauth_consumer_key"     => $this->credentials->getConsumerKey(),
-            "oauth_token"            => $this->credentials->getAccessToken(),
+            "oauth_consumer_key"     => $consumerKey,
+            "oauth_token"            => $accessToken,
             "oauth_nonce"            => $this->getNonce(),
-            "oauth_timestamp"        => (new \DateTimeImmutable())->format("U"),
+            "oauth_timestamp"        => (new \DateTimeImmutable)->format("U"),
             "oauth_signature_method" => "HMAC-SHA1",
             "oauth_version"          => "1.0",
             "status"                 => $tweetText,
@@ -198,7 +144,7 @@ class Tweet extends BasePlugin
         $queryString = urldecode(http_build_query($oauthParameters, '', '&'));
 
         $baseString = "POST&" . rawurlencode(self::BASE_URI . "/statuses/update.json") . "&" . rawurlencode($queryString);
-        $key        = $this->credentials->getConsumerSecret() . "&" . $this->credentials->getAccessTokenSecret();
+        $key        = "{$consumerSecret}&{$accessTokenSecret}";
         $signature  = rawurlencode(base64_encode(hash_hmac('sha1', $baseString, $key, true)));
 
         $oauthParameters["oauth_signature"] = $signature;
