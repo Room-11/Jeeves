@@ -413,8 +413,8 @@ class Reminder extends BasePlugin
             . Chars::BULLET . " !!reminder unset 32901146 \n"
             . Chars::BULLET . " !!reminder list \n"
             . Chars::BULLET . " !!remind me to grab a beer in 2 hours \n"
-            . Chars::BULLET . " !!remind everyone that strpbrk is a thing. \n"
-            . Chars::BULLET . " !!remind @anAdmin to unpin that last xkcd. \n"
+            . Chars::BULLET . " !!remind everyone that strpbrk is a thing... in 12 hours \n"
+            . Chars::BULLET . " !!remind @anAdmin to unpin that last xkcd in 2 days\n"
             . Chars::BULLET . " !!in 2 days 42 hours 42 minutes 42 seconds 42! \n"
             . Chars::BULLET . " !!at 22:00 Grab a beer!";
 
