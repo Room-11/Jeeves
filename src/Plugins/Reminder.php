@@ -96,7 +96,6 @@ class Reminder extends BasePlugin
         $grumble = [
             ' So get on that, would ya?',
             " It's about time you get on that.",
-            " Let's not skip that.",
             " Let's not forget that."
         ];
 
