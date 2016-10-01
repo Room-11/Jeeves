@@ -166,12 +166,6 @@ class Reminder extends BasePlugin
 
                     $message = (!$tempIsMessage) ? substr($temp, strlen($textOrUser)) : $temp;
 
-                    $actionOrFact = $command->getParameter(1);
-                    $array = [ 'to', 'that', 'about' ];
-                    if(in_array($actionOrFact, $array)){
-                        $message = preg_replace("/{$actionOrFact}/", '', $message, 1);
-                    }
-
                     $setBy = $command->getUserName();
 
                     if($setBy !== $target){
