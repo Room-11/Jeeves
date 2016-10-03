@@ -4,13 +4,12 @@ namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Event\Traits\RoomSource;
 use Room11\Jeeves\Chat\Event\Traits\UserSource;
-use Room11\Jeeves\Chat\Message\Factory as MessageFactory;
-use Room11\Jeeves\Chat\Message\Message;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use function Room11\DOMUtils\domdocument_load_html;
 
-abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourcedEvent
+abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomSourcedEvent
 {
-    use RoomSource;
-    use UserSource;
+    use RoomSource, UserSource;
 
     /**
      * @var int
@@ -18,33 +17,37 @@ abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourc
     private $messageId;
 
     /**
-     * @var string
+     * @var \DOMDocument
      */
     private $messageContent;
 
     /**
-     * @var Message
+     * @var int
      */
-    private $message;
+    private $parentId;
 
-    protected function __construct(array $data, MessageFactory $messageFactory)
+    /**
+     * @var bool
+     */
+    private $showParent;
+
+    public function __construct(array $data, ChatRoom $room)
     {
-        parent::__construct((int)$data['id'], (int)$data['time_stamp']);
+        parent::__construct($data, $room->getIdentifier()->getHost());
 
-        $this->roomId = (int)$data['room_id'];
+        $this->room = $room;
 
         $this->userId = (int)$data['user_id'];
         $this->userName = (string)$data['user_name'];
 
         $this->messageId = (int)$data['message_id'];
-        $this->messageContent = (string)$data['content'] ?? '';
+        $this->messageContent = domdocument_load_html(
+            (string)($data['content'] ?? ''),
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
 
-        $this->message = $messageFactory->build($this);
-    }
-
-    public function getMessage(): Message
-    {
-        return $this->message;
+        $this->parentId = (int)($data['parent_id'] ?? -1);
+        $this->showParent = (bool)($data['show_parent'] ?? false);
     }
 
     public function getMessageId(): int
@@ -52,8 +55,18 @@ abstract class MessageEvent extends Event implements UserSourcedEvent, RoomSourc
         return $this->messageId;
     }
 
-    public function getMessageContent(): string
+    public function getMessageContent(): \DOMDocument
     {
         return $this->messageContent;
+    }
+
+    public function getParentId(): int
+    {
+        return $this->parentId;
+    }
+
+    public function shouldShowParent(): bool
+    {
+        return $this->showParent;
     }
 }

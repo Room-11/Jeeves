@@ -1,13 +1,13 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Room11\Jeeves\Chat\Event;
 
-class Unknown extends Event
-{
-    const EVENT_TYPE_ID = 0;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
-    public function __construct(array $data)
+class Unknown extends BaseEvent
+{
+    public function __construct(array $data, ChatRoom $room)
     {
-        parent::__construct((int)($data['id'] ?? 0), (int)($data['time_stamp'] ?? 0));
+        parent::__construct($data, $room->getIdentifier()->getHost());
     }
 }

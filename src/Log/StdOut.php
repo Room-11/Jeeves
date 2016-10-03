@@ -2,27 +2,34 @@
 
 namespace Room11\Jeeves\Log;
 
+use Amp\Promise;
+use Amp\Success;
+
 class StdOut extends BaseLogger
 {
-    public function log(int $logLevel, string $message, $extraData = null)
+    private $format;
+
+    public function __construct(int $level, bool $showTimestamps = true)
     {
-        if (!$this->meetsLogLevel($logLevel)) {
-            return;
-        }
+        parent::__construct($level);
 
-        echo sprintf("[%s] %s\n", (new \DateTime())->format('Y-m-d H:i:s'), $message);
-
-        if ($extraData !== null) {
-            $this->logExtraData($extraData);
-        }
+        $this->format = $showTimestamps
+            ? '[%2$s] %1$s'
+            : '%s';
     }
 
-    private function logExtraData($extraData)
+    public function log(int $logLevel, string $message, $extraData = null): Promise
     {
-        if (!$this->meetsLogLevel(Level::EXTRA_DATA) && $extraData !== null) {
-            return;
+        if (!$this->meetsLogLevel($logLevel)) {
+            return new Success();
         }
 
-        var_dump($extraData);
+        printf("{$this->format}\n", $message, (new \DateTime())->format('Y-m-d H:i:s'));
+
+        if ($extraData !== null && $this->meetsLogLevel(Level::EXTRA_DATA)) {
+            var_dump($extraData);
+        }
+
+        return new Success();
     }
 }

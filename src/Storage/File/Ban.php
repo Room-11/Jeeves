@@ -2,54 +2,25 @@
 
 namespace Room11\Jeeves\Storage\File;
 
+use Amp\Promise;
+use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Ban as BanStorage;
-use function Amp\File\exists;
-use function Amp\File\get;
-use function Amp\File\put;
+use function Amp\resolve;
 
 class Ban implements BanStorage
 {
-    private $dataFile;
+    private $accessor;
+    private $dataFileTemplate;
 
-    public function __construct(string $dataFile) {
-        $this->dataFile = $dataFile;
-    }
-
-    public function getAll(): \Generator {
-        if (!yield exists($this->dataFile)) {
-            return [];
-        }
-
-        $banned = yield get($this->dataFile);
-
-        yield from $this->clearExpiredBans(json_decode($banned, true));
-
-        $banned = yield get($this->dataFile);
-
-        return json_decode($banned, true);
-    }
-
-    public function isBanned(int $userId): \Generator {
-        // inb4 people "testing" banning me
-        if ($userId === 508666) {
-            return false;
-        }
-
-        $banned = yield from $this->getAll();
-
-        return array_key_exists($userId, $banned) && new \DateTimeImmutable($banned[$userId]) > new \DateTimeImmutable();
-    }
-
-    public function add(int $userId, string $duration): \Generator {
-        $banned = yield from $this->getAll();
-
-        $banned[$userId] = $this->getExpiration($duration)->format('Y-m-d H:i:s');
-
-        yield put($this->dataFile, json_encode($banned));
+    public function __construct(JsonFileAccessor $accessor, string $dataFile) {
+        $this->dataFileTemplate = $dataFile;
+        $this->accessor = $accessor;
     }
 
     // duration string should be in the format of [nd(ays)][nh(ours)][nm(inutes)][ns(econds)]
-    private function getExpiration(string $duration): \DateTimeImmutable {
+    private function getExpiration(string $duration): \DateTimeImmutable
+    {
         $expiration = new \DateTimeImmutable();
 
         if (!preg_match('/^((?P<days>\d+)d)?((?P<hours>\d+)h)?((?P<minutes>\d+)m)?((?P<seconds>\d+)s)?$/', $duration, $matches)) {
@@ -82,24 +53,44 @@ class Ban implements BanStorage
         return $expiration->add(new \DateInterval($dateInterval));
     }
 
-    public function remove(int $userId): \Generator {
-        if (!yield from $this->isBanned($userId)) {
-            return;
-        }
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @return Promise
+     */
+    public function getAll(ChatRoom $room): Promise
+    {
+        return $this->accessor->writeCallback(function($data) {
+            $now = new \DateTimeImmutable();
 
-        $banned = yield from $this->getAll();
-
-        unset($banned[$userId]);
-
-        yield put($this->dataFile, json_encode($banned));
+            return array_filter($data, function($expiration) use($now) {
+                return new \DateTimeImmutable($expiration) > $now;
+            });
+        }, $this->dataFileTemplate, $room);
     }
 
-    private function clearExpiredBans(array $banned): \Generator
+    public function isBanned(ChatRoom $room, int $userId): Promise
     {
-        $nonExpiredBans = array_filter($banned, function($expiration) {
-            return new \DateTimeImmutable($expiration) > new \DateTimeImmutable();
-        });
+        return resolve(function() use($room, $userId) {
+            $banned = yield $this->accessor->read($this->dataFileTemplate, $room);
 
-        yield put($this->dataFile, json_encode($nonExpiredBans));
+            return array_key_exists($userId, $banned)
+                && new \DateTimeImmutable($banned[$userId]) > new \DateTimeImmutable();
+        });
+    }
+
+    public function add(ChatRoom $room, int $userId, string $duration): Promise
+    {
+        return $this->accessor->writeCallback(function($data) use($userId, $duration) {
+            $data[$userId] = $this->getExpiration($duration)->format('Y-m-d H:i:s');
+            return $data;
+        }, $this->dataFileTemplate, $room);
+    }
+
+    public function remove(ChatRoom $room, int $userId): Promise
+    {
+        return $this->accessor->writeCallback(function($data) use($userId) {
+            unset($data[$userId]);
+            return $data;
+        }, $this->dataFileTemplate, $room);
     }
 }

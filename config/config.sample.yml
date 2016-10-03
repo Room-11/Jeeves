@@ -1,19 +1,62 @@
 # https://openid.stackexchange.com/account/login
-username: %username%
-password: %password%
+openids:
+  default:
+    username: %username%
+    password: %password%
+  stackoverflow.com:
+    username: %username%
+    password: %password%
 
-room:
-  hostname: chat.stackoverflow.com
-  secure: true
-  id: 100286
+rooms:
+  -
+    hostname: chat.stackoverflow.com
+    id: 110670
+  -
+    hostname: chat.stackoverflow.com
+    id: 100286
 
 logging:
   level: ALL | DEBUG
   handler: Room11\Jeeves\Log\StdOut
+  params:
+    includeTimestamps: true
 
 storage:
   admin: Room11\Jeeves\Storage\File\Admin
   ban: Room11\Jeeves\Storage\File\Ban
+  keyvalue: Room11\Jeeves\Storage\File\KeyValue
+  plugin: Room11\Jeeves\Storage\File\Plugin
+  room: Room11\Jeeves\Storage\File\Room
+
+plugins:
+  - Room11\Jeeves\Plugins\Canon
+  - Room11\Jeeves\Plugins\Chuck
+  - Room11\Jeeves\Plugins\CodeFormat
+  - Room11\Jeeves\Plugins\Docs
+  - Room11\Jeeves\Plugins\EvalCode
+  - Room11\Jeeves\Plugins\Giphy
+  - Room11\Jeeves\Plugins\Github
+  - Room11\Jeeves\Plugins\Google
+  - Room11\Jeeves\Plugins\HttpRequester
+  - Room11\Jeeves\Plugins\Imdb
+  - Room11\Jeeves\Plugins\Lick
+  - Room11\Jeeves\Plugins\Man
+  - Room11\Jeeves\Plugins\Mdn
+  - Room11\Jeeves\Plugins\Packagist
+  - Room11\Jeeves\Plugins\PHPSrcGrok
+  - Room11\Jeeves\Plugins\Rebecca
+  - Room11\Jeeves\Plugins\Regex
+  - Room11\Jeeves\Plugins\RePinner
+  - Room11\Jeeves\Plugins\RFC
+  - Room11\Jeeves\Plugins\SwordFight
+  - Room11\Jeeves\Plugins\Terminator
+  - Room11\Jeeves\Plugins\Tweet
+  - Room11\Jeeves\Plugins\Urban
+  - Room11\Jeeves\Plugins\Wikipedia
+  - Room11\Jeeves\Plugins\Wotd
+  - Room11\Jeeves\Plugins\Xkcd
+  - Room11\Jeeves\Plugins\Changelog
+  - Room11\Jeeves\Plugins\Reminder
 
 twitter:
   consumerKey: YourConsumerKey
@@ -23,3 +66,22 @@ twitter:
 
 bitly:
   accessToken: YourBitlyAccessToken
+
+ms-translate:
+  client-id: YourClientID
+  client-secret: YourClientSecret
+
+web-api:
+  enable: true
+  bind-addr: 0.0.0.0
+  bind-port: 1337
+  #host: hostname.tld
+  ssl:
+    enable: false
+    #cert-path: /path/to/ssl.cert
+    #cert-path: /path/to/ssl.key
+    #context: # See http://php.net/context.ssl
+      #disable_compression: true
+
+dev-mode:
+  enable: true

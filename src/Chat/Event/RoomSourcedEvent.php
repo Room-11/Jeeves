@@ -2,7 +2,9 @@
 
 namespace Room11\Jeeves\Chat\Event;
 
-interface RoomSourcedEvent
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+
+interface RoomSourcedEvent extends Event
 {
-    public function getRoomId(): int;
+    public function getRoom(): ChatRoom;
 }
