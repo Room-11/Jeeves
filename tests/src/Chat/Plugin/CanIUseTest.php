@@ -32,7 +32,7 @@ class CanIUseTest extends AbstractPluginTest
         $this->assertCount(1, $result, 'Command endpoints array doesn\'t contain exactly 1 endpoint definition.');
     }
 
-    public function testGetLinkCommand()
+    public function testGetLinkCommandWithSearchParameters()
     {
         /** @var CanIUse $plugin */
         $plugin = $this->plugin;
@@ -52,6 +52,31 @@ class CanIUseTest extends AbstractPluginTest
             ->with(
                 $this->identicalTo($command),
                 $this->equalTo('[Can I Use Search: `flexbox css3`](http://caniuse.com/flexbox+css3)')
+            );
+
+        $plugin->getLink($command);
+    }
+
+    public function testGetLinkCommandWithoutSearchParameters()
+    {
+        /** @var CanIUse $plugin */
+        $plugin = $this->plugin;
+        $client = $this->client;
+
+        $command = $this->getMockBuilder(Command::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $command
+            ->expects($this->once())
+            ->method('getParameters')
+            ->will($this->returnValue([]));
+
+        $client
+            ->expects($this->once())
+            ->method('postReply')
+            ->with(
+                $this->identicalTo($command),
+                $this->equalTo('[Can I Use - Support tables for HTML5, CSS3, etc](http://caniuse.com)')
             );
 
         $plugin->getLink($command);
