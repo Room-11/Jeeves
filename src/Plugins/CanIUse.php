@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Plugins;
 
+use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
@@ -47,9 +48,9 @@ class CanIUse extends BasePlugin
     /**
      * Entry point for generating and returning a link from the command.
      * @param Command $command
-     * @return \Generator
+     * @return Promise
      */
-    public function getLink(Command $command): \Generator
+    public function getLink(Command $command): Promise
     {
         return $this->chatClient->postReply(
             $command,
@@ -73,7 +74,7 @@ class CanIUse extends BasePlugin
         $url = self::DOMAIN;
 
         if (strlen($searchFor) > 0) {
-            $title = sprintf('Can I Use - `%s`', ucwords($searchFor));
+            $title = sprintf('Can I Use Search: `%s`', $searchFor);
             $url = $this->generateSearchUri($searchFor);
         }
 
