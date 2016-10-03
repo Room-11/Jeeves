@@ -4,24 +4,32 @@ namespace Room11\Jeeves\Tests\Chat\Plugin;
 
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Plugins\CanIUse;
+use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class CanIUseTest extends AbstractPluginTest
 {
-    /**
-     * @inheritdoc
-     */
-    protected function setUp()
-    {
-        parent::setUp();
-
-        $this->plugin = new CanIUse($this->client);
-    }
-
     public function testCommandName()
     {
         $this->assertSame('CanIUse', $this->plugin->getName());
+        $this->assertSame(
+            'A quick search tool for CanIUse, a browser comparability feature list for modern standards.',
+            $this->plugin->getDescription()
+        );
         $this->assertSame([], $this->plugin->getEventHandlers());
         $this->assertSame(null, $this->plugin->getMessageHandler());
+    }
+
+    public function testValidCommandEndpoints()
+    {
+        $result = $this->plugin->getCommandEndpoints();
+
+        $this->assertContainsOnlyInstancesOf(
+            PluginCommandEndpoint::class,
+            $result,
+            'Command endpoints array doesn\'t contain only valid endpoint definitions.'
+        );
+
+        $this->assertCount(1, $result, 'Command endpoints array doesn\'t contain exactly 1 endpoint definition.');
     }
 
     public function testGetLinkCommand()
@@ -47,5 +55,15 @@ class CanIUseTest extends AbstractPluginTest
             );
 
         $plugin->getLink($command);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function setUp()
+    {
+        parent::setUp();
+
+        $this->plugin = new CanIUse($this->client);
     }
 }
