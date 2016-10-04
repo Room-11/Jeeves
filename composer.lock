@@ -739,16 +739,17 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PeeHaa/AsyncTwitter.git",
-                "reference": "a8f3db370d623fd8877cf48240cd3deb9ae366c7"
+                "reference": "4993cd3ed97b5d68acc5fadff30c004d50860a33"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/a8f3db370d623fd8877cf48240cd3deb9ae366c7",
-                "reference": "a8f3db370d623fd8877cf48240cd3deb9ae366c7",
+                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/4993cd3ed97b5d68acc5fadff30c004d50860a33",
+                "reference": "4993cd3ed97b5d68acc5fadff30c004d50860a33",
                 "shasum": ""
             },
             "require": {
                 "amphp/artax": "^2",
+                "daverandom/exceptional-json": "^1.0",
                 "php": "^7"
             },
             "require-dev": {
@@ -781,7 +782,7 @@
                 "parallel",
                 "twitter"
             ],
-            "time": "2016-10-03 15:17:39"
+            "time": "2016-10-04 14:23:22"
         },
         {
             "name": "php-ds/php-ds",
@@ -1151,16 +1152,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.1.4",
+            "version": "v3.1.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "f291ed25eb1435bddbe8a96caaef16469c2a092d"
+                "reference": "368b9738d4033c8b93454cb0dbd45d305135a6d3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/f291ed25eb1435bddbe8a96caaef16469c2a092d",
-                "reference": "f291ed25eb1435bddbe8a96caaef16469c2a092d",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/368b9738d4033c8b93454cb0dbd45d305135a6d3",
+                "reference": "368b9738d4033c8b93454cb0dbd45d305135a6d3",
                 "shasum": ""
             },
             "require": {
@@ -1196,7 +1197,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2016-09-02 02:12:52"
+            "time": "2016-09-25 08:27:07"
         }
     ],
     "packages-dev": [
