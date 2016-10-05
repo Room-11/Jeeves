@@ -15,10 +15,10 @@ class AntiW3Schools extends BasePlugin
         'html' => '[Check the Mozilla Developer Network HTML documentation](https://developer.mozilla.org/docs/Web/HTML) for help with HTML.',
         'css' => '[Check the Mozilla Developer Network CSS documentation](https://developer.mozilla.org/docs/Web/CSS) for help with CSS.',
         'js' => '[Check the Mozilla Developer Network JS documentation](https://developer.mozilla.org/docs/Web/JavaScript) for help with JavaScript.',
-        'sql' => '[Check MySQL\'s official MySQL documentation](http://dev.mysql.com/doc/) for more information.',
-        'php' => '[Check the official PHP Documentation](http://php.net/docs.php) for help with PHP.',
-        'bootstrap' => '[Check the official Bootstrap Documentation](http://getbootstrap.com/getting-started/) for help with the Bootstrap framework.',
-        'jquery' => '[Check the official jQuery API Documentation](http://api.jquery.com/) for help with the jQuery library.',
+        'sql' => '[Check MySQL\'s official MySQL documentation](https://dev.mysql.com/doc/) for more information.',
+        'php' => '[Check the official PHP Documentation](https://secure.php.net/docs.php) for help with PHP.',
+        'bootstrap' => '[Check the official Bootstrap Documentation](https://getbootstrap.com/getting-started/) for help with the Bootstrap framework.',
+        'jquery' => '[Check the official jQuery API Documentation](https://api.jquery.com/) for help with the jQuery library.',
         'angular' => '[Check the official AngularJS API Documentation](https://docs.angularjs.org/api) for help with the AngularJS framework.',
         'xml'=> '[Check W3\'s documentation on XML](https://www.w3.org/standards/xml/core) for more information.',
         'ajax' => '[Check the Mozilla Developer Network AJAX documentation](https://developer.mozilla.org/docs/AJAX) for more information.',
@@ -74,7 +74,7 @@ class AntiW3Schools extends BasePlugin
      */
     private function containsTerribleUri(string $text) : bool
     {
-        return preg_match('/' . self::BAD_HOST_PATTERN . '/i', $text) === 1;
+        return preg_match('#' . self::BAD_HOST_PATTERN . '#i', $text) === 1;
     }
 
     /**
@@ -110,7 +110,7 @@ class AntiW3Schools extends BasePlugin
 
         if(
             !preg_match_all(
-                '/' . self::BAD_HOST_PATTERN . '\/(' . implode('|', $categoryNames) . ')\//i',
+                '#' . self::BAD_HOST_PATTERN . '/(' . implode('|', $categoryNames) . ')/#i',
                 $text,
                 $matchSets
             ) > 0
