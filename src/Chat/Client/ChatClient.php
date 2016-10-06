@@ -51,9 +51,24 @@ class ChatClient
         $this->urlResolver = $urlResolver;
     }
 
-    private function applyPostFlagsToText(string $text, int $flags)
+    private function checkAndNormaliseEncoding(string $text): string
     {
-        $text = rtrim($text);
+        if (!mb_check_encoding($text, self::ENCODING)) {
+            throw new MessagePostFailureException('Message text encoding invalid');
+        }
+
+        $text = \Normalizer::normalize(rtrim($text), \Normalizer::FORM_C);
+
+        if ($text === false) {
+            throw new MessagePostFailureException('Failed to normalize message text');
+        }
+
+        return $text;
+    }
+
+    private function applyPostFlagsToText(string $text, int $flags): string
+    {
+        $text = rtrim($this->checkAndNormaliseEncoding($text));
 
         if ($flags & PostFlags::SINGLE_LINE) {
             $text = preg_replace('#\s+#u', ' ', $text);
@@ -343,10 +358,6 @@ class ChatClient
                 throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
             }
 
-            if (!mb_check_encoding($text, self::ENCODING)) {
-                throw new MessagePostFailureException('Message text encoding invalid');
-            }
-
             $text = $this->applyPostFlagsToText($text, $flags);
 
             $body = (new FormBody)
@@ -374,10 +385,6 @@ class ChatClient
 
     public function editMessage(PostedMessage $message, string $text, int $flags = PostFlags::NONE): Promise
     {
-        if (!mb_check_encoding($text, self::ENCODING)) {
-            throw new MessagePostFailureException('Message text encoding invalid');
-        }
-
         $text = $this->applyPostFlagsToText($text, $flags);
 
         $body = (new FormBody)
