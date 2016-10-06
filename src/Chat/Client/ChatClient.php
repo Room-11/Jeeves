@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
+use function Amp\all;
 use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
@@ -213,6 +214,32 @@ class ChatClient
         return resolve(function() use($request, $identifier) {
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($request);
+
+            return array_map(function($data) use($identifier) {
+                return new ChatUser($data);
+            }, json_try_decode($response->getBody(), true)['users'] ?? []);
+        });
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param int[] ...$ids
+     * @return Promise
+     */
+    public function getMainSiteUsers($room, int ...$ids): Promise
+    {
+        $identifier = $this->getIdentifierFromArg($room);
+
+        $promises = [];
+
+        foreach ($ids as $id) {
+            $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::MAINSITE_USER, $id);
+            $promises[] = $this->httpClient->request($url);
+        }
+
+        return resolve(function() use($promises, $identifier) {
+            /** @var HttpResponse[] $responses */
+            $responses = yield all($promises);
 
             return array_map(function($data) use($identifier) {
                 return new ChatUser($data);

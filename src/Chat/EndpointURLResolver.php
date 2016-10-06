@@ -35,7 +35,7 @@ class EndpointURLResolver
         Endpoint::CHAT_USER_INFO               => 'https://%1$s/user/info',
         Endpoint::CHAT_USER_INFO_EXTRA         => 'https://%1$s/users/thumbs/%3$d?showUsage=false',
 
-        Endpoint::MAINSITE_USER                => '%1$s/users/%2$d',
+        Endpoint::MAINSITE_USER                => '%1$s/users/%2$d?tab=profile',
     ];
 
     private $roomCollection;
