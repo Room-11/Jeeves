@@ -107,14 +107,10 @@ class AntiW3Schools extends BasePlugin
         $categoryNames = array_keys(self::W3S_CATEGORY_RESPONSES);
 
         $matchSets = [];
+        $categoryMatchPattern = '#' . self::BAD_HOST_PATTERN . '/(' . implode('|', $categoryNames) . ')/#i';
+        $matchResult = preg_match_all($categoryMatchPattern, $text, $matchSets);
 
-        if(
-            !preg_match_all(
-                '#' . self::BAD_HOST_PATTERN . '/(' . implode('|', $categoryNames) . ')/#i',
-                $text,
-                $matchSets
-            ) > 0
-        ) {
+        if($matchResult === 0 || $matchResult === false) {
             // If no matches were found (or the regex failed), return no results.
             return [];
         }
