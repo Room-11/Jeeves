@@ -100,7 +100,7 @@ class Message
         }
 
         $userName = preg_quote($this->event->getRoom()->getSession()->getUser()->getName(), '#');
-        $expr = '#(?:^|\s)@' . $userName . '(?:\s|$)#i';
+        $expr = '#@' . $userName . '(?:\s|$)#i';
 
         return (bool)preg_match($expr, $this->getText());
     }
