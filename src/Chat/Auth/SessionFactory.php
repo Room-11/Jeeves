@@ -2,11 +2,11 @@
 
 namespace Room11\Jeeves\Chat\Auth;
 
-use Room11\Jeeves\Chat\Entities\User;
+use Room11\Jeeves\Chat\Entities\ChatUser;
 
 class SessionFactory
 {
-    public function build(User $user, string $fkey, string $mainSiteUrl, string $webSocketUrl)
+    public function build(ChatUser $user, string $fkey, string $mainSiteUrl, string $webSocketUrl)
     {
         return new Session($user, $fkey, $mainSiteUrl, $webSocketUrl);
     }

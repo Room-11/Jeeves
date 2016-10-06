@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Entities;
 
-class User
+class ChatUser
 {
     const GRAVATAR_URL_TEMPLATE = 'https://www.gravatar.com/avatar/%s?s=256&d=identicon&r=PG';
 

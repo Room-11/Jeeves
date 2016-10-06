@@ -5,7 +5,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Artax\HttpClient;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Entities\User;
+use Room11\Jeeves\Chat\Entities\ChatUser;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
@@ -38,9 +38,9 @@ class Admin implements BuiltInCommand
 
         $users = /** @noinspection PhpStrictTypeCheckingInspection */
             yield $this->chatClient->getChatUsers($command->getRoom(), ...$userIds);
-        usort($users, function (User $a, User $b) { return strcasecmp($a->getName(), $b->getName()); });
+        usort($users, function (ChatUser $a, ChatUser $b) { return strcasecmp($a->getName(), $b->getName()); });
 
-        $list = implode(', ', array_map(function(User $user) use($admins) {
+        $list = implode(', ', array_map(function(ChatUser $user) use($admins) {
             return in_array($user->getId(), $admins['owners'])
                 ? '*' . $user->getName() . '*'
                 : $user->getName();

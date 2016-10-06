@@ -9,7 +9,7 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\DOMUtils\ElementNotFoundException;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Entities\User;
+use Room11\Jeeves\Chat\Entities\ChatUser;
 use Room11\Jeeves\Chat\Client\Actions\ActionFactory;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\UserAccessType as ChatRoomAccessType;
@@ -215,7 +215,7 @@ class ChatClient
             $response = yield $this->httpClient->request($request);
 
             return array_map(function($data) use($identifier) {
-                return new User($data);
+                return new ChatUser($data);
             }, json_try_decode($response->getBody(), true)['users'] ?? []);
         });
     }
