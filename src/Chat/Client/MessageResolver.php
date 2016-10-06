@@ -22,6 +22,24 @@ class MessageResolver
         $this->chatClient = $chatClient;
     }
 
+    public function resolveMessageIDFromPermalink(string $text, string $domain = null): int
+    {
+        static $exprTemplates = [
+            '~\bhttps?://%s/transcript/message/(\d+)(?:#\1)\b~i',
+            '~\bhttps?://%s/transcript/\d+\?m=(\d+)(?:#\1)\b~i',
+        ];
+
+        foreach ($exprTemplates as $exprTemplate) {
+            $expr = sprintf($exprTemplate, $domain ? preg_quote($domain) : DNS_NAME_EXPR);
+
+            if (preg_match($expr, $text, $match)) {
+                return (int)$match[1];
+            }
+        }
+
+        throw new MessageIDNotFoundException;
+    }
+
     public function resolveMessageText(Room $room, string $text, int $flags = self::MATCH_ANY): Promise
     {
         if (preg_match('~^:\d+\s+(.+)~', $text, $match)) {
@@ -30,24 +48,18 @@ class MessageResolver
 
         return resolve(function() use($room, $text, $flags) {
             if ($flags & self::MATCH_PERMALINKS) {
-                $exprs = [
-                    '~\bhttps?://' . DNS_NAME_EXPR . '/transcript/message/(\d+)(?:#\1)\b~i',
-                    '~\bhttps?://' . DNS_NAME_EXPR . '/transcript/\d+\?m=(\d+)(?:#\1)\b~i',
-                ];
+                try {
+                    $messageID = $this->resolveMessageIDFromPermalink($text);
+                    $text = yield $this->chatClient->getMessageText($room, $messageID);
 
-                foreach ($exprs as $expr) {
-                    if (preg_match($expr, $text, $match)) {
-                        $text = yield $this->chatClient->getMessageText($room, (int)$match[1]);
-
-                        return ($flags & self::RECURSE)
-                            ? $this->resolveMessageText($room, $text, $flags | self::MATCH_LITERAL_TEXT)
-                            : $text;
-                    }
-                }
+                    return ($flags & self::RECURSE)
+                        ? $this->resolveMessageText($room, $text, $flags | self::MATCH_LITERAL_TEXT)
+                        : $text;
+                } catch (MessageIDNotFoundException $e) { /* ignore, there may be other matches */ }
             }
 
-            if (($flags & self::MATCH_MESSAGE_IDS) && preg_match('~^(\d+)$~', $text, $match)) {
-                $text = yield $this->chatClient->getMessageText($room, (int)$match[1]);
+            if (($flags & self::MATCH_MESSAGE_IDS) && ctype_digit($text)) {
+                $text = yield $this->chatClient->getMessageText($room, (int)$text);
 
                 return ($flags & self::RECURSE)
                     ? $this->resolveMessageText($room, $text, $flags | self::MATCH_LITERAL_TEXT)
