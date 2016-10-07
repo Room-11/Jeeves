@@ -23,6 +23,7 @@
         "php": ">=7",
         "lib-libxml": ">=2.7.8",
         "ext-mbstring": "*",
+        "ext-intl": "*",
 
         "amphp/amp": "^1.2",
         "amphp/artax": "^2",

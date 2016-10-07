@@ -2,14 +2,16 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
+use function Amp\all;
 use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\DOMUtils\ElementNotFoundException;
+use Room11\Jeeves\Chat\Entities\MainSiteUser;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Entities\User;
+use Room11\Jeeves\Chat\Entities\ChatUser;
 use Room11\Jeeves\Chat\Client\Actions\ActionFactory;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\UserAccessType as ChatRoomAccessType;
@@ -51,9 +53,24 @@ class ChatClient
         $this->urlResolver = $urlResolver;
     }
 
-    private function applyPostFlagsToText(string $text, int $flags)
+    private function checkAndNormaliseEncoding(string $text): string
     {
-        $text = rtrim($text);
+        if (!mb_check_encoding($text, self::ENCODING)) {
+            throw new MessagePostFailureException('Message text encoding invalid');
+        }
+
+        $text = \Normalizer::normalize(rtrim($text), \Normalizer::FORM_C);
+
+        if ($text === false) {
+            throw new MessagePostFailureException('Failed to normalize message text');
+        }
+
+        return $text;
+    }
+
+    private function applyPostFlagsToText(string $text, int $flags): string
+    {
+        $text = rtrim($this->checkAndNormaliseEncoding($text));
 
         if ($flags & PostFlags::SINGLE_LINE) {
             $text = preg_replace('#\s+#u', ' ', $text);
@@ -200,8 +217,38 @@ class ChatClient
             $response = yield $this->httpClient->request($request);
 
             return array_map(function($data) use($identifier) {
-                return new User($data);
+                return new ChatUser($data);
             }, json_try_decode($response->getBody(), true)['users'] ?? []);
+        });
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param int[] ...$ids
+     * @return Promise
+     */
+    public function getMainSiteUsers($room, int ...$ids): Promise
+    {
+        $identifier = $this->getIdentifierFromArg($room);
+
+        $promises = [];
+
+        foreach ($ids as $id) {
+            $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::MAINSITE_USER, $id);
+            $promises[$id] = $this->httpClient->request($url);
+        }
+
+        return resolve(function() use($promises, $identifier) {
+            /** @var HttpResponse[] $responses */
+            $responses = yield all($promises);
+
+            $result = [];
+
+            foreach ($responses as $id => $response) {
+                $result[$id] = MainSiteUser::createFromDOMDocument(domdocument_load_html($response->getBody()));
+            }
+
+            return $result;
         });
     }
 
@@ -255,6 +302,32 @@ class ChatClient
             }
 
             return null;
+        });
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param string[] $names
+     * @return Promise<int[]>
+     */
+    public function getPingableUserIDs($room, string ...$names): Promise
+    {
+        return resolve(function() use($room, $names) {
+            $users = yield $this->getPingableUsers($room);
+            $result = [];
+
+            foreach ($names as $name) {
+                $lower = strtolower($name);
+
+                foreach ($users as $user) {
+                    if (strtolower($user['name']) === $lower || strtolower($user['pingable']) === $lower) {
+                        $result[$name] = $user['id'];
+                        break;
+                    }
+                }
+            }
+
+            return $result;
         });
     }
 
@@ -343,10 +416,6 @@ class ChatClient
                 throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
             }
 
-            if (!mb_check_encoding($text, self::ENCODING)) {
-                throw new MessagePostFailureException('Message text encoding invalid');
-            }
-
             $text = $this->applyPostFlagsToText($text, $flags);
 
             $body = (new FormBody)
@@ -374,10 +443,6 @@ class ChatClient
 
     public function editMessage(PostedMessage $message, string $text, int $flags = PostFlags::NONE): Promise
     {
-        if (!mb_check_encoding($text, self::ENCODING)) {
-            throw new MessagePostFailureException('Message text encoding invalid');
-        }
-
         $text = $this->applyPostFlagsToText($text, $flags);
 
         $body = (new FormBody)

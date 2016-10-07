@@ -14,7 +14,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Endpoint;
 use Room11\Jeeves\Chat\EndpointURLResolver;
-use Room11\Jeeves\Chat\Entities\User;
+use Room11\Jeeves\Chat\Entities\ChatUser;
 use Room11\Jeeves\Chat\WebSocket\EventDispatcher;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
@@ -342,7 +342,7 @@ class PresenceManager
         catch (AlreadyApprovedException $e) { /* this should never happen but just in case */ }
         catch (UserNotAcceptableException $e) { /* this can happen but we don't care */ }
 
-        /** @var User $invitingUser */
+        /** @var ChatUser $invitingUser */
         $botUser = $room->getSession()->getUser();
         $invitingUser = (yield $this->chatClient->getChatUsers($room, $invitingUserID))[0];
         $invitingUserProfileURL = $this->urlResolver->getEndpointURL($room, Endpoint::CHAT_USER, $invitingUser->getId());

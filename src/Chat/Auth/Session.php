@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Auth;
 
-use Room11\Jeeves\Chat\Entities\User;
+use Room11\Jeeves\Chat\Entities\ChatUser;
 
 class Session
 {
@@ -11,7 +11,7 @@ class Session
     private $mainSiteUrl;
     private $webSocketUrl;
 
-    public function __construct(User $user, string $fkey, string $mainSiteUrl, string $webSocketUrl)
+    public function __construct(ChatUser $user, string $fkey, string $mainSiteUrl, string $webSocketUrl)
     {
         $this->user = $user;
         $this->fkey = $fkey;
@@ -19,7 +19,7 @@ class Session
         $this->webSocketUrl = $webSocketUrl;
     }
 
-    public function getUser(): User
+    public function getUser(): ChatUser
     {
         return $this->user;
     }

@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "41b3ec1c0f5b7180076471e7b8dd6b60",
-    "content-hash": "3b7e69c47577ceb60c382569a0d00b9e",
+    "hash": "fa61142947c0671a30cdd41670ea8d1c",
+    "content-hash": "195d130cf079404da6416640d7fc671f",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -739,16 +739,17 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PeeHaa/AsyncTwitter.git",
-                "reference": "a8f3db370d623fd8877cf48240cd3deb9ae366c7"
+                "reference": "4993cd3ed97b5d68acc5fadff30c004d50860a33"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/a8f3db370d623fd8877cf48240cd3deb9ae366c7",
-                "reference": "a8f3db370d623fd8877cf48240cd3deb9ae366c7",
+                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/4993cd3ed97b5d68acc5fadff30c004d50860a33",
+                "reference": "4993cd3ed97b5d68acc5fadff30c004d50860a33",
                 "shasum": ""
             },
             "require": {
                 "amphp/artax": "^2",
+                "daverandom/exceptional-json": "^1.0",
                 "php": "^7"
             },
             "require-dev": {
@@ -781,7 +782,7 @@
                 "parallel",
                 "twitter"
             ],
-            "time": "2016-10-03 15:17:39"
+            "time": "2016-10-04 14:23:22"
         },
         {
             "name": "php-ds/php-ds",
@@ -940,16 +941,16 @@
         },
         {
             "name": "room11/dom-utils",
-            "version": "v1.0.2",
+            "version": "v1.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/DOMUtils.git",
-                "reference": "4de002616b32aaf5b8942d12c370774e82a4afd2"
+                "reference": "19817c58a16c2434fd17448dd85c8eb562c677f1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/4de002616b32aaf5b8942d12c370774e82a4afd2",
-                "reference": "4de002616b32aaf5b8942d12c370774e82a4afd2",
+                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/19817c58a16c2434fd17448dd85c8eb562c677f1",
+                "reference": "19817c58a16c2434fd17448dd85c8eb562c677f1",
                 "shasum": ""
             },
             "type": "library",
@@ -971,7 +972,7 @@
                 }
             ],
             "description": "Utility functions for the PHP DOM extension",
-            "time": "2016-05-13 17:03:09"
+            "time": "2016-10-07 19:04:41"
         },
         {
             "name": "room11/openid",
@@ -1151,16 +1152,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.1.4",
+            "version": "v3.1.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "f291ed25eb1435bddbe8a96caaef16469c2a092d"
+                "reference": "368b9738d4033c8b93454cb0dbd45d305135a6d3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/f291ed25eb1435bddbe8a96caaef16469c2a092d",
-                "reference": "f291ed25eb1435bddbe8a96caaef16469c2a092d",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/368b9738d4033c8b93454cb0dbd45d305135a6d3",
+                "reference": "368b9738d4033c8b93454cb0dbd45d305135a6d3",
                 "shasum": ""
             },
             "require": {
@@ -1196,7 +1197,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2016-09-02 02:12:52"
+            "time": "2016-09-25 08:27:07"
         }
     ],
     "packages-dev": [
@@ -2411,7 +2412,8 @@
     "platform": {
         "php": ">=7",
         "lib-libxml": ">=2.7.8",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "ext-intl": "*"
     },
     "platform-dev": []
 }

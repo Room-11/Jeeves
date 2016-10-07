@@ -90,7 +90,7 @@ class Message
 
     public function getParentMessageId()
     {
-        return $this->getEvent()->getParentId();
+        return $this->event->getParentId();
     }
 
     public function isConversation()
