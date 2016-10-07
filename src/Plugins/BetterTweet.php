@@ -5,7 +5,6 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use PeeHaa\AsyncTwitter\Api\Client as TwitterClient;
 use PeeHaa\AsyncTwitter\Api\ClientFactory as TwitterClientFactory;
-use PeeHaa\AsyncTwitter\Api\Request as TwitterRequest;
 use PeeHaa\AsyncTwitter\Api\RequestFailedException as TwitterRequestFailedException;
 use PeeHaa\AsyncTwitter\Api\Status\Retweet as RetweetRequest;
 use PeeHaa\AsyncTwitter\Api\Status\Update as UpdateRequest;
@@ -14,6 +13,7 @@ use Room11\DOMUtils\LibXMLFatalErrorException;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\MessageIDNotFoundException;
 use Room11\Jeeves\Chat\Client\MessageResolver as ChatMessageResolver;
+use Room11\Jeeves\Chat\Entities\MainSiteUser;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Exception;
@@ -139,9 +139,32 @@ class BetterTweet extends BasePlugin
         }
     }
 
-    private function removePings(string $text): string
+    private function replacePings(ChatRoom $room, string $text)
     {
-        return preg_replace('/(?:^|\s)@([^\s]+)(?:$|\s)/', '', $text);
+        static $pingExpr = '/@([^\s]+)(?=$|\s)/';
+
+        if (!preg_match_all($pingExpr, $text, $matches)) {
+            return $text;
+        }
+
+        $pingableIDs = yield $this->chatClient->getPingableUserIDs($room, ...$matches[1]);
+        /** @var int $ids because PHP storm is dumb */
+        $ids = array_values($pingableIDs);
+        $users = yield $this->chatClient->getMainSiteUsers($room, ...$ids);
+
+        /** @var MainSiteUser[] $pingableUsers */
+        $pingableUsers = [];
+        foreach ($pingableIDs as $name => $id) {
+            $pingableUsers[$name] = $users[$id];
+        }
+
+        return preg_replace_callback($pingExpr, function($match) use($pingableUsers) {
+            $handle = isset($pingableUsers[$match[1]])
+                ? $pingableUsers[$match[1]]->getTwitterHandle()
+                : null;
+
+            return $handle !== null ? '@' . $handle : $match[1];
+        }, $text);
     }
 
     private function getClientForRoom(ChatRoom $room)
@@ -172,14 +195,14 @@ class BetterTweet extends BasePlugin
         return new RetweetRequest($this->getTweetIdFromMessage($dom));
     }
 
-    private function buildUpdateRequest(\DOMDocument $dom): UpdateRequest
+    private function buildUpdateRequest(ChatRoom $room, \DOMDocument $dom)
     {
         $this->replaceEmphasizeTags($dom);
         $this->replaceStrikeTags($dom);
         $this->replaceImages($dom);
         $this->replaceHrefs($dom);
 
-        $text = $this->removePings($dom->textContent);
+        $text = yield from $this->replacePings($room, $dom->textContent);
         $text = \Normalizer::normalize(trim($text), \Normalizer::FORM_C);
 
         if ($text === false) {
@@ -193,11 +216,11 @@ class BetterTweet extends BasePlugin
         return new UpdateRequest($text);
     }
 
-    private function buildTwitterRequest(\DOMDocument $dom): TwitterRequest
+    private function buildTwitterRequest(ChatRoom $room, \DOMDocument $dom)
     {
         return $this->isRetweet($dom)
             ? $this->buildRetweetRequest($dom)
-            : $this->buildUpdateRequest($dom);
+            : yield from $this->buildUpdateRequest($room, $dom);
     }
 
     public function tweet(Command $command)
@@ -214,7 +237,7 @@ class BetterTweet extends BasePlugin
 
             $message = yield from $this->getRawMessage($room, $command->getParameter(0));
 
-            $request = $this->buildTwitterRequest($message);
+            $request = yield from $this->buildTwitterRequest($room, $message);
 
             $result = yield $client->request($request);
 
