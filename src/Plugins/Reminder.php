@@ -68,60 +68,6 @@ class Reminder extends BasePlugin
         });
     }
 
-    private function startRandomConversation(string $target, string $message, string $setBy): string
-    {
-        $noGrumbles = $noStarters = false;
-
-        $last = substr($message, -1);
-        $chars = [ '.', '!', '?' ];
-        if(!in_array($last, $chars)) {
-            $message .= '. ';
-            $noGrumbles = true;
-        }
-
-        if ($target != "everyone") {
-
-            if($target != 'myself') {
-                $target = "@{$target}";
-
-                if("@{$setBy}" == $target) {
-                    $noStarters = true;
-                    $target .= ' ';
-                }
-
-            } else {
-                $target = '... '; # Jeeves remembers everything :P
-                $noStarters = $noGrumbles = true;
-            }
-
-        } else {
-            $target = 'o/ Everyone, ';
-            $noStarters = true;
-        }
-
-        $starters = [
-            ' wanted me to remind you ',
-            ' asked me to remind you '
-        ];
-
-        $who = ("@{$setBy}" == $target) ? 'you' : $setBy;
-        if($who == 'you') $noStarters = true;
-
-        $grumble = [
-            ' So get on that, would ya?',
-            " It's about time you get on that.",
-            " Let's not forget that."
-        ];
-
-        $message = (!$noStarters)
-            ? $target . ', earlier ' . $who . $starters[array_rand($starters)] . $message
-            : $target . $message;
-
-        if(!$noGrumbles) $message .= $grumble[array_rand($grumble)];
-
-        return $message;
-    }
-
     private function setReminder(Command $command, string $commandName): Promise
     {
         return resolve(function() use($command, $commandName) {
@@ -131,7 +77,6 @@ class Reminder extends BasePlugin
             switch ($commandName){
                 case 'in':
                     $parameters = $intervalParser->normalizeTimeInterval(implode(" ", $command->getParameters()));
-
                     $expression = IntervalParser::$intervalSeparatorDefinitions . IntervalParser::$intervalWithTrailingData;
 
                     if(preg_match($expression, $parameters, $matches)){
@@ -139,168 +84,46 @@ class Reminder extends BasePlugin
                         $text = $matches['trailing'] ?? false;
                     }
                     break;
+
                 case 'at':
                     $time = $command->getParameter(0) ?? false; // 24hrs
 
-                    if($time && preg_match(self::TIME_FORMAT_REGEX, $time)){ // maybe @TODO support !!at monday next week remind?
+                    if($time && preg_match(self::TIME_FORMAT_REGEX, $time)){
                         $text = implode(" ", array_diff($command->getParameters(), array($time)));
                     }
-
                     break;
-                case 'reminder':
 
-                   $parameters = implode(" ", $command->getParameters());
+                case 'reminder':
+                    $parameters = implode(" ", $command->getParameters());
 
                     if(!preg_match(self::REMINDER_REGEX, $parameters, $matches)){
                         return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
                     }
 
-                    $time = $matches[2] ?? '';
-                    $temp = $matches[1] ?? false;
-                    if(!$temp) break;
-                    $tempIsMessage = false;
+                    $time = $matches[2] ?? false;
+                    $string = $matches[1] ?? false;
+                    if(!$string || !$time) break;
+
+                    $textOrUser = $command->getParameter(0);
+                    $setBy = $command->getUserName();
 
                     # Find the target for message
-                    $textOrUser = $command->getParameter(0);
-                    switch ($textOrUser){
-                        case 'me':
-                            $target = $command->getUserName();
-                            break;
-                        case 'everyone':
-                            $target = "everyone";
-                            break;
-                        case 'yourself':
-                            $target  = 'myself';
-                            break;
-                        default:
-                            if(preg_match("/^@(?<username>.*)/ui", $textOrUser, $matches)){
-                                $target = $matches['username'];
-                                break;
-                            }
+                    $output  = $this->findMessageTarget($textOrUser, $string, $setBy);
+                    $target  = $output['target'];
+                    $message = $output['message'];
+                    # Decide what to say and to whom
+                    $message = $this->prepareReply($command, $target, $message);
 
-                            $target = $command->getUserName();
-                            $tempIsMessage = true;
-                            break;
-                    }
-
-                    $message = (!$tempIsMessage) ? substr($temp, strlen($textOrUser)) : $temp;
-
-                    # Check first parameter
-                    # remind [ to do something | that strpbrk is a thing | about something ] in 2hrs
-                    if (in_array($textOrUser, ['to', 'that', 'about'])) {
-                        $message = preg_replace("/{$textOrUser}/", '', $message, 1);
-                    }
-
-                    # Check 2nd parameter for context
-                    # remind @someone|me|yourself|everyone
-                    # reminder foo is bar
-                    $actionOrFact = $command->getParameter(1);
-                    switch ($textOrUser){
-                        case 'everyone':
-                            # remind everyone not to forget this in 2s
-                            if ($actionOrFact == 'not') {
-                                $actionOrFact .= '\s' . $command->getParameter(2);
-                                $message = preg_replace("/{$actionOrFact}/", 'do not', $message, 1);
-
-                            } elseif ($actionOrFact == 'to') {
-
-                                $replacement = '';
-                                # to not [ do something | forget stocking bourbons for the winter ]
-                                if ($command->getParameter(2) == 'not') {
-                                    $actionOrFact .= '\s' . $command->getParameter(2);
-                                    $replacement = 'do not';
-                                }
-
-                                $message = preg_replace("/{$actionOrFact}/", $replacement, $message, 1);
-                                break;
-
-                            } elseif (strtolower($actionOrFact) == 'i') {
-                                # remind everyone I hate strtotime
-                                $verb = $command->getParameter(2); # this... needs proper NLP
-                                $message = $this->translateVerbs($message, $verb);
-                                $message = $this->translatePronouns($message, $command->getUserName());
-                                break;
-
-                            } elseif ($actionOrFact == 'about') {
-                                # remind everyone about that time when I...
-                                $message = $this->translatePronouns($message, $command->getUserName());
-                                $message = preg_replace("/{$actionOrFact}/", '', $message, 1);
-                                break;
-
-                            } elseif ($actionOrFact == 'that') {
-
-                                $message = $this->translatePronouns($message, $command->getUserName());
-
-                                if (strtolower($command->getParameter(2)) == 'i'){
-                                    $verb = $command->getParameter(3); # this... needs proper NLP
-                                    $message = $this->translateVerbs($message, $verb);
-                                }
-
-                                $message = preg_replace("/{$actionOrFact}/", '', $message, 1);
-                                break;
-
-                            } elseif ($actionOrFact == 'you') {
-                                $message = $this->translatePronouns($message); # I | I am
-                            } else {
-                                $message = $this->translatePronouns($message, $command->getUserName());
-                            }
-
-                            break;
-
-                        # remind me [ to grab a beer | that Ace is waiting me | about the document I have to send | I am late ] in 2hrs
-                        case 'me':
-                            # remind me not to forget this in 2s
-                            if ($actionOrFact == 'not') {
-                                $actionOrFact .= '\s' . $command->getParameter(2);
-                                $message = preg_replace("/{$actionOrFact}/", 'do not', $message, 1);
-                            }
-
-                            # remind me to not use mysql_*
-                            if ($actionOrFact == 'to') {
-                                $replacement = '';
-                                # to not [ do something | forget stocking bourbons for the winter ]
-                                if ($command->getParameter(2) == 'not') {
-                                    $actionOrFact .= '\s' . $command->getParameter(2);
-                                    $replacement = 'do not';
-                                }
-
-                                $message = preg_replace("/{$actionOrFact}/", $replacement, $message, 1);
-                            }
-
-                            if(in_array($actionOrFact, ['that', 'about'])) {
-                                $message = preg_replace("/{$actionOrFact}/", '', $message, 1);
-                            }
-
-                            $message = $this->translatePronouns($message);
-                            break;
-
-                        # remind yourself that you are a bot, jeez.
-                        case 'yourself':
-                            $message = preg_replace("/{$textOrUser}/", '', $message, 1);
-                            $output  = $this->translatePronouns($message);
-                            $message = "I don't need to be reminded " . $output;
-                            break;
-                        default:
-                            #$message = preg_replace("/{$actionOrFact}/", '', $message, 1);
-                            $name = ($target == $command->getUserName()) ? null : $command->getUserName();
-                            $message = $this->translatePronouns($message, $name);
-                            break;
-
-                    }
-
-                    $setBy = $command->getUserName();
                     # Only an admin can set a reminder for someone else
-                    if( !in_array($textOrUser, ['me', 'everyone', 'yourself'])
-                        && strtolower($setBy) !== strtolower($target)
-                    ){
+                    if(!in_array($textOrUser, ['me', 'everyone', 'yourself']) && strtolower($setBy) !== strtolower($target)){
                        if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
                            return $this->chatClient->postReply($command, "Only an admin can set a reminder for someone else.");
                        }
                     }
 
-                    $text = $this->startRandomConversation($target, trim($message), $setBy);
+                    $text = $this->buildReminderMessage($target, trim($message), $setBy);
 
-                    if ($time !== '') $time = $intervalParser->normalizeTimeInterval($time);
+                    if ($time) $time = $intervalParser->normalizeTimeInterval($time);
                     break;
             }
 
@@ -310,7 +133,6 @@ class Reminder extends BasePlugin
             if(!isset($text) || !$text) return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
 
             $timestamp = strtotime($time) ?: strtotime("+{$time}"); // false|int
-
             if (!$timestamp) return $this->chatClient->postMessage($command->getRoom(), "Have a look at the time again, yo!");
 
             $key = (string) $command->getId();
@@ -332,7 +154,7 @@ class Reminder extends BasePlugin
                 $watcher = once(function () use ($command, $value, $key) {
                     yield $this->storage->unset($key, $command->getRoom());
 
-                    if($value['for'] == "everyone" || $value['for'] == "yourself"){
+                    if(in_array($value['for'], ["everyone","yourself"])){
                         return $this->chatClient->postMessage($command->getRoom(), $value['text']);
                     } elseif ($value['for'] !== $value['username']){
                         return $this->chatClient->postMessage($command->getRoom(), $value['text'], PostFlags::ALLOW_PINGS);
@@ -390,9 +212,227 @@ class Reminder extends BasePlugin
         });
     }
 
-    public function translateVerbs(string $message, string $verb): string
+    /**
+     * Assemble final sentence for reminder ping.
+     * 
+     * @param string $target
+     * @param string $message
+     * @param string $setBy
+     * @return string
+     */
+    private function buildReminderMessage(string $target, string $message, string $setBy): string
     {
-        # this... needs a better solution
+        $noGrumbles = $noStarters = false;
+        # Check whether the sentence is terminated already
+        if(!in_array(substr($message, -1), [ '.', '!', '?' ])) {
+            $message .= '. ';
+            $noGrumbles = true;
+        }
+
+        if ($target == "everyone") {
+            $target = 'o/ Everyone, ';
+            $noStarters = true;
+        } elseif ($target == 'myself') {
+            # Jeeves remembers everything :P
+            $target = '... ';
+            $noStarters = $noGrumbles = true;
+        } else {
+            $target = "@{$target}";
+
+            if("@{$setBy}" == $target) {
+                $noStarters = true;
+                $target .= ' ';
+            }
+        }
+
+        $starters = [
+            ' wanted me to remind you ',
+            ' asked me to remind you '
+        ];
+
+        $who = ("@{$setBy}" == $target) ? 'you' : $setBy;
+        if($who == 'you') $noStarters = true;
+
+        $grumble = [
+            ' So get on that, would ya?',
+            " It's about time you get on that.",
+            " Let's not forget that."
+        ];
+
+        $message = (!$noStarters)
+            ? $target . ', earlier ' . $who . $starters[array_rand($starters)] . $message
+            : $target . $message;
+
+        if(!$noGrumbles) $message .= $grumble[array_rand($grumble)];
+
+        return $message;
+    }
+    
+    /**
+     * Check parameters for context and decide what to say and to whom.
+     * 
+     * remind @someone|me|yourself|everyone|you
+     * reminder foo is bar
+     * 
+     * @param Command $command
+     * @param string $target
+     * @param string $message
+     * @return string
+     */
+    private function prepareReply(Command $command, string $target, string $message): string
+    {
+        $textOrTarget = $command->getParameter(0);
+        $actionOrFact = $command->getParameter(1);
+
+        # Check first parameter
+        # remind [ to do something | that strpbrk is a thing | about something ] in 2hrs
+        if (in_array($textOrTarget, ['to', 'that', 'about'])) {
+            $message = preg_replace("/{$textOrTarget}/", '', $message, 1);
+        }
+
+        switch ($textOrTarget){
+            case 'everyone':
+                # remind everyone not to forget this in 2s
+                if ($actionOrFact == 'not') {
+                    $actionOrFact .= '\s' . $command->getParameter(2);
+                    $message = preg_replace("/{$actionOrFact}/", 'do not', $message, 1);
+
+                } elseif ($actionOrFact == 'to') {
+                    $replacement = '';
+                    # to not [ do something | forget stocking bourbons for the winter ]
+                    if ($command->getParameter(2) == 'not') {
+                        $actionOrFact .= '\s' . $command->getParameter(2);
+                        $replacement = 'do not';
+                    }
+                    $message = preg_replace("/{$actionOrFact}/", $replacement, $message, 1);
+                    break;
+
+                } elseif (strtolower($actionOrFact) == 'i') {
+                    # remind everyone I hate strtotime
+                    $verb = $command->getParameter(2); # this... needs proper NLP
+                    $message = $this->translateVerbs($message, $verb);
+                    $message = $this->translatePronouns($message, $command->getUserName());
+                    break;
+
+                } elseif ($actionOrFact == 'about') {
+                    # remind everyone about that time when I...
+                    $message = $this->translatePronouns($message, $command->getUserName());
+                    $message = preg_replace("/{$actionOrFact}/", '', $message, 1);
+                    break;
+
+                } elseif ($actionOrFact == 'that') {
+                    $message = $this->translatePronouns($message, $command->getUserName());
+
+                    if (strtolower($command->getParameter(2)) == 'i'){
+                        $verb = $command->getParameter(3); # this... needs proper NLP
+                        $message = $this->translateVerbs($message, $verb);
+                    }
+                    $message = preg_replace("/{$actionOrFact}/", '', $message, 1);
+                    break;
+
+                } elseif ($actionOrFact == 'you') {
+                    $message = $this->translatePronouns($message); # I | I am
+                } else {
+                    $message = $this->translatePronouns($message, $command->getUserName());
+                }
+                break;
+
+            # remind me [ to grab a beer | that Ace is waiting me | about the document I have to send | I am late ] in 2hrs
+            case 'me':
+                # remind me not to forget this in 2s
+                if ($actionOrFact == 'not') {
+                    $actionOrFact .= '\s' . $command->getParameter(2);
+                    $message = preg_replace("/{$actionOrFact}/", 'do not', $message, 1);
+                }
+
+                # remind me to not use mysql_*
+                if ($actionOrFact == 'to') {
+                    $replacement = '';
+                    # to not [ do something | forget stocking bourbons for the winter ]
+                    if ($command->getParameter(2) == 'not') {
+                        $actionOrFact .= '\s' . $command->getParameter(2);
+                        $replacement = 'do not';
+                    }
+                    $message = preg_replace("/{$actionOrFact}/", $replacement, $message, 1);
+                }
+
+                if(in_array($actionOrFact, ['that', 'about'])) {
+                    $message = preg_replace("/{$actionOrFact}/", '', $message, 1);
+                }
+                $message = $this->translatePronouns($message);
+                break;
+
+            # remind yourself that you are a bot, jeez.
+            case 'yourself':
+                $message = preg_replace("/{$textOrTarget}/", '', $message, 1);
+                $output  = $this->translatePronouns($message);
+                $message = "I don't need to be reminded " . $output;
+                break;
+            default:
+                $message = preg_replace("/{$actionOrFact}/", '', $message, 1);
+                $name = ($target == $command->getUserName()) ? null : $command->getUserName();
+                $message = $this->translatePronouns($message, $name);
+
+                if ($actionOrFact == 'that') {
+                    if (strtolower($command->getParameter(2)) == 'i'){
+                        $verb = $command->getParameter(3); # this... needs proper NLP
+                        $message = $this->translateVerbs($message, $verb);
+                    }
+
+                    $message = preg_replace("/{$actionOrFact}/", '', $message, 1);
+                    break;
+
+                } elseif (strtolower($actionOrFact) == 'i') {
+                    # remind everyone I hate strtotime
+                    $verb = $command->getParameter(2); # this... needs proper NLP
+                    $message = $this->translateVerbs($message, $verb);
+                    break;
+                }
+                break;
+        }
+        return $message;
+    }
+
+    /**
+     * Find the intended target of message
+     *
+     * @param string $textOrTarget  First parameter of message
+     * @param string $message       Reminder text
+     * @param string $setBy         $setBy
+     * @return array
+     */
+    private function findMessageTarget(string $textOrTarget, string $message, string $setBy): array
+    {
+        $substring = false;
+
+        switch ($textOrTarget){
+            case 'me':
+                $target = $setBy;
+                break;
+            case 'everyone':
+                $target = "everyone";
+                break;
+            case 'yourself':
+                $target  = 'myself';
+                break;
+            default:
+                if(preg_match("/^@(?<username>.*)/ui", $textOrTarget, $matches)){
+                    $target = $matches['username'];
+                    break;
+                }
+
+                $target = $setBy;
+                $substring = true;
+                break;
+        }
+
+        return (!$substring)
+            ? [ 'target' => $target, 'message' => substr($message, strlen($textOrTarget)) ]
+            : [ 'target' => $target, 'message' => $message ];
+    }
+
+    public function translateVerbs(string $message, string $verb): string
+    { # this... needs a better solution
         switch ($verb){
             case 'do':
             case 'go':
@@ -409,6 +449,14 @@ class Reminder extends BasePlugin
         return preg_replace("/{$verb}/", $p, $message, 1);
     }
 
+    /**
+     * Translate pronouns and the form of to be, if found any.
+     * If $username is given, use that instead.
+     *
+     * @param string $message
+     * @param string|null $username
+     * @return string
+     */
     public function translatePronouns(string $message, string $username = null): string
     {
         static $expression = "/(?J)
@@ -417,7 +465,7 @@ class Reminder extends BasePlugin
                |(?<obj>you|they)(?:(?<part>'re)|\s(?<part>are|were))?
                |(?<obj>it|he|she)(?:(?<part>'s)|\s(?<part>is|was))?
                |(?<obj>(my|your|it)sel(f|ves))
-               |(?<obj>mine|yours)
+               |(?<obj>mine|yours|me)
             )\b
         /uix";
 
@@ -527,21 +575,6 @@ class Reminder extends BasePlugin
         }
     }
 
-    public function enableForRoom(ChatRoom $room, bool $persist = true){
-        $reminders = yield $this->storage->getKeys($room);
-        yield from $this->rescheduleUpcomingReminders($room, $reminders);
-        yield from $this->apologizeForExpiredReminders($room, $reminders);
-    }
-
-    public function disableForRoom(ChatRoom $room, bool $persist = false){
-        if(!$this->watchers) return;
-
-        foreach ($this->watchers as $key => $id){
-            cancel($id);
-        }
-    }
-
-
     /**
      * Handle a command message
      *
@@ -593,15 +626,19 @@ class Reminder extends BasePlugin
             return yield $this->setReminder($command, 'reminder');
         });
     }
-
-    public function getName(): string
-    {
-        return 'Reminders';
+    
+    public function enableForRoom(ChatRoom $room, bool $persist = true){
+        $reminders = yield $this->storage->getKeys($room);
+        yield from $this->rescheduleUpcomingReminders($room, $reminders);
+        yield from $this->apologizeForExpiredReminders($room, $reminders);
     }
 
-    public function getDescription(): string
-    {
-        return 'Get reminded by an elephpant because, why not?';
+    public function disableForRoom(ChatRoom $room, bool $persist = false){
+        if(!$this->watchers) return;
+
+        foreach ($this->watchers as $key => $id){
+            cancel($id);
+        }
     }
 
     public function getExamples(Command $command): Promise
@@ -622,6 +659,16 @@ class Reminder extends BasePlugin
         return resolve(function () use($command, $examples) {
             return $this->chatClient->postMessage($command->getRoom(), $examples);
         });
+    }
+    
+    public function getName(): string
+    {
+        return 'Reminders';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Get reminded by an elephpant because, why not?';
     }
 
     public function getCommandEndpoints(): array
