@@ -941,16 +941,16 @@
         },
         {
             "name": "room11/dom-utils",
-            "version": "v1.0.2",
+            "version": "v1.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/DOMUtils.git",
-                "reference": "4de002616b32aaf5b8942d12c370774e82a4afd2"
+                "reference": "19817c58a16c2434fd17448dd85c8eb562c677f1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/4de002616b32aaf5b8942d12c370774e82a4afd2",
-                "reference": "4de002616b32aaf5b8942d12c370774e82a4afd2",
+                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/19817c58a16c2434fd17448dd85c8eb562c677f1",
+                "reference": "19817c58a16c2434fd17448dd85c8eb562c677f1",
                 "shasum": ""
             },
             "type": "library",
@@ -972,7 +972,7 @@
                 }
             ],
             "description": "Utility functions for the PHP DOM extension",
-            "time": "2016-05-13 17:03:09"
+            "time": "2016-10-07 19:04:41"
         },
         {
             "name": "room11/openid",
