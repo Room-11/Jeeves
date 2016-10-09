@@ -15,7 +15,7 @@ class AntiW3Schools extends BasePlugin
         'html' => '[Check the Mozilla Developer Network HTML documentation](https://developer.mozilla.org/docs/Web/HTML) for help with HTML.',
         'css' => '[Check the Mozilla Developer Network CSS documentation](https://developer.mozilla.org/docs/Web/CSS) for help with CSS.',
         'js' => '[Check the Mozilla Developer Network JS documentation](https://developer.mozilla.org/docs/Web/JavaScript) for help with JavaScript.',
-        'sql' => '[Check MySQL\'s official MySQL documentation](https://dev.mysql.com/doc/) for more information.',
+        'sql' => '[Check MySQL\'s official documentation](https://dev.mysql.com/doc/) for more information.',
         'php' => '[Check the official PHP Documentation](https://secure.php.net/docs.php) for help with PHP.',
         'bootstrap' => '[Check the official Bootstrap Documentation](https://getbootstrap.com/getting-started/) for help with the Bootstrap framework.',
         'jquery' => '[Check the official jQuery API Documentation](https://api.jquery.com/) for help with the jQuery library.',
