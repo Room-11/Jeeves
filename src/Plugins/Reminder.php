@@ -125,7 +125,6 @@ class Reminder extends BasePlugin
                         $text = $matches['trailing'] ?? false;
                     }
                     break;
-
                 case 'at':
                     $time = $command->getParameter(0) ?? false; // 24hrs
 
@@ -133,7 +132,6 @@ class Reminder extends BasePlugin
                         $text = implode(" ", array_diff($command->getParameters(), array($time)));
                     }
                     break;
-
                 case 'reminder':
                     $parameters = implode(" ", $command->getParameters());
 
@@ -267,82 +265,41 @@ class Reminder extends BasePlugin
      */
     private function prepareReply(Command $command, string $target, string $message): string
     {
-        $textOrTarget = $command->getParameter(0);
-        $first  = $command->getParameter(1);
-        $second = $command->getParameter(2);
-        $third  = $command->getParameter(3);
         $username = $command->getUserName();
+        $parameters = explode(" ", implode(" ", $command->getParameters()));
 
-        # Check first parameter
-        # remind [ to do something | that strpbrk is a thing | about something ] in 2hrs
-        if (in_array($textOrTarget, ['to', 'that', 'about'])) {
-            $message = preg_replace("/{$textOrTarget}/", '', $message, 1);
-        }
+        # remind me [ to grab a beer | that Ace is waiting me | about the document I have to send | I am late ] in 2hrs
 
-        switch (strtolower($textOrTarget)) {
-            case 'everyone':
-                # remind everyone (not) to do something <time>
-                if ($first == 'to' || $second == 'to')
-                    $message = $this->translateForm($message, $first, $second);
+        foreach ($parameters as $key => $param){
+            if($key == 0) $username = null;
 
-                if (strtolower($first) == 'i') {
-                    # remind everyone I hate strtotime
-                    $message = $this->translateVerbs($message, $second); # this... needs proper NLP
-
-                } elseif (in_array($first, ['that', 'about'])) {
-                    $message = preg_replace("/{$first}/", '', $message, 1);
-
-                    if (strtolower($second) == 'i') {
-                        $message = $this->translateVerbs($message, $third); # this... needs proper NLP
+            switch (strtolower($param)) {
+                case 'to':
+                    $message = $this->translateForm($message, $parameters[$key], $parameters[$key + 1]);
+                    break;
+                case 'not': # remind everyone (not) to do something <time>
+                    if ($parameters[$key - 1] != 'do'){
+                        $message = $this->translateForm($message, $parameters[$key], $parameters[$key + 1]);
                     }
-
-                } elseif ($first == 'you') {
+                    break;
+                case 'i':   # remind everyone I hate strtotime
                     $username = null;
-                }
-
-                return $this->translatePronouns($message, $username);
-
-            # remind me [ to grab a beer | that Ace is waiting me | about the document I have to send | I am late ] in 2hrs
-            case 'me':
-
-                if ($first == 'to' || $second == 'to') {
-                    $message = $this->translateForm($message, $first, $second);
-                }
-
-                if (in_array($first, ['that', 'about'])) {
-                    $message = preg_replace("/{$first}/", '', $message, 1);
-                }
-
-                $message = $this->translatePronouns($message);
-
-                return $message;
-
-            # remind yourself that you are a bot, jeez.
-            case 'yourself':
-                $message = preg_replace("/{$textOrTarget}/", '', $message, 1);
-                return "I don't need to be reminded " . $this->translatePronouns($message);
-
-            default:
-                $name = ($target == $username) ? null : $username;
-                $message = $this->translatePronouns($message, $name);
-
-                #$message = preg_replace("/{$first}/", '', $message, 1);
-
-                if ($first == 'that') {
-                    if (strtolower($second) == 'i') {
-                        $message = $this->translateVerbs($message, $third); # this... needs proper NLP
-                    }
-
-                    return preg_replace("/{$first}/", '', $message, 1);
-
-                } elseif (strtolower($first) == 'i') {
-                    # remind everyone I hate strtotime
-                    $message = $this->translateVerbs($message, $second); # this... needs proper NLP
-                    return preg_replace("/{$first}/", '', $message, 1);
-                }
-
-                return $message;
+                    $message = $this->translateVerbs($message, $parameters[$key + 1]); # this... needs proper NLP
+                    break;
+                case 'that':
+                case 'about':
+                    $message = preg_replace("/{$param}/", '', $message, 1);
+                    break;
+                case 'yourself': # remind yourself that you are a bot, jeez.
+                    $message = preg_replace("/{$param}/", '', $message, 1);
+                    return "I don't need to be reminded " . $this->translatePronouns($message);
+                default:
+                    $username = ($target == $username) ? null : $username;
+                    break;
+            }
         }
+
+        return $this->translatePronouns($message, $username);;
     }
 
     /**
@@ -355,11 +312,11 @@ class Reminder extends BasePlugin
      */
     private function buildReminderMessage(string $target, string $message, string $setBy): string
     {
-        $noGrumbles = $noStarters = false;
+        $grumbles = $noStarters = false;
         # Check whether the sentence is terminated already
-        if(!in_array(substr($message, -1), [ '.', '!', '?' ])) {
+        if(!in_array(substr(trim($message), -1), [ '.', '!', '?' ])) {
             $message .= '. ';
-            $noGrumbles = true;
+            if(random_int(0, 105) > 100) $grumbles = true;
         }
 
         if ($target == "everyone") {
@@ -368,14 +325,14 @@ class Reminder extends BasePlugin
         } elseif ($target == 'myself') {
             # Jeeves remembers everything :P
             $target = '... ';
-            $noStarters = $noGrumbles = true;
+            $noStarters = true;
         } else {
-            $target = "@{$target}";
-
-            if("@{$setBy}" == $target) {
+            if("@{$setBy}" == "@{$target}") {
                 $noStarters = true;
-                $target .= ' ';
+                if(random_int(0, 100) > 95) $grumbles = true;
             }
+
+            $target = "@{$target}" . ', ';
         }
 
         $starters = [
@@ -388,15 +345,14 @@ class Reminder extends BasePlugin
 
         $grumble = [
             ' So get on that, would ya?',
-            " It's about time you get on that.",
-            " Let's not forget that."
+            " It's about time you get on that."
         ];
 
         $message = (!$noStarters)
-            ? $target . ', earlier ' . $who . $starters[array_rand($starters)] . $message
+            ? $target . 'earlier ' . $who . $starters[array_rand($starters)] . $message
             : $target . $message;
 
-        if(!$noGrumbles) $message .= $grumble[array_rand($grumble)];
+        if($grumbles) $message .= $grumble[array_rand($grumble)];
 
         return $message;
     }
@@ -411,7 +367,7 @@ class Reminder extends BasePlugin
             $replacement = 'do not';
 
         } elseif ($actionOrFact == 'to') {
-            # to not [ do something | forget stocking bourbons for the winter ]
+            # to not [ do something | forget stocking bourbons for the winter | to fail ]
             if ($next == 'not') {
                 $actionOrFact .= '\s' . $next;
                 $replacement = 'do not';
@@ -423,6 +379,8 @@ class Reminder extends BasePlugin
 
     public function translateVerbs(string $message, string $verb): string
     { # this... needs a better solution
+        static $verbs = ['should', 'could', 'would', 'shall', 'did', 'had', 'am', 'was', 'were', 'went'];
+
         switch ($verb){
             case 'do':
             case 'go':
@@ -432,7 +390,7 @@ class Reminder extends BasePlugin
                 $p = "has";
                 break;
             default:
-                $p = "{$verb}s";
+                $p = (in_array($verb, $verbs)) ? $verb : "{$verb}s";
                 break;
         }
 
@@ -454,8 +412,8 @@ class Reminder extends BasePlugin
                (?<obj>i)(?:(?<part>'m)|\s(?<part>am|was))?
                |(?<obj>you|they)(?:(?<part>'re)|\s(?<part>are|were))?
                |(?<obj>it|he|she)(?:(?<part>'s)|\s(?<part>is|was))?
-               |(?<obj>mine|yours?|me)
-               |(?<obj>(my|your|it)self
+               |(?<obj>(mine|me|yours?))
+               |(?<obj>(my|your|it)self)
             )\b
         /uix";
 
@@ -521,7 +479,7 @@ class Reminder extends BasePlugin
             }, $message
         );
 
-        return $output;
+        return $output ?? $message;
     }
 
     public function apologizeForExpiredReminders(ChatRoom $room, array $reminders): \Generator
