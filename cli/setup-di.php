@@ -7,6 +7,8 @@ use Amp\Artax\Cookie\ArrayCookieJar;
 use Amp\Artax\Cookie\CookieJar;
 use Amp\Artax\HttpClient;
 use Auryn\Injector;
+use PeeHaa\AsyncTwitter\Api\Client\Client as TwitterClient;
+use PeeHaa\AsyncTwitter\Http\Artax as ArtaxTwitterClient;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\MessageResolver;
 use Room11\Jeeves\Chat\Event\Filter\Builder as EventFilterBuilder;
@@ -44,6 +46,7 @@ const DATA_BASE_DIR = __DIR__ . '/../data';
 $injector->alias(HttpClient::class, ArtaxClient::class);
 $injector->alias(OpenIdAuthenticator::class, StackExchangeAuthenticator::class);
 $injector->alias(CookieJar::class, ArrayCookieJar::class);
+$injector->alias(TwitterClient::class, ArtaxTwitterClient::class);
 
 $injector->define(FileAdminStorage::class, [":dataFile" => DATA_BASE_DIR . "/admins.%s.json"]);
 $injector->define(FileBanStorage::class, [":dataFile" => DATA_BASE_DIR . "/bans.%s.json"]);
