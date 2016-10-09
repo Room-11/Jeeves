@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
-use PeeHaa\AsyncTwitter\Api\Client as TwitterClient;
+use PeeHaa\AsyncTwitter\Api\Client\Client as TwitterClient;
 use PeeHaa\AsyncTwitter\Api\Client\ClientFactory as TwitterClientFactory;
 use PeeHaa\AsyncTwitter\Api\Client\Exception\RequestFailed as TwitterRequestFailedException;
 use PeeHaa\AsyncTwitter\Api\Request\Status\Retweet as RetweetRequest;
