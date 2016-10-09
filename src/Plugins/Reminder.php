@@ -158,9 +158,9 @@ class Reminder extends BasePlugin
 
                     # Only an admin can set a reminder for someone else
                     if(!in_array($textOrUser, ['me', 'everyone', 'yourself']) && strtolower($setBy) !== strtolower($target)){
-                       if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
-                           return $this->chatClient->postReply($command, "Only an admin can set a reminder for someone else.");
-                       }
+                        if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
+                            return $this->chatClient->postReply($command, "Only an admin can set a reminder for someone else.");
+                        }
                     }
 
                     # Assemble full string/sentence of reminder ping
@@ -304,7 +304,6 @@ class Reminder extends BasePlugin
 
             # remind me [ to grab a beer | that Ace is waiting me | about the document I have to send | I am late ] in 2hrs
             case 'me':
-                $message = $this->translatePronouns($message);
 
                 if ($first == 'to' || $second == 'to') {
                     $message = $this->translateForm($message, $first, $second);
@@ -313,6 +312,8 @@ class Reminder extends BasePlugin
                 if (in_array($first, ['that', 'about'])) {
                     $message = preg_replace("/{$first}/", '', $message, 1);
                 }
+
+                $message = $this->translatePronouns($message);
 
                 return $message;
 
@@ -453,8 +454,8 @@ class Reminder extends BasePlugin
                (?<obj>i)(?:(?<part>'m)|\s(?<part>am|was))?
                |(?<obj>you|they)(?:(?<part>'re)|\s(?<part>are|were))?
                |(?<obj>it|he|she)(?:(?<part>'s)|\s(?<part>is|was))?
-               |(?<obj>(my|your|it)sel(f|ves))
-               |(?<obj>mine|yours|me)
+               |(?<obj>mine|yours?|me)
+               |(?<obj>(my|your|it)self
             )\b
         /uix";
 
@@ -483,6 +484,9 @@ class Reminder extends BasePlugin
                         break;
                     case 'mine':
                         $o = ($username) ? $username."'s " : 'yours ';
+                        break;
+                    case 'your':
+                        $o = 'my ';
                         break;
                     case 'yours':
                         $o = 'mine ';
@@ -615,7 +619,7 @@ class Reminder extends BasePlugin
             return yield $this->setReminder($command, 'reminder');
         });
     }
-    
+
     public function enableForRoom(ChatRoom $room, bool $persist = true){
         $reminders = yield $this->storage->getKeys($room);
         yield from $this->rescheduleUpcomingReminders($room, $reminders);
@@ -649,7 +653,7 @@ class Reminder extends BasePlugin
             return $this->chatClient->postMessage($command->getRoom(), $examples);
         });
     }
-    
+
     public function getName(): string
     {
         return 'Reminders';
