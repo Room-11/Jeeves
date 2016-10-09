@@ -29,7 +29,10 @@ storage:
   room: Room11\Jeeves\Storage\File\Room
 
 plugins:
+plugins:
+  - Room11\Jeeves\AntiW3Schools
   - Room11\Jeeves\Plugins\Canon
+  - Room11\Jeeves\Plugins\Changelog
   - Room11\Jeeves\Plugins\Chuck
   - Room11\Jeeves\Plugins\CodeFormat
   - Room11\Jeeves\Plugins\Docs
@@ -46,6 +49,7 @@ plugins:
   - Room11\Jeeves\Plugins\PHPSrcGrok
   - Room11\Jeeves\Plugins\Rebecca
   - Room11\Jeeves\Plugins\Regex
+  - Room11\Jeeves\Plugins\Reminder
   - Room11\Jeeves\Plugins\RePinner
   - Room11\Jeeves\Plugins\RFC
   - Room11\Jeeves\Plugins\SwordFight
@@ -55,8 +59,6 @@ plugins:
   - Room11\Jeeves\Plugins\Wikipedia
   - Room11\Jeeves\Plugins\Wotd
   - Room11\Jeeves\Plugins\Xkcd
-  - Room11\Jeeves\Plugins\Changelog
-  - Room11\Jeeves\Plugins\Reminder
 
 twitter:
   consumerKey: YourConsumerKey
