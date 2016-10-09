@@ -4,10 +4,10 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use PeeHaa\AsyncTwitter\Api\Client as TwitterClient;
-use PeeHaa\AsyncTwitter\Api\ClientFactory as TwitterClientFactory;
-use PeeHaa\AsyncTwitter\Api\RequestFailedException as TwitterRequestFailedException;
-use PeeHaa\AsyncTwitter\Api\Status\Retweet as RetweetRequest;
-use PeeHaa\AsyncTwitter\Api\Status\Update as UpdateRequest;
+use PeeHaa\AsyncTwitter\Api\Client\ClientFactory as TwitterClientFactory;
+use PeeHaa\AsyncTwitter\Api\Client\Exception\RequestFailed as TwitterRequestFailedException;
+use PeeHaa\AsyncTwitter\Api\Request\Status\Retweet as RetweetRequest;
+use PeeHaa\AsyncTwitter\Api\Request\Status\Update as UpdateRequest;
 use PeeHaa\AsyncTwitter\Credentials\AccessTokenFactory as TwitterAccessTokenFactory;
 use Room11\DOMUtils\LibXMLFatalErrorException;
 use Room11\Jeeves\Chat\Client\ChatClient;

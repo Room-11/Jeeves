@@ -739,12 +739,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PeeHaa/AsyncTwitter.git",
-                "reference": "4993cd3ed97b5d68acc5fadff30c004d50860a33"
+                "reference": "d0b729c9e73d7bf059bf0521930dae0d182dab68"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/4993cd3ed97b5d68acc5fadff30c004d50860a33",
-                "reference": "4993cd3ed97b5d68acc5fadff30c004d50860a33",
+                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/d0b729c9e73d7bf059bf0521930dae0d182dab68",
+                "reference": "d0b729c9e73d7bf059bf0521930dae0d182dab68",
                 "shasum": ""
             },
             "require": {
@@ -782,7 +782,7 @@
                 "parallel",
                 "twitter"
             ],
-            "time": "2016-10-04 14:23:22"
+            "time": "2016-10-09 19:30:18"
         },
         {
             "name": "php-ds/php-ds",
