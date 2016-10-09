@@ -7,7 +7,7 @@ use Amp\Artax\Cookie\ArrayCookieJar;
 use Amp\Artax\Cookie\CookieJar;
 use Amp\Artax\HttpClient;
 use Auryn\Injector;
-use PeeHaa\AsyncTwitter\Api\Client\Client as TwitterClient;
+use PeeHaa\AsyncTwitter\Http\Client as TwitterClient;
 use PeeHaa\AsyncTwitter\Http\Artax as ArtaxTwitterClient;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\MessageResolver;
