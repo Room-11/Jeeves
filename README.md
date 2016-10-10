@@ -8,7 +8,10 @@ Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for
 ## Requirements
 
 1. PHP 7.0 or greater.
-1. Ensure the `php_intl` extension is installed and enabled. [Read the PHP Documentation](http://php.net/manual/en/book.intl.php) for more information.
+1. [`php_intl`](https://secure.php.net/manual/en/book.intl.php) PHP extension.
+1. [`php_mbstring`](https://secure.php.net/manual/en/book.mbstring.php) PHP extension.
+1. [`libxml`](https://secure.php.net/manual/en/book.libxml.php), version 2.7.8 or greater.
+    * Jeeves requires this version because of its use of `LIBXML_HTML_NOIMPLIED` and `LIBXML_HTML_NODEFDTD `.
 
 ## Installation
 
@@ -20,9 +23,8 @@ Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for
 ## Optional Dependencies
 
 1. For true non-blocking execution:
-    *  Install the [`libevent`](https://pecl.php.net/package/libevent) and
- [`ev`](https://pecl.php.net/package/ev) PECL extensions.
-    * Install the [`php-uv`](https://github.com/bwoebi/php-uv) extension.
+    * Install the [`libevent`](https://pecl.php.net/package/libevent) PECL extension.
+    * Install the [`php-uv`](https://github.com/bwoebi/php-uv) PHP extension OR the  [`ev`](https://pecl.php.net/package/ev) PECL extension.
 
 ### JAAS (Jeeves as a Service)
 
