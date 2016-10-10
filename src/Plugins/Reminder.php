@@ -151,6 +151,7 @@ class Reminder extends BasePlugin
                     $target  = $output['target'];
                     $message = $output['message'];
 
+                    #if(null !== yield $this->chatClient->getPingableName($command->getRoom(), $target)){}
                     # Decide what to say and to whom
                     $message = $this->prepareReply($command, $target, $message);
 
@@ -163,7 +164,7 @@ class Reminder extends BasePlugin
 
                     # Assemble full string/sentence of reminder ping
                     $text = $this->buildReminderMessage($target, trim($message), $setBy);
-
+                    # Normalize interval string
                     if ($time) $time = $intervalParser->normalizeTimeInterval($time);
                     break;
             }
@@ -200,7 +201,7 @@ class Reminder extends BasePlugin
                     } elseif ($value['for'] !== $value['username']){
                         return $this->chatClient->postMessage($command->getRoom(), $value['text'], PostFlags::ALLOW_PINGS);
                     }
-                    # remind the setter
+                    # else reply to the setter
                     return $this->chatClient->postReply($command, $value['text']);
                 }, $seconds * 1000);
 
@@ -252,134 +253,100 @@ class Reminder extends BasePlugin
 
     /**
      * Check parameters for context and decide what to say and to whom.
-     *
-     * remind @someone|me|yourself|everyone|you that|about|to foo in <time>
-     * reminder foo is bar
+     * !!remind @someone|me|yourself|everyone|you that|about|to foo in <time>
      *
      * @param Command $command
      * @param string $target
      * @param string $message
-     * @param $textOrTarget
-     * @param $actionOrFact
-     * @return mixed
+     * @return string
      */
     private function prepareReply(Command $command, string $target, string $message): string
     {
         $username = $command->getUserName();
-        $parameters = explode(" ", implode(" ", $command->getParameters()));
+        $parameters = $command->getParameters();
 
-        # remind me [ to grab a beer | that Ace is waiting me | about the document I have to send | I am late ] in 2hrs
-
+        # remind me [ to grab a beer | that Ace is waiting me | I am late ] in 2hrs
         foreach ($parameters as $key => $param){
             if($key == 0) $username = null;
 
             switch (strtolower($param)) {
                 case 'to':
-                    $message = $this->translateForm($message, $parameters[$key], $parameters[$key + 1]);
-                    break;
-                case 'not': # remind everyone (not) to do something <time>
-                    if ($parameters[$key - 1] != 'do'){
-                        $message = $this->translateForm($message, $parameters[$key], $parameters[$key + 1]);
+                case 'not':
+                    if($parameters[$key - 1] != 'do' && in_array($key, [0,1,2])){
+                        # [ to not do something | not to miss ]
+                        if (in_array($parameters[$key + 1], ['to', 'not']) && $param != $parameters[$key +1]) {
+                            $param .= '\s' . $parameters[$key + 1];
+                            $message = preg_replace("/{$param}/", "don't", $message, 1);
+                            break;
+                        }
+                        $username = ($target == $command->getUserName()) ? null : $command->getUserName();
+                        $message = ($username == null || $target == 'everyone') ? preg_replace("/{$param}/", "", $message, 1) : $message;
                     }
                     break;
                 case 'i':   # remind everyone I hate strtotime
-                    $username = null;
-                    $message = $this->translateVerbs($message, $parameters[$key + 1]); # this... needs proper NLP
-                    break;
+                    $username = ($target == $command->getUserName()) ? null : $command->getUserName();
+                    $message = $this->translatePronouns($message, $username);
+                    if($username) $message = $this->translateVerbs($message, $parameters[$key + 1]); # this... needs proper NLP
+                    return $message;
                 case 'that':
-                case 'about':
-                    $message = preg_replace("/{$param}/", '', $message, 1);
+                    if($parameters[$key - 1] != 'about') $message = preg_replace("/{$param}/", '', $message, 1);
                     break;
                 case 'yourself': # remind yourself that you are a bot, jeez.
                     $message = preg_replace("/{$param}/", '', $message, 1);
                     return "I don't need to be reminded " . $this->translatePronouns($message);
+                case 'she':
+                case 'he':
+                    $username = null;
+                    return $this->translatePronouns($message, $username, $command->getUserName());
                 default:
-                    $username = ($target == $username) ? null : $username;
+                    $username = ($target == $command->getUserName()) ? null : $command->getUserName();
                     break;
             }
         }
 
-        return $this->translatePronouns($message, $username);;
+        return $this->translatePronouns($message, $username) ?? $message;
     }
 
     /**
      * Assemble final sentence for reminder ping.
      *
-     * @param string $target
-     * @param string $message
-     * @param string $setBy
+     * @param string $target   Target found by findTargetAndMessage()
+     * @param string $message  Message found by findTargetAndMessage()
+     * @param string $setBy    $command->getUsername()
      * @return string
      */
     private function buildReminderMessage(string $target, string $message, string $setBy): string
     {
-        $grumbles = $noStarters = false;
+        static $starters = [
+            ' wanted me to remind you ', ' asked me to remind you '
+        ];
+
+        static $grumble = [
+            ' So get on that, would ya?', " It's about time you get on that."
+        ];
+
         # Check whether the sentence is terminated already
-        if(!in_array(substr(trim($message), -1), [ '.', '!', '?' ])) {
-            $message .= '. ';
-            if(random_int(0, 105) > 100) $grumbles = true;
-        }
+        if(!in_array(substr(trim($message), -1), [ '.', '!', '?' ])) $message .= '. ';
 
         if ($target == "everyone") {
-            $target = 'o/ Everyone, ';
-            $noStarters = true;
+            $message = 'o/ everyone, ' . $message;
         } elseif ($target == 'myself') {
-            # Jeeves remembers everything :P
-            $target = '... ';
-            $noStarters = true;
+            $message = ':-) ' . $message;
+        } elseif ($setBy == $target) {
+            if(random_int(0, 100) > 95) $message .= $grumble[array_rand($grumble)];
+            $message = "@{$target}" . ', '. $message;
         } else {
-            if("@{$setBy}" == "@{$target}") {
-                $noStarters = true;
-                if(random_int(0, 100) > 95) $grumbles = true;
-            }
-
-            $target = "@{$target}" . ', ';
+            $message = "@{$target}" . ', ' . 'earlier ' . $setBy . $starters[array_rand($starters)]. $message;
         }
-
-        $starters = [
-            ' wanted me to remind you ',
-            ' asked me to remind you '
-        ];
-
-        $who = ("@{$setBy}" == $target) ? 'you' : $setBy;
-        if($who == 'you') $noStarters = true;
-
-        $grumble = [
-            ' So get on that, would ya?',
-            " It's about time you get on that."
-        ];
-
-        $message = (!$noStarters)
-            ? $target . 'earlier ' . $who . $starters[array_rand($starters)] . $message
-            : $target . $message;
-
-        if($grumbles) $message .= $grumble[array_rand($grumble)];
 
         return $message;
     }
 
-    private function translateForm(string $message, string $actionOrFact, string $next): string
-    {
-        $replacement = "";
-
-        # remind everyone not to forget this in 2s
-        if ($actionOrFact == 'not') {
-            $actionOrFact .= '\s' . $next;
-            $replacement = 'do not';
-
-        } elseif ($actionOrFact == 'to') {
-            # to not [ do something | forget stocking bourbons for the winter | to fail ]
-            if ($next == 'not') {
-                $actionOrFact .= '\s' . $next;
-                $replacement = 'do not';
-            }
-        }
-
-        return preg_replace("/{$actionOrFact}/", $replacement, $message, 1);
-    }
-
+    # this... needs a better solution / proper NLP
     public function translateVerbs(string $message, string $verb): string
-    { # this... needs a better solution
-        static $verbs = ['should', 'could', 'would', 'shall', 'did', 'had', 'am', 'was', 'were', 'went'];
+    {
+        static $verbs = ['can', 'shall', 'am', 'was', 'were', 'haz', 'said', 'made'];
+        $isOK = (in_array(substr($verb, -1), ['d', 't', 'w']) || in_array($verb, $verbs));
 
         switch ($verb){
             case 'do':
@@ -390,89 +357,95 @@ class Reminder extends BasePlugin
                 $p = "has";
                 break;
             default:
-                $p = (in_array($verb, $verbs)) ? $verb : "{$verb}s";
+                $p = ($isOK) ? $verb : "{$verb}s";
                 break;
         }
 
         return preg_replace("/{$verb}/", $p, $message, 1);
     }
 
-    /**
-     * Translate pronouns and the form of to be, if found any.
-     * If $username is given, use that instead.
-     *
-     * @param string $message
-     * @param string|null $username
-     * @return string
-     */
-    public function translatePronouns(string $message, string $username = null): string
+    # Translate pronouns and the form of to be, if found any.
+    # If $username is given, use that instead
+    public function translatePronouns(string $message, string $username = null, string $setBy = null): string
     {
         static $expression = "/(?J)
             \b(?:
-               (?<obj>i)(?:(?<part>'m)|\s(?<part>am|was))?
-               |(?<obj>you|they)(?:(?<part>'re)|\s(?<part>are|were))?
-               |(?<obj>it|he|she)(?:(?<part>'s)|\s(?<part>is|was))?
+               (?<obj>i)(?:(?<part>'m)|\s(?<part>am|was)(?<neg>n't)?)?
+               |(?<obj>you|they)(?:(?<part>'re)|\s(?<part>are|were)(?<neg>n't)?)?
+               |(?<obj>it|he|she)(?:(?<part>'s)|\s(?<part>is|was)(?<neg>n't)?)?
                |(?<obj>(mine|me|yours?))
-               |(?<obj>(my|your|it)self)
+               |(?<obj>(my|your|it|him|her)(self)?)
             )\b
         /uix";
 
         $output = preg_replace_callback($expression,
-            function ($matches) use($username) {
-
+            function ($matches) use($username, $setBy) {
+                $matches = array_filter($matches);
                 $object = strtolower($matches['obj']);
+
                 switch($object){
                     case 'i':
-                        $o = ($username) ? $username : 'you';
+                        if($setBy){
+                            $o = $setBy;
+                            break;
+                        }
+                        $o = ($username) ?: 'you';
                         break;
-                    case 'you':
-                        $o = 'I ';
+                    case 'you': $o = (isset($matches['part'])) ? 'I ' : 'me';
                         break;
-                    case 'me':
-                        $o = ($username) ? $username : 'you';
+                    case 'me': $o = ($username) ?: 'you';
                         break;
-                    case 'my':
-                        $o = ($username) ? $username."'s " : 'your ';
+                    case 'my': $o = ($username) ? $username."'s " : 'your ';
                         break;
-                    case 'yourself':
-                        $o = 'myself';
+                    case 'yourself': $o = 'myself';
                         break;
-                    case 'myself':
-                        $o = ($username) ? $username .' themself ' : 'yourself ';
+                    case 'myself': $o = ($username) ? 'him/herself ' : 'yourself ';
                         break;
-                    case 'mine':
-                        $o = ($username) ? $username."'s " : 'yours ';
+                    case 'mine': $o = ($username) ? $username."'s " : 'yours ';
                         break;
-                    case 'your':
-                        $o = 'my ';
+                    case 'your': $o = 'my ';
                         break;
-                    case 'yours':
-                        $o = 'mine ';
+                    case 'yours': $o = 'mine ';
+                        break;
+                    case 'he':
+                    case 'she': $o = (!$username) ? ' you ' : ' '.$object;
+                        break;
+                    case 'himself':
+                    case 'herself': $o = (!$username) ? ' yourself ' : ' '.$object;
                         break;
                     default:
                         $o = $object;
+                        break;
                 }
 
                 if(isset($matches['part'])){
                     switch($part = strtolower($matches['part'])){
                         case "'re":
                         case "are":
-                            $o .= ($object != 'you') ? $part : 'am ';
+                            $o .= ($object != 'you') ? ' '.$part : 'am ';
                             break;
                         case 'am':
                         case "'m":
-                            $o .= ($username) ? 'is' : ' are';
+                            $o .= ($username) ? ' is ' : ' are';
                             break;
                         case 'was':
-                            $o .= ($object == 'i' && $o == 'you') ? ' were' : ' '.$part;
+                            $o .= (in_array($object, ['she','he']) || $o == 'you') ? ' were' : ' '.$part;
                             break;
                         case 'were':
-                            $o .= ($object != 'you') ? $o .= $part : ' was';
+                            $o .= ($object != 'you') ? ' '.$part : ' was';
+                            break;
+                        case "'s":
+                        case "is":
+                            $o .= (in_array($object, ['he', 'she'])) ? ' are ' : ' is';
                             break;
                         default:
                             $o .= $part;
                             break;
                     }
+                }
+
+                if(isset($matches['neg'])){
+                    $o .= ' not ';
                 }
 
                 return $o;
