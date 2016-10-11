@@ -5,6 +5,20 @@ Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for
 
 [![Build Status](https://travis-ci.org/Room-11/Jeeves.svg?branch=master)](https://travis-ci.org/Room-11/Jeeves)
 
+## Requirements
+
+ - PHP (at least 7.0)
+ - PHP extensions: intl, mbstring
+ - additional libraries: libxml (v2.7.8 or higher)
+
+The remaining dependencies can be seen in [composer.json](https://github.com/Room-11/Jeeves/blob/master/composer.json) and be installed via composer:
+
+    composer install
+    
+When downloading dependencies for a production environment the following arguments are recommended:
+
+    composer install --no-dev --prefer-dist --optimize-autoloader
+
 ## Installation
 
 1. Clone the project.
