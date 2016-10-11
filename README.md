@@ -7,10 +7,10 @@ Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for
 
 ## Requirements
 
-1. PHP 7.0 or greater.
-1. [`php_intl`](https://secure.php.net/manual/en/book.intl.php) PHP extension.
-1. [`php_mbstring`](https://secure.php.net/manual/en/book.mbstring.php) PHP extension.
-1. [`libxml`](https://secure.php.net/manual/en/book.libxml.php), version 2.7.8 or greater due to use of `LIBXML_HTML_NOIMPLIED` and `LIBXML_HTML_NODEFDTD `.
+* PHP 7.0 or greater.
+* [`php_intl`](https://secure.php.net/manual/en/book.intl.php) PHP extension.
+* [`php_mbstring`](https://secure.php.net/manual/en/book.mbstring.php) PHP extension.
+* [`libxml`](https://secure.php.net/manual/en/book.libxml.php), version 2.7.8 or greater due to use of `LIBXML_HTML_NOIMPLIED` and `LIBXML_HTML_NODEFDTD `.
 
 ## Installation
 
@@ -31,9 +31,10 @@ If you want to run the bot as a systemd service:
 
 ## Optional Dependencies
 
-1. For true non-blocking execution:
-    * Install the [`libevent`](https://pecl.php.net/package/libevent) PECL extension.
-    * Install the [`php-uv`](https://github.com/bwoebi/php-uv) PHP extension OR the  [`ev`](https://pecl.php.net/package/ev) PECL extension.
+* For true non-blocking execution, install one of the following:
+    * [`libevent`](https://pecl.php.net/package/libevent) PECL extension.
+    * [`ev`](https://pecl.php.net/package/ev) PECL extension
+    * [`php-uv`](https://github.com/bwoebi/php-uv) PHP extension.
 
 ## Documentation
 
