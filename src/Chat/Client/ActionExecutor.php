@@ -36,6 +36,7 @@ class ActionExecutor
     private function executeAction(Action $action)
     {
         if (!$action->isValid()) {
+            $action->fail(new ActionExecutionFailureException('Action no longer valid at point of execution'));
             return;
         }
 

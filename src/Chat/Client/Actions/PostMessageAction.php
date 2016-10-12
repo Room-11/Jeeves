@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Client\Actions;
 
 use Amp\Artax\Request as HttpRequest;
 use Room11\Jeeves\Chat\Client\MessagePostFailureException;
+use Room11\Jeeves\Chat\Client\PostedMessageTracker;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
@@ -11,13 +12,22 @@ use Room11\Jeeves\Log\Logger;
 
 class PostMessageAction extends Action
 {
+    private $tracker;
     private $room;
+    private $text;
 
-    public function __construct(Logger $logger, HttpRequest $request, ChatRoom $room)
-    {
+    public function __construct(
+        Logger $logger,
+        PostedMessageTracker $tracker,
+        HttpRequest $request,
+        ChatRoom $room,
+        string $text
+    ) {
         parent::__construct($logger, $request);
 
+        $this->tracker = $tracker;
         $this->room = $room;
+        $this->text = $text;
     }
 
     public function getMaxAttempts(): int
@@ -25,9 +35,15 @@ class PostMessageAction extends Action
         return 5;
     }
 
+    public function isValid(): bool
+    {
+        return $this->tracker->getLastPostedMessage($this->room) !== $this->text;
+    }
+
     public function processResponse($response, int $attempt): int
     {
         if (isset($response["id"], $response["time"])) {
+            $this->tracker->setLastPostedMessage($this->room, $this->text);
             $this->succeed(new PostedMessage($this->room, $response["id"], $response["time"]));
             return self::SUCCESS;
         }

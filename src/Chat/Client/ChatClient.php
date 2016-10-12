@@ -429,7 +429,7 @@ class ChatClient
                 ->setMethod("POST")
                 ->setBody($body);
 
-            $action = $this->actionFactory->createPostMessageAction($request, $room);
+            $action = $this->actionFactory->createPostMessageAction($request, $room, $text);
             $this->actionExecutor->enqueue($action);
 
             return $action->promise();
