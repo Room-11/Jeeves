@@ -272,15 +272,16 @@ class Reminder extends BasePlugin
             switch (strtolower($param)) {
                 case 'to':
                 case 'not':
-                    if($parameters[$key - 1] != 'do' && in_array($key, [0,1,2])){
+                    if($parameters[$key - 1] != 'do' && $key < 3){
                         # [ to not do something | not to miss ]
                         if (in_array($parameters[$key + 1], ['to', 'not']) && $param != $parameters[$key +1]) {
                             $param .= '\s' . $parameters[$key + 1];
                             $message = preg_replace("/{$param}/", "don't", $message, 1);
                             break;
                         }
+
                         $username = ($target == $command->getUserName()) ? null : $command->getUserName();
-                        $message = ($username == null || $target == 'everyone') ? preg_replace("/{$param}/", "", $message, 1) : $message;
+                        $message  = ($username == null || $target == 'everyone') ? preg_replace("/{$param}/", "", $message, 1) : $message;
                     }
                     break;
                 case 'i':   # remind everyone I hate strtotime
@@ -345,8 +346,8 @@ class Reminder extends BasePlugin
     # this... needs a better solution / proper NLP
     public function translateVerbs(string $message, string $verb): string
     {
-        static $verbs = ['can', 'shall', 'am', 'was', 'were', 'haz', 'said', 'made'];
-        $isOK = (in_array(substr($verb, -1), ['d', 't', 'w']) || in_array($verb, $verbs));
+        $verbs = ['can', 'shall', 'am', 'was', 'were', 'haz', 'said', 'made'];
+        $isOK  = (in_array(substr($verb, -1), ['d', 't', 'w']) || in_array($verb, $verbs));
 
         switch ($verb){
             case 'do':
@@ -365,7 +366,7 @@ class Reminder extends BasePlugin
     }
 
     # Translate pronouns and the form of to be, if found any.
-    # If $username is given, use that instead
+    # $username = null means translatePronouns will translate sentence object to 'you', otherwise to a 3rd person view
     public function translatePronouns(string $message, string $username = null, string $setBy = null): string
     {
         static $expression = "/(?J)
@@ -391,30 +392,36 @@ class Reminder extends BasePlugin
                         }
                         $o = ($username) ?: 'you';
                         break;
-                    case 'you': $o = (isset($matches['part'])) ? 'I ' : 'me';
+                    case 'you':
+                        $o = (isset($matches['part'])) ? 'I ' : 'me';
                         break;
-                    case 'me': $o = ($username) ?: 'you';
+                    case 'me':
+                        $o = ($username) ?: 'you';
                         break;
-                    case 'my': $o = ($username) ? $username."'s " : 'your ';
+                    case 'my':
+                        $o = ($username) ? $username."'s " : 'your ';
                         break;
-                    case 'yourself': $o = 'myself';
+                    case 'yourself':  $o = 'myself';
                         break;
-                    case 'myself': $o = ($username) ? 'him/herself ' : 'yourself ';
+                    case 'myself':
+                        $o = ($username) ? 'him/herself ' : 'yourself ';
                         break;
-                    case 'mine': $o = ($username) ? $username."'s " : 'yours ';
+                    case 'mine':
+                        $o = ($username) ? $username."'s " : 'yours ';
                         break;
-                    case 'your': $o = 'my ';
+                    case 'your':  $o = 'my ';
                         break;
                     case 'yours': $o = 'mine ';
                         break;
                     case 'he':
-                    case 'she': $o = (!$username) ? ' you ' : ' '.$object;
+                    case 'she':
+                        $o = (!$username) ? ' you ' : ' '.$object;
                         break;
                     case 'himself':
-                    case 'herself': $o = (!$username) ? ' yourself ' : ' '.$object;
+                    case 'herself':
+                        $o = (!$username) ? ' yourself ' : ' '.$object;
                         break;
-                    default:
-                        $o = $object;
+                    default: $o = $object;
                         break;
                 }
 
@@ -444,9 +451,7 @@ class Reminder extends BasePlugin
                     }
                 }
 
-                if(isset($matches['neg'])){
-                    $o .= ' not ';
-                }
+                if(isset($matches['neg'])) $o .= ' not ';
 
                 return $o;
             }, $message
@@ -570,15 +575,15 @@ class Reminder extends BasePlugin
         $examples = "Examples: \n"
             . Chars::BULLET . " !!reminder foo at 18:00 \n"
             . Chars::BULLET . " With timezone: (ie. UTC-3) !!reminder foo at 18:00-3:00 \n"
-            . Chars::BULLET . " !!reminder bar in 2 hours \n"
-            . Chars::BULLET . " !!reminder unset 32901146 \n"
-            . Chars::BULLET . " !!reminder list \n"
+            . Chars::BULLET . " !!at 22:00 Grab a beer! \n"
+            . Chars::BULLET . " !!reminder do something in 2 hours \n"
             . Chars::BULLET . " !!remind me to grab a beer in 2 hours \n"
             . Chars::BULLET . " !!remind everyone that strpbrk is a thing... in 12 hours \n"
             . Chars::BULLET . " !!remind @anAdmin to unpin that last xkcd in 2 days\n"
-            . Chars::BULLET . " !!remind yourself that you are a bot... in 5 mins\n"
+            . Chars::BULLET . " !!remind yourself that you are a bot... in 5 secs\n"
             . Chars::BULLET . " !!in 2 days 42 hours 42 minutes 42 seconds 42! \n"
-            . Chars::BULLET . " !!at 22:00 Grab a beer!";
+            . Chars::BULLET . " !!reminder unset 32901146 \n"
+            . Chars::BULLET . " !!reminder list \n";
 
         return resolve(function () use($command, $examples) {
             return $this->chatClient->postMessage($command->getRoom(), $examples);
