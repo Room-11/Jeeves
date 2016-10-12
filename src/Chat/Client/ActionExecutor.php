@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Client;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Pause;
+use Amp\Promise;
 use Ds\Queue;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Chat\Client\Actions\Action;
@@ -32,8 +33,12 @@ class ActionExecutor
         $this->actionQueue = new Queue;
     }
 
-    private function executeMessageAction(Action $action)
+    private function executeAction(Action $action)
     {
+        if (!$action->isValid()) {
+            return;
+        }
+
         $attempt = 0;
 
         while ($attempt++ < $action->getMaxAttempts()) {
@@ -48,7 +53,7 @@ class ActionExecutor
                 } catch (\InvalidArgumentException $e) {
                     $errStr = 'Got a 409 response to an Action request that could not be decoded as a back-off delay';
                     $this->logger->log(Level::ERROR, $errStr, $response->getBody());
-                    $action->getPromisor()->fail(new ActionExecutionFailureException($errStr));
+                    $action->fail(new ActionExecutionFailureException($errStr));
                     return;
                 }
 
@@ -61,7 +66,7 @@ class ActionExecutor
             if ($response->getStatus() !== 200) {
                 $errStr = 'Got a ' . $response->getStatus() . ' response to an Action request';
                 $this->logger->log(Level::ERROR, $errStr, [$action->getRequest(), $response]);
-                $action->getPromisor()->fail(new ActionExecutionFailureException($errStr));
+                $action->fail(new ActionExecutionFailureException($errStr));
                 return;
             }
 
@@ -71,11 +76,11 @@ class ActionExecutor
                 $errStr = 'A response that could not be decoded as JSON was received'
                     . ' (JSON decode error: ' . $e->getMessage() . ')';
                 $this->logger->log(Level::ERROR, $errStr, $response->getBody());
-                $action->getPromisor()->fail(new ActionExecutionFailureException($errStr));
+                $action->fail(new ActionExecutionFailureException($errStr));
                 return;
             }
 
-            $result = $action->processResponse($decoded, $attempt, $this->logger);
+            $result = $action->processResponse($decoded, $attempt);
 
             if ($result < 1) {
                 return;
@@ -108,7 +113,7 @@ class ActionExecutor
 
         while ($this->actionQueue->count() > 0) {
             try {
-                yield from $this->executeMessageAction($this->actionQueue->pop());
+                yield from $this->executeAction($this->actionQueue->pop());
             } catch (\Throwable $e) {
                 $this->logger->log(Level::DEBUG, 'Unhandled exception while executing ChatAction: ' . $e->getMessage(), $e);
             }
@@ -118,12 +123,14 @@ class ActionExecutor
         $this->haveLoop = false;
     }
 
-    public function enqueue(Action $action)
+    public function enqueue(Action $action): Promise
     {
         $this->actionQueue->push($action);
 
         if (!$this->haveLoop) {
             resolve($this->executeActionsFromQueue());
         }
+
+        return $action->promise();
     }
 }

@@ -9,6 +9,7 @@ use Amp\Artax\HttpClient;
 use Auryn\Injector;
 use PeeHaa\AsyncTwitter\Http\Client as TwitterClient;
 use PeeHaa\AsyncTwitter\Http\Artax as ArtaxTwitterClient;
+use Room11\Jeeves\Chat\Client\Actions\ActionFactory;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\MessageResolver;
 use Room11\Jeeves\Chat\Event\Filter\Builder as EventFilterBuilder;
@@ -54,6 +55,7 @@ $injector->define(FilePluginStorage::class, [":dataFile" => DATA_BASE_DIR . "/pl
 $injector->define(FileKeyValueStorageFactory::class, [":dataFileTemplate" => DATA_BASE_DIR . "/keyvalue.%s.json"]);
 $injector->define(FileRoomStorage::class, [":dataFile" => DATA_BASE_DIR . "/rooms.json"]);
 
+$injector->share(ActionFactory::class);
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);
 $injector->share(BitlyClient::class);

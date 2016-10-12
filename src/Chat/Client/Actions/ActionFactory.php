@@ -3,28 +3,35 @@
 namespace Room11\Jeeves\Chat\Client\Actions;
 
 use Amp\Artax\Request;
-use Amp\Deferred;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Log\Logger;
 
 class ActionFactory
 {
+    private $logger;
+
+    public function __construct(Logger $logger)
+    {
+        $this->logger = $logger;
+    }
+
     public function createPostMessageAction(Request $request, ChatRoom $room): PostMessageAction
     {
-        return new PostMessageAction($request, $room, new Deferred);
+        return new PostMessageAction($this->logger, $request, $room);
     }
 
     public function createEditMessageAction(Request $request): EditMessageAction
     {
-        return new EditMessageAction($request, new Deferred);
+        return new EditMessageAction($this->logger, $request);
     }
 
     public function createPinOrUnpinMessageAction(Request $request): PinOrUnpinMessageAction
     {
-        return new PinOrUnpinMessageAction($request, new Deferred);
+        return new PinOrUnpinMessageAction($this->logger, $request);
     }
 
     public function createUnstarMessageAction(Request $request): UnstarMessageAction
     {
-        return new UnstarMessageAction($request, new Deferred);
+        return new UnstarMessageAction($this->logger, $request);
     }
 }

@@ -432,7 +432,7 @@ class ChatClient
             $action = $this->actionFactory->createPostMessageAction($request, $room);
             $this->actionExecutor->enqueue($action);
 
-            return $action->getPromisor()->promise();
+            return $action->promise();
         });
     }
 
@@ -457,9 +457,8 @@ class ChatClient
             ->setBody($body);
 
         $action = $this->actionFactory->createEditMessageAction($request);
-        $this->actionExecutor->enqueue($action);
 
-        return $action->getPromisor()->promise();
+        return $this->actionExecutor->enqueue($action);
     }
 
     /**
@@ -489,9 +488,8 @@ class ChatClient
             ->setBody($body);
 
         $action = $this->actionFactory->createPinOrUnpinMessageAction($request);
-        $this->actionExecutor->enqueue($action);
 
-        return $action->getPromisor()->promise();
+        return $this->actionExecutor->enqueue($action);
     }
 
     /**
@@ -521,8 +519,7 @@ class ChatClient
             ->setBody($body);
 
         $action = $this->actionFactory->createUnstarMessageAction($request);
-        $this->actionExecutor->enqueue($action);
 
-        return $action->getPromisor()->promise();
+        return $this->actionExecutor->enqueue($action);
     }
 }
