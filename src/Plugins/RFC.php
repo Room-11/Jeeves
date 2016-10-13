@@ -82,7 +82,8 @@ class RFC extends BasePlugin
         );
 
         yield $this->pluginData->set('lastpinid', $postedMessage->getId(), $command->getRoom());
-        return $this->chatClient->pinOrUnpinMessage($postedMessage->getId(), $command->getRoom());
+
+        return $this->chatClient->pinOrUnpinMessage($postedMessage, $command->getRoom());
     }
 
     private function unpinPreviousMessage(ChatRoom $room) {
