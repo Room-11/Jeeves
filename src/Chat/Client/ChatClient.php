@@ -2,26 +2,27 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
-use function Amp\all;
 use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\DOMUtils\ElementNotFoundException;
-use Room11\Jeeves\Chat\Entities\MainSiteUser;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Entities\ChatUser;
 use Room11\Jeeves\Chat\Client\Actions\ActionFactory;
-use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Chat\Room\UserAccessType as ChatRoomAccessType;
 use Room11\Jeeves\Chat\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\EndpointURLResolver;
+use Room11\Jeeves\Chat\Entities\ChatUser;
+use Room11\Jeeves\Chat\Entities\MainSiteUser;
+use Room11\Jeeves\Chat\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\Room\IdentifierFactory as ChatRoomIdentifierFactory;
 use Room11\Jeeves\Chat\Room\NotApprovedException as RoomNotApprovedException;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\Room\UserAccessType as ChatRoomAccessType;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
+use function Amp\all;
 use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
 use function Room11\DOMUtils\xpath_get_element;
@@ -38,19 +39,22 @@ class ChatClient
     private $actionExecutor;
     private $actionFactory;
     private $urlResolver;
+    private $identifierFactory;
 
     public function __construct(
         HttpClient $httpClient,
         Logger $logger,
         ActionExecutor $actionExecutor,
         ActionFactory $actionFactory,
-        EndpointURLResolver $urlResolver
+        EndpointURLResolver $urlResolver,
+        ChatRoomIdentifierFactory $identifierFactory
     ) {
         $this->httpClient = $httpClient;
         $this->logger = $logger;
         $this->actionExecutor = $actionExecutor;
         $this->actionFactory = $actionFactory;
         $this->urlResolver = $urlResolver;
+        $this->identifierFactory = $identifierFactory;
     }
 
     private function checkAndNormaliseEncoding(string $text): string
@@ -190,6 +194,38 @@ class ChatClient
         return resolve(function() use($room, $userId) {
             $users = yield $this->getRoomOwners($room);
             return isset($users[$userId]);
+        });
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param int $messageId
+     * @return Promise<ChatRoom>
+     */
+    public function getRoomIdentifierFromMessageID($room, int $messageId)
+    {
+        $identifier = $this->getIdentifierFromArg($room);
+        $url = $this->urlResolver->getEndpointURL($identifier, ChatRoomEndpoint::CHATROOM_GET_MESSAGE_HISTORY, $messageId);
+
+        return resolve(function() use($identifier, $url, $messageId) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($url);
+
+            $doc = domdocument_load_html($response->getBody());
+            $els = (new \DOMXPath($doc))->query("//*[@id='message-{$messageId}']//a[@name='{$messageId}']");
+
+            if ($els->length === 0) {
+                throw new DataFetchFailureException('Unable to find message anchor element in response HTML');
+            }
+
+            /** @var \DOMElement $anchorEl */
+            $anchorEl = $els->item(0);
+
+            if (!preg_match('~^/transcript/([0-9]+)~', $anchorEl->getAttribute('href'), $match)) {
+                throw new DataFetchFailureException('Message anchor element href in an unexpected format');
+            }
+
+            return $this->identifierFactory->create((int)$match[1], $identifier->getHost());
         });
     }
 
