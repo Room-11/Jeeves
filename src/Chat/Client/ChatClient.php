@@ -147,7 +147,7 @@ class ChatClient
      * @param ChatRoom|ChatRoomIdentifier $room
      * @return Promise<string[][]>
      */
-    public function getRoomAccess($room)
+    public function getRoomAccess($room): Promise
     {
         $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::CHATROOM_INFO_ACCESS);
 
@@ -185,7 +185,7 @@ class ChatClient
      * @param int $userId
      * @return Promise<bool>
      */
-    public function isRoomOwner($room, int $userId)
+    public function isRoomOwner($room, int $userId): Promise
     {
         return resolve(function() use($room, $userId) {
             $users = yield $this->getRoomOwners($room);
