@@ -485,7 +485,7 @@ class ChatClient
             ->addField("text", $text)
             ->addField("fkey", (string)$message->getRoom()->getSession()->getFKey());
 
-        $url = $this->urlResolver->getEndpointURL($message->getRoom(), ChatRoomEndpoint::CHATROOM_EDIT_MESSAGE, $message->getMessageId());
+        $url = $this->urlResolver->getEndpointURL($message->getRoom(), ChatRoomEndpoint::CHATROOM_EDIT_MESSAGE, $message->getId());
 
         $request = (new HttpRequest)
             ->setUri($url)

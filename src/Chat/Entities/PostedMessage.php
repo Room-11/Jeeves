@@ -8,13 +8,13 @@ class PostedMessage
 {
     private $room;
 
-    private $messageId;
+    private $id;
 
     private $timestamp;
 
-    public function __construct(ChatRoom $room, int $messageId, int $timestamp) {
+    public function __construct(ChatRoom $room, int $id, int $timestamp) {
         $this->room = $room;
-        $this->messageId = $messageId;
+        $this->id = $id;
         $this->timestamp = new \DateTimeImmutable("@" . $timestamp);
     }
 
@@ -22,8 +22,8 @@ class PostedMessage
         return $this->room;
     }
 
-    public function getMessageId(): int {
-        return $this->messageId;
+    public function getId(): int {
+        return $this->id;
     }
 
     public function getTimestamp(): \DateTimeImmutable {

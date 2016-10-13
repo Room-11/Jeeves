@@ -67,7 +67,7 @@ class RFC extends BasePlugin
             if (yield $this->pluginData->exists('lastpinid', $command->getRoom())) {
                 yield $this->pluginData->unset('lastpinid', $command->getRoom());
             }
-            
+
             return $this->chatClient->postMessage($command->getRoom(), "Sorry, but we can't have nice things.");
         }
 
@@ -80,8 +80,8 @@ class RFC extends BasePlugin
             )
         );
 
-        yield $this->pluginData->set('lastpinid', $postedMessage->getMessageId(), $command->getRoom());
-        return $this->chatClient->pinOrUnpinMessage($postedMessage->getMessageId(), $command->getRoom());
+        yield $this->pluginData->set('lastpinid', $postedMessage->getId(), $command->getRoom());
+        return $this->chatClient->pinOrUnpinMessage($postedMessage->getId(), $command->getRoom());
     }
 
     private function unpinPreviousMessage(ChatRoom $room) {
