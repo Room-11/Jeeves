@@ -103,6 +103,28 @@ class ChatClient
         throw new \InvalidArgumentException('Invalid chat room identifier');
     }
 
+    /**
+     * @param PostedMessage|Message|int $messageOrId
+     * @param ChatRoom|null $room
+     * @return array
+     */
+    private function getMessageIDAndRoomPairFromArgs($messageOrId, ChatRoom $room = null): array
+    {
+        if ($messageOrId instanceof Message || $messageOrId instanceof PostedMessage) {
+            return [$messageOrId->getId(), $messageOrId->getRoom()];
+        }
+
+        if (!is_int($messageOrId)) {
+            throw new \InvalidArgumentException('$messageOrId must be integer or instance of ' . Message::class);
+        }
+
+        if ($room === null) {
+            throw new \InvalidArgumentException('Room required if message ID is specified');
+        }
+
+        return [$messageOrId, $room];
+    }
+
     public function truncateText(string $text, $length = self::TRUNCATION_LIMIT): string
     {
         if (mb_strlen($text, self::ENCODING) <= $length) {
@@ -472,12 +494,24 @@ class ChatClient
         });
     }
 
-    public function postReply(Message $origin, string $text, int $flags = PostFlags::NONE): Promise
+    /**
+     * @param PostedMessage|Message $origin
+     * @param string $text
+     * @param int $flags
+     * @return Promise
+     */
+    public function postReply($origin, string $text, int $flags = PostFlags::NONE): Promise
     {
         return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}", $flags & ~PostFlags::FIXED_FONT);
     }
 
-    public function editMessage(PostedMessage $message, string $text, int $flags = PostFlags::NONE): Promise
+    /**
+     * @param PostedMessage|Message $message
+     * @param string $text
+     * @param int $flags
+     * @return Promise
+     */
+    public function editMessage($message, string $text, int $flags = PostFlags::NONE): Promise
     {
         $text = $this->applyPostFlagsToText($text, $flags);
 
@@ -498,29 +532,7 @@ class ChatClient
     }
 
     /**
-     * @param Message|int $messageOrId
-     * @param ChatRoom|null $room
-     * @return array
-     */
-    private function getMessageIDAndRoomPairFromArgs($messageOrId, ChatRoom $room = null): array
-    {
-        if ($messageOrId instanceof Message) {
-            return [$messageOrId->getId(), $messageOrId->getRoom()];
-        }
-
-        if (!is_int($messageOrId)) {
-            throw new \InvalidArgumentException('$messageOrId must be integer or instance of ' . Message::class);
-        }
-
-        if ($room === null) {
-            throw new \InvalidArgumentException('Room required if message ID is specified');
-        }
-
-        return [$messageOrId, $room];
-    }
-
-    /**
-     * @param Message|int $messageOrId
+     * @param PostedMessage|Message|int $messageOrId
      * @param ChatRoom|null $room
      * @return Promise
      */
@@ -544,7 +556,7 @@ class ChatClient
     }
 
     /**
-     * @param Message|int $messageOrId
+     * @param PostedMessage|Message|int $messageOrId
      * @param ChatRoom|null $room
      * @return Promise
      */
