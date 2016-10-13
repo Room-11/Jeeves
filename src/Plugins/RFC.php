@@ -27,7 +27,8 @@ class RFC extends BasePlugin
         $this->pluginData = $pluginData;
     }
 
-    public function search(Command $command): \Generator {
+    public function search(Command $command)
+    {
         if ($command->hasParameters(1)) {
             // !!rfcs some-rfc-name
             return yield from $this->getRFC($command);
@@ -95,7 +96,8 @@ class RFC extends BasePlugin
         }
     }
 
-    public function getRFC(Command $command): \Generator {
+    public function getRFC(Command $command)
+    {
         $rfc = $command->getParameter(0);
         if ($rfc === null) {
             // e.g.: !!rfc pipe-operator
