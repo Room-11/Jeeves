@@ -492,9 +492,31 @@ class ChatClient
             ->setMethod("POST")
             ->setBody($body);
 
-        $action = $this->actionFactory->createEditMessageAction($request);
+        $action = $this->actionFactory->createEditMessageAction($request, $message->getRoom());
 
         return $this->actionExecutor->enqueue($action);
+    }
+
+    /**
+     * @param Message|int $messageOrId
+     * @param ChatRoom|null $room
+     * @return array
+     */
+    private function getMessageIDAndRoomPairFromArgs($messageOrId, ChatRoom $room = null): array
+    {
+        if ($messageOrId instanceof Message) {
+            return [$messageOrId->getId(), $messageOrId->getRoom()];
+        }
+
+        if (!is_int($messageOrId)) {
+            throw new \InvalidArgumentException('$messageOrId must be integer or instance of ' . Message::class);
+        }
+
+        if ($room === null) {
+            throw new \InvalidArgumentException('Room required if message ID is specified');
+        }
+
+        return [$messageOrId, $room];
     }
 
     /**
@@ -504,14 +526,7 @@ class ChatClient
      */
     public function pinOrUnpinMessage($messageOrId, ChatRoom $room = null): Promise
     {
-        if ($messageOrId instanceof Message) {
-            $messageId = $messageOrId->getId();
-            $room = $messageOrId->getRoom();
-        } else if (is_int($messageOrId)) {
-            $messageId = $messageOrId;
-        } else {
-            throw new \InvalidArgumentException('$messageOrId must be integer or instance of ' . Message::class);
-        }
+        list($messageId, $room) = $this->getMessageIDAndRoomPairFromArgs($messageOrId, $room);
 
         $body = (new FormBody)
             ->addField("fkey", $room->getSession()->getFKey());
@@ -523,7 +538,7 @@ class ChatClient
             ->setMethod("POST")
             ->setBody($body);
 
-        $action = $this->actionFactory->createPinOrUnpinMessageAction($request);
+        $action = $this->actionFactory->createPinOrUnpinMessageAction($request, $room);
 
         return $this->actionExecutor->enqueue($action);
     }
@@ -535,14 +550,7 @@ class ChatClient
      */
     public function unstarMessage($messageOrId, ChatRoom $room = null): Promise
     {
-        if ($messageOrId instanceof Message) {
-            $messageId = $messageOrId->getId();
-            $room = $messageOrId->getRoom();
-        } else if (is_int($messageOrId)) {
-            $messageId = $messageOrId;
-        } else {
-            throw new \InvalidArgumentException('$messageOrId must be integer or instance of ' . Message::class);
-        }
+        list($messageId, $room) = $this->getMessageIDAndRoomPairFromArgs($messageOrId, $room);
 
         $body = (new FormBody)
             ->addField("fkey", $room->getSession()->getFKey());
@@ -554,7 +562,7 @@ class ChatClient
             ->setMethod("POST")
             ->setBody($body);
 
-        $action = $this->actionFactory->createUnstarMessageAction($request);
+        $action = $this->actionFactory->createUnstarMessageAction($request, $room);
 
         return $this->actionExecutor->enqueue($action);
     }

@@ -20,21 +20,21 @@ class ActionFactory
 
     public function createPostMessageAction(Request $request, ChatRoom $room, string $messageText): PostMessageAction
     {
-        return new PostMessageAction($this->logger, $this->tracker, $request, $room, $messageText);
+        return new PostMessageAction($this->logger, $request, $room, $this->tracker, $messageText);
     }
 
-    public function createEditMessageAction(Request $request): EditMessageAction
+    public function createEditMessageAction(Request $request, ChatRoom $room): EditMessageAction
     {
-        return new EditMessageAction($this->logger, $request);
+        return new EditMessageAction($this->logger, $request, $room);
     }
 
-    public function createPinOrUnpinMessageAction(Request $request): PinOrUnpinMessageAction
+    public function createPinOrUnpinMessageAction(Request $request, ChatRoom $room): PinOrUnpinMessageAction
     {
-        return new PinOrUnpinMessageAction($this->logger, $request);
+        return new PinOrUnpinMessageAction($this->logger, $request, $room);
     }
 
-    public function createUnstarMessageAction(Request $request): UnstarMessageAction
+    public function createUnstarMessageAction(Request $request, ChatRoom $room): UnstarMessageAction
     {
-        return new UnstarMessageAction($this->logger, $request);
+        return new UnstarMessageAction($this->logger, $request, $room);
     }
 }

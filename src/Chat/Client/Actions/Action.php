@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Client\Actions;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Deferred;
 use Amp\Promisor;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Logger;
 
 abstract class Action implements Promisor
@@ -16,11 +17,13 @@ abstract class Action implements Promisor
 
     protected $logger;
     protected $request;
+    protected $room;
 
-    public function __construct(Logger $logger, HttpRequest $request)
+    public function __construct(Logger $logger, HttpRequest $request, ChatRoom $room)
     {
         $this->logger = $logger;
         $this->request = $request;
+        $this->room = $room;
 
         $this->deferred = new Deferred();
     }
@@ -28,6 +31,11 @@ abstract class Action implements Promisor
     public function getRequest(): HttpRequest
     {
         return $this->request;
+    }
+
+    public function getRoom(): ChatRoom
+    {
+        return $this->room;
     }
 
     public function isValid(): bool

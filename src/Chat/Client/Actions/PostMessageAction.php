@@ -13,20 +13,18 @@ use Room11\Jeeves\Log\Logger;
 class PostMessageAction extends Action
 {
     private $tracker;
-    private $room;
     private $text;
 
     public function __construct(
         Logger $logger,
-        PostedMessageTracker $tracker,
         HttpRequest $request,
         ChatRoom $room,
+        PostedMessageTracker $tracker,
         string $text
     ) {
-        parent::__construct($logger, $request);
+        parent::__construct($logger, $request, $room);
 
         $this->tracker = $tracker;
-        $this->room = $room;
         $this->text = $text;
     }
 
