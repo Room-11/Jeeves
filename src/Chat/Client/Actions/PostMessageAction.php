@@ -28,9 +28,9 @@ class PostMessageAction extends Action
         $this->text = $text;
     }
 
-    public function getMaxAttempts(): int
+    public function getExceptionClassName(): string
     {
-        return 5;
+        return MessagePostFailureException::class;
     }
 
     public function isValid(): bool
@@ -54,8 +54,9 @@ class PostMessageAction extends Action
 
         // sometimes we can get {"id":null,"time":null}
         // I think this happens when we repeat ourselves too quickly
+        // todo: remove this if we don't get any more for a week or two (repeat message guard should prevent it)
         $delay = $attempt * 1000;
-        $this->logger->log(Level::DEBUG, "Got a null message post response, waiting for {$delay}ms before trying again");
+        $this->logger->log(Level::ERROR, "WARN: Got a null message post response, waiting for {$delay}ms before trying again");
 
         return $delay;
     }

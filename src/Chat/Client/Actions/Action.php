@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Chat\Client\Actions;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Deferred;
 use Amp\Promisor;
+use Room11\Jeeves\Chat\Client\ActionExecutionFailureException;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Logger;
 
@@ -28,14 +29,34 @@ abstract class Action implements Promisor
         $this->deferred = new Deferred();
     }
 
-    public function getRequest(): HttpRequest
+    final public function getRequest(): HttpRequest
     {
         return $this->request;
     }
 
-    public function getRoom(): ChatRoom
+    final public function getRoom(): ChatRoom
     {
         return $this->room;
+    }
+
+    final public function promise()
+    {
+        return $this->deferred->promise();
+    }
+
+    final public function update($progress)
+    {
+        $this->deferred->update($progress);
+    }
+
+    final public function succeed($result = null)
+    {
+        $this->deferred->succeed($result);
+    }
+
+    final public function fail($error)
+    {
+        $this->deferred->fail($error);
     }
 
     public function isValid(): bool
@@ -43,27 +64,15 @@ abstract class Action implements Promisor
         return true;
     }
 
-    abstract public function getMaxAttempts(): int;
+    public function getExceptionClassName(): string
+    {
+        return ActionExecutionFailureException::class;
+    }
+
+    public function getMaxAttempts(): int
+    {
+        return 5;
+    }
 
     abstract public function processResponse($response, int $attempt): int;
-
-    public function promise()
-    {
-        return $this->deferred->promise();
-    }
-
-    public function update($progress)
-    {
-        $this->deferred->update($progress);
-    }
-
-    public function succeed($result = null)
-    {
-        $this->deferred->succeed($result);
-    }
-
-    public function fail($error)
-    {
-        $this->deferred->fail($error);
-    }
 }

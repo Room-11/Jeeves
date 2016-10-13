@@ -7,9 +7,9 @@ use Room11\Jeeves\Log\Level;
 
 class EditMessageAction extends Action
 {
-    public function getMaxAttempts(): int
+    public function getExceptionClassName(): string
     {
-        return 5;
+        return MessageEditFailureException::class;
     }
 
     public function processResponse($response, int $attempt): int

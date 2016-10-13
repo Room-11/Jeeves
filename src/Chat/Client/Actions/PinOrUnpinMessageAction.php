@@ -7,11 +7,6 @@ use Room11\Jeeves\Log\Level;
 
 class PinOrUnpinMessageAction extends Action
 {
-    public function getMaxAttempts(): int
-    {
-        return 5;
-    }
-
     public function processResponse($response, int $attempt): int
     {
         if ($response === 'ok') {

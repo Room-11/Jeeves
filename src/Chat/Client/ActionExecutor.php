@@ -36,8 +36,10 @@ class ActionExecutor
 
     private function executeAction(Action $action)
     {
+        $exceptionClass = $action->getExceptionClassName();
+
         if (!$action->isValid()) {
-            $action->fail(new ActionExecutionFailureException('Action no longer valid at point of execution'));
+            $action->fail(new $exceptionClass('Action no longer valid at point of execution'));
             return;
         }
 
@@ -55,7 +57,7 @@ class ActionExecutor
                 } catch (\InvalidArgumentException $e) {
                     $errStr = 'Got a 409 response to an Action request that could not be decoded as a back-off delay';
                     $this->logger->log(Level::ERROR, $errStr, $response->getBody());
-                    $action->fail(new ActionExecutionFailureException($errStr));
+                    $action->fail(new $exceptionClass($errStr, $e->getCode(), $e));
                     return;
                 }
 
@@ -68,7 +70,7 @@ class ActionExecutor
             if ($response->getStatus() !== 200) {
                 $errStr = 'Got a ' . $response->getStatus() . ' response to an Action request';
                 $this->logger->log(Level::ERROR, $errStr, [$action->getRequest(), $response]);
-                $action->fail(new ActionExecutionFailureException($errStr));
+                $action->fail(new $exceptionClass($errStr));
                 return;
             }
 
@@ -78,7 +80,7 @@ class ActionExecutor
                 $errStr = 'A response that could not be decoded as JSON was received'
                     . ' (JSON decode error: ' . $e->getMessage() . ')';
                 $this->logger->log(Level::ERROR, $errStr, $response->getBody());
-                $action->fail(new ActionExecutionFailureException($errStr));
+                $action->fail(new $exceptionClass($errStr, $e->getCode(), $e));
                 return;
             }
 
