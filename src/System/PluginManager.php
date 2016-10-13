@@ -11,7 +11,7 @@ use Room11\Jeeves\Chat\Event\GlobalEvent;
 use Room11\Jeeves\Chat\Event\RoomSourcedEvent;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
+use Room11\Jeeves\Chat\Room\ConnectedRoomCollection;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
@@ -28,7 +28,7 @@ class PluginManager
     private $logger;
     private $filterBuilder;
     private $builtInActionManager;
-    private $rooms;
+    private $connectedRooms;
 
     /**
      * @var Plugin[]
@@ -184,14 +184,14 @@ class PluginManager
         Logger $logger,
         EventFilterBuilder $filterBuilder,
         BuiltInActionManager $builtInActionManager,
-        ChatRoomCollection $rooms
+        ConnectedRoomCollection $connectedRooms
     ) {
         $this->banStorage = $banStorage;
         $this->pluginStorage = $pluginStorage;
         $this->logger = $logger;
         $this->filterBuilder = $filterBuilder;
         $this->builtInActionManager = $builtInActionManager;
-        $this->rooms = $rooms;
+        $this->connectedRooms = $connectedRooms;
     }
 
     public function registerPlugin(Plugin $plugin) /*: void*/
@@ -287,7 +287,7 @@ class PluginManager
      */
     public function getMappedCommandsForRoom($room): array
     {
-        $room = $this->rooms->get($room);
+        $room = $this->connectedRooms->get($room);
         $result = [];
 
         /**
@@ -312,7 +312,7 @@ class PluginManager
      */
     public function isCommandMappedForRoom($room, string $command): bool
     {
-        return isset($this->commandMap[$this->rooms->get($room)->getIdentifier()->getIdentString()][$command]);
+        return isset($this->commandMap[$this->connectedRooms->get($room)->getIdentifier()->getIdentString()][$command]);
     }
 
     /**
@@ -324,7 +324,7 @@ class PluginManager
      */
     public function mapCommandForRoom($room, $plugin, string $endpoint, string $command): Promise
     {
-        $room = $this->rooms->get($room);
+        $room = $this->connectedRooms->get($room);
 
         if (in_array($command, $this->builtInActionManager->getRegisteredCommands())) {
             throw new \LogicException("Command '{$command}' is built in");
@@ -361,7 +361,7 @@ class PluginManager
      */
     public function unmapCommandForRoom($room, string $command): Promise
     {
-        $room = $this->rooms->get($room);
+        $room = $this->connectedRooms->get($room);
 
         if (in_array($command, $this->builtInActionManager->getRegisteredCommands())) {
             throw new \LogicException("Command '{$command}' is built in");
@@ -389,7 +389,7 @@ class PluginManager
     {
         list($pluginName) = $this->resolvePluginFromNameOrObject($plugin);
 
-        return isset($this->enabledPlugins[$this->rooms->get($room)->getIdentifier()->getIdentString()][$pluginName]);
+        return isset($this->enabledPlugins[$this->connectedRooms->get($room)->getIdentifier()->getIdentString()][$pluginName]);
     }
 
     /**
@@ -399,7 +399,7 @@ class PluginManager
      */
     public function enableAllPluginsForRoom($room, bool $persist = false): Promise
     {
-        $room = $this->rooms->get($room);
+        $room = $this->connectedRooms->get($room);
 
         return resolve(function () use ($room, $persist) {
             $promises = [];
@@ -421,7 +421,7 @@ class PluginManager
      */
     public function disableAllPluginsForRoom($room, bool $persist = false): Promise
     {
-        $room = $this->rooms->get($room);
+        $room = $this->connectedRooms->get($room);
 
         return all(array_map(function(Plugin $plugin) use($room, $persist) {
             return $this->disablePluginForRoom($plugin, $room, $persist);
@@ -436,7 +436,7 @@ class PluginManager
      */
     public function disablePluginForRoom($plugin, $room, bool $persist = true): Promise
     {
-        $room = $this->rooms->get($room);
+        $room = $this->connectedRooms->get($room);
 
         list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
         $roomId = $room->getIdentifier()->getIdentString();
@@ -473,7 +473,7 @@ class PluginManager
      */
     public function enablePluginForRoom($plugin, $room, bool $persist = true): Promise
     {
-        $room = $this->rooms->get($room);
+        $room = $this->connectedRooms->get($room);
 
         return resolve(function() use($plugin, $room, $persist) {
             list($pluginName, $plugin) = $this->resolvePluginFromNameOrObject($plugin);
@@ -553,8 +553,8 @@ class PluginManager
 
         $roomId = null;
         if ($room !== null) {
-            $room = $this->rooms->get($room);
-            $roomId = $this->rooms->get($room)->getIdentifier()->getIdentString();
+            $room = $this->connectedRooms->get($room);
+            $roomId = $this->connectedRooms->get($room)->getIdentifier()->getIdentString();
         }
 
         $endpoints = [];

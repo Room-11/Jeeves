@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Room;
 
 use const Room11\Jeeves\ROOM_IDENTIFIER_EXPR;
 
-class Collection implements \Iterator, \ArrayAccess, \Countable
+class ConnectedRoomCollection implements \Iterator, \ArrayAccess, \Countable
 {
     /**
      * @var Room[][]

@@ -34,6 +34,7 @@ class PresenceManager
     private $urlResolver;
     private $identifierFactory;
     private $connector;
+    private $connectedRooms;
     private $eventDispatcher;
     private $logger;
 
@@ -48,7 +49,7 @@ class PresenceManager
         EndpointURLResolver $urlResolver,
         IdentifierFactory $identifierFactory,
         Connector $connector,
-        Collection $rooms,
+        ConnectedRoomCollection $connectedRooms,
         EventDispatcher $eventDispatcher,
         Logger $logger
     ) {
@@ -58,7 +59,7 @@ class PresenceManager
         $this->urlResolver = $urlResolver;
         $this->identifierFactory = $identifierFactory;
         $this->connector = $connector;
-        $this->rooms = $rooms;
+        $this->connectedRooms = $connectedRooms;
         $this->eventDispatcher = $eventDispatcher;
         $this->logger = $logger;
     }
@@ -118,7 +119,7 @@ class PresenceManager
 
         $message = "Hi! This is just a friendly reminder that I will leave the room in 12 hours if I have not been"
                  . " approved by {$requiredApprovals} room owners. So far I have {$currentApprovals} votes.";
-        $room = $this->rooms->get($identifier);
+        $room = $this->connectedRooms->get($identifier);
 
         yield $this->chatClient->postMessage($room, $message, PostFlags::FORCE);
     }
@@ -134,7 +135,7 @@ class PresenceManager
 
         $message = "Hi! This is just a friendly reminder that I will leave the room in 1 hour if I have not been"
                  . " approved by {$requiredApprovals} room owners. So far I have {$currentApprovals} votes.";
-        $room = $this->rooms->get($identifier);
+        $room = $this->connectedRooms->get($identifier);
 
         yield $this->chatClient->postMessage($room, $message, PostFlags::FORCE);
     }
@@ -148,7 +149,7 @@ class PresenceManager
         $requiredApprovals = yield from $this->getRequiredApproveVoteCount($identifier);
 
         $message = "I have not been approved by {$requiredApprovals} room owners, so I am leaving the room. Bye!";
-        $room = $this->rooms->get($identifier);
+        $room = $this->connectedRooms->get($identifier);
 
         yield $this->chatClient->postMessage($room, $message, PostFlags::FORCE);
         yield $this->leaveRoom($room);
@@ -196,7 +197,7 @@ class PresenceManager
     private function connectRoom(Identifier $identifier)
     {
         $room = yield $this->connector->connect($identifier, $this, isset($this->permanentRooms[$identifier->getIdentString()]));
-        $this->rooms->add($room);
+        $this->connectedRooms->add($room);
 
         yield $this->eventDispatcher->processConnect($identifier);
 
@@ -292,7 +293,7 @@ class PresenceManager
 
     private function checkAndAddLeaveVote(Identifier $identifier, int $userID)
     {
-        $room = $this->rooms->get($identifier);
+        $room = $this->connectedRooms->get($identifier);
 
         if (!yield $this->chatClient->isRoomOwner($identifier, $userID)) {
             throw new UserNotAcceptableException(
@@ -384,12 +385,12 @@ class PresenceManager
         yield $this->eventDispatcher->processDisconnect($identifier);
 
         assert(
-            $this->rooms->contains($identifier),
+            $this->connectedRooms->contains($identifier),
             new \LogicException("Got disconnect from unknown room {$identifier}")
         );
 
-        $room = $this->rooms->get($identifier);
-        $this->rooms->remove($identifier);
+        $room = $this->connectedRooms->get($identifier);
+        $this->connectedRooms->remove($identifier);
 
         if ($room->isPermanent() || yield $this->storage->containsRoom($identifier)) {
             yield from $this->reconnectRoom($identifier);

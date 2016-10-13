@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Chat;
 
-use Room11\Jeeves\Chat\Room\Collection as ChatRoomCollection;
+use Room11\Jeeves\Chat\Room\ConnectedRoomCollection;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
@@ -38,7 +38,7 @@ class EndpointURLResolver
         Endpoint::MAINSITE_USER                => '%1$s/users/%2$d?tab=profile',
     ];
 
-    private $roomCollection;
+    private $connectedRooms;
 
     private function getIdentifierFromArg($arg): ChatRoomIdentifier
     {
@@ -56,7 +56,7 @@ class EndpointURLResolver
         if ($arg instanceof ChatRoom) {
             return $arg;
         } else if ($arg instanceof ChatRoomIdentifier || is_string($arg)) {
-            return $this->roomCollection->get($arg);
+            return $this->connectedRooms->get($arg);
         }
 
         throw new \InvalidArgumentException('Invalid chat room identifier');
@@ -81,9 +81,9 @@ class EndpointURLResolver
         );
     }
 
-    public function __construct(ChatRoomCollection $roomCollection)
+    public function __construct(ConnectedRoomCollection $connectedRooms)
     {
-        $this->roomCollection = $roomCollection;
+        $this->connectedRooms = $connectedRooms;
     }
 
     /**
