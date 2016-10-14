@@ -30,7 +30,7 @@ storage:
 
 plugins:
 plugins:
-  - Room11\Jeeves\AntiW3Schools
+  - Room11\Jeeves\Plugins\AntiW3Schools
   - Room11\Jeeves\Plugins\Canon
   - Room11\Jeeves\Plugins\Changelog
   - Room11\Jeeves\Plugins\Chuck
