@@ -27,7 +27,8 @@ class RFC extends BasePlugin
         $this->pluginData = $pluginData;
     }
 
-    public function search(Command $command): \Generator {
+    public function search(Command $command)
+    {
         if ($command->hasParameters(1)) {
             // !!rfcs some-rfc-name
             return yield from $this->getRFC($command);
@@ -67,7 +68,7 @@ class RFC extends BasePlugin
             if (yield $this->pluginData->exists('lastpinid', $command->getRoom())) {
                 yield $this->pluginData->unset('lastpinid', $command->getRoom());
             }
-            
+
             return $this->chatClient->postMessage($command->getRoom(), "Sorry, but we can't have nice things.");
         }
 
@@ -80,8 +81,9 @@ class RFC extends BasePlugin
             )
         );
 
-        yield $this->pluginData->set('lastpinid', $postedMessage->getMessageId(), $command->getRoom());
-        return $this->chatClient->pinOrUnpinMessage($postedMessage->getMessageId(), $command->getRoom());
+        yield $this->pluginData->set('lastpinid', $postedMessage->getId(), $command->getRoom());
+
+        return $this->chatClient->pinOrUnpinMessage($postedMessage, $command->getRoom());
     }
 
     private function unpinPreviousMessage(ChatRoom $room) {
@@ -95,7 +97,8 @@ class RFC extends BasePlugin
         }
     }
 
-    public function getRFC(Command $command): \Generator {
+    public function getRFC(Command $command)
+    {
         $rfc = $command->getParameter(0);
         if ($rfc === null) {
             // e.g.: !!rfc pipe-operator

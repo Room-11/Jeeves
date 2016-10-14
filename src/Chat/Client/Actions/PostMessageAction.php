@@ -2,47 +2,61 @@
 
 namespace Room11\Jeeves\Chat\Client\Actions;
 
-use Amp\Deferred;
 use Amp\Artax\Request as HttpRequest;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\MessagePostFailureException;
+use Room11\Jeeves\Chat\Client\PostedMessageTracker;
+use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 
 class PostMessageAction extends Action
 {
-    private $room;
+    private $tracker;
+    private $text;
 
-    public function __construct(HttpRequest $request, ChatRoom $room, Deferred $deferred)
-    {
-        parent::__construct($request, $deferred);
+    public function __construct(
+        Logger $logger,
+        HttpRequest $request,
+        ChatRoom $room,
+        PostedMessageTracker $tracker,
+        string $text
+    ) {
+        parent::__construct($logger, $request, $room);
 
-        $this->room = $room;
+        $this->tracker = $tracker;
+        $this->text = $text;
     }
 
-    public function getMaxAttempts(): int
+    public function getExceptionClassName(): string
     {
-        return 5;
+        return MessagePostFailureException::class;
     }
 
-    public function processResponse($response, int $attempt, Logger $logger): int
+    public function isValid(): bool
+    {
+        return $this->tracker->getLastPostedMessage($this->room) !== $this->text;
+    }
+
+    public function processResponse($response, int $attempt): int
     {
         if (isset($response["id"], $response["time"])) {
-            $this->getPromisor()->succeed(new PostedMessage($this->room, $response["id"], $response["time"]));
+            $this->tracker->setLastPostedMessage($this->room, $this->text);
+            $this->succeed(new PostedMessage($this->room, $response["id"], $response["time"]));
             return self::SUCCESS;
         }
 
         if (!array_key_exists('id', $response)) {
-            $logger->log(Level::ERROR, 'A JSON response that I don\'t understand was received', $response);
-            $this->getPromisor()->fail(new MessagePostFailureException("Invalid response from server"));
+            $this->logger->log(Level::ERROR, 'A JSON response that I don\'t understand was received', $response);
+            $this->fail(new MessagePostFailureException("Invalid response from server"));
             return self::FAILURE;
         }
 
         // sometimes we can get {"id":null,"time":null}
         // I think this happens when we repeat ourselves too quickly
+        // todo: remove this if we don't get any more for a week or two (repeat message guard should prevent it)
         $delay = $attempt * 1000;
-        $logger->log(Level::DEBUG, "Got a null message post response, waiting for {$delay}ms before trying again");
+        $this->logger->log(Level::ERROR, "WARN: Got a null message post response, waiting for {$delay}ms before trying again");
 
         return $delay;
     }

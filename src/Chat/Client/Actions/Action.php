@@ -3,34 +3,76 @@
 namespace Room11\Jeeves\Chat\Client\Actions;
 
 use Amp\Artax\Request as HttpRequest;
+use Amp\Deferred;
 use Amp\Promisor;
+use Room11\Jeeves\Chat\Client\ActionExecutionFailureException;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Logger;
 
-abstract class Action
+abstract class Action implements Promisor
 {
-    private $request;
-    private $promisor;
-
     const SUCCESS = -1;
     const FAILURE = 0;
 
-    public function __construct(HttpRequest $request, Promisor $promisor)
+    private $deferred;
+
+    protected $logger;
+    protected $request;
+    protected $room;
+
+    public function __construct(Logger $logger, HttpRequest $request, ChatRoom $room)
     {
+        $this->logger = $logger;
         $this->request = $request;
-        $this->promisor = $promisor;
+        $this->room = $room;
+
+        $this->deferred = new Deferred();
     }
 
-    public function getRequest(): HttpRequest
+    final public function getRequest(): HttpRequest
     {
         return $this->request;
     }
 
-    public function getPromisor(): Promisor
+    final public function getRoom(): ChatRoom
     {
-        return $this->promisor;
+        return $this->room;
     }
 
-    abstract public function getMaxAttempts(): int;
+    final public function promise()
+    {
+        return $this->deferred->promise();
+    }
 
-    abstract public function processResponse($response, int $attempt, Logger $logger): int;
+    final public function update($progress)
+    {
+        $this->deferred->update($progress);
+    }
+
+    final public function succeed($result = null)
+    {
+        $this->deferred->succeed($result);
+    }
+
+    final public function fail($error)
+    {
+        $this->deferred->fail($error);
+    }
+
+    public function isValid(): bool
+    {
+        return true;
+    }
+
+    public function getExceptionClassName(): string
+    {
+        return ActionExecutionFailureException::class;
+    }
+
+    public function getMaxAttempts(): int
+    {
+        return 5;
+    }
+
+    abstract public function processResponse($response, int $attempt): int;
 }

@@ -4,25 +4,24 @@ namespace Room11\Jeeves\Chat\Client\Actions;
 
 use Room11\Jeeves\Chat\Client\MessageEditFailureException;
 use Room11\Jeeves\Log\Level;
-use Room11\Jeeves\Log\Logger;
 
 class EditMessageAction extends Action
 {
-    public function getMaxAttempts(): int
+    public function getExceptionClassName(): string
     {
-        return 5;
+        return MessageEditFailureException::class;
     }
 
-    public function processResponse($response, int $attempt, Logger $logger): int
+    public function processResponse($response, int $attempt): int
     {
         if ($response === 'ok') {
-            $this->getPromisor()->succeed();
+            $this->succeed();
             return self::SUCCESS;
         }
 
         $errStr = 'A JSON response that I don\'t understand was received';
-        $logger->log(Level::ERROR, $errStr, $response);
-        $this->getPromisor()->fail(new MessageEditFailureException($errStr));
+        $this->logger->log(Level::ERROR, $errStr, $response);
+        $this->fail(new MessageEditFailureException($errStr));
 
         return self::FAILURE;
     }

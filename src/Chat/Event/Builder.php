@@ -4,27 +4,27 @@ namespace Room11\Jeeves\Chat\Event;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Event\Factory as EventFactory;
-use Room11\Jeeves\Chat\Room\Collection as RoomCollection;
+use Room11\Jeeves\Chat\Room\ConnectedRoomCollection;
 use Room11\Jeeves\Chat\Room\Identifier;
 
 class Builder
 {
     private $eventFactory;
     private $chatClient;
-    private $rooms;
+    private $connectedRooms;
 
-    public function __construct(EventFactory $eventFactory, ChatClient $chatClient, RoomCollection $rooms)
+    public function __construct(EventFactory $eventFactory, ChatClient $chatClient, ConnectedRoomCollection $connectedRooms)
     {
         $this->eventFactory = $eventFactory;
         $this->chatClient = $chatClient;
-        $this->rooms = $rooms;
+        $this->connectedRooms = $connectedRooms;
     }
 
     public function build(array $data, Identifier $identifier)
     {
         $result = [];
 
-        $room = $this->rooms->get($identifier);
+        $room = $this->connectedRooms->get($identifier);
         $roomId = $identifier->getId();
 
         foreach ($data['r' . $roomId]['e'] ?? [] as $eventData) {

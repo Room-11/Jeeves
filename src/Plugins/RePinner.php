@@ -23,7 +23,7 @@ class RePinner extends BasePlugin
         $this->keyValueStore = $keyValueStore;
     }
 
-    public function starMessageEventHandler(StarMessageEvent $event): \Generator
+    public function starMessageEventHandler(StarMessageEvent $event)
     {
         $key = (string)$event->getMessageId();
 
@@ -40,13 +40,13 @@ class RePinner extends BasePlugin
 
         /** @var PostedMessage $posted */
         $posted = yield $this->chatClient->postMessage($event->getRoom(), $message);
-        $id = $posted->getMessageId();
 
-        yield $this->chatClient->pinOrUnpinMessage($id, $event->getRoom());
-        yield $this->keyValueStore->set((string)$id, $message, $event->getRoom());
+        yield $this->keyValueStore->set((string)$posted->getId(), $message, $event->getRoom());
+
+        yield $this->chatClient->pinOrUnpinMessage($posted, $event->getRoom());
     }
 
-    public function repin(Command $command): \Generator
+    public function repin(Command $command)
     {
         $owners = yield $this->chatClient->getRoomOwners($command->getRoom());
 
@@ -72,7 +72,7 @@ class RePinner extends BasePlugin
         if (!in_array($id, yield $this->chatClient->getPinnedMessages($command->getRoom()))) {
             /** @var PostedMessage $posted */
             $posted = yield $this->chatClient->postMessage($command->getRoom(), $message);
-            $id = $posted->getMessageId();
+            $id = $posted->getId();
             yield $this->chatClient->pinOrUnpinMessage($id, $command->getRoom());
         }
 
@@ -159,7 +159,7 @@ class RePinner extends BasePlugin
 
             /** @var PostedMessage $posted */
             $posted = yield $this->chatClient->postMessage($room, $message);
-            $id = $posted->getMessageId();
+            $id = $posted->getId();
 
             yield $this->chatClient->pinOrUnpinMessage($id, $room);
 

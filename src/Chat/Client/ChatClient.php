@@ -2,26 +2,27 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
-use function Amp\all;
 use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\DOMUtils\ElementNotFoundException;
-use Room11\Jeeves\Chat\Entities\MainSiteUser;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Entities\ChatUser;
 use Room11\Jeeves\Chat\Client\Actions\ActionFactory;
-use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Chat\Room\UserAccessType as ChatRoomAccessType;
 use Room11\Jeeves\Chat\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\EndpointURLResolver;
+use Room11\Jeeves\Chat\Entities\ChatUser;
+use Room11\Jeeves\Chat\Entities\MainSiteUser;
+use Room11\Jeeves\Chat\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\Room\IdentifierFactory as ChatRoomIdentifierFactory;
 use Room11\Jeeves\Chat\Room\NotApprovedException as RoomNotApprovedException;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\Room\UserAccessType as ChatRoomAccessType;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
+use function Amp\all;
 use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
 use function Room11\DOMUtils\xpath_get_element;
@@ -38,19 +39,22 @@ class ChatClient
     private $actionExecutor;
     private $actionFactory;
     private $urlResolver;
+    private $identifierFactory;
 
     public function __construct(
         HttpClient $httpClient,
         Logger $logger,
         ActionExecutor $actionExecutor,
         ActionFactory $actionFactory,
-        EndpointURLResolver $urlResolver
+        EndpointURLResolver $urlResolver,
+        ChatRoomIdentifierFactory $identifierFactory
     ) {
         $this->httpClient = $httpClient;
         $this->logger = $logger;
         $this->actionExecutor = $actionExecutor;
         $this->actionFactory = $actionFactory;
         $this->urlResolver = $urlResolver;
+        $this->identifierFactory = $identifierFactory;
     }
 
     private function checkAndNormaliseEncoding(string $text): string
@@ -97,6 +101,28 @@ class ChatClient
         }
 
         throw new \InvalidArgumentException('Invalid chat room identifier');
+    }
+
+    /**
+     * @param PostedMessage|Message|int $messageOrId
+     * @param ChatRoom|null $room
+     * @return array
+     */
+    private function getMessageIDAndRoomPairFromArgs($messageOrId, ChatRoom $room = null): array
+    {
+        if ($messageOrId instanceof Message || $messageOrId instanceof PostedMessage) {
+            return [$messageOrId->getId(), $messageOrId->getRoom()];
+        }
+
+        if (!is_int($messageOrId)) {
+            throw new \InvalidArgumentException('$messageOrId must be integer or instance of ' . Message::class);
+        }
+
+        if ($room === null) {
+            throw new \InvalidArgumentException('Room required if message ID is specified');
+        }
+
+        return [$messageOrId, $room];
     }
 
     public function truncateText(string $text, $length = self::TRUNCATION_LIMIT): string
@@ -147,7 +173,7 @@ class ChatClient
      * @param ChatRoom|ChatRoomIdentifier $room
      * @return Promise<string[][]>
      */
-    public function getRoomAccess($room)
+    public function getRoomAccess($room): Promise
     {
         $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::CHATROOM_INFO_ACCESS);
 
@@ -185,11 +211,43 @@ class ChatClient
      * @param int $userId
      * @return Promise<bool>
      */
-    public function isRoomOwner($room, int $userId)
+    public function isRoomOwner($room, int $userId): Promise
     {
         return resolve(function() use($room, $userId) {
             $users = yield $this->getRoomOwners($room);
             return isset($users[$userId]);
+        });
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier $room
+     * @param int $messageId
+     * @return Promise<ChatRoom>
+     */
+    public function getRoomIdentifierFromMessageID($room, int $messageId)
+    {
+        $identifier = $this->getIdentifierFromArg($room);
+        $url = $this->urlResolver->getEndpointURL($identifier, ChatRoomEndpoint::CHATROOM_GET_MESSAGE_HISTORY, $messageId);
+
+        return resolve(function() use($identifier, $url, $messageId) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($url);
+
+            $doc = domdocument_load_html($response->getBody());
+            $els = (new \DOMXPath($doc))->query("//*[@id='message-{$messageId}']//a[@name='{$messageId}']");
+
+            if ($els->length === 0) {
+                throw new DataFetchFailureException('Unable to find message anchor element in response HTML');
+            }
+
+            /** @var \DOMElement $anchorEl */
+            $anchorEl = $els->item(0);
+
+            if (!preg_match('~^/transcript/([0-9]+)~', $anchorEl->getAttribute('href'), $match)) {
+                throw new DataFetchFailureException('Message anchor element href in an unexpected format');
+            }
+
+            return $this->identifierFactory->create((int)$match[1], $identifier->getHost());
         });
     }
 
@@ -429,19 +487,31 @@ class ChatClient
                 ->setMethod("POST")
                 ->setBody($body);
 
-            $action = $this->actionFactory->createPostMessageAction($request, $room);
+            $action = $this->actionFactory->createPostMessageAction($request, $room, $text);
             $this->actionExecutor->enqueue($action);
 
-            return $action->getPromisor()->promise();
+            return $action->promise();
         });
     }
 
-    public function postReply(Message $origin, string $text, int $flags = PostFlags::NONE): Promise
+    /**
+     * @param PostedMessage|Message $origin
+     * @param string $text
+     * @param int $flags
+     * @return Promise
+     */
+    public function postReply($origin, string $text, int $flags = PostFlags::NONE): Promise
     {
         return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}", $flags & ~PostFlags::FIXED_FONT);
     }
 
-    public function editMessage(PostedMessage $message, string $text, int $flags = PostFlags::NONE): Promise
+    /**
+     * @param PostedMessage|Message $message
+     * @param string $text
+     * @param int $flags
+     * @return Promise
+     */
+    public function editMessage($message, string $text, int $flags = PostFlags::NONE): Promise
     {
         $text = $this->applyPostFlagsToText($text, $flags);
 
@@ -449,34 +519,26 @@ class ChatClient
             ->addField("text", $text)
             ->addField("fkey", (string)$message->getRoom()->getSession()->getFKey());
 
-        $url = $this->urlResolver->getEndpointURL($message->getRoom(), ChatRoomEndpoint::CHATROOM_EDIT_MESSAGE, $message->getMessageId());
+        $url = $this->urlResolver->getEndpointURL($message->getRoom(), ChatRoomEndpoint::CHATROOM_EDIT_MESSAGE, $message->getId());
 
         $request = (new HttpRequest)
             ->setUri($url)
             ->setMethod("POST")
             ->setBody($body);
 
-        $action = $this->actionFactory->createEditMessageAction($request);
-        $this->actionExecutor->enqueue($action);
+        $action = $this->actionFactory->createEditMessageAction($request, $message->getRoom());
 
-        return $action->getPromisor()->promise();
+        return $this->actionExecutor->enqueue($action);
     }
 
     /**
-     * @param Message|int $messageOrId
+     * @param PostedMessage|Message|int $messageOrId
      * @param ChatRoom|null $room
      * @return Promise
      */
     public function pinOrUnpinMessage($messageOrId, ChatRoom $room = null): Promise
     {
-        if ($messageOrId instanceof Message) {
-            $messageId = $messageOrId->getId();
-            $room = $messageOrId->getRoom();
-        } else if (is_int($messageOrId)) {
-            $messageId = $messageOrId;
-        } else {
-            throw new \InvalidArgumentException('$messageOrId must be integer or instance of ' . Message::class);
-        }
+        list($messageId, $room) = $this->getMessageIDAndRoomPairFromArgs($messageOrId, $room);
 
         $body = (new FormBody)
             ->addField("fkey", $room->getSession()->getFKey());
@@ -488,27 +550,19 @@ class ChatClient
             ->setMethod("POST")
             ->setBody($body);
 
-        $action = $this->actionFactory->createPinOrUnpinMessageAction($request);
-        $this->actionExecutor->enqueue($action);
+        $action = $this->actionFactory->createPinOrUnpinMessageAction($request, $room);
 
-        return $action->getPromisor()->promise();
+        return $this->actionExecutor->enqueue($action);
     }
 
     /**
-     * @param Message|int $messageOrId
+     * @param PostedMessage|Message|int $messageOrId
      * @param ChatRoom|null $room
      * @return Promise
      */
     public function unstarMessage($messageOrId, ChatRoom $room = null): Promise
     {
-        if ($messageOrId instanceof Message) {
-            $messageId = $messageOrId->getId();
-            $room = $messageOrId->getRoom();
-        } else if (is_int($messageOrId)) {
-            $messageId = $messageOrId;
-        } else {
-            throw new \InvalidArgumentException('$messageOrId must be integer or instance of ' . Message::class);
-        }
+        list($messageId, $room) = $this->getMessageIDAndRoomPairFromArgs($messageOrId, $room);
 
         $body = (new FormBody)
             ->addField("fkey", $room->getSession()->getFKey());
@@ -520,9 +574,8 @@ class ChatClient
             ->setMethod("POST")
             ->setBody($body);
 
-        $action = $this->actionFactory->createUnstarMessageAction($request);
-        $this->actionExecutor->enqueue($action);
+        $action = $this->actionFactory->createUnstarMessageAction($request, $room);
 
-        return $action->getPromisor()->promise();
+        return $this->actionExecutor->enqueue($action);
     }
 }
