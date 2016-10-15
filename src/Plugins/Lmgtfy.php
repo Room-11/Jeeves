@@ -62,7 +62,6 @@ class Lmgtfy extends BasePlugin
         return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
     }
 
-
     public function getName(): string
     {
         return 'lmgtfy - Let Me Google That For You';
