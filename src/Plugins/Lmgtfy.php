@@ -30,11 +30,11 @@ class Lmgtfy extends BasePlugin
         }
 
         return $this->chatClient->postReply(
-            $command, $this->getResponse($command, $text)
+            $command, $this->getResponse($text)
         );
     }
 
-    private function getResponse(Command $command, string $text = null): string
+    private function getResponse(string $text = null): string
     {
         if (empty($text)) {
             return self::USAGE;
