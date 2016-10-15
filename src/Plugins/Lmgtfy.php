@@ -47,7 +47,7 @@ class Lmgtfy extends BasePlugin
         return self::URL . '?q=' . urlencode($this->removePings($text));
     }
 
-    private function getRawMessage(Room $room, string $link)
+    private function getRawMessage(Room $room, string $link): string
     {
         $ID = $this->messageResolver->resolveMessageIDFromPermalink($link);
 
@@ -57,7 +57,7 @@ class Lmgtfy extends BasePlugin
         return $messageBody;
     }
 
-    private function removePings(string $text) 
+    private function removePings(string $text): string 
     {
         return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
     }
