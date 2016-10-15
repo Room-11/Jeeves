@@ -47,7 +47,7 @@ class Lmgtfy extends BasePlugin
         return self::URL . '?q=' . urlencode($this->removePings($text));
     }
 
-    private function getRawMessage(Room $room, string $link): string
+    private function getRawMessage(Room $room, string $link)
     {
         $ID = $this->messageResolver->resolveMessageIDFromPermalink($link);
 
