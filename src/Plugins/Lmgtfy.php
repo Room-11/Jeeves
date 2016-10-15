@@ -34,7 +34,7 @@ class Lmgtfy extends BasePlugin
         );
     }
 
-    private function getResponse($command, string $text = null): string
+    private function getResponse(Command $command, string $text = null): string
     {
         if (empty($text)) {
             return self::USAGE;
