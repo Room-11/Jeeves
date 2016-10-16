@@ -12,6 +12,7 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStore;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\Jeeves\PosTagger;
 use function Amp\cancel;
 use function Amp\once;
 use function Amp\resolve;
@@ -22,15 +23,24 @@ class Reminder extends BasePlugin
     private $storage;
     private $watchers;
     private $admin;
+    private $tagger;
 
     const USAGE = "Usage: `!!reminder [ examples | list | <text> [ at <time> | in <delay> ] | unset <id> ]` Try `!!reminder examples`" ;
     const REMINDER_REGEX = "/(.*)\s+(?:in|at)\s+(.*)/ui";
+    const USERNAME_REGEX = "/^@(?<username>.*)/ui";
     const TIME_FORMAT_REGEX = "/(?<time>(?:\d|[01]\d|2[0-3]):[0-5]\d)[+-]?(?&time)?/ui";
 
-    public function __construct(ChatClient $chatClient, KeyValueStore $storage, AdminStore $admin, array $watchers = []) {
+    public function __construct(
+        ChatClient $chatClient,
+        KeyValueStore $storage,
+        AdminStore $admin,
+        PosTagger $tagger,
+        array $watchers = []
+    ) {
         $this->chatClient = $chatClient;
         $this->watchers = $watchers;
         $this->storage = $storage;
+        $this->tagger = $tagger;
         $this->admin = $admin;
     }
 
@@ -151,7 +161,8 @@ class Reminder extends BasePlugin
                     $target  = $output['target'];
                     $message = $output['message'];
 
-                    #if(null !== yield $this->chatClient->getPingableName($command->getRoom(), $target)){}
+                    var_dump(yield from $this->tagger->tag($message));
+
                     # Decide what to say and to whom
                     $message = $this->prepareReply($command, $target, $message);
 
@@ -236,7 +247,7 @@ class Reminder extends BasePlugin
                 $target  = 'myself';
                 break;
             default:
-                if(preg_match("/^@(?<username>.*)/ui", $textOrTarget, $matches)){
+                if(preg_match(self::USERNAME_REGEX, $textOrTarget, $matches)){
                     $target = $matches['username'];
                     break;
                 }
@@ -256,14 +267,15 @@ class Reminder extends BasePlugin
      * !!remind @someone|me|yourself|everyone|you that|about|to foo in <time>
      *
      * @param Command $command
-     * @param string $target
-     * @param string $message
+     * @param string  $target
+     * @param string  $message
      * @return string
      */
     private function prepareReply(Command $command, string $target, string $message): string
     {
         $username = $command->getUserName();
         $parameters = $command->getParameters();
+        /*$pings = [];*/
 
         # remind me [ to grab a beer | that Ace is waiting me | I am late ] in 2hrs
         foreach ($parameters as $key => $param){
@@ -271,26 +283,40 @@ class Reminder extends BasePlugin
 
             switch (strtolower($param)) {
                 case 'to':
-                case 'not':
+                case 'not': # [ to not do something | not to miss ]
                     if($parameters[$key - 1] != 'do' && $key < 3){
-                        # [ to not do something | not to miss ]
-                        if (in_array($parameters[$key + 1], ['to', 'not']) && $param != $parameters[$key +1]) {
+
+                        if ($param != $parameters[$key +1] && in_array($parameters[$key + 1], ['to', 'not'])) {
                             $param .= '\s' . $parameters[$key + 1];
                             $message = preg_replace("/{$param}/", "don't", $message, 1);
                             break;
                         }
 
                         $username = ($target == $command->getUserName()) ? null : $command->getUserName();
-                        $message  = ($username == null || $target == 'everyone') ? preg_replace("/{$param}/", "", $message, 1) : $message;
+
+                        $message  = ($username == null || $target == 'everyone')
+                            ? preg_replace("/{$param}/", "", $message, 1)
+                            : $message;
                     }
                     break;
                 case 'i':   # remind everyone I hate strtotime
                     $username = ($target == $command->getUserName()) ? null : $command->getUserName();
                     $message = $this->translatePronouns($message, $username);
+
                     if($username) $message = $this->translateVerbs($message, $parameters[$key + 1]); # this... needs proper NLP
                     return $message;
                 case 'that':
-                    if($parameters[$key - 1] != 'about') $message = preg_replace("/{$param}/", '', $message, 1);
+                    if($key == 0) $message = preg_replace("/{$param}/", '', $message, 1);
+
+                    if(in_array($target, ['everyone', $command->getUserName()])){
+
+                        $message = ($parameters[$key - 1] == 'about')
+                            ? preg_replace("/about/", 'remember', $message, 1)
+                            : preg_replace("/{$param}/", '', $message, 1);;
+
+                    }
+
+                    if($parameters[$key - 1] == 'about') $message = preg_replace("/{$param}/", '', $message, 1);
                     break;
                 case 'yourself': # remind yourself that you are a bot, jeez.
                     $message = preg_replace("/{$param}/", '', $message, 1);
@@ -300,6 +326,10 @@ class Reminder extends BasePlugin
                     $username = null;
                     return $this->translatePronouns($message, $username, $command->getUserName());
                 default:
+                    /*if(preg_match(self::USERNAME_REGEX, $param, $matches)){ TODO: Allow multiple targets
+                        $pings[] = $matches['username'];
+                    }*/
+
                     $username = ($target == $command->getUserName()) ? null : $command->getUserName();
                     break;
             }
@@ -318,12 +348,14 @@ class Reminder extends BasePlugin
      */
     private function buildReminderMessage(string $target, string $message, string $setBy): string
     {
-        static $starters = [
-            ' wanted me to remind you ', ' asked me to remind you '
+        $starters = [
+            ' wanted me to remind you ',
+            ' asked me to remind you '
         ];
 
-        static $grumble = [
-            ' So get on that, would ya?', " It's about time you get on that."
+        $grumbles = [
+            ' So get on that, would ya?',
+            " It's about time you get on that."
         ];
 
         # Check whether the sentence is terminated already
@@ -334,7 +366,7 @@ class Reminder extends BasePlugin
         } elseif ($target == 'myself') {
             $message = ':-) ' . $message;
         } elseif ($setBy == $target) {
-            if(random_int(0, 100) > 95) $message .= $grumble[array_rand($grumble)];
+            if(random_int(0, 100) > 95) $message .= $grumbles[array_rand($grumbles)];
             $message = "@{$target}" . ', '. $message;
         } else {
             $message = "@{$target}" . ', ' . 'earlier ' . $setBy . $starters[array_rand($starters)]. $message;
@@ -369,7 +401,7 @@ class Reminder extends BasePlugin
     # $username = null means translatePronouns will translate sentence object to 'you', otherwise to a 3rd person view
     public function translatePronouns(string $message, string $username = null, string $setBy = null): string
     {
-        static $expression = "/(?J)
+        $expression = "/(?J)
             \b(?:
                (?<obj>i)(?:(?<part>'m)|\s(?<part>am|was)(?<neg>n't)?)?
                |(?<obj>you|they)(?:(?<part>'re)|\s(?<part>are|were)(?<neg>n't)?)?
@@ -557,6 +589,8 @@ class Reminder extends BasePlugin
     }
 
     public function enableForRoom(ChatRoom $room, bool $persist = true){
+        $this->tagger = new PosTagger();
+
         $reminders = yield $this->storage->getKeys($room);
         yield from $this->rescheduleUpcomingReminders($room, $reminders);
         yield from $this->apologizeForExpiredReminders($room, $reminders);
