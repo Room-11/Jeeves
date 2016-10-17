@@ -26,9 +26,9 @@ class Lmgtfy extends BasePlugin
         $text = $command->getText();
 
         if ((bool) preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~', $text)) {
-            $text = yield from $this->getRawMessage($command->getRoom(), $text);
+            $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $text);
         }
-
+        
         return $this->chatClient->postReply(
             $command, $this->getResponse($text)
         );
@@ -45,16 +45,6 @@ class Lmgtfy extends BasePlugin
         }
 
         return self::URL . '?q=' . urlencode($this->removePings($text));
-    }
-
-    private function getRawMessage(Room $room, string $link)
-    {
-        $ID = $this->messageResolver->resolveMessageIDFromPermalink($link);
-
-        $messageInfo = yield $this->chatClient->getMessageHTML($room, $ID);
-        $messageBody = html_entity_decode($messageInfo, ENT_QUOTES);
-
-        return $messageBody;
     }
 
     private function removePings(string $text): string 
@@ -77,3 +67,4 @@ class Lmgtfy extends BasePlugin
         return [new PluginCommandEndpoint('Lmgtfy', [$this, 'lmgtfy'], 'lmgtfy')];
     }
 }
+
