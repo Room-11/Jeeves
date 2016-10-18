@@ -55,7 +55,7 @@ class JeevesDad extends BasePlugin
         yield $this->chatClient->postReply($message, $reply);
     }
 
-    private function isDadGreetEnabled(ChatRoom $room): \Generator
+    private function isDadGreetEnabled(ChatRoom $room)
     {
         return (!yield $this->storage->exists('dadgreet', $room)) || (yield $this->storage->get('dadgreet', $room));
     }
@@ -65,7 +65,7 @@ class JeevesDad extends BasePlugin
         yield $this->storage->set('dadgreet', $enabled, $room);
     }
 
-    private function getDadGreetFrequency(ChatRoom $room): \Generator
+    private function getDadGreetFrequency(ChatRoom $room)
     {
         return (yield $this->storage->exists('dadgreet_frequency', $room))
             ? yield $this->storage->get('dadgreet_frequency', $room)
@@ -77,7 +77,7 @@ class JeevesDad extends BasePlugin
         yield $this->storage->set('dadgreet_frequency', $frequency, $room);
     }
 
-    private function refreshJokes(): \Generator
+    private function refreshGlobalJokesIfNecessary()
     {
         $refreshNeeded = (!yield $this->storage->exists('jokes'))
             || (!yield $this->storage->exists('refreshtime'))
@@ -101,21 +101,115 @@ class JeevesDad extends BasePlugin
         yield $this->storage->set('refreshtime', time() + 86400);
     }
 
-    public function dadJoke(Command $command): \Generator
+    private function getDadJoke(Command $command)
     {
-        yield from $this->refreshJokes();
+        yield from $this->refreshGlobalJokesIfNecessary();
 
-        $jokes = yield $this->storage->get('jokes');
+        $jokes = [];
+
+        if (yield $this->storage->exists('jokes')) {
+            $jokes = array_merge($jokes, yield $this->storage->get('jokes'));
+        }
+
+        if (yield $this->storage->exists('jokes', $command->getRoom())) {
+            $jokes = array_merge($jokes, yield $this->storage->get('jokes', $command->getRoom()));
+        }
+
+        if (!$jokes) {
+            return $this->chatClient->postReply($command, "Sorry, I can't remember any jokes right now :-(");
+        }
+
         $joke = $jokes[array_rand($jokes)];
 
         return $this->chatClient->postMessage($command->getRoom(), sprintf('%s *%s*', $joke['setup'], $joke['punchline']));
     }
 
-    public function dadGreet(Command $command): \Generator
+    private function addCustomDadJoke(Command $command)
+    {
+        static $expr = '#^(?<name>\w+)\s*/(?<setup>(?:[^\\\\/]++|\\\\\\\\|\\\\/|\\\\)++)/(?<punchline>.+)$#';
+
+        if (!preg_match($expr, implode(' ', $command->getParameters(1)), $match)) {
+            return $this->chatClient->postReply($command, "Sorry, I don't get that joke, I need `name / setup / punchline`");
+        }
+
+        $jokes = (yield $this->storage->exists('jokes', $command->getRoom()))
+            ? yield $this->storage->get('jokes', $command->getRoom())
+            : [];
+
+        if (isset($jokes[$match['name']])) {
+            return $this->chatClient->postReply($command, sprintf("I already know a joke about %s! Tell me a new one.", $match['name']));
+        }
+
+        $jokes[$match['name']] = ['setup' => trim($match['setup']), 'punchline' => trim($match['punchline'])];
+
+        yield $this->storage->set('jokes', $jokes, $command->getRoom());
+
+        return $this->chatClient->postReply($command, sprintf("Ha ha ha! Brilliant! I'll save that one about %s for later!", $match['name']));
+    }
+
+    private function removeCustomDadJoke(Command $command)
+    {
+        $name = $command->getParameter(1);
+
+        if ($name === null) {
+            return $this->chatClient->postReply($command, "You didn't tell me what to forget. Did you forget?");
+        }
+
+        $jokes = (yield $this->storage->exists('jokes', $command->getRoom()))
+            ? yield $this->storage->get('jokes', $command->getRoom())
+            : [];
+
+        if (!isset($jokes[$name])) {
+            return $this->chatClient->postReply($command, sprintf("I don't know a joke about %s to forget", $name));
+        }
+
+        unset($jokes[$name]);
+
+        yield $this->storage->set('jokes', $jokes, $command->getRoom());
+
+        return $this->chatClient->postReply($command, "Ever get the feeling you've forgotten something? I feel like that...");
+    }
+
+    private function listCustomDadJokes(Command $command)
+    {
+        $jokes = array_keys((yield $this->storage->exists('jokes', $command->getRoom()))
+            ? yield $this->storage->get('jokes', $command->getRoom())
+            : []
+        );
+
+        if (count($jokes) === 0) {
+            $message = 'You haven\'t taught me any jokes yet but I always love to hear a good one';
+        } else if (count($jokes) === 1) {
+            $message = 'You guys have taught me a joke about ' . $jokes[0];
+        } else {
+            $last = array_pop($jokes);
+            $message = 'You guys have taught me jokes about ' . implode(', ', $jokes) . ' and ' . $last;
+        }
+
+        return $this->chatClient->postReply($command, $message);
+    }
+
+    public function dadJoke(Command $command)
+    {
+        switch ($command->getParameter(0)) {
+            case 'add': case 'learn':
+                return yield from $this->addCustomDadJoke($command);
+
+            case 'remove': case 'forget':
+                return yield from $this->removeCustomDadJoke($command);
+
+            case 'list': case 'show':
+                return yield from $this->listCustomDadJokes($command);
+        }
+
+        return yield from $this->getDadJoke($command);
+    }
+
+    public function dadGreet(Command $command)
     {
         $room = $command->getRoom();
 
-        switch (strtolower($command->getParameter(0))) {
+        switch ($command->getParameter(0)) {
             case 'on':
                 if (!yield $this->admin->isAdmin($room, $command->getUserId())) {
                     return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");

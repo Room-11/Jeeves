@@ -29,11 +29,14 @@ class Command extends Message
     }
 
     /**
-     * @return string[]
+     * @param int $skip
+     * @return array|\string[]
      */
-    public function getParameters(): array
+    public function getParameters(int $skip = 0): array
     {
-        return $this->parameters;
+        return $skip
+            ? array_slice($this->parameters, $skip)
+            : $this->parameters;
     }
 
     /**
