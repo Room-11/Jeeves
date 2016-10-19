@@ -50,7 +50,7 @@ class Scrabble extends BasePlugin
         $sum = 0;
         foreach ($input as $char) {
             $char = preg_quote($char, '~');
-            $sum += key(preg_grep("~$char~i", SCORES['en']));
+            $sum += key(preg_grep("~$char~i", static::SCORES['en']));
         }
         return $sum;
     }
