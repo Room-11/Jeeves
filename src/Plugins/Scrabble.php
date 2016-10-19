@@ -49,7 +49,7 @@ class Scrabble extends BasePlugin
     {
         $sum = 0;
         foreach ($input as $char) {
-            $char = preg_quote($char);
+            $char = preg_quote($char, '~');
             $sum += key(preg_grep("~$char~i", SCORES['en']));
         }
         return $sum;
