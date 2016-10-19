@@ -30,6 +30,7 @@
         "amphp/aerys": "~0.4",
         "amphp/websocket": "dev-master",
         "amphp/file": "0.1.*",
+        "daverandom/async-bitly-client": "^0.1",
         "daverandom/exceptional-json": "^1.0",
         "daverandom/mutex": "~0.0",
         "php-ds/php-ds": "*",

@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "fa61142947c0671a30cdd41670ea8d1c",
-    "content-hash": "195d130cf079404da6416640d7fc671f",
+    "hash": "278939a5c3706734a8369f62e20a3faa",
+    "content-hash": "ef7866d8c57b53da964727bc659a3eeb",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -493,6 +493,53 @@
             "time": "2016-01-11 20:27:12"
         },
         {
+            "name": "daverandom/async-bitly-client",
+            "version": "v0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/DaveRandom/AsyncBitlyClient.git",
+                "reference": "617eadd51c9c0b0fe0346ec618cadf9ac7b72554"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DaveRandom/AsyncBitlyClient/zipball/617eadd51c9c0b0fe0346ec618cadf9ac7b72554",
+                "reference": "617eadd51c9c0b0fe0346ec618cadf9ac7b72554",
+                "shasum": ""
+            },
+            "require": {
+                "amphp/amp": "^1.2",
+                "amphp/artax": "^2",
+                "daverandom/exceptional-json": "^1.0",
+                "php": ">=7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "DaveRandom\\AsyncBitlyClient\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Chris Wright",
+                    "email": "cw@daverandom.com"
+                }
+            ],
+            "description": "Asynchronous bitly API client built on the amp concurrency framework",
+            "keywords": [
+                "amp",
+                "api",
+                "async",
+                "bitly",
+                "client",
+                "non-blocking"
+            ],
+            "time": "2016-10-19 12:58:31"
+        },
+        {
             "name": "daverandom/exceptional-json",
             "version": "v1.0.1",
             "source": {
@@ -833,16 +880,16 @@
         },
         {
             "name": "psr/log",
-            "version": "1.0.1",
+            "version": "1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/log.git",
-                "reference": "5277094ed527a1c4477177d102fe4c53551953e0"
+                "reference": "4ebe3a8bf773a19edfe0a84b6585ba3d401b724d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/5277094ed527a1c4477177d102fe4c53551953e0",
-                "reference": "5277094ed527a1c4477177d102fe4c53551953e0",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/4ebe3a8bf773a19edfe0a84b6585ba3d401b724d",
+                "reference": "4ebe3a8bf773a19edfe0a84b6585ba3d401b724d",
                 "shasum": ""
             },
             "require": {
@@ -876,7 +923,7 @@
                 "psr",
                 "psr-3"
             ],
-            "time": "2016-09-19 16:02:08"
+            "time": "2016-10-10 12:19:37"
         },
         {
             "name": "rdlowrey/auryn",
