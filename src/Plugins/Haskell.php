@@ -42,7 +42,7 @@ class Haskell extends BasePlugin {
         } else if (isset($data["error"])) {
             return sprintf(
                 "Error: `%s`",
-                str_replace("`", "\\`", $data["error"])
+                str_replace("`", "\\`", preg_replace("~\\s~", " ", $data["error"]))
             );
         }
 
