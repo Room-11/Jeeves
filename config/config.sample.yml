@@ -29,7 +29,7 @@ storage:
   room: Room11\Jeeves\Storage\File\Room
 
 plugins:
-plugins:
+  - Room11\Jeeves\Plugins\Lmgtfy
   - Room11\Jeeves\Plugins\AntiW3Schools
   - Room11\Jeeves\Plugins\Canon
   - Room11\Jeeves\Plugins\Changelog
@@ -87,3 +87,4 @@ web-api:
 
 dev-mode:
   enable: true
+
