@@ -72,7 +72,7 @@ class Scrabble extends BasePlugin
         return $scores;
     }
 
-    private function calculateScore(string $word): string
+    private function calculateScore(string $word): int
     {
         $sum = 0;
         for ($i = 0; $i < strlen($word); $i++) {
