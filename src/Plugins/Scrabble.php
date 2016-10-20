@@ -9,6 +9,8 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Scrabble extends BasePlugin
 {
+    const USAGE = "Usage: `!!scrabble [words to calculate score for]`";
+
     const SCORES = [
         'en' => [
             1 => 'EAIONRTLSU',
@@ -28,31 +30,68 @@ class Scrabble extends BasePlugin
         $this->chatClient = $chatClient;
     }
 
-    public function scrabble(Command $command): Promise
-    {
-        if (!$command->hasParameters()) {
-            return new Success();
-        }
-
-        return $this->chatClient->postReply(
-            $command, 
-            $this->calculateScore(implode($command->getParameters()))
-        );
-    }
-
     public function getDescription(): string
     {
         return 'Calculates the Scrabble score for the given input';
     }
 
-    private function calculateScore(string $input): string
+    public function scrabble(Command $command): Promise
+    {
+        if ($command->hasParameters() === false) {
+            return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+        }
+
+        return $this->chatClient->postReply(
+            $command, 
+            $this->formatScores(
+               $this->calculateScores(
+                    $this->getScorableWords(
+                        $command->getParameters()
+                    )
+                )
+            )
+        );
+    }
+    
+    private function getScorableWords(array $words): array
+    {
+        $chars = preg_quote(implode(static::SCORES['en']), '~');
+        $words = preg_replace("~[^$chars]~i", '', $words);
+        // @todo remove any non-dictionary words
+        
+        return array_filter($words, 'strlen');
+    }
+
+    private function calculateScores(array $words): array
+    {
+        $scores = [];
+        foreach ($words as $word) {
+            $scores[$word] = $this->calculateScore($word);
+        }
+
+        return $scores;
+    }
+
+    private function calculateScore(string $word): string
     {
         $sum = 0;
-        foreach ($input as $char) {
-            $char = preg_quote($char, '~');
+        for ($i = 0; $i < strlen($word); $i++) {
+            $char = preg_quote($word[$i], '~');
             $sum += key(preg_grep("~$char~i", static::SCORES['en']));
         }
+
         return $sum;
+    }
+
+    private function formatScores(array $scores): string
+    {
+        $total = 0;
+        $result = '';
+        foreach ($scores as $word => $score) {
+            $result .= "$word = $score, ";
+            $total += $score;
+        }
+        return $result .= "TOTAL SCORE = $total";
     }
 
     /**
