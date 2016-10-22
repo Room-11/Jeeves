@@ -3,6 +3,7 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
@@ -26,9 +27,9 @@ class Github extends BasePlugin
 
     public function enableForRoom(Room $room, bool $persist = true)
     {
-        repeat(
-            function() use ($room) { return $this->checkStatusChange($room); }, 150000
-        );
+        repeat(function() use ($room) {
+            yield $this->checkStatusChange($room);
+        }, 150000);
     }
 
     public function github(Command $command): \Generator {
@@ -66,17 +67,21 @@ class Github extends BasePlugin
         $githubResponse = yield from $this->getGithubStatus();
 
         if (!$githubResponse) {
-            return;
+            return new Success;
         }
 
-        if (is_null($this->lastKnownStatus)) {
-            $this->lastKnownStatus = $githubResponse->status;
-            return;
+        if ($this->lastKnownStatus === $githubResponse->status) {
+            return new Success;
         }
 
-        if ($this->lastKnownStatus !== $githubResponse->status) {
-            return $this->postResponse($room, $githubResponse);
+        $before = $this->lastKnownStatus;
+        $this->lastKnownStatus = $githubResponse->status;
+
+        if ($before === null) {
+            return new Success;
         }
+
+        return $this->postResponse($room, $githubResponse);
     }
 
     private function postResponse(Room $room, $response)
