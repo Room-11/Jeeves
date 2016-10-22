@@ -161,8 +161,6 @@ class Reminder extends BasePlugin
                     $target  = $output['target'];
                     $message = $output['message'];
 
-                    var_dump(yield from $this->tagger->tag($message));
-
                     # Decide what to say and to whom
                     $message = $this->prepareReply($command, $target, $message);
 
@@ -539,7 +537,6 @@ class Reminder extends BasePlugin
     /**
      * Handle a command message
      *
-     * According to http://www.strawpoll.me/11212318/r this plugin will support the following commands
      * !!<reminder|remind> remind this <in|at> <time>
      * !!at <time> remind this
      * !!in <time> remind this
@@ -590,8 +587,9 @@ class Reminder extends BasePlugin
 
     public function enableForRoom(ChatRoom $room, bool $persist = true){
         $this->tagger = new PosTagger();
-
         $reminders = yield $this->storage->getKeys($room);
+
+        yield from $this->tagger->setupDictionary();
         yield from $this->rescheduleUpcomingReminders($room, $reminders);
         yield from $this->apologizeForExpiredReminders($room, $reminders);
     }
