@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "278939a5c3706734a8369f62e20a3faa",
-    "content-hash": "ef7866d8c57b53da964727bc659a3eeb",
+    "hash": "3bd1530f147695ebe19843ed5d0e6820",
+    "content-hash": "e0642cb000c9fc4ce750cbc12cbed1c1",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -146,17 +146,11 @@
         },
         {
             "name": "amphp/artax",
-            "version": "v2.0.5",
+            "version": "dev-debug/requestcycle-backtrace",
             "source": {
                 "type": "git",
-                "url": "https://github.com/amphp/artax.git",
-                "reference": "1795ed4076469546f79804b348ffd6dd77656f73"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/amphp/artax/zipball/1795ed4076469546f79804b348ffd6dd77656f73",
-                "reference": "1795ed4076469546f79804b348ffd6dd77656f73",
-                "shasum": ""
+                "url": "git@github.com:/Room-11/artax.git",
+                "reference": "ebf59551e4334b288677a8c3483dcff40145c2ee"
             },
             "require": {
                 "amphp/amp": "^1",
@@ -179,7 +173,11 @@
                     "Amp\\Artax\\": "lib/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "Amp\\Test\\Artax\\": "test/"
+                }
+            },
             "license": [
                 "MIT"
             ],
@@ -200,7 +198,7 @@
                 "parallel",
                 "rest"
             ],
-            "time": "2016-08-08 16:27:01"
+            "time": "2016-10-22 15:48:59"
         },
         {
             "name": "amphp/cache",
@@ -494,16 +492,16 @@
         },
         {
             "name": "daverandom/async-bitly-client",
-            "version": "v0.1.0",
+            "version": "v0.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/DaveRandom/AsyncBitlyClient.git",
-                "reference": "617eadd51c9c0b0fe0346ec618cadf9ac7b72554"
+                "reference": "e434f98c7bb5d661c545ab618f2c6fae039f0070"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/DaveRandom/AsyncBitlyClient/zipball/617eadd51c9c0b0fe0346ec618cadf9ac7b72554",
-                "reference": "617eadd51c9c0b0fe0346ec618cadf9ac7b72554",
+                "url": "https://api.github.com/repos/DaveRandom/AsyncBitlyClient/zipball/e434f98c7bb5d661c545ab618f2c6fae039f0070",
+                "reference": "e434f98c7bb5d661c545ab618f2c6fae039f0070",
                 "shasum": ""
             },
             "require": {
@@ -516,7 +514,10 @@
             "autoload": {
                 "psr-4": {
                     "DaveRandom\\AsyncBitlyClient\\": "src/"
-                }
+                },
+                "files": [
+                    "src/helpers.php"
+                ]
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
@@ -537,7 +538,7 @@
                 "client",
                 "non-blocking"
             ],
-            "time": "2016-10-19 12:58:31"
+            "time": "2016-10-19 14:29:05"
         },
         {
             "name": "daverandom/exceptional-json",
@@ -786,12 +787,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PeeHaa/AsyncTwitter.git",
-                "reference": "d0b729c9e73d7bf059bf0521930dae0d182dab68"
+                "reference": "d137b654e31ad259599824f6f49483117333cdca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/d0b729c9e73d7bf059bf0521930dae0d182dab68",
-                "reference": "d0b729c9e73d7bf059bf0521930dae0d182dab68",
+                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/d137b654e31ad259599824f6f49483117333cdca",
+                "reference": "d137b654e31ad259599824f6f49483117333cdca",
                 "shasum": ""
             },
             "require": {
@@ -829,7 +830,7 @@
                 "parallel",
                 "twitter"
             ],
-            "time": "2016-10-09 19:30:18"
+            "time": "2016-10-20 20:59:38"
         },
         {
             "name": "php-ds/php-ds",
@@ -988,16 +989,16 @@
         },
         {
             "name": "room11/dom-utils",
-            "version": "v1.0.3",
+            "version": "v1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/DOMUtils.git",
-                "reference": "19817c58a16c2434fd17448dd85c8eb562c677f1"
+                "reference": "724529187818c52e895914abc4969de11118093c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/19817c58a16c2434fd17448dd85c8eb562c677f1",
-                "reference": "19817c58a16c2434fd17448dd85c8eb562c677f1",
+                "url": "https://api.github.com/repos/Room-11/DOMUtils/zipball/724529187818c52e895914abc4969de11118093c",
+                "reference": "724529187818c52e895914abc4969de11118093c",
                 "shasum": ""
             },
             "type": "library",
@@ -1019,7 +1020,7 @@
                 }
             ],
             "description": "Utility functions for the PHP DOM extension",
-            "time": "2016-10-07 19:04:41"
+            "time": "2016-10-19 15:15:02"
         },
         {
             "name": "room11/openid",
@@ -2448,9 +2449,17 @@
             "time": "2016-08-09 15:02:57"
         }
     ],
-    "aliases": [],
+    "aliases": [
+        {
+            "alias": "2.x-dev",
+            "alias_normalized": "2.9999999.9999999.9999999-dev",
+            "version": "dev-debug/requestcycle-backtrace",
+            "package": "amphp/artax"
+        }
+    ],
     "minimum-stability": "stable",
     "stability-flags": {
+        "amphp/artax": 20,
         "amphp/websocket": 20,
         "peehaa/async-twitter": 20
     },
