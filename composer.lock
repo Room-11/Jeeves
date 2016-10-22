@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "3bd1530f147695ebe19843ed5d0e6820",
-    "content-hash": "e0642cb000c9fc4ce750cbc12cbed1c1",
+    "hash": "c5077000b1d3ee261ae808de218b96fc",
+    "content-hash": "fa651e125e69e3d6329e72c1186fa298",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -149,7 +149,7 @@
             "version": "dev-debug/requestcycle-backtrace",
             "source": {
                 "type": "git",
-                "url": "git@github.com:/Room-11/artax.git",
+                "url": "https://github.com:/Room-11/artax",
                 "reference": "ebf59551e4334b288677a8c3483dcff40145c2ee"
             },
             "require": {

@@ -22,7 +22,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "git@github.com:/Room-11/artax.git"
+            "url": "https://github.com:/Room-11/artax"
         }
     ],
     "require": {
