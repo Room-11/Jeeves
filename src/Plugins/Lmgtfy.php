@@ -54,7 +54,7 @@ class Lmgtfy extends BasePlugin
 
     public function getName(): string
     {
-        return 'lmgtfy - Let Me Google That For You';
+        return 'lmgtfy';
     }
 
     public function getDescription(): string
