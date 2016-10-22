@@ -7,12 +7,15 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\Jeeves\Chat\Room\Room;
+use function Amp\repeat;
 
 class Github extends BasePlugin
 {
     private $chatClient;
     private $httpClient;
     private $pluginData;
+    private $lastKnownStatus = null;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
@@ -21,15 +24,22 @@ class Github extends BasePlugin
         $this->pluginData = $pluginData;
     }
 
+    public function enableForRoom(Room $room, bool $persist = true)
+    {
+        repeat(
+            function() use ($room) { return $this->checkStatusChange($room); }, 150000
+        );
+    }
+
     public function github(Command $command): \Generator {
         $obj = $command->getParameter(0) ?? 'status';
 
         if ($obj === 'status') {
-            return yield from $this->status($command);
+            return yield from $this->status($command->getRoom());
         } elseif (strpos($obj, '/') === false) {
-            return yield from $this->profile($command, $obj);
+            return yield from $this->profile($command->getRoom(), $obj);
         } elseif (strpos($obj, '/') === strrpos($obj, '/')) {
-            return yield from $this->repo($command, $obj);
+            return yield from $this->repo($command->getRoom(), $obj);
         }
 
         return $this->chatClient->postMessage($command->getRoom(),
@@ -46,23 +56,56 @@ class Github extends BasePlugin
      * @param Command $command
      * @return \Generator
      */
-    protected function status(Command $command): \Generator {
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request('https://status.github.com/api/last-message.json');
-        if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command->getRoom(), "Failed fetching status");
+    protected function status(Room $room)
+    {
+        return $this->postResponse($room, yield from $this->getGithubStatus());
+    }
+
+    private function checkStatusChange(Room $room)
+    {
+        $githubResponse = yield from $this->getGithubStatus();
+
+        if (!$githubResponse) {
+            return;
         }
-        $json = json_decode($response->getBody());
+
+        if (is_null($this->lastKnownStatus)) {
+            $this->lastKnownStatus = $githubResponse->status;
+            return;
+        }
+
+        if ($this->lastKnownStatus !== $githubResponse->status) {
+            return $this->postResponse($room, $githubResponse);
+        }
+    }
+
+    private function postResponse(Room $room, $response)
+    {
+        if (!$response) {
+            return $this->chatClient->postMessage($room, "Failed fetching status");
+        }
 
         return $this->chatClient->postMessage(
-            $command->getRoom(),
+            $room,
             sprintf(
                 "[tag:github-status] **%s**: %s *as of %s*",
-                $json->status,
-                rtrim($json->body, '.!?'),
-                $json->created_on
+                $response->status,
+                rtrim($response->body, '.!?'),
+                $response->created_on
             )
         );
+    }
+
+    private function getGithubStatus()
+    {
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request('https://status.github.com/api/last-message.json');
+
+        if ($response->getStatus() !== 200) {
+            return false;
+        }
+
+        return json_decode($response->getBody());
     }
 
     /**
