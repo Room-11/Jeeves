@@ -1,4 +1,5 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
+
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
@@ -6,9 +7,10 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\Jeeves\Chat\Room\Room;
+use function Amp\all;
 use function Amp\repeat;
 
 class Github extends BasePlugin
@@ -17,6 +19,7 @@ class Github extends BasePlugin
     private $httpClient;
     private $pluginData;
     private $lastKnownStatus = null;
+    private $rooms = [];
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
@@ -27,12 +30,17 @@ class Github extends BasePlugin
 
     public function enableForRoom(Room $room, bool $persist = true)
     {
-        repeat(function() use ($room) {
-            yield $this->checkStatusChange($room);
-        }, 150000);
+        if (!$this->rooms) {
+            repeat(function () {
+                yield $this->checkStatusChange();
+            }, 150000);
+        }
+
+        $this->rooms[] = $room;
     }
 
-    public function github(Command $command): \Generator {
+    public function github(Command $command): \Generator
+    {
         $obj = $command->getParameter(0) ?? 'status';
 
         if ($obj === 'status') {
@@ -54,7 +62,7 @@ class Github extends BasePlugin
      *
      * [tag:github-status] good: Everything operating normally. as of 2016-05-25T18:44:58Z
      *
-     * @param Command $command
+     * @param Room $room
      * @return \Generator
      */
     protected function status(Room $room)
@@ -62,7 +70,7 @@ class Github extends BasePlugin
         return $this->postResponse($room, yield from $this->getGithubStatus());
     }
 
-    private function checkStatusChange(Room $room)
+    private function checkStatusChange()
     {
         $githubResponse = yield from $this->getGithubStatus();
 
@@ -81,7 +89,9 @@ class Github extends BasePlugin
             return new Success;
         }
 
-        return $this->postResponse($room, $githubResponse);
+        return all(array_map(function (Room $room) use ($githubResponse) {
+            return $this->postResponse($room, $githubResponse);
+        }, $this->rooms));
     }
 
     private function postResponse(Room $room, $response)
@@ -120,12 +130,13 @@ class Github extends BasePlugin
      * [tag:github-profile] Organization [Room-11](https://github.com/Room-11): 15 public repos
      *
      * @param Command $command
-     * @param string $profile
+     * @param string  $profile
      * @return \Generator
      */
-    protected function profile(Command $command, string $profile): \Generator {
+    protected function profile(Command $command, string $profile): \Generator
+    {
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request('https://api.github.com/users/'.urlencode($profile));
+        $response = yield $this->httpClient->request('https://api.github.com/users/' . urlencode($profile));
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage($command->getRoom(), "Failed fetching profile for $profile");
         }
@@ -155,14 +166,16 @@ class Github extends BasePlugin
      *    - Watchers: 14, Forks: 15, Last Pushed: 2016-05-26T08:57:41Z
      *
      * @param Command $command
-     * @param string $path
+     * @param string  $path
      * @return \Generator
      */
-    protected function repo(Command $command, string $path): \Generator {
+    protected function repo(Command $command, string $path): \Generator
+    {
         list($user, $repo) = explode('/', $path, 2);
 
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request('https://api.github.com/repos/' . urlencode($user).'/'.urlencode($repo));
+        $response = yield $this->httpClient->request('https://api.github.com/repos/' . urlencode($user) . '/' . urlencode($repo));
+
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage($command->getRoom(), "Failed fetching repo for $path");
         }
