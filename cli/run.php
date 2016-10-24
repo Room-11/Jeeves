@@ -3,183 +3,232 @@
 
 namespace Room11\Jeeves;
 
-use Amp\Artax\HttpClient;
-use Amp\Artax\Client as ArtaxClient;
-use Amp\Websocket\Handshake;
+use Aerys\Bootstrapper;
+use Aerys\Host;
 use Auryn\Injector;
-use Room11\Jeeves\Bitly\Client as BitlyClient;
-use Room11\Jeeves\Chat\BuiltIn\Admin as AdminBuiltIn;
-use Room11\Jeeves\Chat\BuiltIn\Ban as BanBuiltIn;
-use Room11\Jeeves\Chat\BuiltIn\Version as VersionBuiltIn;
-use Room11\Jeeves\Chat\BuiltInCommandManager;
-use Room11\Jeeves\Chat\Client\ChatClient;
-//use Room11\Jeeves\Chat\Plugin\CodeFormat as CodeFormatPlugin;
-use Room11\Jeeves\Chat\PluginManager;
-use Room11\Jeeves\Chat\Plugin\Canon as CanonPlugin;
-use Room11\Jeeves\Chat\Plugin\Docs as DocsPlugin;
-use Room11\Jeeves\Chat\Plugin\EvalCode as EvalPlugin;
-use Room11\Jeeves\Chat\Plugin\Imdb as ImdbPlugin;
-use Room11\Jeeves\Chat\Plugin\Lick as LickPlugin;
-use Room11\Jeeves\Chat\Plugin\Man as ManPlugin;
-use Room11\Jeeves\Chat\Plugin\Packagist as PackagistPlugin;
-use Room11\Jeeves\Chat\Plugin\Regex as RegexPlugin;
-use Room11\Jeeves\Chat\Plugin\RFC as RfcPlugin;
-use Room11\Jeeves\Chat\Plugin\SwordFight as SwordFightPlugin;
-use Room11\Jeeves\Chat\Plugin\Tweet as TweetPlugin;
-use Room11\Jeeves\Chat\Plugin\Urban as UrbanPlugin;
-use Room11\Jeeves\Chat\Plugin\Wikipedia as WikipediaPlugin;
-use Room11\Jeeves\Chat\Plugin\Xkcd as XkcdPlugin;
-use Room11\Jeeves\Chat\Plugin\Mdn as MdnPlugin;
-use Room11\Jeeves\Chat\Plugin\Chuck as ChuckPlugin;
-use Room11\Jeeves\Chat\Plugin\Rebecca as RebeccaPlugin;
-use Room11\Jeeves\Chat\Plugin\Wotd as WotdPlugin;
-use Room11\Jeeves\Chat\Plugin\Google as GooglePlugin;
-use Room11\Jeeves\Chat\Plugin\HttpClient as HttpClientPlugin;
-use Room11\Jeeves\Chat\Room\Host;
-use Room11\Jeeves\Chat\Room\Room;
-use Room11\Jeeves\Fkey\FKey;
-use Room11\Jeeves\Fkey\Retriever;
-use Room11\Jeeves\Log\Level;
+use DaveRandom\AsyncBitlyClient\Client as BitlyClient;
+use PeeHaa\AsyncTwitter\Credentials\Application as TwitterApplicationCredentials;
+use Room11\Jeeves\BuiltIn\Commands\Admin as AdminBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Ban as BanBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Command as CommandBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Plugin as PluginBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\RoomPresence;
+use Room11\Jeeves\BuiltIn\Commands\Uptime as UptimeBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Version as VersionBuiltIn;
+use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
+use Room11\Jeeves\Chat\Room\CredentialManager;
+use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
+use Room11\Jeeves\Chat\Room\PresenceManager;
+use Room11\Jeeves\Chat\WebSocket\EventDispatcher as WebSocketEventDispatcher;
+use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
+use Room11\Jeeves\Log\AerysLogger;
+use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\Log\StdOut;
-use Room11\Jeeves\OpenId\Client as OpenIdClient;
-use Room11\Jeeves\OpenId\EmailAddress;
-use Room11\Jeeves\OpenId\Password;
-use Room11\Jeeves\Twitter\Credentials as TwitterCredentials;
+use Room11\Jeeves\Log\StdOut as StdOutLogger;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
-use Room11\Jeeves\WebSocket\Handler;
+use Room11\Jeeves\Storage\File\Admin as FileAdminStorage;
+use Room11\Jeeves\Storage\File\Ban as FileBanStorage;
+use Room11\Jeeves\Storage\File\KeyValue as FileKeyValueStorage;
+use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
+use Room11\Jeeves\Storage\File\Room as FileRoomStorage;
+use Room11\Jeeves\Storage\KeyValue as KeyValueStorage;
+use Room11\Jeeves\Storage\KeyValueFactory as KeyValueStorageFactory;
+use Room11\Jeeves\Storage\Plugin as PluginStorage;
+use Room11\Jeeves\Storage\Room as RoomStorage;
+use Room11\Jeeves\System\BuiltInActionManager;
+use Room11\Jeeves\System\Plugin;
+use Room11\Jeeves\System\PluginManager;
+use Room11\Jeeves\WebAPI\Server as WebAPIServer;
+use Room11\OpenId\Credentials;
+use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
+use Room11\OpenId\Password as OpenIdPassword;
 use Symfony\Component\Yaml\Yaml;
+use function Amp\onError;
+use function Amp\run;
 
-require_once __DIR__ . "/../vendor/autoload.php";
-require_once __DIR__ . "/../version.php";
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../version.php';
 
-$config = Yaml::parse(file_get_contents(__DIR__ . "/../config/config.yml"));
+define(__NAMESPACE__ . '\\PROCESS_START_TIME', time());
+
+$builtInCommands = [
+    AdminBuiltIn::class,
+    BanBuiltIn::class,
+    CommandBuiltIn::class,
+    PluginBuiltIn::class,
+    RoomPresence::class,
+    UptimeBuiltIn::class,
+    VersionBuiltIn::class,
+];
+
+$builtInEventHandlers = [
+    Invite::class,
+];
+
+$config = Yaml::parse(file_get_contents(__DIR__ . '/../config/config.yml'));
 
 $injector = new Injector();
+require_once __DIR__ . '/setup-di.php';
 
-$injector->define(Host::class, [
-    ":hostname" => $config["room"]["hostname"] ?? "chat.stackoverflow.com",
-    ":secure" => $config["room"]["secure"] ?? true,
+$injector->alias(AdminStorage::class,    $config['storage']['admin']    ?? FileAdminStorage::class);
+$injector->alias(BanStorage::class,      $config['storage']['ban']      ?? FileBanStorage::class);
+$injector->alias(KeyValueStorage::class, $config['storage']['keyvalue'] ?? FileKeyValueStorage::class);
+$injector->alias(KeyValueStorageFactory::class, ($config['storage']['keyvalue'] ?? FileKeyValueStorage::class) . 'Factory');
+$injector->alias(PluginStorage::class,   $config['storage']['plugin']   ?? FilePluginStorage::class);
+$injector->alias(RoomStorage::class,     $config['storage']['room']     ?? FileRoomStorage::class);
+
+$injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);
+
+$injector->define(TwitterApplicationCredentials::class, [
+    ':key' => $config['twitter']['consumerKey'],
+    ':secret' => $config['twitter']['consumerSecret'],
 ]);
 
-$injector->define(Room::class, [
-    ":id" => $config["room"]["id"],
+$injector->define(TranslationAPICredentials::class, [
+    ':clientId'     => $config['ms-translate']['client-id'] ?? '',
+    ':clientSecret' => $config['ms-translate']['client-secret'] ?? '',
+]);
+
+$injector->define(WebSocketEventDispatcher::class, [
+   ':devMode' => $config['dev-mode']['enable'] ?? false,
 ]);
 
 $injector->delegate(Logger::class, function () use ($config) {
-    $flags = array_map("trim", explode("|", $config["logging"]["level"] ?? ""));
+    $flags = array_map('trim', explode('|', $config['logging']['level'] ?? ''));
 
     if (empty($flags[0])) {
-        $flags = Level::ALL;
+        $flags = LogLevel::ALL;
     } else {
         $flags = array_reduce($flags, function ($carry, $flag) {
-            return $carry | constant(Level::class . "::$flag");
+            return $carry | constant(LogLevel::class . "::{$flag}");
         }, 0);
     }
 
-    $logger = $config["handler"] ?? StdOut::class;
-    return new $logger($flags);
+    $logger = $config['logging']['handler'] ?? StdOutLogger::class;
+
+    return new $logger($flags, ...array_values($config['logging']['params'] ?? []));
 });
 
-$injector->delegate(FKey::class, function (Retriever $retriever, Room $room) {
-    $uri = sprintf(
-        "%s://%s/rooms/%d",
-        $room->getHost()->isSecure() ? "https" : "http",
-        $room->getHost()->getHostname(),
-        $room->getId()
+$injector->delegate(CredentialManager::class, function () use ($config) {
+    $manager = new CredentialManager;
+
+    $haveDefault = false;
+
+    foreach ($config['openids'] ?? [] as $domain => $details) {
+        if (!isset($details['username'], $details['password'])) {
+            throw new InvalidConfigurationException(
+                "OpenID domain '{$domain}' does not define username and password"
+            );
+        }
+
+        $details = new Credentials(
+            new OpenIdEmailAddress($details['username']),
+            new OpenIdPassword($details['password'])
+        );
+
+        if ($domain === 'default') {
+            $haveDefault = true;
+            $manager->setDefaultCredentials($details);
+        } else {
+            $manager->setCredentialsForDomain($domain, $details);
+        }
+    }
+
+    if (!$haveDefault) {
+        throw new InvalidConfigurationException('Default OpenID credentials not defined');
+    }
+
+    return $manager;
+});
+
+/** @var BuiltInActionManager $builtInActionManager */
+$builtInActionManager = $injector->make(BuiltInActionManager::class);
+
+foreach ($builtInCommands as $className) {
+    $builtInActionManager->registerCommand($injector->make($className));
+}
+
+foreach ($builtInEventHandlers as $className) {
+    $builtInActionManager->registerEventHandler($injector->make($className));
+}
+
+$pluginManager = $injector->make(PluginManager::class);
+
+foreach ($config['plugins'] ?? [] as $pluginClass) {
+    if (!class_exists($pluginClass)) {
+        throw new \LogicException("Plugin class {$pluginClass} does not exist");
+    } else if (!is_a($pluginClass, Plugin::class, true)) {
+        throw new \LogicException("Plugin class {$pluginClass} does not implement " . Plugin::class);
+    }
+
+    $injector->define(FileKeyValueStorage::class, [
+        ':dataFile' => DATA_BASE_DIR . '/keyvalue.%s.json',
+        ':partitionName' => $pluginClass
+    ]);
+
+    $pluginManager->registerPlugin($injector->make($pluginClass));
+}
+
+$injector->make(PresenceManager::class)->restoreRooms(array_map(function($room) {
+    return new ChatRoomIdentifier(
+        $room['id'],
+        $room['hostname'] ?? 'chat.stackoverflow.com'
     );
+}, $config['rooms']));
 
-    $key = $retriever->get($uri);
+if ($config['web-api']['enable'] ?? false) {
+    $host = new Host;
 
-    return $key;
-});
+    $sslEnabled = false;
 
-$injector->alias(HttpClient::class, ArtaxClient::class);
-$injector->alias(AdminStorage::class, $config["storage"]["admin"]);
-$injector->alias(BanStorage::class, $config["storage"]["ban"]);
-$injector->define(AdminStorage::class, [":dataFile" => __DIR__ . "/../data/admins.json"]);
-$injector->define(BanStorage::class, [":dataFile" => __DIR__ . "/../data/bans.json"]);
-$injector->share(AdminStorage::class);
-$injector->share(BanStorage::class);
+    if ($config['web-api']['ssl']['enable']) {
+        if (!isset($config['web-api']['ssl']['cert-path'])) {
+            throw new InvalidConfigurationException('SSL-enabled web API must define a certificate path');
+        }
 
-$injector->define(TwitterCredentials::class, [
-    ":consumerKey" => $config["twitter"]["consumerKey"],
-    ":consumerSecret" => $config["twitter"]["consumerSecret"],
-    ":accessToken" => $config["twitter"]["accessToken"],
-    ":accessTokenSecret" => $config["twitter"]["accessTokenSecret"],
-]);
-$injector->define(BitlyClient::class, [
-    ":accessToken" => $config["bitly"]["accessToken"],
-]);
+        $sslEnabled = true;
+        $sslCert = realpath($config['web-api']['ssl']['cert-path']);
 
-$injector->delegate(PluginManager::class, function () use ($injector) {
-    $pluginManager = new PluginManager($injector->make(AdminStorage::class), $injector->make(BanStorage::class));
+        if (!$sslCert) {
+            throw new InvalidConfigurationException('Invalid SSL certificate path');
+        }
 
-    $plugins = [
-        UrbanPlugin::class,
-        WikipediaPlugin::class,
-        SwordFightPlugin::class,
-        DocsPlugin::class,
-        ImdbPlugin::class,
-        PackagistPlugin::class,
-        RfcPlugin::class,
-        //CodeFormatPlugin::class,
-        EvalPlugin::class,
-        CanonPlugin::class,
-        ManPlugin::class,
-        RegexPlugin::class,
-        LickPlugin::class,
-        XkcdPlugin::class,
-        TweetPlugin::class,
-        MdnPlugin::class,
-        ChuckPlugin::class,
-        RebeccaPlugin::class,
-        WotdPlugin::class,
-        GooglePlugin::class,
-        HttpClientPlugin::class,
-    ];
+        $sslKey = null;
+        if (isset($config['web-api']['ssl']['key-path']) && !$sslKey = realpath($config['web-api']['ssl']['key-path'])) {
+            throw new InvalidConfigurationException('Invalid SSL key path');
+        }
 
-    foreach ($plugins as $plugin) {
-        $pluginManager->register($injector->make($plugin));
+        $sslContext = $config['web-api']['ssl']['context'] ?? [];
+
+        $host->encrypt($sslCert, $sslKey, $sslContext);
     }
 
-    return $pluginManager;
-});
+    $bindAddr = $config['web-api']['bind-addr'] ?? '127.0.0.1';
+    $bindPort = (int)($config['web-api']['bind-port'] ?? ($sslEnabled ? 1337 : 1338));
 
-$injector->delegate(BuiltInCommandManager::class, function () use ($injector) {
-    $builtInCommandManager = new BuiltInCommandManager($injector->make(BanStorage::class));
+    $host->expose($bindAddr, $bindPort);
 
-    $commands = [AdminBuiltIn::class, BanBuiltIn::class, VersionBuiltIn::class];
-
-    foreach ($commands as $command) {
-        $builtInCommandManager->register($injector->make($command));
+    if (isset($config['web-api']['host'])) {
+        $host->name($config['web-api']['host']);
     }
 
-    return $builtInCommandManager;
+    /** @var WebAPIServer $api */
+    $api = $injector->make(WebAPIServer::class);
+
+    $host->use($api->getRouter());
+
+    (new Bootstrapper(function() use($host) { return [$host]; }))
+        ->init(new AerysLogger($injector->make(Logger::class)))
+        ->start();
+}
+
+onError(function (\Throwable $e) {
+    fwrite(STDERR, "\nAn exception was not handled:\n\n{$e}\n\n");
 });
 
-$injector->share(OpenIdClient::class);
-$injector->share(Logger::class);
-$injector->share(BitlyClient::class);
-$injector->share(HttpClient::class);
-$injector->share(ChatClient::class);
-$injector->share(new EmailAddress($config["username"]));
-$injector->share(new Password($config["password"]));
-
-$openIdClient = $injector->make(OpenIdClient::class);
-$openIdClient->logIn();
-
-$room = $injector->make(Room::class);
-$handshake = new Handshake($openIdClient->getWebSocketUri($room));
-$handshake->setHeader("Origin", sprintf(
-    "%s://%s",
-    $room->getHost()->isSecure() ? "wss" : "ws",
-    $room->getHost()->getHostname()
-));
-
-$webSocket = $injector->make(Handler::class);
-
-\Amp\run(function () use ($webSocket, $handshake) {
-    yield \Amp\websocket($webSocket, $handshake);
-});
+try {
+    run();
+} catch (\Throwable $e) {
+    fwrite(STDERR, "\nSomething went badly wrong:\n\n{$e}\n\n");
+}

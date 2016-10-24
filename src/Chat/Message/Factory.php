@@ -2,21 +2,19 @@
 
 namespace Room11\Jeeves\Chat\Message;
 
-use Room11\Jeeves\Chat\Event\MentionMessage;
 use Room11\Jeeves\Chat\Event\MessageEvent;
 
 class Factory
 {
-    public function build(MessageEvent $message): Message
+    private function isCommandMessage(MessageEvent $event)
     {
-        if (strpos($message->getMessageContent(), '!!') === 0) {
-            return new Command($message);
-        }
+        return strpos($event->getMessageContent()->textContent, '!!') === 0;
+    }
 
-        if ($message instanceof MentionMessage) {
-            return new Conversation($message);
-        }
-
-        return new Message($message);
+    public function build(MessageEvent $event): Message
+    {
+        return $this->isCommandMessage($event)
+            ? new Command($event, $event->getRoom())
+            : new Message($event, $event->getRoom());
     }
 }

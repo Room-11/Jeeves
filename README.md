@@ -1,9 +1,16 @@
 Jeeves
 ======
 
-Chat bot for StackOverflow. Playground for [amphp](https://github.com/amphp) libraries and just maybe some actual working bot will come out of it.
+Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for async magic sauce.
 
 [![Build Status](https://travis-ci.org/Room-11/Jeeves.svg?branch=master)](https://travis-ci.org/Room-11/Jeeves)
+
+## Requirements
+
+* PHP 7.0 or greater.
+* [`php_intl`](https://secure.php.net/manual/en/book.intl.php) PHP extension.
+* [`php_mbstring`](https://secure.php.net/manual/en/book.mbstring.php) PHP extension.
+* [`libxml`](https://secure.php.net/manual/en/book.libxml.php), version 2.7.8 or greater due to use of `LIBXML_HTML_NOIMPLIED` and `LIBXML_HTML_NODEFDTD `.
 
 ## Installation
 
@@ -16,25 +23,23 @@ Chat bot for StackOverflow. Playground for [amphp](https://github.com/amphp) lib
 
 If you want to run the bot as a systemd service:
 
-1. Copy `config/jeeves.sample.service` to `config/jeeves.service`.
+1. Copy `config/jeeves.sample.service` to `/etc/systemd/system/jeeves.service`.
 1. Replace the path with your installation location.
-1. Symlink the service to your systemd directory
 1. Make the `cli/run.php` file executable
+1. If you want to service to automatically start run `systemctl enable jeeves`
 1. Start the service using `systemctl start jeeves`
 
-## Request flow for chat
+## Optional Dependencies
 
-### Log in to SE's OpenID
+* For true non-blocking execution, install one of the following:
+    * [`libevent`](https://pecl.php.net/package/libevent) PECL extension.
+    * [`ev`](https://pecl.php.net/package/ev) PECL extension
+    * [`php-uv`](https://github.com/bwoebi/php-uv) PHP extension.
 
-- Navigate to the openid login page https://openid.stackexchange.com/account/login
-- Find the fkey value (hidden field)
-- Log in using the fkey, username and password at https://openid.stackexchange.com/account/login/submit
-- Navigate to http://stackoverflow.com/users/login?returnurl=stackoverflow.com%2f
-- Log in using the fkey, username and password at http://stackoverflow.com/users/login?returnurl=stackoverflow.com%2f
-- Go to a room e.g. http://chat.stackoverflow.com/rooms/11/php because it's the best...
-- Get the fkey (again, I'm fairly certain by now it stands for fuckingkey)
-- Get the websocket URL by making a POST request to http://chat.stackoverflow.com/ws-auth with the room id and the fkey
+## Documentation
 
-### Setup the websocket connection
-
-- /ws-auth should return the websocket URI to connect to
+Documentation is something other people do. Despite this, there is some information in the [wiki](https://github.com/Room-11/Jeeves/wiki)
+ 
+## License
+ 
+ The source code of this project is licensed under the [MIT license](https://opensource.org/licenses/mit-license.php).

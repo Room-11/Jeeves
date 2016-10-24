@@ -2,13 +2,16 @@
 
 namespace Room11\Jeeves\Storage;
 
+use Amp\Promise;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+
 interface Admin
 {
-    public function getAll(): \Generator;
+    public function getAll(ChatRoom $room): Promise;
 
-    public function isAdmin(int $userId): \Generator;
+    public function isAdmin(ChatRoom $room, int $userId): Promise;
 
-    public function add(int $userId): \Generator;
+    public function add(ChatRoom $room, int $userId): Promise;
 
-    public function remove(int $userId): \Generator;
+    public function remove(ChatRoom $room, int $userId): Promise;
 }

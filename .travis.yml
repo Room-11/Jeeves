@@ -6,6 +6,7 @@ php:
   - '7.0'
 
 before_script:
+  - phpenv config-rm xdebug.ini
   - travis_retry composer self-update
   - travis_retry composer install --no-interaction
 

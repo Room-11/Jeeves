@@ -1,5 +1,6 @@
 [Unit]
 Description=Jeeves as a service (JAAS)
+After=network.target
 
 [Service]
 Type=simple

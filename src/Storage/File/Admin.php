@@ -2,61 +2,72 @@
 
 namespace Room11\Jeeves\Storage\File;
 
+use Amp\Promise;
+use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
-use function Amp\File\exists;
-use function Amp\File\get;
-use function Amp\File\put;
+use function Amp\resolve;
 
 class Admin implements AdminStorage
 {
-    private $dataFile;
+    private $accessor;
+    private $chatClient;
+    private $dataFileTemplate;
 
-    public function __construct(string $dataFile) {
-        $this->dataFile = $dataFile;
+    public function __construct(JsonFileAccessor $accessor, ChatClient $chatClient, string $dataFile)
+    {
+        $this->accessor = $accessor;
+        $this->chatClient = $chatClient;
+        $this->dataFileTemplate = $dataFile;
     }
 
-    public function getAll(): \Generator {
-        if (!yield exists($this->dataFile)) {
-            return [];
-        }
+    public function getAll(ChatRoom $room): Promise
+    {
+        return resolve(function() use($room) {
+            $owners = array_keys(yield $this->chatClient->getRoomOwners($room));
 
-        $administrators = yield get($this->dataFile);
+            $admins = yield $this->accessor->writeCallback(function($data) use($owners) {
+                return array_values(array_diff($data, $owners));
+            }, $this->dataFileTemplate, $room);
 
-        return json_decode($administrators, true);
+            return [
+                'owners' => $owners,
+                'admins' => $admins,
+            ];
+        });
     }
 
-    public function isAdmin(int $userId): \Generator {
-        // inb4 people "testing" removing me from the admin list
-        if ($userId === 508666) {
-            return true;
-        }
+    public function isAdmin(ChatRoom $room, int $userId): Promise
+    {
+        return resolve(function() use($room, $userId) {
+            // inb4 people "testing" removing me from the admin list
+            if ($userId === 508666) {
+                return true;
+            }
 
-        $administrators = yield from $this->getAll();
+            $administrators = yield $this->getAll($room);
 
-        return $administrators === [] || in_array($userId, $administrators, true);
+            return ($administrators['owners'] === [] && $administrators['admins'] === [])
+                || in_array($userId, $administrators['owners'], true)
+                || in_array($userId, $administrators['admins'], true);
+        });
     }
 
-    public function add(int $userId): \Generator {
-        $administrators = yield from $this->getAll();
-
-        if (in_array($userId, $administrators, true)) {
-            return;
-        }
-
-        $administrators[] = $userId;
-
-        yield put($this->dataFile, json_encode($administrators));
+    public function add(ChatRoom $room, int $userId): Promise
+    {
+        return $this->accessor->writeCallback(function($data) use($userId) {
+            $data[] = $userId;
+            return array_unique($data);
+        }, $this->dataFileTemplate, $room);
     }
 
-    public function remove(int $userId): \Generator {
-        if (!yield from $this->isAdmin($userId)) {
-            return;
-        }
-
-        $administrators = yield from $this->getAll();
-
-        $administrators = array_diff($administrators, [$userId]);
-
-        yield put($this->dataFile, json_encode($administrators));
+    public function remove(ChatRoom $room, int $userId): Promise
+    {
+        return $this->accessor->writeCallback(function($data) use($userId) {
+            if (false !== $key = array_search($userId, $data)) {
+                array_splice($data, $key, 1);
+            }
+            return $data;
+        }, $this->dataFileTemplate, $room);
     }
 }

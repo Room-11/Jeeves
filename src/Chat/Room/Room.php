@@ -2,20 +2,75 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
-class Room {
-    private $id;
-    private $host;
+use Amp\Promise;
+use Amp\Success;
+use Room11\Jeeves\Chat\Auth\Session;
+use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
+use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 
-    public function __construct(int $id, Host $host) {
-        $this->id = $id;
-        $this->host = $host;
+class Room
+{
+    private $identifier;
+    private $session;
+    private $presenceManager;
+    private $permanent;
+    private $websocketHandler;
+    private $keyValueStore;
+
+    public function __construct(
+        Identifier $identifier,
+        Session $sessionInfo,
+        WebSocketHandler $websocketHandler,
+        PresenceManager $presenceManager,
+        KeyValueStore $keyValueStore,
+        bool $permanent
+    ) {
+        $this->identifier = $identifier;
+        $this->session = $sessionInfo;
+        $this->websocketHandler = $websocketHandler;
+        $this->keyValueStore = $keyValueStore;
+        $this->presenceManager = $presenceManager;
+        $this->permanent = $permanent;
     }
 
-    public function getId(): int {
-        return $this->id;
+    public function getIdentifier(): Identifier
+    {
+        return $this->identifier;
     }
 
-    public function getHost(): Host {
-        return $this->host;
+    public function getSession(): Session
+    {
+        return $this->session;
+    }
+
+    public function isPermanent(): bool
+    {
+        return $this->permanent;
+    }
+
+    public function getWebsocketHandler(): WebSocketHandler
+    {
+        return $this->websocketHandler;
+    }
+
+    public function getKeyValueStore(): KeyValueStore
+    {
+        return $this->keyValueStore;
+    }
+
+    public function isApproved(): Promise
+    {
+        return $this->permanent
+            ? new Success(true)
+            : $this->presenceManager->isApproved($this->identifier);
+    }
+
+    public function __debugInfo()
+    {
+        return [
+            'identifier' => $this->identifier,
+            'sessionInfo' => $this->session,
+            'websocketEndpoint' => $this->websocketHandler->getEndpoint()->getInfo(),
+        ];
     }
 }

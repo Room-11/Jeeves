@@ -13,21 +13,41 @@
         }
     ],
     "autoload": {
-        "psr-4": {"Room11\\Jeeves\\": "src/"}
+        "psr-4": {"Room11\\Jeeves\\": "src/"},
+        "files": ["src/helpers.php"]
     },
     "autoload-dev": {
         "psr-4": {"Room11\\Jeeves\\Tests\\": "tests/src/"}
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com:/Room-11/artax"
+        }
+    ],
     "require": {
         "php": ">=7",
-        "amphp/artax": "^2",
+        "lib-libxml": ">=2.7.8",
+        "ext-mbstring": "*",
+        "ext-intl": "*",
+
+        "amphp/amp": "^1.2",
+        "amphp/artax": "dev-debug/requestcycle-backtrace as 2.x-dev",
+        "amphp/aerys": "~0.4",
         "amphp/websocket": "dev-master",
         "amphp/file": "0.1.*",
-        "sebastian/version": "^1.0",
-        "symfony/yaml": "^3.0",
+        "daverandom/async-bitly-client": "^0.1",
+        "daverandom/exceptional-json": "^1.0",
+        "daverandom/mutex": "~0.0",
+        "php-ds/php-ds": "*",
+        "peehaa/async-twitter": "dev-master",
+        "ekinhbayar/interval-parser": "^0.1",
         "rdlowrey/auryn": "^1.1",
+        "room11/openid": "~0.0",
+        "room11/dom-utils": "~1.0",
         "sabre/uri": "^1.0",
-        "daverandom/exceptional-json": "^1.0"
+        "sebastian/version": "^1.0",
+        "symfony/yaml": "^3.0"
     },
     "require-dev": {
         "phpunit/phpunit": "5.3.*"

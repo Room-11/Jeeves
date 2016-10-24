@@ -9,6 +9,7 @@ class Level
     const EVENT         = 0x04;
     const DEBUG         = 0x08;
     const EXTRA_DATA    = 0x10;
+    const AERYS         = 0x20;
 
     const ALL           = 0xffffffff & ~self::DEBUG;
     const NONE          = 0;
