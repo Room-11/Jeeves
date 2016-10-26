@@ -456,7 +456,7 @@ class PluginManager
             try {
                 yield $this->invokeCallbackAsPromise([$plugin, 'disableForRoom'], $room, $persist);
             } catch (\Throwable $e) {
-                $this->logger->log(Level::ERROR, "Unhandled exception in " . get_class($plugin) . '#disableForRoom(): ' . $e->getMessage());
+                $this->logger->log(Level::ERROR, "Unhandled exception in " . get_class($plugin) . '#disableForRoom(): ' . $e);
             }
 
             if ($persist) {
@@ -485,7 +485,7 @@ class PluginManager
             try {
                 yield $this->invokeCallbackAsPromise([$plugin, 'enableForRoom'], $room, $persist);
             } catch (\Throwable $e) {
-                $this->logger->log(Level::ERROR, "Unhandled exception in " . get_class($plugin) . '#enableForRoom(): ' . $e->getMessage());
+                $this->logger->log(Level::ERROR, "Unhandled exception in " . get_class($plugin) . '#enableForRoom(): ' . $e);
             }
 
             $this->enabledPlugins[$roomId][$pluginName] = true;
