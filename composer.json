@@ -43,7 +43,7 @@
         "peehaa/async-twitter": "dev-master",
         "ekinhbayar/interval-parser": "^0.1",
         "rdlowrey/auryn": "^1.1",
-        "room11/openid": "~0.0",
+        "room11/openid": "~1.0",
         "room11/dom-utils": "~1.0",
         "sabre/uri": "^1.0",
         "sebastian/version": "^1.0",

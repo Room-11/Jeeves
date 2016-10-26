@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "c5077000b1d3ee261ae808de218b96fc",
-    "content-hash": "fa651e125e69e3d6329e72c1186fa298",
+    "hash": "983fdd50c9448b2a7a5a15d563801896",
+    "content-hash": "b19257c073dbdae61d91131c84b6c883",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -150,7 +150,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com:/Room-11/artax",
-                "reference": "ebf59551e4334b288677a8c3483dcff40145c2ee"
+                "reference": "1b9a4a12fc1eea2a1ad06d16bcb0b3c887ec5d8f"
             },
             "require": {
                 "amphp/amp": "^1",
@@ -198,7 +198,7 @@
                 "parallel",
                 "rest"
             ],
-            "time": "2016-10-22 15:48:59"
+            "time": "2016-10-26 15:36:06"
         },
         {
             "name": "amphp/cache",
@@ -1024,21 +1024,21 @@
         },
         {
             "name": "room11/openid",
-            "version": "v0.0.2",
+            "version": "v1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/OpenID.git",
-                "reference": "0e64643a5ce087c85a01a901cf82fb9136e562cd"
+                "reference": "4f383897723befd31be3f36fb8b4da5fb8c45a5e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/OpenID/zipball/0e64643a5ce087c85a01a901cf82fb9136e562cd",
-                "reference": "0e64643a5ce087c85a01a901cf82fb9136e562cd",
+                "url": "https://api.github.com/repos/Room-11/OpenID/zipball/4f383897723befd31be3f36fb8b4da5fb8c45a5e",
+                "reference": "4f383897723befd31be3f36fb8b4da5fb8c45a5e",
                 "shasum": ""
             },
             "require": {
                 "amphp/artax": "^2",
-                "room11/dom-utils": "~1.0"
+                "room11/dom-utils": "~1.1"
             },
             "require-dev": {
                 "phpunit/phpunit": "5.3.*"
@@ -1062,7 +1062,7 @@
                 }
             ],
             "description": "OpenID consumer",
-            "time": "2016-05-06 14:11:00"
+            "time": "2016-10-19 13:37:18"
         },
         {
             "name": "sabre/uri",
