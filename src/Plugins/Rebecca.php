@@ -10,7 +10,8 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Rebecca extends BasePlugin
 {
-    const VIDEO_URL = 'https://www.youtube.com/watch?v=kfVsfOSbJY0';
+    const FRIDAY_VIDEO_URL = 'https://www.youtube.com/watch?v=kfVsfOSbJY0';
+    const SATURDAY_VIDEO_URL = 'https://www.youtube.com/watch?v=GVCzdpagXOQ';
 
     private $chatClient;
 
@@ -18,17 +19,22 @@ class Rebecca extends BasePlugin
         $this->chatClient = $chatClient;
     }
 
-    private function getRebeccaLinkIfFriday(): string
+    public function gottaGetDownOnFriday(Command $command): Promise
+    {
+        return $this->chatClient->postReply($command, $this->getResponse());
+    }
+
+    private function getResponse(): string
     {
         switch (date('l')) {
-        case 'Thursday':
-            return "Happy Prebeccaday!";
-        case 'Friday':
-            return self::VIDEO_URL;
-        case 'Saturday':
-            return "Today is Saturday. And Sunday comes afterwards";
-        default:
-            return $this->getCountdown();
+            case 'Thursday':
+                return "Happy Prebeccaday!";
+            case 'Friday':
+                return self::FRIDAY_VIDEO_URL;
+            case 'Saturday':
+                return sprintf('[Today is Saturday. And Sunday comes afterwards.](%s)', SATURDAY_VIDEO_URL);
+            default:
+                return $this->getCountdown();
         }
     }
 
@@ -49,11 +55,6 @@ class Rebecca extends BasePlugin
         $friday = new \DateTime('next friday', new \DateTimeZone('UTC'));
 
         return $now->diff($friday);
-    }
-
-    public function gottaGetDownOnFriday(Command $command): Promise
-    {
-        return $this->chatClient->postReply($command, $this->getRebeccaLinkIfFriday());
     }
 
     public function getDescription(): string
