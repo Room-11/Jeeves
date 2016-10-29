@@ -32,7 +32,7 @@ class Rebecca extends BasePlugin
             case 'Friday':
                 return self::FRIDAY_VIDEO_URL;
             case 'Saturday':
-                return sprintf('[Today is Saturday. And Sunday comes afterwards.](%s)', SATURDAY_VIDEO_URL);
+                return sprintf('[Today is Saturday. And Sunday comes afterwards.](%s)', self::SATURDAY_VIDEO_URL);
             default:
                 return $this->getCountdown();
         }
