@@ -17,13 +17,11 @@ class Imdb extends BasePlugin
     const OMDB_API_ENDPOINT = 'http://www.omdbapi.com/';
     private $chatClient;
     private $httpClient;
-    private $queue;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
-        $this->queue = new Queue();
     }
 
     public function search(Command $command): \Generator
