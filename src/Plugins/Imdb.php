@@ -33,6 +33,11 @@ class Imdb extends BasePlugin
 
         $search = $command->getText();
 
+        $message = yield $this->chatClient->postMessage(
+            $command->getRoom(),
+            sprintf('_Looking for \'%s\' for you…_', $search)
+        );
+
         $params = $this->buildTitleSearchParams($search);
 
         // Send it out.
@@ -53,12 +58,12 @@ class Imdb extends BasePlugin
             $searchResults[$searchResult->imdbID] = $searchResult;
         }
 
-        // Only pick the top 5 results if needed.
-        $searchResults = array_slice($searchResults, 0, 5, true);
+        // Only pick the top 3 results if needed.
+        $searchResults = array_slice($searchResults, 0, 3, true);
 
         /** @var PostedMessage $chatMessage */
-        $message = yield $this->chatClient->postMessage(
-            $command->getRoom(),
+        yield $this->chatClient->editMessage(
+            $message,
             $this->formatSearchResults($searchResults)
         );
 
@@ -113,12 +118,36 @@ class Imdb extends BasePlugin
         {
             $description = '';
             if(is_array($deepResults) && isset($deepResults[$id])) {
-                $description = sprintf(
-                    ' - %s [♥ %s | 🍅 %s]',
-                    $deepResults[$id]->Plot,
-                    $deepResults[$id]->imdbRating,
-                    $deepResults[$id]->tomatoRating
-                );
+                $deepResult = $deepResults[$id];
+
+                $ratings = [];
+
+                $append = [];
+
+                // Film Plot
+
+                if ($deepResult->Plot !== 'N/A') {
+                    $append[] = $this->truncate($deepResult->Plot, 75);
+                }
+
+                // Ratings
+
+                if($deepResult->imdbRating !== 'N/A') {
+                    $ratings[] = '♥ ' . $deepResult->imdbRating;
+                }
+
+                if ($deepResult->tomatoRating !== 'N/A') {
+                    $ratings[] = '🍅 ' . $deepResult->tomatoRating;
+                }
+
+                // Mush it all together.
+                if (count($ratings) > 0) {
+                    $append[] = '[' . implode(' | ', $ratings) . ']';
+                }
+
+                if (count($append) > 0) {
+                    $description = ' - ' . implode(' ', $append);
+                }
             }
             $outputLines[] = sprintf(
                 '%s (%d) [ %s ]%s',
@@ -130,6 +159,15 @@ class Imdb extends BasePlugin
         }
 
         return implode("\n", $outputLines);
+    }
+
+    private function truncate(string $string, int $length): string
+    {
+        $string = trim($string);
+        if(strlen($string) > $length) {
+            $string = rtrim(substr($string, 0, $length), '. ') . '…';
+        }
+        return $string;
     }
 
     private function getImdbUrlById(string $id)
