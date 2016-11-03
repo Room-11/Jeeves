@@ -38,6 +38,8 @@ class Canon extends BasePlugin
                 return $this->chatClient->postMessage($command->getRoom(), "There are no registered canonicals.");
             }
 
+            ksort($canonicals);
+
             foreach ($canonicals as $title => $link) {
                 $message .= sprintf(
                     "\n%s %s %s %s",
