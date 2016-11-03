@@ -54,11 +54,13 @@ function getNormalisedStackExchangeURL(string $url): string
             '[a-z0-9]+\.stackexchange\.com',
         ];
 
-    $questionExpr = $questionExpr ?? '#^https?://(?:www\.)?(' . implode('|', $domains) . ')/q(?:uestions)?/([0-9]+)#';
+    $questionOrAnswerExpr = $questionExpr ?? '~^https?://(?:www\.)?(' . implode('|', $domains) . ')/q(?:uestions)?/([0-9]+)(?:[^#]+#([0-9]+))?~';
     $answerExpr = $answerExpr ?? '#^https?://(?:www\.)?(' . implode('|', $domains) . ')/a/([0-9]+)#';
 
-    if (preg_match($questionExpr, $url, $match)) {
-        return 'https://' . $match[1] . '/q/' . $match[2];
+    if (preg_match($questionOrAnswerExpr, $url, $match)) {
+        return !empty($match[3])
+            ? 'https://' . $match[1] . '/a/' . $match[3]
+            : 'https://' . $match[1] . '/q/' . $match[2];
     }
 
     if (preg_match($answerExpr, $url, $match)) {
