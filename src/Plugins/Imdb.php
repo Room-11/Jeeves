@@ -108,7 +108,7 @@ class Imdb extends BasePlugin
         $params = [
             's' => $searchString,
             'r' => 'json',
-            'type' => 'movie'
+            // 'type' => 'movie'
         ];
 
         return $params;
