@@ -75,6 +75,7 @@ class Github extends BasePlugin
         }
 
         if ($this->lastKnownStatus !== $githubResponse->status) {
+            $this->lastKnownStatus = $githubResponse->status;
             return $this->postResponse($room, $githubResponse);
         }
     }
