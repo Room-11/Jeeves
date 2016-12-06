@@ -57,14 +57,12 @@ class Changelog extends BasePlugin
             throw new ReferenceNotFoundException("Failed to fetch repository for $path");
         }
 
-        $json = json_decode($response->getBody());
-        $sha  = $json->object->sha ?? false;
-
-        if (!$sha) {
-            throw new ReferenceNotFoundException("Failed to fetch reference SHA for $path");
+        $commit = json_decode($response->getBody(), true);
+        if (!isset($commit['object'])) {
+            return $this->chatClient->postMessage($command->getRoom(), "Failed to fetch reference SHA for $path");
         }
 
-        return $sha;
+        return $commit['object']['sha'];
     }
 
     /**
