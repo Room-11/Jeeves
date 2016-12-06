@@ -83,7 +83,10 @@ class ChatClient
             $text = preg_replace('#(^|\r?\n)#', '$1    ', $text);
         }
         if (!($flags & PostFlags::ALLOW_PINGS)) {
-            $text = preg_replace('#(^|\s)@#', "$0\u{2060}", $text);
+            $text = preg_replace('#@((?:\p{L}|\p{N})(?:\p{L}|\p{N}|\.|-|_|\')*)#u', "@\u{2060}$1", $text);
+        }
+        if (!($flags & PostFlags::ALLOW_REPLIES)) {
+            $text = preg_replace('#^:([0-9]+)\s*#', '', $text);
         }
         if (($flags & ~PostFlags::SINGLE_LINE) & PostFlags::TRUNCATE) {
             $text = $this->truncateText($text);
@@ -502,7 +505,10 @@ class ChatClient
      */
     public function postReply($origin, string $text, int $flags = PostFlags::NONE): Promise
     {
-        return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}", $flags & ~PostFlags::FIXED_FONT);
+        $flags |= PostFlags::ALLOW_REPLIES;
+        $flags &= ~PostFlags::FIXED_FONT;
+
+        return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}", $flags);
     }
 
     /**
