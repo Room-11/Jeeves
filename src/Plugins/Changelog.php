@@ -5,9 +5,12 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\Jeeves\Chat\Client\PostFlags;
+
+class ReferenceNotFoundException extends Exception {}
 
 class Changelog extends BasePlugin
 {
@@ -33,35 +36,38 @@ class Changelog extends BasePlugin
             return yield from $this->getLastCommit($command, $repository);
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), "Usage: !!changelog [ <profile>/<repo> ]");
+        return $this->chatClient->postMessage($command->getRoom(), "Usage: !!changelog [ <profile>/<repo> <branch>]");
     }
 
     protected function getCommitReference(Command $command, string $path)
     {
         list($user, $repo) = explode('/', $path, 2);
 
+        $branch = $command->getParameter(1) ?? 'master';
+
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(
             self::BASE_URL . '/repos/'
             . urlencode($user) . '/'
-            . urlencode($repo) . '/git/refs/heads/master'
+            . urlencode($repo) . '/git/refs/heads/'
+            . urlencode($branch)
         );
 
         if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command->getRoom(), "Failed to fetch repo for $path");
+            throw new ReferenceNotFoundException("Failed to fetch repository for $path");
         }
 
-        $json = json_decode($response->getBody());
-        if (!isset($json->object->sha)) {
+        $commit = json_decode($response->getBody(), true);
+        if (!isset($commit['object'])) {
             return $this->chatClient->postMessage($command->getRoom(), "Failed to fetch reference SHA for $path");
         }
 
-        return $json->object->sha;
+        return $commit['object']['sha'];
     }
 
     /**
      * Example:
-     *   !!changelog Room-11/Jeeves
+     *   !!changelog Room-11/Jeeves <branch>
      *
      * @param Command $command
      * @param string $path
@@ -71,7 +77,11 @@ class Changelog extends BasePlugin
     {
         list($user, $repo) = explode('/', $path, 2);
 
-        $sha = yield from $this->getCommitReference($command, $path);
+        try {
+            $sha = yield from $this->getCommitReference($command, $path);
+        } catch (ReferenceNotFoundException $e) {
+            return $this->chatClient->postMessage($command->getRoom(), $e->getMessage());
+        }
 
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(
