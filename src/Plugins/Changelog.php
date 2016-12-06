@@ -58,7 +58,7 @@ class Changelog extends BasePlugin
         }
 
         $commit = json_decode($response->getBody(), true);
-        if (!isset($commit['object'])) {
+        if (!isset($commit['object']['sha'])) {
             return $this->chatClient->postMessage($command->getRoom(), "Failed to fetch reference SHA for $path");
         }
 
