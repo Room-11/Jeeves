@@ -45,19 +45,29 @@ class Changelog extends BasePlugin
 
         $branch = $command->getParameter(1) ?? 'master';
 
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(
+        /** @var HttpResponse $heads, $branch */
+        $heads = yield $this->httpClient->request(
+            self::BASE_URL . '/repos/'
+            . urlencode($user) . '/'
+            . urlencode($repo) . '/git/refs/heads/'
+        );
+
+        $branchRef = yield $this->httpClient->request(
             self::BASE_URL . '/repos/'
             . urlencode($user) . '/'
             . urlencode($repo) . '/git/refs/heads/'
             . urlencode($branch)
         );
 
-        if ($response->getStatus() !== 200) {
+        if ($heads->getStatus() !== 200) {
             throw new ReferenceNotFoundException("Failed to fetch repository for $path");
         }
 
-        $commit = json_decode($response->getBody(), true);
+        if ($branchRef->getStatus() !== 200) {
+            throw new ReferenceNotFoundException("Failed to fetch branch $branch for $path");
+        }
+
+        $commit = json_decode($branchRef->getBody(), true);
         if (!isset($commit['object']['sha'])) {
             return $this->chatClient->postMessage($command->getRoom(), "Failed to fetch reference SHA for $path");
         }
