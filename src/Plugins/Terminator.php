@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
 use Amp\Success;
+use PeeHaa\AsyncChatterBot\Client\CleverBot;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Message;
 
@@ -12,6 +13,8 @@ class Terminator extends BasePlugin
     const COMMAND = 'terminator';
 
     private $chatClient;
+
+    private $chatBotClient;
 
     private $patterns = [
         'you suck'                                    => 'And *you* like it.',
@@ -47,17 +50,19 @@ class Terminator extends BasePlugin
         '(?:Are )you a (?:ro)?bot'                    => 'Step aside you filthy human.',
     ];
 
-    public function __construct(ChatClient $chatClient)
+    public function __construct(ChatClient $chatClient, CleverBot $chatBotClient)
     {
-        $this->chatClient = $chatClient;
+        $this->chatClient    = $chatClient;
+        $this->chatBotClient = $chatBotClient;
     }
 
     private function isMatch(Message $message): bool
     {
-        if (!$message->isConversation()) {
-            return false;
-        }
+        return $message->isConversation();
+    }
 
+    private function isSpecialCased(Message $message): bool
+    {
         foreach ($this->patterns as $pattern => $response) {
             if (preg_match('/' . $pattern . '/iu', $this->normalizeText($message->getText())) === 1) {
                 return true;
@@ -92,11 +97,30 @@ class Terminator extends BasePlugin
         return $response;
     }
 
-    public function handleMessage(Message $message): Promise
+    private function buildCleverBotResponse(Message $message)
     {
-        return $this->isMatch($message)
-            ? $this->chatClient->postReply($message, $this->getResponse($message))
-            : new Success();
+        $response = yield $this->chatBotClient->request('Are you ok?');
+
+        return $response->getText();
+    }
+
+    public function handleMessage(Message $message)
+    {
+        if (!$this->isMatch($message)) {
+            return new Success();
+        }
+
+        if ($this->isSpecialCased($message)) {
+            return $this->chatClient->postReply($message, $this->getResponse($message));
+        }
+
+        if ($message->getRoom()->getIdentifier()->getId() !== 11 && $message->getRoom()->getIdentifier()->getId() !== 100286) {
+            return new Success();
+        }
+
+        $cleverBotResponse = yield from $this->buildCleverBotResponse($message);
+
+        return $this->chatClient->postReply($message, $cleverBotResponse);
     }
 
     public function getDescription(): string
