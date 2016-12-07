@@ -44,32 +44,26 @@ class Changelog extends BasePlugin
         list($user, $repo) = explode('/', $path, 2);
 
         $branch = $command->getParameter(1) ?? 'master';
+        $heads  = self::BASE_URL . '/repos/' . urlencode($user) . '/' . urlencode($repo) . '/git/refs/heads/';
 
-        /** @var HttpResponse $heads, $branch */
-        $heads = yield $this->httpClient->request(
-            self::BASE_URL . '/repos/'
-            . urlencode($user) . '/'
-            . urlencode($repo) . '/git/refs/heads/'
-        );
+        $promises = \Amp\some($this->httpClient->requestMulti([
+            'heads'  => $heads,
+            'branch' => $heads . urlencode($branch)
+        ]));
 
-        $branchRef = yield $this->httpClient->request(
-            self::BASE_URL . '/repos/'
-            . urlencode($user) . '/'
-            . urlencode($repo) . '/git/refs/heads/'
-            . urlencode($branch)
-        );
+        list($errors, $responses) = yield $promises;
 
-        if ($heads->getStatus() !== 200) {
-            throw new ReferenceNotFoundException("Failed to fetch repository for $path");
+        if($responses['heads']->getStatus() !== 200){
+            throw new ReferenceNotFoundException("Failed to fetch repository for $path. Typo?");
         }
 
-        if ($branchRef->getStatus() !== 200) {
-            throw new ReferenceNotFoundException("Failed to fetch branch $branch for $path");
+        if($responses['branch']->getStatus() !== 200){
+            throw new ReferenceNotFoundException("Failed to fetch branch $branch for $path. Typo?");
         }
 
-        $commit = json_decode($branchRef->getBody(), true);
+        $commit = json_decode($responses['branch']->getBody(), true);
         if (!isset($commit['object']['sha'])) {
-            return $this->chatClient->postMessage($command->getRoom(), "Failed to fetch reference SHA for $path");
+            throw new ReferenceNotFoundException("Failed to fetch the last commit reference for branch $branch of $path. Typo?");
         }
 
         return $commit['object']['sha'];
