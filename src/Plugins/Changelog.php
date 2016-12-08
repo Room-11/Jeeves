@@ -9,6 +9,7 @@ use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\Jeeves\Chat\Client\PostFlags;
+use function Amp\all;
 
 class ReferenceNotFoundException extends Exception {}
 
@@ -46,12 +47,12 @@ class Changelog extends BasePlugin
         $branch = $command->getParameter(1) ?? 'master';
         $heads  = self::BASE_URL . '/repos/' . urlencode($user) . '/' . urlencode($repo) . '/git/refs/heads/';
 
-        $promises = \Amp\some($this->httpClient->requestMulti([
+        $promises = $this->httpClient->requestMulti([
             'heads'  => $heads,
             'branch' => $heads . urlencode($branch)
-        ]));
+        ]);
 
-        list($errors, $responses) = yield $promises;
+        $responses = yield all($promises);
 
         if($responses['heads']->getStatus() !== 200){
             throw new ReferenceNotFoundException("Failed to fetch repository for $path. Typo?");
@@ -62,6 +63,7 @@ class Changelog extends BasePlugin
         }
 
         $commit = json_decode($responses['branch']->getBody(), true);
+
         if (!isset($commit['object']['sha'])) {
             throw new ReferenceNotFoundException("Failed to fetch the last commit reference for branch $branch of $path. Typo?");
         }
