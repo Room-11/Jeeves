@@ -104,4 +104,9 @@ class Message
 
         return (bool)preg_match($expr, $this->getText());
     }
+
+    public function isReply(): bool
+    {
+        return $this->event instanceof ReplyMessage;
+    }
 }
