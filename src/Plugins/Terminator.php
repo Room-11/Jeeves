@@ -56,9 +56,12 @@ class Terminator extends BasePlugin
         $this->chatBotClient = $chatBotClient;
     }
 
+    // we don't want to respond to replies.
+    // When somebody replies to a message (:messageid) the chat api will send *two* messages instead of 1 like it's sane
     private function isMatch(Message $message): bool
     {
-        return $message->isConversation();
+        return $message->isConversation()
+            && !$message->isReply();
     }
 
     private function isSpecialCased(Message $message): bool
@@ -125,7 +128,7 @@ class Terminator extends BasePlugin
 
     public function getDescription(): string
     {
-        return 'Naive pattern matching chat bot logic';
+        return 'Naive pattern matching chat bot logic, now with a touch of extra smart-arse';
     }
 
     /**
