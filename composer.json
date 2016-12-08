@@ -19,12 +19,6 @@
     "autoload-dev": {
         "psr-4": {"Room11\\Jeeves\\Tests\\": "tests/src/"}
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com:/Room-11/artax"
-        }
-    ],
     "require": {
         "php": ">=7",
         "lib-libxml": ">=2.7.8",
@@ -32,7 +26,7 @@
         "ext-intl": "*",
 
         "amphp/amp": "^1.2",
-        "amphp/artax": "dev-debug/requestcycle-backtrace as 2.x-dev",
+        "amphp/artax": "^2",
         "amphp/aerys": "~0.4",
         "amphp/websocket": "dev-master",
         "amphp/file": "0.1.*",

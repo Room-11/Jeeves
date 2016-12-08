@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "e23dca628e48c0ea93de939610aa5696",
-    "content-hash": "666fd6a629a2728b161460d0ff8f67b3",
+    "hash": "2118369417fca64714b256843c40c11d",
+    "content-hash": "d3f678e348c0906fb2e08413587d44d4",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -146,11 +146,17 @@
         },
         {
             "name": "amphp/artax",
-            "version": "dev-debug/requestcycle-backtrace",
+            "version": "v2.0.5",
             "source": {
                 "type": "git",
-                "url": "https://github.com:/Room-11/artax",
-                "reference": "1b9a4a12fc1eea2a1ad06d16bcb0b3c887ec5d8f"
+                "url": "https://github.com/amphp/artax.git",
+                "reference": "1795ed4076469546f79804b348ffd6dd77656f73"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/amphp/artax/zipball/1795ed4076469546f79804b348ffd6dd77656f73",
+                "reference": "1795ed4076469546f79804b348ffd6dd77656f73",
+                "shasum": ""
             },
             "require": {
                 "amphp/amp": "^1",
@@ -173,11 +179,7 @@
                     "Amp\\Artax\\": "lib/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Amp\\Test\\Artax\\": "test/"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -198,7 +200,7 @@
                 "parallel",
                 "rest"
             ],
-            "time": "2016-10-26 15:36:06"
+            "time": "2016-08-08 16:27:01"
         },
         {
             "name": "amphp/cache",
@@ -2506,17 +2508,9 @@
             "time": "2016-11-23 20:04:58"
         }
     ],
-    "aliases": [
-        {
-            "alias": "2.x-dev",
-            "alias_normalized": "2.9999999.9999999.9999999-dev",
-            "version": "dev-debug/requestcycle-backtrace",
-            "package": "amphp/artax"
-        }
-    ],
+    "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "amphp/artax": 20,
         "amphp/websocket": 20,
         "peehaa/async-twitter": 20,
         "peehaa/async-chatter-bot": 20
