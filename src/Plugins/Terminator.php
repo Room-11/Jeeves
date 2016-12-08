@@ -99,7 +99,7 @@ class Terminator extends BasePlugin
 
     private function buildCleverBotResponse(Message $message)
     {
-        $response = yield $this->chatBotClient->request('Are you ok?');
+        $response = yield $this->chatBotClient->request($message->getText());
 
         return $response->getText();
     }
