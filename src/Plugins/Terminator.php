@@ -128,7 +128,7 @@ class Terminator extends BasePlugin
 
     public function getDescription(): string
     {
-        return 'Naive pattern matching chat bot logic, now with a touch of extra smart-arse';
+        return 'Naive pattern matching chat bot logic, now with a touch of extra smart-arsedness';
     }
 
     /**
