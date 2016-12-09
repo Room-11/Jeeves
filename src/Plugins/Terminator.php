@@ -41,7 +41,8 @@ class Terminator extends BasePlugin
         'can you do (?:a trick|tricks)'               => 'Type this code in your chat window: `<(?:"[^"]*"[\'"]*|\'[^\']*\'[\'"]*|[^\'">])+>`',
         'what do you think (?:of|about) me'           => 'You\'re ok.',
         'what do you think (?:of|about) cap(.*)'      => 'It\'s ok for a first prototype I guess.',
-        'what do you think (?:of|about) (?:singletons|globals|javascript|js|node|mongo|laravel)' => 'It\'s crap and should be avoided',
+        'what do you think (?:of|about) (?:singletons|globals|javascript|js|node|mongo|laravel)' => 'It\'s crap and should be avoided.',
+        'did you try (?:singletons|globals|javascript|js|node|mongo|laravel)(?: yet)?' => 'Yes. It\'s crap and should be avoided.',
         'what (?:do you think)? (?:of|about) jquery'  => 'It\'s great and does all the things!',
         'what do you think (?:of|about) (.*)'         => 'I don\'t think I like $1',
         'what about (?:.*)'                           => 'What about it?',
@@ -128,7 +129,7 @@ class Terminator extends BasePlugin
 
     public function getDescription(): string
     {
-        return 'Naive pattern matching chat bot logic, now with a touch of extra smart-arse';
+        return 'Naive pattern matching chat bot logic, now with a touch of extra smart-arsedness';
     }
 
     /**
