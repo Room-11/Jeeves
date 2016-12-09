@@ -20,8 +20,8 @@ class OpenGrokSearchFailureException extends \RuntimeException {}
 
 class PHPSrcGrok extends BasePlugin
 {
-    const DEFAULT_BRANCH = 'master';
-    const BASE_URL = 'https://php-lxr.adamharvey.name/source/search';
+    const DEFAULT_BRANCH = 'PHP-MASTER';
+    const BASE_URL = 'http://lxr.php.net/source/search';
 
     private $chatClient;
     private $httpClient;
@@ -243,7 +243,7 @@ class PHPSrcGrok extends BasePlugin
     public function getCommandEndpoints(): array
     {
         return [
-            new PluginCommandEndpoint('Def', [$this, 'getDefinition'], 'lxr', 'Retrieves and displays definition search results from php-lxr.adamharvey.name/source'),
+            new PluginCommandEndpoint('Def', [$this, 'getDefinition'], 'lxr', 'Retrieves and displays definition search results from lxr.php.net'),
 //            new PluginCommandEndpoint('Ref', [$this, 'getReference'], 'refs', 'Retrieves and displays symbol search results from lxr.php.net'),
 //            new PluginCommandEndpoint('Full', [$this, 'getFullSearch'], 'lxr', 'Retrieves and displays definition search results from lxr.php.net'),
         ];
