@@ -215,9 +215,8 @@ class PHPSrcGrok extends BasePlugin
             return;
         }
 
-        yield from $this->chatClient->postReply(
-            $command, 'Nothing went wrong but I couldn\'t find a suitable definition. Ping DaveRandom if you think I should have done.'
-        );
+        // fall back to full search if no results have been found
+        yield from $this->getFullSearch($command);
     }
 
     /*
@@ -225,12 +224,42 @@ class PHPSrcGrok extends BasePlugin
     {
 
     }
+    */
 
     public function getFullSearch(Command $command): \Generator
     {
+        if (!$command->hasParameters()) {
+            return;
+        }
 
+        list($branch, $searchTerm) = $this->getBranchAndSearchTerm($command);
+
+        try {
+            $results = yield from $this->getOpenGrokSearchResults($branch, ['q' => $searchTerm]);
+        } catch (OpenGrokSearchFailureException $e) {
+            if ($e->getCode()) {
+                yield from $this->chatClient->postReply($command, $e->getMessage());
+                return;
+            }
+
+            $results = [];
+        }
+
+        $pattern = '~^/\* {{{ proto \w+ ' . preg_quote($searchTerm) . '\(~';
+
+        if (isset($results['code'])) {
+            foreach ($results['code'] as $result) {
+                if (preg_match($pattern, $result['code'])) {
+                    yield from $this->chatClient->postMessage($command->getRoom(), $this->formatResultMessage($result));
+                    return;
+                }
+            }
+        }
+
+        yield from $this->chatClient->postReply(
+            $command, 'Nothing went wrong but I couldn\'t find a suitable definition. Ping DaveRandom or Peehaa if you think I should have done.'
+        );
     }
-    */
 
     public function getDescription(): string
     {
