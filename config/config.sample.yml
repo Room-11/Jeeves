@@ -88,3 +88,6 @@ web-api:
 dev-mode:
   enable: true
 
+github:
+  username: %username%
+  password: %password%
