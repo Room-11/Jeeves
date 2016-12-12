@@ -18,7 +18,8 @@ class Issue extends BasePlugin
 {
     const USAGE = 'Usage: `!!issue [<title> - <body>]`';
     const ISSUE_URL = 'https://api.github.com/repos/Room-11/Jeeves/issues';
-    const CHAT_URL_EX = '~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~';
+    const CHAT_URL_EXP = '~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~';
+    const PING_EXP = '/@([^\s]+)(?=$|\s)/';
     const REQUIRED_AUTH = ['username', 'password'];
 
     private $chatClient;
@@ -52,10 +53,11 @@ class Issue extends BasePlugin
             return $this->chatClient->postReply($command, self::USAGE);
         }
         
-        $title = yield $this->getTextFromCommand($content[0], $command);
+        $title = yield from $this->getTextFromCommand($content[0], $command);
+        $body = null;
 
         if (isset($content[1])) {
-            $body = yield $this->getTextFromCommand($content[1], $command);
+            $body = yield from $this->getTextFromCommand($content[1], $command);
         }
 
         yield from $this->createIssue($title, $body, $command->getId());
@@ -64,7 +66,7 @@ class Issue extends BasePlugin
     }
 
     private function createIssue(string $title, $body = '', int $id)
-    {
+    { // TODO Handle different status returns
         $requestBody = [
             'title' => $title,
             'body' => $body . "\n Source - http://chat.stackoverflow.com/transcript/message/$id#$id"
@@ -85,7 +87,6 @@ class Issue extends BasePlugin
 
         if ($result->getStatus() !== 201) {
             $this->response = 'I failed to create the issue :-(. You might want to create an issue about that';
-            var_dump($result->getBody());
             return new Success();
         }
 
@@ -108,16 +109,46 @@ class Issue extends BasePlugin
     private function getTextFromCommand($text, $command)
     {
         if (is_null($text)) {
-            return new Success(null);
+            return null;
         }
 
-        if (preg_match(self::CHAT_URL_EX, $text)) {
-            return $this->messageResolver->resolveMessageText(
+        if (preg_match(self::CHAT_URL_EXP, $text)) {
+            $text = yield from $this->messageResolver->resolveMessageText(
                 $command->getRoom(), $text
             );
         }
 
-        return new Success((string) $text);    
+        return yield from $this->replacePings($command, $text);
+    }
+
+    private function replacePings($command, string $text)
+    {
+        $room = $command->getRoom();
+
+        if (!preg_match_all(self::PING_EXP, $text, $matches)) {
+            return $text;
+        }
+
+        $pingables = yield $this->chatClient->getPingableUserIDs($room, ...$matches[1]);
+
+        $ids = array_values($pingables);
+        $users = yield $this->chatClient->getMainSiteUsers($room, ...$ids);
+
+        $pingableUsers = [];
+        foreach ($pingables as $name => $id) {
+            $pingableUsers[$name] = $users[$id];
+        }
+
+        return preg_replace_callback(self::PING_EXP, 
+            function($match) use($pingableUsers) 
+            {
+                if (isset($pingableUsers[$match[1]])) {
+                    return '@' . $pingableUsers[$match[1]]->getGithubUsername();
+                }
+
+                return $match[1];
+            },
+        $text);
     }
 
     public function getName(): string
