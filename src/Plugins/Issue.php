@@ -1,6 +1,4 @@
 <?php declare(strict_types=1);
-
-// TODO - Scrape for GH profiles and ping detect
   
 namespace Room11\Jeeves\Plugins;
 
@@ -17,10 +15,10 @@ use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 class Issue extends BasePlugin
 {
     const USAGE = 'Usage: `!!issue [<title> - <body>]`';
-    const ISSUE_URL = 'https://api.github.com/repos/Room-11/Jeeves/issues';
+    const ISSUE_URL = 'https://api.github.com/repos/JayPHP/Project-Template/issues';
     const CHAT_URL_EXP = '~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~';
     const PING_EXP = '/@([^\s]+)(?=$|\s)/';
-    const REQUIRED_AUTH = ['username', 'password'];
+    const REQUIRED_AUTH = ['username', 'password', 'token'];
 
     private $chatClient;
     private $httpClient;
@@ -66,7 +64,7 @@ class Issue extends BasePlugin
     }
 
     private function createIssue(string $title, $body = '', int $id)
-    { // TODO Handle different status returns
+    {
         $requestBody = [
             'title' => $title,
             'body' => $body . "\n Source - http://chat.stackoverflow.com/transcript/message/$id#$id"
@@ -80,7 +78,8 @@ class Issue extends BasePlugin
             ->setMethod('POST')
             ->setBody(json_encode($requestBody))
             ->setAllHeaders([
-                'Authorization' => 'Basic ' . base64_encode("$username:$password")
+                'Authorization' => 'Basic ' . base64_encode("$username:$password"),
+                'X-GitHub-OTP' => base64_encode($this->credentials->get('token'))
             ]);
 
         $result = yield $this->httpClient->request($request);

@@ -10,11 +10,13 @@ class Credentials
 {
     private $username;
     private $password;
+    private $token;
 
-    public function __construct(string $username, string $password)
+    public function __construct(string $username, string $password, string $token)
     {
         $this->username = $username;
         $this->password = $password;
+        $this->token = $token;
     }
 
     public function get(string $credential): string
