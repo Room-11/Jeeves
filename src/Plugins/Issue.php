@@ -15,10 +15,9 @@ use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 class Issue extends BasePlugin
 {
     const USAGE = 'Usage: `!!issue [<title> - <body>]`';
-    const ISSUE_URL = 'https://api.github.com/repos/JayPHP/Project-Template/issues';
     const CHAT_URL_EXP = '~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~';
     const PING_EXP = '/@([^\s]+)(?=$|\s)/';
-    const REQUIRED_AUTH = ['username', 'password', 'token'];
+    const REQUIRED_AUTH = ['url', 'username', 'password', 'token'];
 
     private $chatClient;
     private $httpClient;
@@ -70,17 +69,11 @@ class Issue extends BasePlugin
             'body' => $body . "\n Source - http://chat.stackoverflow.com/transcript/message/$id#$id"
         ];
 
-        $username = $this->credentials->get('username');
-        $password = $this->credentials->get('password');
-
         $request = (new HttpRequest)
-            ->setUri(self::ISSUE_URL)
+            ->setUri($this->credentials->get('url'))
             ->setMethod('POST')
             ->setBody(json_encode($requestBody))
-            ->setAllHeaders([
-                'Authorization' => 'Basic ' . base64_encode("$username:$password"),
-                'X-GitHub-OTP' => base64_encode($this->credentials->get('token'))
-            ]);
+            ->setAllHeaders($this->getAuthHeader());
 
         $result = yield $this->httpClient->request($request);
 
@@ -94,10 +87,24 @@ class Issue extends BasePlugin
         return new Success();
     }
 
-    private function credentialsPresent()
+    private function getAuthHeader(): array
+    {
+        $auth = 'Basic %s';
+
+        if (empty($this->credentials->get('token'))) {
+            $credentials = base64_encode(
+                $this->credentials->get('username') . ':' . $this->credentials->get('password')
+            );
+            return ['Authorization' => sprintf($auth, $credentials)];
+        }
+
+        return ['X-GitHub-OTP' => sprintf($auth, $this->credentials->get('token'))];
+    }
+
+    private function credentialsPresent(): bool
     {
         foreach (self::REQUIRED_AUTH as $key) {
-            if (!$this->credentials->exists($key) || empty($this->credentials->get($key))) {
+            if (!$this->credentials->exists($key)) {
                 return false;
             }
         }
@@ -165,4 +172,3 @@ class Issue extends BasePlugin
         return [new PluginCommandEndpoint('Issue', [$this, 'issue'], 'issue')];
     }
 }
-

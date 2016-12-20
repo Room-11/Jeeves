@@ -92,6 +92,7 @@ $injector->define(TranslationAPICredentials::class, [
 ]);
 
 $injector->define(GithubIssueCredentials::class, [
+    ':url'      => $config['github']['url'] ?? '',
     ':username' => $config['github']['username'] ?? '',
     ':password' => $config['github']['password'] ?? '',
     ':token'    => $config['github']['token'] ?? ''

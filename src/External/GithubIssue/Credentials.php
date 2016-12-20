@@ -11,9 +11,15 @@ class Credentials
     private $username;
     private $password;
     private $token;
+    private $url;
 
-    public function __construct(string $username, string $password, string $token)
-    {
+    public function __construct(
+        string $url,
+        string $username, 
+        string $password, 
+        string $token
+    ) {
+        $this->url = $url;
         $this->username = $username;
         $this->password = $password;
         $this->token = $token;
