@@ -8,6 +8,7 @@ use Aerys\Host;
 use Auryn\Injector;
 use DaveRandom\AsyncBitlyClient\Client as BitlyClient;
 use PeeHaa\AsyncTwitter\Credentials\Application as TwitterApplicationCredentials;
+use Room11\Jeeves\External\GithubIssue\Credentials as GithubIssueCredentials;
 use Room11\Jeeves\BuiltIn\Commands\Admin as AdminBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Ban as BanBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Command as CommandBuiltIn;
@@ -88,6 +89,13 @@ $injector->define(TwitterApplicationCredentials::class, [
 $injector->define(TranslationAPICredentials::class, [
     ':clientId'     => $config['ms-translate']['client-id'] ?? '',
     ':clientSecret' => $config['ms-translate']['client-secret'] ?? '',
+]);
+
+$injector->define(GithubIssueCredentials::class, [
+    ':url'      => $config['github']['url'] ?? '',
+    ':username' => $config['github']['username'] ?? '',
+    ':password' => $config['github']['password'] ?? '',
+    ':token'    => $config['github']['token'] ?? ''
 ]);
 
 $injector->define(WebSocketEventDispatcher::class, [

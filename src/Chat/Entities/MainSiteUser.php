@@ -18,6 +18,7 @@ class MainSiteUser
      * @var string
      */
     private $twitterHandle;
+    private $githubUsername;
 
     public static function createFromDOMDocument(\DOMDocument $doc): MainSiteUser // very todo: remove horrible static ctor
     {
@@ -28,12 +29,19 @@ class MainSiteUser
             ? trim($twitterLink->item(0)->textContent)
             : null;
 
-        return new MainSiteUser($twitterHandle);
+        // cannot separate this because of static, bloody mancs. 
+        $githubLink = $xpath->query("//li[span[" . xpath_html_class('icon-github') . "]]/a");
+        $githubUsername = $githubLink->length > 0
+            ? trim($githubLink->item(0)->textContent)
+            : null;
+
+        return new MainSiteUser($twitterHandle, $githubUsername);
     }
 
-    public function __construct(string $twitterHandle = null)
+    public function __construct(string $twitterHandle = null, string $githubUsername = null)
     {
         $this->twitterHandle = $twitterHandle;
+        $this->githubUsername = $githubUsername;
     }
 
     /**
@@ -42,5 +50,10 @@ class MainSiteUser
     public function getTwitterHandle()
     {
         return $this->twitterHandle;
+    }
+
+    public function getGithubUsername()
+    {
+        return $this->githubUsername;
     }
 }

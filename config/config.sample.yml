@@ -88,3 +88,8 @@ web-api:
 dev-mode:
   enable: true
 
+github:
+  url: https://api.github.com/repos/Room-11/Jeeves/issues
+  username: %username%
+  password: %password%
+  token:
