@@ -17,9 +17,9 @@ class Issue extends BasePlugin
     const USAGE = 'Usage: `!!issue [<title> - <body>]`';
     const CHAT_URL_EXP = '~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~';
     const PING_EXP = '/@([^\s]+)(?=$|\s)/';
-    const REQUIRED_AUTH = ['url', 'username', 'password', 'token'];
 
     private $chatClient;
+    private $messageResolver;
     private $httpClient;
     private $credentials;
     private $response;
@@ -70,7 +70,7 @@ class Issue extends BasePlugin
         ];
 
         $request = (new HttpRequest)
-            ->setUri($this->credentials->get('url'))
+            ->setUri($this->credentials->getUrl())
             ->setMethod('POST')
             ->setBody(json_encode($requestBody))
             ->setAllHeaders($this->getAuthHeader());
@@ -91,22 +91,24 @@ class Issue extends BasePlugin
     {
         $auth = 'Basic %s';
 
-        if (empty($this->credentials->get('token'))) {
+        if (empty($this->credentials->getToken())) {
             $credentials = base64_encode(
-                $this->credentials->get('username') . ':' . $this->credentials->get('password')
+                $this->credentials->getUsername() . ':' . $this->credentials->getPassword()
             );
             return ['Authorization' => sprintf($auth, $credentials)];
         }
 
-        return ['X-GitHub-OTP' => sprintf($auth, $this->credentials->get('token'))];
+        return ['Authorization' => sprintf($auth, $this->credentials->getToken())];
     }
 
     private function credentialsPresent(): bool
     {
-        foreach (self::REQUIRED_AUTH as $key) {
-            if (!$this->credentials->exists($key)) {
-                return false;
-            }
+        if (!empty($this->credentials->getToken())) {
+            return true;
+        }
+
+        if (empty($this->credentials->getUsername()) || empty($this->credentials->getPassword())) {
+            return false;
         }
 
         return true;

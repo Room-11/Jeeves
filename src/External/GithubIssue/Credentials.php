@@ -25,23 +25,23 @@ class Credentials
         $this->token = $token;
     }
 
-    public function get(string $credential): string
+    public function getUrl(): string
     {
-        if (!property_exists($this, $credential)) {
-            throw new MissingCredentialException(
-                'Credential [' . $credential . '] does not exist'
-            );
-        }
-
-        return $this->$credential;
+        return $this->url;
     }
 
-    public function exists(string $credential): bool
+    public function getUsername(): string
     {
-        if (!property_exists($this, $credential)) {    
-            return false;
-        }
+        return $this->username;
+    }
 
-        return true;
+    public function getPassword(): string
+    {
+        return $this->password;
+    }
+
+    public function getToken(): string
+    {
+        return $this->token;
     }
 }
