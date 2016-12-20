@@ -11,6 +11,7 @@ use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\Jeeves\Chat\Client\MessageResolver;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
+use Room11\Jeeves\Storage\Admin as AdminStorage;
 
 class Issue extends BasePlugin
 {
@@ -23,21 +24,28 @@ class Issue extends BasePlugin
     private $httpClient;
     private $credentials;
     private $response;
+    private $admin;
 
     public function __construct(
         ChatClient $chatClient, 
         MessageResolver $messageResolver,
         HttpClient $httpClient,
-        Credentials $credentials
+        Credentials $credentials,
+        AdminStorage $adminStorage
     ) {
         $this->credentials = $credentials;
         $this->httpClient = $httpClient;
         $this->messageResolver = $messageResolver;
         $this->chatClient = $chatClient;
+        $this->admin = $adminStorage;
     }
 
     public function issue(Command $command)
     {
+        if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
+            return $this->chatClient->postReply($command, "Sorry, you're not cool enough to do that :(");
+        }
+
         if (!$this->credentialsPresent()) {
             return $this->chatClient->postReply(
                 $command, 'I\'m not configured to use GitHub :('
