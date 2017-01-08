@@ -16,6 +16,7 @@ use Room11\Jeeves\BuiltIn\Commands\Plugin as PluginBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\RoomPresence;
 use Room11\Jeeves\BuiltIn\Commands\Uptime as UptimeBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Version as VersionBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Remove as RemoveBuiltIn;
 use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
 use Room11\Jeeves\Chat\Room\CredentialManager;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
@@ -61,6 +62,7 @@ $builtInCommands = [
     RoomPresence::class,
     UptimeBuiltIn::class,
     VersionBuiltIn::class,
+    RemoveBuiltIn::class
 ];
 
 $builtInEventHandlers = [

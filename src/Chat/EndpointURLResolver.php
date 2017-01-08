@@ -17,6 +17,7 @@ class EndpointURLResolver
         Endpoint::CHATROOM_GET_MESSAGE_HTML    => 'https://%1$s/message/%3$d',
         Endpoint::CHATROOM_POST_MESSAGE        => 'https://%1$s/chats/%2$d/messages/new',
         Endpoint::CHATROOM_EDIT_MESSAGE        => 'https://%1$s/messages/%3$d',
+        Endpoint::CHATROOM_MOVE_MESSAGE        => 'https://%1$s/admin/movePosts/%2$d',
         Endpoint::CHATROOM_PIN_MESSAGE         => 'https://%1$s/messages/%3$d/owner-star',
         Endpoint::CHATROOM_UNSTAR_MESSAGE      => 'https://%1$s/messages/%3$d/unstar',
         Endpoint::CHATROOM_GET_MESSAGE_TEXT    => 'https://%1$s/messages/%2$d/%3$d',
