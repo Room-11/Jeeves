@@ -10,7 +10,7 @@ use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 
-class remove implements BuiltInCommand
+class Remove implements BuiltInCommand
 {
     private $chatClient;
     private $admin;
