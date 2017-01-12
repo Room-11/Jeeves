@@ -201,19 +201,22 @@ class Reminder extends BasePlugin
     {
         return resolve(function() use($command) {
 
-            if ($command->hasParameters() === false) {
+            $commandName = $command->getCommandName(); // <reminder|in|at>
+
+            if ($command->hasParameters() === false && $commandName !== 'reminders') {
                 return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
             }
 
             /* $command->getParameter(0) can be: list | examples | flush | unset | <text> | <time> */
             $textOrCommand = $command->getParameter(0);
-            $commandName = $command->getCommandName(); // <reminder|in|at>
 
             switch ($commandName){
                 case 'in':
                     return yield $this->setReminder($command, 'in');
                 case 'at':
                     return yield $this->setReminder($command, 'at');
+                case 'reminders':
+                    return yield $this->getAllReminders($command);
                 case 'reminder':
                     break;
             }
@@ -323,7 +326,7 @@ class Reminder extends BasePlugin
             . Chars::BULLET . " With timezone: (ie. UTC-3) !!reminder foo at 18:00-3:00 \n"
             . Chars::BULLET . " !!reminder bar in 2 hours \n"
             . Chars::BULLET . " !!reminder unset 32901146 \n"
-            . Chars::BULLET . " !!reminder list \n"
+            . Chars::BULLET . " !!reminder list or just !!reminders \n"
             . Chars::BULLET . " !!in 2 days 42 hours 42 minutes 42 seconds 42! \n"
             . Chars::BULLET . " !!at 22:00 Grab a beer!";
 
@@ -335,6 +338,7 @@ class Reminder extends BasePlugin
     public function getCommandEndpoints(): array
     {
         return [
+            new PluginCommandEndpoint('reminders', [$this, 'handleCommand'], 'reminders'),
             new PluginCommandEndpoint('reminder', [$this, 'handleCommand'], 'reminder'),
             new PluginCommandEndpoint('in', [$this, 'handleCommand'], 'in'),
             new PluginCommandEndpoint('at', [$this, 'handleCommand'], 'at')
