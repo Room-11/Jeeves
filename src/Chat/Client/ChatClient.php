@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
+use Ds\Deque;
 use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
@@ -33,6 +34,9 @@ class ChatClient
     const MAX_POST_ATTEMPTS = 5;
     const ENCODING = 'UTF-8';
     const TRUNCATION_LIMIT = 500;
+    const MAXIMUM_MESSAGES_STORED = 10;
+    const MAXIMUM_MESSAGES_MOVED = 11;
+    const BIN_ROOM_ID = 48058;
 
     private $httpClient;
     private $logger;
@@ -40,6 +44,7 @@ class ChatClient
     private $actionFactory;
     private $urlResolver;
     private $identifierFactory;
+    private $storedMessages = [];
 
     public function __construct(
         HttpClient $httpClient,
@@ -493,8 +498,76 @@ class ChatClient
             $action = $this->actionFactory->createPostMessageAction($request, $room, $text);
             $this->actionExecutor->enqueue($action);
 
+            $promise = $action->promise();
+            $promise->when(function ($error, $response = null) use ($room)
+            {
+                if ($error === null) {
+                    $this->storeMessageForRemoval(
+                        $response->getId(), $room->getIdentifier()->getId()
+                    );
+                }
+            });
+
             return $action->promise();
         });
+    }
+
+    private function storeMessageForRemoval(int $messageId, int $roomId)
+    {
+        if (!isset($this->storedMessages[$roomId])) {
+            $this->storedMessages[$roomId] = new Deque;
+        }
+
+        $this->storedMessages[$roomId]->push($messageId);
+
+        if ($this->storedMessages[$roomId]->count() > self::MAXIMUM_MESSAGES_STORED) {
+            $this->storedMessages[$roomId]->shift();
+        }
+    }
+
+    public function getStoredMessages(ChatRoom $room)
+    {
+        if (!isset($this->storedMessages[$room->getIdentifier()->getId()])) {
+            return false;
+        }
+
+        return $this->storedMessages[$room->getIdentifier()->getId()];
+    }
+
+    public function getAndRemoveStoredMessage(ChatRoom $room)
+    {
+        $roomId = $room->getIdentifier()->getId();
+        if (!isset($this->storedMessages[$roomId]) || !$this->storedMessages[$roomId] instanceof Deque) {
+            return false;
+        }
+
+        $message = $this->storedMessages[$roomId]->pop();
+
+        if ($this->storedMessages[$roomId]->isEmpty()) {
+            unset($this->storedMessages[$roomId]);
+        }
+
+        return $message;
+    }
+
+    public function moveMessages(array $messageIds, ChatRoom $room): Promise
+    {
+       $messages = array_slice($messageIds, 0, self::MAXIMUM_MESSAGES_MOVED);
+
+        $body = (new FormBody)
+            ->addField("fkey", $room->getSession()->getFKey())
+            ->addField('ids', implode(',', $messages))
+            ->addField('to', self::BIN_ROOM_ID);
+
+        $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::CHATROOM_MOVE_MESSAGE);
+
+        $request = (new HttpRequest)
+            ->setUri($url)
+            ->setMethod("POST")
+            ->setBody($body);
+
+        $action = $this->actionFactory->createMoveMessageAction($request, $room);
+        return $this->actionExecutor->enqueue($action);
     }
 
     /**

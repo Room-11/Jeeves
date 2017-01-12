@@ -28,6 +28,11 @@ class ActionFactory
         return new EditMessageAction($this->logger, $request, $room);
     }
 
+    public function createMoveMessageAction(Request $request, ChatRoom $room): MoveMessageAction
+    {
+        return new MoveMessageAction($this->logger, $request, $room);
+    }
+
     public function createPinOrUnpinMessageAction(Request $request, ChatRoom $room): PinOrUnpinMessageAction
     {
         return new PinOrUnpinMessageAction($this->logger, $request, $room);
