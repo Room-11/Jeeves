@@ -41,7 +41,7 @@ class Remove implements BuiltInCommand
             $amount = $messages->count();
         }
 
-        yield from $this->removeMessages($command->getRoom(), $amount, $command->getId());
+        yield from $this->removeMessages($command->getRoom(), (int) $amount, $command->getId());
     }
 
     private function removeMessages(ChatRoom $room, int $amount, int $commandId)
