@@ -52,7 +52,7 @@ class Issue extends BasePlugin
             );
         }
 
-        $content = explode('-', $command->getText());
+        $content = explode('-', $command->getText(), 2);
 
         if (empty($content[0]) || count($content) > 2) {
             return $this->chatClient->postReply($command, self::USAGE);
