@@ -284,6 +284,10 @@ class Command implements BuiltInCommand
         }
 
         try {
+            if ($command->getCommandName() === 'help') {
+                return $this->list($command);
+            }
+
             switch ($command->getParameter(0)) {
                 case 'alias': return yield from $this->alias($command);
                 case 'list':  return $this->list($command);
@@ -316,6 +320,6 @@ class Command implements BuiltInCommand
      */
     public function getCommandNames(): array
     {
-        return ['command'];
+        return ['command', 'help'];
     }
 }
