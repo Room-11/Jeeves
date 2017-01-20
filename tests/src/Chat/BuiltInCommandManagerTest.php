@@ -11,6 +11,7 @@ use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Event\MessageEvent;
 use Amp\Success;
 use function Amp\wait;
+use Room11\Jeeves\System\BuiltInCommandInfo;
 
 
 class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
@@ -41,7 +42,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($builtInCommandManager, $builtInCommandManager->registerCommand($command));
     }
 
-    public function testGetRegisteredCommands()
+    public function testHasRegisteredCommand()
     {
         $builtInCommandManager = new BuiltInActionManager(
             $this->getMock(BanStorage::class),
@@ -53,12 +54,37 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
         $command
             ->expects($this->once())
             ->method('getCommandNames')
-            ->will($this->returnValue(['foo', 'bar']))
+            ->will($this->returnValue(['foo']))
         ;
 
         $builtInCommandManager->registerCommand($command);
 
-        $this->assertSame(['foo', 'bar'], $builtInCommandManager->getRegisteredCommands());
+        $this->assertSame(true, $builtInCommandManager->hasRegisteredCommand('foo'));
+        $this->assertSame(false, $builtInCommandManager->hasRegisteredCommand('bar'));
+    }
+
+    public function testGetRegisteredCommands()
+    {
+        $builtInCommandManager = new BuiltInActionManager(
+            $this->getMock(BanStorage::class),
+            $this->getMock(Logger::class)
+        );
+
+        $info = $this->getMock(BuiltInCommandInfo::class);
+        $command = $this->getMock(BuiltInCommand::class);
+
+        $info
+            ->method('getCommand')
+            ->will($this->returnValue('foo'));
+
+        $command
+            ->expects($this->once())
+            ->method('getCommandInfo')
+            ->will($this->returnValue([$info]));
+
+        $builtInCommandManager->registerCommand($command);
+
+        $this->assertSame(['foo' => $info], $builtInCommandManager->getRegisteredCommandInfo());
     }
 
     public function testHandleCommandDoesntMatch()
@@ -125,7 +151,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->method('getId')
             ->willReturn(721)
         ;
-        
+
         $userCommand = $this->getMockBuilder(Command::class)
             ->disableOriginalConstructor()
             ->getMock()

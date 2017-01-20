@@ -18,7 +18,7 @@ interface BuiltInCommand
     /**
      * Get a list of specific commands handled by this built-in
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array;
+    public function getCommandInfo(): array;
 }

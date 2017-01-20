@@ -9,8 +9,9 @@ use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\BuiltInCommand;
-use function Amp\resolve;
+use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
+use function Amp\resolve;
 
 class Alias implements BuiltInCommand
 {
@@ -40,7 +41,7 @@ class Alias implements BuiltInCommand
         $aliasCommand = $command->getParameter(0);
         $mapping = implode(' ', $command->getParameters(1));
 
-        if (in_array($aliasCommand, $this->builtInCommandManager->getRegisteredCommands())) {
+        if ($this->builtInCommandManager->hasRegisteredCommand($aliasCommand)) {
             return $this->chatClient->postReply($command, "Command '{$aliasCommand}' is built in and cannot be altered");
         }
 
@@ -96,10 +97,13 @@ class Alias implements BuiltInCommand
     /**
      * Get a list of specific commands handled by this plugin
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['alias', 'unalias'];
+        return [
+            new BuiltInCommandInfo('alias', 'Add a bash-style alias', true),
+            new BuiltInCommandInfo('unalias', 'Remove a bash-style alias', true)
+        ];
     }
 }

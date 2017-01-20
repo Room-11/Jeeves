@@ -8,6 +8,7 @@ use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
+use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
 use function Amp\resolve;
 
@@ -16,6 +17,20 @@ class Plugin implements BuiltInCommand
     private $pluginManager;
     private $chatClient;
     private $adminStorage;
+
+    const COMMAND_HELP_TEXT =
+        "Sub-commands (* indicates admin-only):\n"
+        . "\n"
+        . "\n help     - display this message"
+        . "\n list     - display a list of plugins, or a list of endpoints for the specified plugin."
+        . "\n             Syntax: plugin list [<name>]"
+        . "\n *enable  - Enable a plugin in this room."
+        . "\n             Syntax: plugin enable <name>"
+        . "\n *disable - Disable a plugin in this room."
+        . "\n             Syntax: plugin disable <name>"
+        . "\n status   - Query whether a plugin is enabled in this room."
+        . "\n             Syntax: plugin status <name>"
+    ;
 
     public function __construct(PluginManager $pluginManager, ChatClient $chatClient, AdminStorage $adminStorage)
     {
@@ -150,6 +165,7 @@ class Plugin implements BuiltInCommand
         }
 
         switch ($command->getParameter(0)) {
+            case 'help':    return $this->showCommandHelp($command);
             case 'list':    return $this->list($command);
             case 'enable':  return $this->enable($command);
             case 'disable': return $this->disable($command);
@@ -157,6 +173,11 @@ class Plugin implements BuiltInCommand
         }
 
         return $this->chatClient->postReply($command, "Syntax: plugin [list|disable|enable] [plugin-name]");
+    }
+
+    private function showCommandHelp(CommandMessage $command): Promise
+    {
+        return $this->chatClient->postMessage($command->getRoom(), self::COMMAND_HELP_TEXT, PostFlags::FIXED_FONT);
     }
 
     /**
@@ -173,10 +194,12 @@ class Plugin implements BuiltInCommand
     /**
      * Get a list of specific commands handled by this built-in
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['plugin'];
+        return [
+            new BuiltInCommandInfo('plugin', "Manage plugins. Use 'plugin help' for details."),
+        ];
     }
 }

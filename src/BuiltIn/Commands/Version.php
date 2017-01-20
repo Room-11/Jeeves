@@ -6,6 +6,7 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
+use Room11\Jeeves\System\BuiltInCommandInfo;
 use SebastianBergmann\Version as SebastianVersion;
 use const Room11\Jeeves\APP_BASE;
 use function Amp\resolve;
@@ -56,8 +57,10 @@ class Version implements BuiltInCommand
      *
      * @return string[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['version'];
+        return [
+            new BuiltInCommandInfo('version', "Display the current running version of the bot."),
+        ];
     }
 }

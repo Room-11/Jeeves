@@ -5,19 +5,30 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Artax\HttpClient;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Entities\ChatUser;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use function Amp\resolve;
+use Room11\Jeeves\System\BuiltInCommandInfo;
 
 class Admin implements BuiltInCommand
 {
-    const ACTIONS = ["add", "remove", "list"];
-
     private $chatClient;
     private $httpClient;
     private $storage;
+
+    const COMMAND_HELP_TEXT =
+        "Sub-commands (* indicates admin-only):\n"
+        . "\n"
+        . "\n help    - Display this message"
+        . "\n list    - Display a list of the current admin users."
+        . "\n *add    - Add a user to the admin list."
+        . "\n            Syntax: admin add <user id>"
+        . "\n *remove - Remove a user from the admin list."
+        . "\n            Syntax: admin remove <user id>"
+    ;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $storage)
     {
@@ -81,14 +92,19 @@ class Admin implements BuiltInCommand
         return $this->chatClient->postMessage($command->getRoom(), "User removed from the admin list.");
     }
 
+    private function showCommandHelp(CommandMessage $command): Promise
+    {
+        return $this->chatClient->postMessage($command->getRoom(), self::COMMAND_HELP_TEXT, PostFlags::FIXED_FONT);
+    }
+
     private function execute(CommandMessage $command)
     {
         if (!yield $command->getRoom()->isApproved()) {
-            return;
+            return null;
         }
 
-        if (!in_array($command->getParameter(0), self::ACTIONS, true)) {
-            return;
+        if ($command->getParameter(0) === "help") {
+            return $this->showCommandHelp($command);
         }
 
         if ($command->getParameter(0) === "list") {
@@ -103,8 +119,6 @@ class Admin implements BuiltInCommand
             case 'add':    return yield from $this->add($command, (int)$command->getParameter(1));
             case 'remove': return yield from $this->remove($command, (int)$command->getParameter(1));
         }
-
-        throw new \LogicException('Operation ' . $command->getParameter(0) . ' was considered valid but not handled??');
     }
 
     /**
@@ -121,10 +135,12 @@ class Admin implements BuiltInCommand
     /**
      * Get a list of specific commands handled by this plugin
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['admin'];
+        return [
+            new BuiltInCommandInfo('admin', "Manage the bot's admin list. Use 'admin help' for details.")
+        ];
     }
 }

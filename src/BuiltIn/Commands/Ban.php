@@ -10,6 +10,7 @@ use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use function Amp\resolve;
+use Room11\Jeeves\System\BuiltInCommandInfo;
 
 class Ban implements BuiltInCommand
 {
@@ -24,9 +25,10 @@ class Ban implements BuiltInCommand
         $this->banStorage   = $banStorage;
     }
 
-    private function execute(CommandMessage $command): \Generator {
+    private function execute(CommandMessage $command)
+    {
         if (!yield $command->getRoom()->isApproved()) {
-            return;
+            return null;
         }
 
         if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
@@ -90,10 +92,13 @@ class Ban implements BuiltInCommand
     /**
      * Get a list of specific commands handled by this plugin
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ["ban", "unban"];
+        return [
+            new BuiltInCommandInfo('ban', 'Ban a user from interacting with the bot for a specified period of time', true),
+            new BuiltInCommandInfo('unban', "Remove a user's ban status", true),
+        ];
     }
 }
