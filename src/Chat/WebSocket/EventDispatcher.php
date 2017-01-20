@@ -82,7 +82,7 @@ class EventDispatcher
             $chatMessage = null;
 
             if ($event instanceof MessageEvent && ($this->devMode || $event->getUserId() !== $event->getRoom()->getSession()->getUser()->getId())) {
-                $chatMessage = $this->messageFactory->build($event);
+                $chatMessage = yield $this->messageFactory->build($event);
 
                 if ($chatMessage instanceof Command) {
                     $this->logger->log(Level::DEBUG, "Processing room event #{$eventId} for built in commands");
