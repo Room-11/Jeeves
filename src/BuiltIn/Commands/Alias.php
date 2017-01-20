@@ -6,10 +6,8 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
 use Room11\Jeeves\System\BuiltInCommand;
-use Room11\Jeeves\System\CommandAliasMap;
-use SebastianBergmann\Version as SebastianVersion;
-use const Room11\Jeeves\APP_BASE;
 use function Amp\resolve;
 
 class Alias implements BuiltInCommand
@@ -18,19 +16,19 @@ class Alias implements BuiltInCommand
     private $adminStorage;
     private $aliasMap;
 
-    public function __construct(ChatClient $chatClient, CommandAliasMap $aliasMap, AdminStorage $adminStorage)
+    public function __construct(ChatClient $chatClient, CommandAliasStorage $aliasMap, AdminStorage $adminStorage)
     {
         $this->chatClient = $chatClient;
         $this->aliasMap = $aliasMap;
         $this->adminStorage = $adminStorage;
     }
 
-    private function addAlias(CommandMessage $command): Promise
+    private function addAlias(CommandMessage $command)
     {
         $aliasCommand = $command->getParameter(0);
         $mapping = implode(' ', $command->getParameters(1));
 
-        $this->aliasMap->addMapping($command->getRoom(), $aliasCommand, $mapping);
+        yield $this->aliasMap->add($command->getRoom(), $aliasCommand, $mapping);
 
         return $this->chatClient->postMessage($command->getRoom(), "Command '!!{$aliasCommand}' aliased to '!!{$mapping}'");
     }
@@ -39,23 +37,13 @@ class Alias implements BuiltInCommand
     {
         $aliasCommand = $command->getParameter(0);
 
-        if (!$this->aliasMap->mappingExists($command->getRoom(), $aliasCommand)) {
+        if (!yield $this->aliasMap->exists($command->getRoom(), $aliasCommand)) {
             return $this->chatClient->postMessage($command->getRoom(), "Alias '!!{$aliasCommand}' is not currently mapped");
         }
 
-        $version = (new SebastianVersion(VERSION, APP_BASE))->getVersion();
+        yield $this->aliasMap->remove($command->getRoom(), $aliasCommand);
 
-        $messageText = preg_replace_callback('@v([0-9.]+)(?:-\d+-g([0-9a-f]+))?@', function($match) {
-            return sprintf(
-                "[%s](%s)",
-                $match[0],
-                empty($match[2])
-                    ? "https://github.com/Room-11/Jeeves/tree/v" . $match[1]
-                    : "https://github.com/Room-11/Jeeves/commit/" . $match[2]
-            );
-        }, $version);
-
-        yield $this->chatClient->postMessage($command->getRoom(), $messageText);
+        return $this->chatClient->postMessage($command->getRoom(), "Alias '!!{$aliasCommand}' removed");
     }
 
     /**
@@ -76,8 +64,8 @@ class Alias implements BuiltInCommand
             }
 
             return $command->getCommandName() === 'alias'
-                ? $this->addAlias($command)
-                : $this->removeAlias($command);
+                ? yield from $this->addAlias($command)
+                : yield from $this->removeAlias($command);
         });
     }
 
