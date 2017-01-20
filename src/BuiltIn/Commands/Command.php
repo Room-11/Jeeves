@@ -39,7 +39,7 @@ class Command implements BuiltInCommand
     ];
 
     const COMMAND_HELP_TEXT =
-        "Sub-commands (* indicates admin-only):\n"
+        "Sub-commands (* indicates admin-only):"
         . "\n"
         . "\n help   - display this message"
         . "\n list   - display a list of the currently mapped commands."

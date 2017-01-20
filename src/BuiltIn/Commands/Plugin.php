@@ -19,7 +19,7 @@ class Plugin implements BuiltInCommand
     private $adminStorage;
 
     const COMMAND_HELP_TEXT =
-        "Sub-commands (* indicates admin-only):\n"
+        "Sub-commands (* indicates admin-only):"
         . "\n"
         . "\n help     - display this message"
         . "\n list     - display a list of plugins, or a list of endpoints for the specified plugin."

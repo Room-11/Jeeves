@@ -20,7 +20,7 @@ class Admin implements BuiltInCommand
     private $storage;
 
     const COMMAND_HELP_TEXT =
-        "Sub-commands (* indicates admin-only):\n"
+        "Sub-commands (* indicates admin-only):"
         . "\n"
         . "\n help    - Display this message"
         . "\n list    - Display a list of the current admin users."
