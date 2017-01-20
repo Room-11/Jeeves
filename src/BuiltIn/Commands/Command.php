@@ -286,7 +286,7 @@ class Command implements BuiltInCommand
             $result .= "\n {$admin}{$info->getCommand()} - {$info->getDescription()}";
         }
 
-        $result = "\n\nPlugin commands currently mapped:";
+        $result .= "\n\nPlugin commands currently mapped:";
 
         if (!$pluginCommands) {
             $result .= ' none';
@@ -296,7 +296,7 @@ class Command implements BuiltInCommand
             $result .= "\n {$cmd} - {$info['endpoint_description']} ({$info['plugin_name']} # {$info['endpoint_name']})";
         }
 
-        $result = "\n\nAliases currently mapped:";
+        $result .= "\n\nAliases currently mapped:";
 
         if (!$aliases) {
             $result .= ' none';
