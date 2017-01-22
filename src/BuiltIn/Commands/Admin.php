@@ -5,6 +5,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Artax\HttpClient;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Entities\ChatUser;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -31,7 +32,10 @@ class Admin implements BuiltInCommand
         $admins = yield $this->storage->getAll($command->getRoom());
 
         if ($admins['owners'] === [] && $admins['admins'] === []) {
-            return $this->chatClient->postMessage($command->getRoom(), "There are no registered admins");
+            return $this->chatClient->postMessage(
+                $command->getRoom(), 
+                new PendingMessage('There are no registered admins', $command->getId())
+            );
         }
 
         $userIds = array_merge($admins['owners'], $admins['admins']);
@@ -46,7 +50,10 @@ class Admin implements BuiltInCommand
                 : $user->getName();
         }, $users));
 
-        return $this->chatClient->postMessage($command->getRoom(), $list);
+        return $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage($list, $command->getId())
+        );
     }
 
     private function add(CommandMessage $command, int $userId)

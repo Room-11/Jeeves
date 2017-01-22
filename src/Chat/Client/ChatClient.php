@@ -10,6 +10,7 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\DOMUtils\ElementNotFoundException;
 use Room11\Jeeves\Chat\Client\Actions\ActionFactory;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\EndpointURLResolver;
 use Room11\Jeeves\Chat\Entities\ChatUser;
@@ -34,8 +35,8 @@ class ChatClient
     const MAX_POST_ATTEMPTS = 5;
     const ENCODING = 'UTF-8';
     const TRUNCATION_LIMIT = 500;
-    const MAXIMUM_MESSAGES_STORED = 10;
-    const MAXIMUM_MESSAGES_MOVED = 11;
+    const MAXIMUM_MESSAGES_STORED = 20;
+    const MAXIMUM_MESSAGES_MOVED = 21;
     const BIN_ROOM_ID = 48058;
 
     private $httpClient;
@@ -474,15 +475,19 @@ class ChatClient
         });
     }
 
-    public function postMessage(ChatRoom $room, string $text, int $flags = PostFlags::NONE): Promise
+    public function postMessage(ChatRoom $room, $pendingMessage, int $flags = PostFlags::NONE): Promise
     {
-        return resolve(function() use ($room, $text, $flags) {
+        return resolve(function() use ($room, $pendingMessage, $flags) {
             // the order of these two conditions is very important! MUST short circuit on $flags or new rooms will block on the welcome message!
             if (!($flags & PostFlags::FORCE) && !(yield $room->isApproved())) {
                 throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
             }
 
-            $text = $this->applyPostFlagsToText($text, $flags);
+            if (!$pendingMessage instanceof PendingMessage) {
+                $pendingMessage = new PendingMessage($pendingMessage);
+            }
+
+            $text = $this->applyPostFlagsToText($pendingMessage->getMessage(), $flags);
 
             $body = (new FormBody)
                 ->addField("text", $text)
@@ -499,11 +504,13 @@ class ChatClient
             $this->actionExecutor->enqueue($action);
 
             $promise = $action->promise();
-            $promise->when(function ($error, $response = null) use ($room)
+            $promise->when(function ($error, $response = null) use ($room, $pendingMessage)
             {
                 if ($error === null) {
                     $this->storeMessageForRemoval(
-                        $response->getId(), $room->getIdentifier()->getId()
+                        $response->getId(),
+                        $room->getIdentifier()->getId(),
+                        $pendingMessage->getCommandId()
                     );
                 }
             });
@@ -512,13 +519,16 @@ class ChatClient
         });
     }
 
-    private function storeMessageForRemoval(int $messageId, int $roomId)
+    private function storeMessageForRemoval(int $messageId, int $roomId, ?int $commandId)
     {
         if (!isset($this->storedMessages[$roomId])) {
             $this->storedMessages[$roomId] = new Deque;
         }
 
-        $this->storedMessages[$roomId]->push($messageId);
+        $this->storedMessages[$roomId]->push([
+            'messageId' => $messageId,
+            'commandId' => $commandId
+        ]);
 
         if ($this->storedMessages[$roomId]->count() > self::MAXIMUM_MESSAGES_STORED) {
             $this->storedMessages[$roomId]->shift();
@@ -576,12 +586,20 @@ class ChatClient
      * @param int $flags
      * @return Promise
      */
-    public function postReply($origin, string $text, int $flags = PostFlags::NONE): Promise
+    public function postReply($origin, $pendingMessage, int $flags = PostFlags::NONE): Promise
     {
         $flags |= PostFlags::ALLOW_REPLIES;
         $flags &= ~PostFlags::FIXED_FONT;
 
-        return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}", $flags);
+        if (!$pendingMessage instanceof PendingMessage) {
+            $pendingMessage = new PendingMessage($pendingMessage);
+        }
+
+        $pendingMessage->setMessage(
+            ":{$origin->getId()} {$pendingMessage->getMessage()}"
+        );
+
+        return $this->postMessage($origin->getRoom(), $pendingMessage, $flags);
     }
 
     /**

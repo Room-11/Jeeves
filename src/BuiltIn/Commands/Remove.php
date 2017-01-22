@@ -5,6 +5,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Promise;
 use function Amp\resolve;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
@@ -28,12 +29,24 @@ class remove implements BuiltInCommand
         }
 
         if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
-            return $this->chatClient->postReply($command, "Sorry, you're not cool enough to do that :(");
+            return $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'Sorry, you\'re not cool enough to do that :(', 
+                    $command->getId()
+                )
+            );
         }
 
         $messages = $this->chatClient->getStoredMessages($command->getRoom());
         if ($messages === false || $messages->count() === 0) {
-            return $this->chatClient->postReply($command, 'I don\'t have any messages stored for this room, sorry');        
+            return $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'I don\'t have any messages stored for this room, sorry', 
+                    $command->getId()
+                )
+            );        
         }
 
         $amount = $command->getParameter(0) ?? 1;
@@ -47,10 +60,16 @@ class remove implements BuiltInCommand
     private function removeMessages(ChatRoom $room, int $amount, int $commandId)
     {
         $messages = [];
-        for ($i = 0; $i < $amount; $i++) {
-            $messages[] = $this->chatClient->getAndRemoveStoredMessage($room);
-        }
         $messages[] = $commandId;
+
+        for ($i = 0; $i < $amount; $i++) {
+            $message = $this->chatClient->getAndRemoveStoredMessage($room);
+            $messages[] = $message['messageId'];
+
+            if (!is_null($message['commandId'])) {
+                $messages[] = $message['commandId'];
+            }
+        }
         
         yield $this->chatClient->moveMessages($messages, $room);
     }

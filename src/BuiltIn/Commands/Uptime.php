@@ -4,6 +4,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use const Room11\Jeeves\PROCESS_START_TIME;
@@ -29,10 +30,13 @@ class Uptime implements BuiltInCommand
             return;
         }
 
-        return $this->chatClient->postReply($command, sprintf(
-            'I have been running for %s, since %s',
-            dateinterval_to_string((new \DateTime)->diff($this->startTime)),
-            $this->startTime->format('Y-m-d H:i:s')
+        return $this->chatClient->postReply($command, new PendingMessage(
+            sprintf(
+                'I have been running for %s, since %s',
+                dateinterval_to_string((new \DateTime)->diff($this->startTime)),
+                $this->startTime->format('Y-m-d H:i:s')
+            ),
+            $command->getId()
         ));
     }
 
