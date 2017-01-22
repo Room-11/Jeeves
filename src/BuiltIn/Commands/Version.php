@@ -4,6 +4,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use SebastianBergmann\Version as SebastianVersion;
@@ -37,7 +38,10 @@ class Version implements BuiltInCommand
             );
         }, $version);
 
-        yield $this->chatClient->postMessage($command->getRoom(), $messageText);
+        yield $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage($messageText, $command->getId())
+        );
     }
 
     /**
