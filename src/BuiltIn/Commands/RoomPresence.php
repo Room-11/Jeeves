@@ -19,6 +19,7 @@ use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\System\BuiltInCommand;
 use function Amp\resolve;
+use Room11\Jeeves\System\BuiltInCommandInfo;
 
 class RoomPresence implements BuiltInCommand
 {
@@ -226,8 +227,12 @@ class RoomPresence implements BuiltInCommand
         return new Failure(new \LogicException("I don't handle the command '{$command->getCommandName()}'"));
     }
 
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['invite', 'approve', 'leave'];
+        return [
+            new BuiltInCommandInfo('invite', "Invite the bot to join a room. This can also be done through the chat web interface."),
+            new BuiltInCommandInfo('approve', "Approve the bot for talking in this room. Room owners only.", true),
+            new BuiltInCommandInfo('leave', "Ask the bot to leave the room. Room owners only.", true),
+        ];
     }
 }

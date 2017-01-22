@@ -176,7 +176,7 @@ class PHPSrcGrok extends BasePlugin
 
     private function formatResultMessage(array $result)
     {
-        return sprintf('[ [%s](%s) ] `%s`', $result['path'], $result['href'], $result['code']);
+        return sprintf('[ [%s](%s) ] `%s`', $result['path'], $result['href'], trim($result['code']));
     }
 
     public function getDefinition(Command $command): \Generator

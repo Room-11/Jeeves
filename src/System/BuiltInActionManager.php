@@ -23,6 +23,11 @@ class BuiltInActionManager
     private $commands = [];
 
     /**
+     * @var BuiltInCommandInfo[]
+     */
+    private $commandInfo = [];
+
+    /**
      * @var BuiltInEventHandler[][]
      */
     private $eventHandlers = [];
@@ -37,10 +42,13 @@ class BuiltInActionManager
     {
         $className = get_class($command);
 
-        foreach ($command->getCommandNames() as $commandName) {
-            $this->logger->log(Level::DEBUG, "Registering command name '{$commandName}' with built in command {$className}");
-            $this->commands[$commandName] = $command;
+        foreach ($command->getCommandInfo() as $commandInfo) {
+            $this->logger->log(Level::DEBUG, "Registering command name '{$commandInfo->getCommand()}' with built in command {$className}");
+            $this->commands[$commandInfo->getCommand()] = $command;
+            $this->commandInfo[$commandInfo->getCommand()] = $commandInfo;
         }
+
+        ksort($this->commandInfo);
 
         return $this;
     }
@@ -57,12 +65,17 @@ class BuiltInActionManager
         return $this;
     }
 
-    /**
-     * @return string[]
-     */
-    public function getRegisteredCommands(): array
+    public function hasRegisteredCommand(string $command): bool
     {
-        return array_keys($this->commands);
+        return isset($this->commands[$command]);
+    }
+
+    /**
+     * @return BuiltInCommandInfo[]
+     */
+    public function getRegisteredCommandInfo(): array
+    {
+        return $this->commandInfo;
     }
 
     public function handleEvent(Event $event): Promise

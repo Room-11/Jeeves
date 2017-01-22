@@ -10,6 +10,7 @@ use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\System\BuiltInCommandInfo;
 
 class Remove implements BuiltInCommand
 {
@@ -70,7 +71,7 @@ class Remove implements BuiltInCommand
                 $messages[] = $message['commandId'];
             }
         }
-        
+
         yield $this->chatClient->moveMessages($messages, $room);
     }
 
@@ -79,8 +80,10 @@ class Remove implements BuiltInCommand
         return resolve($this->remove($command));
     }
 
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['remove'];
+        return [
+            new BuiltInCommandInfo('remove', "Remove the last x messages posted by the bot", true),
+        ];
     }
 }

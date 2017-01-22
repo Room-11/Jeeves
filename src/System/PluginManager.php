@@ -326,7 +326,7 @@ class PluginManager
     {
         $room = $this->connectedRooms->get($room);
 
-        if (in_array($command, $this->builtInActionManager->getRegisteredCommands())) {
+        if ($this->builtInActionManager->hasRegisteredCommand($command)) {
             throw new \LogicException("Command '{$command}' is built in");
         }
 
@@ -363,7 +363,7 @@ class PluginManager
     {
         $room = $this->connectedRooms->get($room);
 
-        if (in_array($command, $this->builtInActionManager->getRegisteredCommands())) {
+        if ($this->builtInActionManager->hasRegisteredCommand($command)) {
             throw new \LogicException("Command '{$command}' is built in");
         }
 

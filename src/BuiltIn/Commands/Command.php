@@ -8,8 +8,10 @@ use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\BuiltInCommand;
+use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
 use function Amp\resolve;
 
@@ -28,7 +30,7 @@ class Command implements BuiltInCommand
         'plugin_not_enabled'     => "Plugin '%s' is not currently enabled",
         'syntax'                 => "    Syntax: command [map|remap] <command> <plugin> [<endpoint>]\n"
                                   . "            command unmap <command>\n"
-                                  . "            command alias <new command> <existing command>\n"
+                                  . "            command clone <new command> <existing command>\n"
                                   . "            command list",
         'unexpected_error'       => "Something really unexpected happened: %s",
         'unknown_endpoint'       => "Unknown endpoint name '%s' for plugin '%s'",
@@ -37,10 +39,26 @@ class Command implements BuiltInCommand
         'user_not_admin'         => "I'm sorry Dave, I'm afraid I can't do that",
     ];
 
+    const COMMAND_HELP_TEXT =
+        "Sub-commands (* indicates admin-only):"
+        . "\n"
+        . "\n help   - display this message"
+        . "\n list   - display a list of the currently mapped commands."
+        . "\n *clone - Copy a command mapping. This is preferable to using an alias where possible, as it ensures that help text is as helpful as possible."
+        . "\n           Syntax: command clone <new command> <existing command>"
+        . "\n *map   - Map a command to a plugin endpoint. The plugin name must be specified, the endpoint name is optional when the plugin only has one endpoint."
+        . "\n           Syntax: command map <command> <plugin> [<endpoint>]"
+        . "\n *remap - Alter an existing command mapping."
+        . "\n           Syntax: command remap <command> <plugin> [<endpoint>]"
+        . "\n *unmap - Remove an existing command mapping."
+        . "\n           Syntax: command unmap <command>"
+    ;
+
     private $pluginManager;
+    private $builtInCommandManager;
     private $chatClient;
     private $adminStorage;
-    private $builtInCommandManager;
+    private $aliasStorage;
 
     private static function message(string $name, ...$args) {
         return vsprintf(self::RESPONSE_MESSAGES[$name], $args);
@@ -68,7 +86,7 @@ class Command implements BuiltInCommand
         $pluginName = $command->getParameter(2);
         $endpointName = $command->getParameter(3);
 
-        if (in_array($cmd, $this->builtInCommandManager->getRegisteredCommands())) {
+        if ($this->builtInCommandManager->hasRegisteredCommand($cmd)) {
             return $this->chatClient->postReply(
                 $command, 
                 new PendingMessage(self::message('command_built_in', $cmd), $command->getId())
@@ -168,7 +186,7 @@ class Command implements BuiltInCommand
 
         $cmd = $command->getParameter(1);
 
-        if (in_array($cmd, $this->builtInCommandManager->getRegisteredCommands())) {
+        if ($this->builtInCommandManager->hasRegisteredCommand($cmd)) {
             return $this->chatClient->postReply(
                 $command, 
                 new PendingMessage(self::message('command_built_in', $cmd), $command->getId())
@@ -212,7 +230,7 @@ class Command implements BuiltInCommand
         $pluginName = $command->getParameter(2);
         $endpointName = $command->getParameter(3);
 
-        if (in_array($cmd, $this->builtInCommandManager->getRegisteredCommands())) {
+        if ($this->builtInCommandManager->hasRegisteredCommand($cmd)) {
             return $this->chatClient->postReply(
                 $command, 
                 new PendingMessage(self::message('command_built_in', $cmd), $command->getId())
@@ -289,7 +307,7 @@ class Command implements BuiltInCommand
         );
     }
 
-    private /* async */ function alias(CommandMessage $command): \Generator
+    private /* async */ function clone(CommandMessage $command): \Generator
     {
         $room = $command->getRoom();
 
@@ -310,7 +328,7 @@ class Command implements BuiltInCommand
         $newCmd = $command->getParameter(1);
         $oldCmd = $command->getParameter(2);
 
-        if (in_array($newCmd, $this->builtInCommandManager->getRegisteredCommands())) {
+        if ($this->builtInCommandManager->hasRegisteredCommand($newCmd)) {
             return $this->chatClient->postReply(
                 $command, 
                 new PendingMessage(self::message('command_built_in', $newCmd), $command->getId())
@@ -324,7 +342,7 @@ class Command implements BuiltInCommand
             );
         }
 
-        if (in_array($oldCmd, $this->builtInCommandManager->getRegisteredCommands())) {
+        if ($this->builtInCommandManager->hasRegisteredCommand($oldCmd)) {
             return $this->chatClient->postReply(
                 $command, 
                 new PendingMessage(self::message('command_built_in', $oldCmd), $command->getId())
@@ -361,29 +379,61 @@ class Command implements BuiltInCommand
         );
     }
 
-    private function list(CommandMessage $command): Promise
+    private function list(CommandMessage $command)
     {
         $room = $command->getRoom();
-        $mappings = $this->pluginManager->getMappedCommandsForRoom($room);
 
-        if (!$mappings) {
-            return $this->chatClient->postMessage(
-                $room, 
-                new PendingMessage('No commands are currently mapped', $command->getId())
-            );
+        $builtInCommands = $this->builtInCommandManager->getRegisteredCommandInfo();
+        $pluginCommands = $this->pluginManager->getMappedCommandsForRoom($room);
+        $aliases = yield $this->aliasStorage->getAll($room);
+
+        ksort($builtInCommands);
+        ksort($pluginCommands);
+        ksort($aliases);
+
+        $result = "Built-in commands (* indicates admin-only):";
+
+        if (!$builtInCommands) {
+            $result .= ' none';
         }
 
-        ksort($mappings);
+        foreach ($builtInCommands as $info) {
+            $admin = $info->isAdminOnly() ? '*' : '';
+            $result .= "\n {$admin}{$info->getCommand()} - {$info->getDescription()}";
+        }
 
-        $result = "Commands currently mapped:";
+        $result .= "\n\nPlugin commands currently mapped:";
 
-        foreach ($mappings as $cmd => $info) {
+        if (!$pluginCommands) {
+            $result .= ' none';
+        }
+
+        foreach ($pluginCommands as $cmd => $info) {
             $result .= "\n {$cmd} - {$info['endpoint_description']} ({$info['plugin_name']} # {$info['endpoint_name']})";
+        }
+
+        $result .= "\n\nAliases currently mapped:";
+
+        if (!$aliases) {
+            $result .= ' none';
+        }
+
+        foreach ($aliases as $cmd => $alias) {
+            $result .= "\n {$cmd} - '{$alias}'";
         }
 
         return $this->chatClient->postMessage(
             $room, 
-            new PendingMessage($result, $command->getId()), 
+            new PendingMessage($result, $command->getId()),
+            PostFlags::FIXED_FONT
+        );
+    }
+
+    private function showCommandHelp(CommandMessage $command): Promise
+    {
+        return $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage(self::COMMAND_HELP_TEXT, $command->getId()),
             PostFlags::FIXED_FONT
         );
     }
@@ -392,24 +442,31 @@ class Command implements BuiltInCommand
         PluginManager $pluginManager,
         BuiltInActionManager $builtInCommandManager,
         ChatClient $chatClient,
-        AdminStorage $adminStorage
+        AdminStorage $adminStorage,
+        CommandAliasStorage $aliasStorage
     ) {
         $this->pluginManager = $pluginManager;
+        $this->builtInCommandManager = $builtInCommandManager;
         $this->chatClient = $chatClient;
         $this->adminStorage = $adminStorage;
-        $this->builtInCommandManager = $builtInCommandManager;
+        $this->aliasStorage = $aliasStorage;
     }
 
-    private function execute(CommandMessage $command): \Generator
+    private function execute(CommandMessage $command)
     {
+        if ($command->getCommandName() === 'help') {
+            return yield from $this->list($command);
+        }
+
         if (!yield $command->getRoom()->isApproved()) {
-            return;
+            return null;
         }
 
         try {
             switch ($command->getParameter(0)) {
-                case 'alias': return yield from $this->alias($command);
-                case 'list':  return $this->list($command);
+                case 'help':  return $this->showCommandHelp($command);
+                case 'list':  return yield from $this->list($command);
+                case 'clone': return yield from $this->clone($command);
                 case 'map':   return yield from $this->map($command);
                 case 'remap': return yield from $this->remap($command);
                 case 'unmap': return yield from $this->unmap($command);
@@ -444,10 +501,13 @@ class Command implements BuiltInCommand
     /**
      * Get a list of specific commands handled by this built-in
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['command'];
+        return [
+            new BuiltInCommandInfo('command', "Manage command mappings. Use 'command help' for details."),
+            new BuiltInCommandInfo('help', "Alias of 'command list'"),
+        ];
     }
 }

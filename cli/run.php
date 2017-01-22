@@ -10,6 +10,7 @@ use DaveRandom\AsyncBitlyClient\Client as BitlyClient;
 use PeeHaa\AsyncTwitter\Credentials\Application as TwitterApplicationCredentials;
 use Room11\Jeeves\External\GithubIssue\Credentials as GithubIssueCredentials;
 use Room11\Jeeves\BuiltIn\Commands\Admin as AdminBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Alias as AliasBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Ban as BanBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Command as CommandBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Plugin as PluginBuiltIn;
@@ -29,8 +30,10 @@ use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
 use Room11\Jeeves\Storage\File\Admin as FileAdminStorage;
 use Room11\Jeeves\Storage\File\Ban as FileBanStorage;
+use Room11\Jeeves\Storage\File\CommandAlias as FileCommandAliasStorage;
 use Room11\Jeeves\Storage\File\KeyValue as FileKeyValueStorage;
 use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
 use Room11\Jeeves\Storage\File\Room as FileRoomStorage;
@@ -56,6 +59,7 @@ define(__NAMESPACE__ . '\\PROCESS_START_TIME', time());
 
 $builtInCommands = [
     AdminBuiltIn::class,
+    AliasBuiltIn::class,
     BanBuiltIn::class,
     CommandBuiltIn::class,
     PluginBuiltIn::class,
@@ -76,6 +80,7 @@ require_once __DIR__ . '/setup-di.php';
 
 $injector->alias(AdminStorage::class,    $config['storage']['admin']    ?? FileAdminStorage::class);
 $injector->alias(BanStorage::class,      $config['storage']['ban']      ?? FileBanStorage::class);
+$injector->alias(CommandAliasStorage::class,      $config['storage']['commandalias']      ?? FileCommandAliasStorage::class);
 $injector->alias(KeyValueStorage::class, $config['storage']['keyvalue'] ?? FileKeyValueStorage::class);
 $injector->alias(KeyValueStorageFactory::class, ($config['storage']['keyvalue'] ?? FileKeyValueStorage::class) . 'Factory');
 $injector->alias(PluginStorage::class,   $config['storage']['plugin']   ?? FilePluginStorage::class);
