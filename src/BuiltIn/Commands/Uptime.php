@@ -4,6 +4,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use const Room11\Jeeves\PROCESS_START_TIME;
@@ -38,12 +39,12 @@ class Uptime implements BuiltInCommand
         
         $lineLength = max(strlen($lastAccidentMessage), strlen($sinceMessage));
         
-        $message  = "    ╔" . str_repeat("═", $lineLength) . "╗";
-        $message .= "    ║" . str_pad($lastAccidentMessage, $lineLength, " ", STR_PAD_BOTH) . "║";
-        $message .= "    ║" . str_pad($sinceMessage, $lineLength, " ", STR_PAD_BOTH) . "║";
-        $message  = "    ╚" . str_repeat("═", $lineLength) . "╝";
+        $message  = "╔" . str_repeat("═", $lineLength) . "╗\n";
+        $message .= "║" . str_pad($lastAccidentMessage, $lineLength, " ", STR_PAD_BOTH) . "║\n";
+        $message .= "║" . str_pad($sinceMessage, $lineLength, " ", STR_PAD_BOTH) . "║\n";
+        $message .= "╚" . str_repeat("═", $lineLength) . "╝\n";
         
-        return $this->chatClient->postReply($command, $message);
+        return $this->chatClient->postMessage($command->getRoom(), $message, PostFlags::FIXED_FONT);
     }
 
     /**
