@@ -41,7 +41,7 @@ class Uptime implements BuiltInCommand
         $message  = "    ╔" . str_repeat("═", $lineLength) . "╗";
         $message .= "    ║" . str_pad($lastAccidentMessage, $lineLength, " ", STR_PAD_BOTH) . "║";
         $message .= "    ║" . str_pad($sinceMessage, $lineLength, " ", STR_PAD_BOTH) . "║";
-        $message  = "    ╚" . str_repeat("═", $lineLength) . "╝";
+        $message .= "    ╚" . str_repeat("═", $lineLength) . "╝";
         
         return $this->chatClient->postReply($command, $message);
     }
