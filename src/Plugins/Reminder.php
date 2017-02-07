@@ -138,7 +138,7 @@ class Reminder extends BasePlugin
                 }, $seconds * 1000);
 
                 $this->watchers[] = $watcher;
-                return $this->chatClient->postMessage($command->getRoom(), "Reminder set.");
+                return $this->chatClient->postMessage($command->getRoom(), "Reminder $key is set.");
             }
 
             return $this->chatClient->postMessage($command->getRoom(), "Dunno what happened but I couldn't set the reminder.");
