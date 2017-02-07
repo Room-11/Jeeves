@@ -10,6 +10,13 @@ use Room11\Jeeves\Log\Level;
 
 class StdOutTest extends \PHPUnit_Framework_TestCase
 {
+    private function tellXDebugToFuckOff()
+    {
+        if (extension_loaded('xdebug')) {
+            ini_set('xdebug.overload_var_dump', '0');
+        }
+    }
+
     public function testImplementsCorrectInterface()
     {
         $this->assertInstanceOf(Logger::class, new StdOut(0));
@@ -69,6 +76,8 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
 
     public function testLogWithExtraData()
     {
+        $this->tellXDebugToFuckOff();
+
         ob_start();
 
         (new StdOut(Level::DEBUG | Level::EXTRA_DATA))->log(Level::DEBUG, 'foo', 'bar');
@@ -89,6 +98,8 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
 
     public function testLogWithExtraDataNoTimestamp()
     {
+        $this->tellXDebugToFuckOff();
+
         ob_start();
 
         (new StdOut(Level::DEBUG | Level::EXTRA_DATA, false))->log(Level::DEBUG, 'foo', 'bar');

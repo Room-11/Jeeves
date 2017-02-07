@@ -18,13 +18,22 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
 {
     public function testRegisterLogs()
     {
+        $info1 = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
+        $info2 = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
         $command = $this->getMock(BuiltInCommand::class);
+
+        $info1
+            ->method('getCommand')
+            ->will($this->returnValue('foo'));
+
+        $info2
+            ->method('getCommand')
+            ->will($this->returnValue('bar'));
 
         $command
             ->expects($this->once())
-            ->method('getCommandNames')
-            ->will($this->returnValue(['foo', 'bar']))
-        ;
+            ->method('getCommandInfo')
+            ->will($this->returnValue([$info1, $info2]));
 
         $logger = $this->getMock(Logger::class);
 
@@ -49,13 +58,17 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             $this->getMock(Logger::class)
         );
 
+        $info = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
         $command = $this->getMock(BuiltInCommand::class);
+
+        $info
+            ->method('getCommand')
+            ->will($this->returnValue('foo'));
 
         $command
             ->expects($this->once())
-            ->method('getCommandNames')
-            ->will($this->returnValue(['foo']))
-        ;
+            ->method('getCommandInfo')
+            ->will($this->returnValue([$info]));
 
         $builtInCommandManager->registerCommand($command);
 
@@ -70,7 +83,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             $this->getMock(Logger::class)
         );
 
-        $info = $this->getMock(BuiltInCommandInfo::class);
+        $info = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
         $command = $this->getMock(BuiltInCommand::class);
 
         $info
@@ -110,13 +123,17 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
 
     public function testHandleCommandWhenBanned()
     {
-        $registeredCommand = $this->getMock(BuiltInCommand::class);
+        $info = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
+        $command = $this->getMock(BuiltInCommand::class);
 
-        $registeredCommand
+        $info
+            ->method('getCommand')
+            ->will($this->returnValue('foo'));
+
+        $command
             ->expects($this->once())
-            ->method('getCommandNames')
-            ->will($this->returnValue(['foo']))
-        ;
+            ->method('getCommandInfo')
+            ->will($this->returnValue([$info]));
 
         $logger = $this->getMock(Logger::class);
 
@@ -124,7 +141,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->expects($this->exactly(2))
             ->method('log')
             ->withConsecutive(
-                [Level::DEBUG, 'Registering command name \'foo\' with built in command ' . get_class($registeredCommand)],
+                [Level::DEBUG, 'Registering command name \'foo\' with built in command ' . get_class($command)],
                 [Level::DEBUG, 'User #14 is banned, ignoring event #721 for built in commands']
             )
         ;
@@ -139,7 +156,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
 
         $builtInCommandManager = new BuiltInActionManager($banStorage, $logger);
 
-        $builtInCommandManager->registerCommand($registeredCommand);
+        $builtInCommandManager->registerCommand($command);
 
         $event = $this->getMockBuilder(MessageEvent::class)
             ->disableOriginalConstructor()
@@ -214,13 +231,17 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->willReturn(14)
         ;
 
+        $info = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
         $registeredCommand = $this->getMock(BuiltInCommand::class);
+
+        $info
+            ->method('getCommand')
+            ->will($this->returnValue('foo'));
 
         $registeredCommand
             ->expects($this->once())
-            ->method('getCommandNames')
-            ->will($this->returnValue(['foo']))
-        ;
+            ->method('getCommandInfo')
+            ->will($this->returnValue([$info]));
 
         $registeredCommand
             ->expects($this->once())
