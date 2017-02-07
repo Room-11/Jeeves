@@ -61,7 +61,7 @@ class Reminder extends BasePlugin
 
             if (yield $this->storage->exists($messageId, $command->getRoom())) {
                 yield $this->storage->unset($messageId, $command->getRoom());
-                return $this->chatClient->postMessage($command->getRoom(), "Reminder unset.");
+                return $this->chatClient->postMessage($command->getRoom(), "Reminder $messageId was unset.");
             }
 
             return $this->chatClient->postReply($command, "I'm sorry, I couldn't find that key.");
