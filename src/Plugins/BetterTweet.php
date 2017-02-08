@@ -169,7 +169,7 @@ class BetterTweet extends BasePlugin
     
     private function fixBrokenImgurUrls(string $text)
     {
-        return preg_replace('~~((?!https?:)//i(?:.stack)?.imgur.com/)~~', 'https:\1', $text);
+        return preg_replace('~((?!https?:)//i(?:.stack)?.imgur.com/)~', 'https:\1', $text);
     }
 
     private function getClientForRoom(ChatRoom $room)
