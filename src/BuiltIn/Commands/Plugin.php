@@ -138,7 +138,7 @@ class Plugin implements BuiltInCommand
 
             return $this->chatClient->postMessage(
                 $command->getRoom(), 
-                new PendingMessage('Plugin \'{$plugin}\' is now enabled in this room', $command->getId())
+                new PendingMessage("Plugin '{$plugin}' is now enabled in this room", $command->getId())
             );
         });
     }
@@ -178,7 +178,7 @@ class Plugin implements BuiltInCommand
 
             return $this->chatClient->postMessage(
                 $command->getRoom(), 
-                new PendingMessage('Plugin \'{$plugin}\' is now disabled in this room', $command->getId())
+                new PendingMessage("Plugin '{$plugin}' is now disabled in this room", $command->getId())
             );
         });
     }

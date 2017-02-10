@@ -46,7 +46,7 @@ class Alias implements BuiltInCommand
             return $this->chatClient->postReply(
                 $command, 
                 new PendingMessage(
-                    'Command \'{$aliasCommand}\' is built in and cannot be altered',
+                    "Command '{$aliasCommand}' is built in and cannot be altered",
                     $command->getId()
                 )
             );
@@ -56,7 +56,7 @@ class Alias implements BuiltInCommand
             return $this->chatClient->postReply(
                 $command, 
                 new PendingMessage(
-                    'Command \'{$aliasCommand}\' is already mapped. Use `!!command list` to display the currently mapped commands.',
+                    "Command '{$aliasCommand}' is already mapped. Use `!!command list` to display the currently mapped commands.",
                     $command->getId()
                 )
             );
