@@ -7,7 +7,7 @@ class PendingMessage
     private $message;
     private $commandId = null;
 
-    public function __construct(string $message, ?int $commandId)
+    public function __construct(string $message, ?int $commandId = null)
     {
         $this->setMessage($message);
 
