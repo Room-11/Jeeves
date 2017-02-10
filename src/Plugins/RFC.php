@@ -2,6 +2,7 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
+use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
@@ -43,7 +44,12 @@ class RFC extends BasePlugin
         $pinInfoPromise = all([$this->chatClient->getPinnedMessages($room), $this->getLastPinId($room)]);
 
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(self::BASE_URI);
+        $request = (new HttpRequest)
+            ->setMethod('GET')
+            ->setUri(self::BASE_URI)
+            ->setHeader('Connection', 'close');
+
+        $response = yield $this->httpClient->request($request);
 
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage($room, "Nope, we can't have nice things.");
