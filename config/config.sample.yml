@@ -40,6 +40,7 @@ plugins:
   - Room11\Jeeves\Plugins\Giphy
   - Room11\Jeeves\Plugins\Github
   - Room11\Jeeves\Plugins\Google
+  - Room11\Jeeves\Plugins\Horoscope
   - Room11\Jeeves\Plugins\HttpRequester
   - Room11\Jeeves\Plugins\Imdb
   - Room11\Jeeves\Plugins\Lick

@@ -86,10 +86,16 @@ class Github extends BasePlugin
             return $this->chatClient->postMessage($room, "Failed fetching status");
         }
 
+        $messageTemplate = '%s *as of %s*';
+        
+        if ($response->status === 'good') {
+            $messageTemplate = '[%s *as of %s*](https://www.youtube.com/watch?v=aJFyWBLeM7Q)';
+        }
+        
         return $this->chatClient->postMessage(
             $room,
             sprintf(
-                "[tag:github-status] **%s**: %s *as of %s*",
+                "[tag:github-status] **%s**: " . $messageTemplate,
                 $response->status,
                 rtrim($response->body, '.!?'),
                 $response->created_on

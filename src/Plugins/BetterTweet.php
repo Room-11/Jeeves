@@ -166,6 +166,11 @@ class BetterTweet extends BasePlugin
             return $handle !== null ? '@' . $handle : $match[1];
         }, $text);
     }
+    
+    private function fixBrokenImgurUrls(string $text)
+    {
+        return preg_replace('~((?!https?:)//i(?:.stack)?.imgur.com/)~', 'https:\1', $text);
+    }
 
     private function getClientForRoom(ChatRoom $room)
     {
@@ -203,6 +208,7 @@ class BetterTweet extends BasePlugin
         $this->replaceHrefs($dom);
 
         $text = yield from $this->replacePings($room, $dom->textContent);
+        $text = $this->fixBrokenImgurUrls($text);
         $text = \Normalizer::normalize(trim($text), \Normalizer::FORM_C);
 
         if ($text === false) {

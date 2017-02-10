@@ -23,7 +23,7 @@ class Terminator extends BasePlugin
         '^\?$'                                        => 'What?',
         '^(wtf|wth|defak|thefuck|the fuck|dafuq)'     => 'What? I only execute commands. Go blame somebody else.',
         'give (?:my|your|me my) (.*) back'            => '/me gives $1 back.',
-        '(?:thank you|thanks|thks|tnx|thx)'           => 'You\'re welcome!',
+        '(?:thank you|thanks|thks|tnx|thx|^ta$)'        => 'You\'re welcome!',
         '(?:you dead|are you dead|you are dead|dead)' => 'Nope. Not that I know of...',
         '(?:hi|hey|heya|yo|hello|hellow|hola)^'       => 'Hola',
         '(?:are )?you drunk'                          => 'Screw you human!',

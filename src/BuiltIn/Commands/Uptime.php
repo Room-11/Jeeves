@@ -5,6 +5,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PendingMessage;
+use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use const Room11\Jeeves\PROCESS_START_TIME;
@@ -31,14 +32,24 @@ class Uptime implements BuiltInCommand
             return null;
         }
 
-        return $this->chatClient->postReply($command, new PendingMessage(
-            sprintf(
-                'I have been running for %s, since %s',
-                dateinterval_to_string((new \DateTime)->diff($this->startTime)),
-                $this->startTime->format('Y-m-d H:i:s')
-            ),
-            $command->getId()
-        ));
+        $lastAccident = dateinterval_to_string((new \DateTime)->diff($this->startTime));
+        $since = $this->startTime->format('Y-m-d H:i:s');
+        
+        $lastAccidentMessage = " [" . $lastAccident . "] without an accident ";
+        $sinceMessage = " since [" . $since . "] ";
+        
+        $lineLength = max(strlen($lastAccidentMessage), strlen($sinceMessage));
+        
+        $message  = "╔" . str_repeat("═", $lineLength) . "╗\n";
+        $message .= "║" . str_pad($lastAccidentMessage, $lineLength, " ", STR_PAD_BOTH) . "║\n";
+        $message .= "║" . str_pad($sinceMessage, $lineLength, " ", STR_PAD_BOTH) . "║\n";
+        $message .= "╚" . str_repeat("═", $lineLength) . "╝\n";
+      
+        return $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage($message, $command->getId()),
+            PostFlags::FIXED_FONT
+        );      
     }
 
     /**
