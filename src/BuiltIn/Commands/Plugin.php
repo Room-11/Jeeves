@@ -4,6 +4,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -48,13 +49,20 @@ class Plugin implements BuiltInCommand
             $result .= "\n[{$check}] {$plugin->getName()} - {$plugin->getDescription()}";
         }
 
-        yield $this->chatClient->postMessage($command->getRoom(), $result, PostFlags::FIXED_FONT);
+        yield $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage($result, $command->getId()), 
+            PostFlags::FIXED_FONT
+        );
     }
 
     private function listPluginEndpoints(string $plugin, CommandMessage $command): \Generator
     {
         if (!$this->pluginManager->isPluginRegistered($plugin)) {
-            yield $this->chatClient->postReply($command, "Invalid plugin name");
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage('Invalid plugin name', $command->getId())
+            );
             return null;
         }
 
@@ -77,7 +85,11 @@ class Plugin implements BuiltInCommand
             $result .= "\n[{$check}] {$name} - {$endpoint['description']} (Default command: {$endpoint['default_command']}, {$map})";
         }
 
-        yield $this->chatClient->postMessage($command->getRoom(), $result, PostFlags::FIXED_FONT);
+        yield $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage($result, $command->getId()), 
+            PostFlags::FIXED_FONT
+        );
     }
 
     private function list(CommandMessage $command): Promise
@@ -95,24 +107,39 @@ class Plugin implements BuiltInCommand
     {
         return resolve(function() use($command) {
             if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
-                return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+                return $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command->getId())
+                );
             }
 
             if (null === $plugin = $command->getParameter(1)) {
-                return $this->chatClient->postReply($command, "No plugin name supplied");
+                return $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage('No plugin name supplied', $command->getId())
+                );
             }
 
             if (!$this->pluginManager->isPluginRegistered($plugin)) {
-                return $this->chatClient->postReply($command, "Invalid plugin name");
+                return $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage('Invalid plugin name', $command->getId())
+                );
             }
 
             if ($this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())) {
-                return $this->chatClient->postReply($command, "Plugin already enabled in this room");
+                return $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage('Plugin already enabled in this room', $command->getId())
+                );
             }
 
             yield $this->pluginManager->enablePluginForRoom($plugin, $command->getRoom());
 
-            return $this->chatClient->postMessage($command->getRoom(), "Plugin '{$plugin}' is now enabled in this room");
+            return $this->chatClient->postMessage(
+                $command->getRoom(), 
+                new PendingMessage('Plugin \'{$plugin}\' is now enabled in this room', $command->getId())
+            );
         });
     }
 
@@ -120,42 +147,66 @@ class Plugin implements BuiltInCommand
     {
         return resolve(function() use($command) {
             if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
-                return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+                return $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command->getId())
+                );
             }
 
             if (null === $plugin = $command->getParameter(1)) {
-                return $this->chatClient->postReply($command, "No plugin name supplied");
+                return $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage('No plugin name supplied', $command->getId())
+                );
             }
 
             if (!$this->pluginManager->isPluginRegistered($plugin)) {
-                return $this->chatClient->postReply($command, "Invalid plugin name");
+                return $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage('Invalid plugin name', $command->getId())
+                );
             }
 
             if (!$this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())) {
-                return $this->chatClient->postReply($command, "Plugin already disabled in this room");
+                return $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage('Plugin already disabled in this room', $command->getId())
+                );
             }
 
             yield $this->pluginManager->disablePluginForRoom($plugin, $command->getRoom());
 
-            return $this->chatClient->postMessage($command->getRoom(), "Plugin '{$plugin}' is now disabled in this room");
+            return $this->chatClient->postMessage(
+                $command->getRoom(), 
+                new PendingMessage('Plugin \'{$plugin}\' is now disabled in this room', $command->getId())
+            );
         });
     }
 
     private function status(CommandMessage $command): Promise
     {
         if (null === $plugin = $command->getParameter(1)) {
-            return $this->chatClient->postReply($command, "No plugin name supplied");
+            return $this->chatClient->postReply(
+                $command, 
+                new PendingMessage('No plugin name supplied', $command->getId())
+            );
         }
 
         if (!$this->pluginManager->isPluginRegistered($plugin)) {
-            return $this->chatClient->postReply($command, "Invalid plugin name");
+            return $this->chatClient->postReply(
+                $command, 
+                new PendingMessage('Invalid plugin name', $command->getId())
+            );
         }
 
         $message = $this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())
             ? "Plugin '{$plugin}' is currently enabled in this room"
             : "Plugin '{$plugin}' is currently disabled in this room";
 
-        return $this->chatClient->postMessage($command->getRoom(), $message);
+        return $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage($message, $command->getId())
+        );
     }
 
     private function execute(CommandMessage $command)
@@ -172,12 +223,19 @@ class Plugin implements BuiltInCommand
             case 'status':  return $this->status($command);
         }
 
-        return $this->chatClient->postReply($command, "Syntax: plugin [list|disable|enable] [plugin-name]");
+        return $this->chatClient->postReply(
+            $command, 
+            new PendingMessage('Syntax: plugin [list|disable|enable] [plugin-name]', $command->getId())
+        );
     }
 
     private function showCommandHelp(CommandMessage $command): Promise
     {
-        return $this->chatClient->postMessage($command->getRoom(), self::COMMAND_HELP_TEXT, PostFlags::FIXED_FONT);
+        return $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage(self::COMMAND_HELP_TEXT, $command->getId()),
+            PostFlags::FIXED_FONT
+        );
     }
 
     /**

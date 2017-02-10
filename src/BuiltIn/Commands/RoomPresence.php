@@ -5,6 +5,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Failure;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Chat\Room\AlreadyApprovedException;
@@ -55,19 +56,34 @@ class RoomPresence implements BuiltInCommand
     private function invite(CommandMessage $command)
     {
         if (!$command->hasParameters()) {
-            yield $this->chatClient->postReply($command, "If you want to invite me somewhere, you have to tell me where...");
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'If you want to invite me somewhere, you have to tell me where...',
+                    $command->getId()
+                )
+            );
             return;
         }
 
         try {
             $identifier = $this->getRoomIdentifierFromArg($command->getParameter(0), $command->getRoom()->getIdentifier()->getHost());
         } catch (InvalidRoomIdentifierException $e) {
-            yield $this->chatClient->postReply($command, "Sorry, I can't work out where you are asking me to go");
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'Sorry, I can\'t work out where you are asking me to go',
+                    $command->getId()
+                )
+            );
             return;
         }
 
         if ($identifier->equals($command->getRoom()->getIdentifier())) {
-            yield $this->chatClient->postReply($command, "Ummm... that's this room?");
+            yield $this->chatClient->postReply(
+                $command,
+                new PendingMessage('Ummm... that\'s this room?', $command->getId())
+            );
             return;
         }
 
@@ -78,11 +94,26 @@ class RoomPresence implements BuiltInCommand
 
         try {
             yield $this->presenceManager->addRoom($identifier, $userId);
-            yield $this->chatClient->postReply($command, "See you there shortly! :-)");
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage('See you there shortly! :-)', $command->getId())
+            );
         } catch (RoomAlreadyExistsException $e) {
-            yield $this->chatClient->postReply($command, "I'm already there, I don't need to be invited again");
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'I\'m already there, I don\'t need to be invited again',
+                    $command->getId()
+                )
+            );
         } catch (\Throwable $e) {
-            yield $this->chatClient->postReply($command, "Something went pretty badly wrong there, please report this issue to my maintainers.");
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'Something went pretty badly wrong there, please report this issue to my maintainers.',
+                    $command->getId()
+                )
+            );
         }
     }
 
@@ -90,7 +121,13 @@ class RoomPresence implements BuiltInCommand
     {
         try {
             if ($command->getRoom()->isPermanent()) {
-                yield $this->chatClient->postReply($command, "This room is my home! I don't need your approval to be here!");
+                yield $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage(
+                        'This room is my home! I don\'t need your approval to be here!',
+                        $command->getId()
+                    )
+                );
                 return;
             }
 
@@ -104,13 +141,34 @@ class RoomPresence implements BuiltInCommand
                 ? 'I have now been approved and am fully active in this room.'
                 : ($requiredVotes - $currentVotes) . ' more votes are required to activated me.';
 
-            yield $this->chatClient->postReply($command, $message, PostFlags::FORCE);
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage($message, $command->getId()), 
+                PostFlags::FORCE
+            );
         } catch (AlreadyApprovedException $e) {
-            yield $this->chatClient->postReply($command, "I've already been activated in this room, but it's nice you know you approve of me :-)");
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'I\'ve already been activated in this room, but it\'s nice you know you approve of me :-)',
+                    $command->getId()
+                )
+            );
         } catch (UserNotAcceptableException $e) {
-            yield $this->chatClient->postReply($command, "Sorry, only room owners can vote", PostFlags::FORCE);
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage('Sorry, only room owners can vote', $command->getId()), 
+                PostFlags::FORCE
+            );
         } catch (UserAlreadyVotedException $e) {
-            yield $this->chatClient->postReply($command, "Sorry, you've already voted, you can't vote again", PostFlags::FORCE);
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'Sorry, you\'ve already voted, you can\'t vote again', 
+                    $command->getId(),
+                    PostFlags::FORCE
+                )
+            );
         }
     }
 
@@ -118,7 +176,13 @@ class RoomPresence implements BuiltInCommand
     {
         try {
             if ($command->getRoom()->isPermanent()) {
-                yield $this->chatClient->postReply($command, "This room is my home! I don't need your approval to be here!");
+                yield $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage(
+                        'This room is my home! I don\'t need your approval to be here!',
+                        $command->getId()
+                    )
+                );
                 return;
             }
 
@@ -132,11 +196,23 @@ class RoomPresence implements BuiltInCommand
             }
 
             $message = 'Your vote has been recorded. If I get one more vote within an hour I will leave the room.';
-            yield $this->chatClient->postReply($command, $message);
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage($message, $command->getId())
+            );
         } catch (UserNotAcceptableException $e) {
-            yield $this->chatClient->postReply($command, "Sorry, only room owners can vote");
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage('Sorry, only room owners can vote', $command->getId())
+            );
         } catch (UserAlreadyVotedException $e) {
-            yield $this->chatClient->postReply($command, "Sorry, you've already voted, you can't vote again");
+            yield $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'Sorry, you\'ve already voted, you can\'t vote again',
+                    $command->getId()
+                )
+            );
         }
     }
 

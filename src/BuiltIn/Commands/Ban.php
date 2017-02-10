@@ -5,6 +5,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
@@ -32,14 +33,20 @@ class Ban implements BuiltInCommand
         }
 
         if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
-            return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+            return $this->chatClient->postReply(
+                $command, 
+                new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command->getId())
+            );
         }
 
         if ($command->getCommandName() === "ban" && $command->getParameter(0) === 'list') {
             yield from $this->list($command);
         } else if ($command->getCommandName() === "ban") {
             if (!$command->hasParameters(2)) {
-                return $this->chatClient->postReply($command, "Ban length must be specified");
+                return $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage('Ban length must be specified', $command->getId())
+                );
             }
 
             yield from $this->add($command, (int)$command->getParameter(0), $command->getParameter(1));
@@ -53,7 +60,10 @@ class Ban implements BuiltInCommand
         $bans = yield $this->banStorage->getAll($command->getRoom());
 
         if (!$bans) {
-            yield $this->chatClient->postMessage($command->getRoom(), "No users are currently on the naughty list.");
+            yield $this->chatClient->postMessage(
+                $command->getRoom(), 
+                new PendingMessage('No users are currently on the naughty list.', $command->getId())
+            );
             return;
         }
 
@@ -61,19 +71,28 @@ class Ban implements BuiltInCommand
             return sprintf("%s (%s)", $userId, $expiration);
         }, $bans, array_keys($bans)));
 
-        yield $this->chatClient->postMessage($command->getRoom(), $list);
+        yield $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage($list, $command->getId())
+        );
     }
 
     private function add(CommandMessage $command, int $userId, string $duration): \Generator {
         yield $this->banStorage->add($command->getRoom(), $userId, $duration);
 
-        yield $this->chatClient->postMessage($command->getRoom(), "User is banned.");
+        yield $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage('User is banned.', $command->getId())
+        );
     }
 
     private function remove(CommandMessage $command, int $userId): \Generator {
         yield $this->banStorage->remove($command->getRoom(), $userId);
 
-        yield $this->chatClient->postMessage($command->getRoom(), "User is unbanned.");
+        yield $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage('User is unbanned.', $command->getId())
+        );
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
@@ -42,20 +43,41 @@ class Alias implements BuiltInCommand
         $mapping = implode(' ', $command->getParameters(1));
 
         if ($this->builtInCommandManager->hasRegisteredCommand($aliasCommand)) {
-            return $this->chatClient->postReply($command, "Command '{$aliasCommand}' is built in and cannot be altered");
+            return $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'Command \'{$aliasCommand}\' is built in and cannot be altered',
+                    $command->getId()
+                )
+            );
         }
 
         if ($this->pluginManager->isCommandMappedForRoom($room, $aliasCommand)) {
-            return $this->chatClient->postReply($command, "Command '{$aliasCommand}' is already mapped. Use `!!command list` to display the currently mapped commands.");
+            return $this->chatClient->postReply(
+                $command, 
+                new PendingMessage(
+                    'Command \'{$aliasCommand}\' is already mapped. Use `!!command list` to display the currently mapped commands.',
+                    $command->getId()
+                )
+            );
         }
 
         if (yield $this->aliasStorage->exists($room, $aliasCommand)) {
-            return $this->chatClient->postReply($command, "Alias '!!{$aliasCommand}' already exists.");
+            return $this->chatClient->postReply(
+                $command, 
+                new PendingMessage('Alias \'!!{$aliasCommand}\' already exists.', $command->getId())
+            );
         }
 
         yield $this->aliasStorage->add($room, $aliasCommand, $mapping);
 
-        return $this->chatClient->postMessage($room, "Command '!!{$aliasCommand}' aliased to '!!{$mapping}'");
+        return $this->chatClient->postMessage(
+            $room, 
+            new PendingMessage(
+                'Command \'!!{$aliasCommand}\' aliased to \'!!{$mapping}\'',
+                $command->getId()
+            )
+        );
     }
 
     private function removeAlias(CommandMessage $command): \Generator
@@ -63,12 +85,18 @@ class Alias implements BuiltInCommand
         $aliasCommand = $command->getParameter(0);
 
         if (!yield $this->aliasStorage->exists($command->getRoom(), $aliasCommand)) {
-            return $this->chatClient->postMessage($command->getRoom(), "Alias '!!{$aliasCommand}' is not currently mapped");
+            return $this->chatClient->postMessage(
+                $command->getRoom(), 
+                new PendingMessage('Alias \'!!{$aliasCommand}\' is not currently mapped', $command->getId())
+            );
         }
 
         yield $this->aliasStorage->remove($command->getRoom(), $aliasCommand);
 
-        return $this->chatClient->postMessage($command->getRoom(), "Alias '!!{$aliasCommand}' removed");
+        return $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage('Alias \'!!{$aliasCommand}\' removed', $command->getId())
+        );
     }
 
     /**
@@ -85,7 +113,10 @@ class Alias implements BuiltInCommand
             }
 
             if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
-                return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+                return $this->chatClient->postReply(
+                    $command, 
+                    new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command->getId())
+                );
             }
 
             return $command->getCommandName() === 'alias'

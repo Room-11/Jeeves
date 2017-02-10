@@ -4,6 +4,7 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
@@ -43,8 +44,12 @@ class Uptime implements BuiltInCommand
         $message .= "║" . str_pad($lastAccidentMessage, $lineLength, " ", STR_PAD_BOTH) . "║\n";
         $message .= "║" . str_pad($sinceMessage, $lineLength, " ", STR_PAD_BOTH) . "║\n";
         $message .= "╚" . str_repeat("═", $lineLength) . "╝\n";
-        
-        return $this->chatClient->postMessage($command->getRoom(), $message, PostFlags::FIXED_FONT);
+      
+        return $this->chatClient->postMessage(
+            $command->getRoom(), 
+            new PendingMessage($message, $command->getId()),
+            PostFlags::FIXED_FONT
+        );      
     }
 
     /**
