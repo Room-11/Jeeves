@@ -7,7 +7,7 @@ Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for
 
 ## Requirements
 
-* PHP 7.0 or greater.
+* PHP 7.1 or greater.
 * [`php_intl`](https://secure.php.net/manual/en/book.intl.php) PHP extension.
 * [`php_mbstring`](https://secure.php.net/manual/en/book.mbstring.php) PHP extension.
 * [`libxml`](https://secure.php.net/manual/en/book.libxml.php), version 2.7.8 or greater due to use of `LIBXML_HTML_NOIMPLIED` and `LIBXML_HTML_NODEFDTD `.
