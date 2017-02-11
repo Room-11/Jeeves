@@ -115,6 +115,14 @@ class Reminder extends BasePlugin
 
             $timestamp = strtotime($time) ?: strtotime("+{$time}"); // false|int
 
+            // If the string was just a time, we might have passed it. If so, move the target time 1 day ahead.
+            if(
+                $timestamp <= time() &&
+                preg_match(self::TIME_FORMAT_REGEX, $time) === 1
+            ) {
+                $timestamp = strtotime("{$time} + 1 day");
+            }
+
             if (!$timestamp) return $this->chatClient->postMessage($command->getRoom(), "Have a look at the time again, yo!");
 
             $key = (string) $command->getId();
