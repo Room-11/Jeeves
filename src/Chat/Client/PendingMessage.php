@@ -4,35 +4,35 @@ namespace Room11\Jeeves\Chat\Client;
 
 class PendingMessage
 {
-    private $message;
-    private $commandId = null;
+    private $text;
+    private $commandMessageId = null;
 
     public function __construct(string $message, ?int $commandId = null)
     {
-        $this->setMessage($message);
+        $this->setText($message);
 
         if (!is_null($commandId)) {
-            $this->setCommandId((int) $commandId);
+            $this->setCommandMessageId((int)$commandId);
         }
     }
 
-    public function setMessage(string $message)
+    public function setText(string $text)
     {
-        $this->message = $message;
+        $this->text = $text;
     }
 
-    public function setCommandId(int $commandId)
+    public function getText()
     {
-        $this->commandId = $commandId;
+        return $this->text;
     }
 
-    public function getMessage()
+    public function setCommandMessageId(int $commandMessageId)
     {
-        return $this->message;
+        $this->commandMessageId = $commandMessageId;
     }
 
-    public function getCommandId()
+    public function getCommandMessageId()
     {
-        return $this->commandId;
+        return $this->commandMessageId;
     }
 }

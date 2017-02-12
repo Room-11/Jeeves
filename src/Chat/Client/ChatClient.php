@@ -2,7 +2,6 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
-use Ds\Deque;
 use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
@@ -10,7 +9,6 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\DOMUtils\ElementNotFoundException;
 use Room11\Jeeves\Chat\Client\Actions\ActionFactory;
-use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Endpoint as ChatRoomEndpoint;
 use Room11\Jeeves\Chat\EndpointURLResolver;
 use Room11\Jeeves\Chat\Entities\ChatUser;
@@ -35,9 +33,6 @@ class ChatClient
     const MAX_POST_ATTEMPTS = 5;
     const ENCODING = 'UTF-8';
     const TRUNCATION_LIMIT = 500;
-    const MAXIMUM_MESSAGES_STORED = 20;
-    const MAXIMUM_MESSAGES_MOVED = 21;
-    const BIN_ROOM_ID = 48058;
 
     private $httpClient;
     private $logger;
@@ -45,7 +40,6 @@ class ChatClient
     private $actionFactory;
     private $urlResolver;
     private $identifierFactory;
-    private $storedMessages = [];
 
     public function __construct(
         HttpClient $httpClient,
@@ -484,6 +478,12 @@ class ChatClient
         });
     }
 
+    /**
+     * @param ChatRoom $room
+     * @param $pendingMessage
+     * @param int $flags
+     * @return Promise
+     */
     public function postMessage(ChatRoom $room, $pendingMessage, int $flags = PostFlags::NONE): Promise
     {
         return resolve(function() use ($room, $pendingMessage, $flags) {
@@ -492,11 +492,14 @@ class ChatClient
                 throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
             }
 
-            if (!$pendingMessage instanceof PendingMessage) {
+            if (is_string($pendingMessage)) {
                 $pendingMessage = new PendingMessage($pendingMessage);
+            } else if (!$pendingMessage instanceof PendingMessage) {
+                throw new InvalidMessageTypeException('Message must be a string or an instance of ' . PendingMessage::class);
             }
 
-            $text = $this->applyPostFlagsToText($pendingMessage->getMessage(), $flags);
+            $text = $this->applyPostFlagsToText($pendingMessage->getText(), $flags);
+            $pendingMessage->setText($text);
 
             $body = (new FormBody)
                 ->addField("text", $text)
@@ -509,74 +512,19 @@ class ChatClient
                 ->setMethod("POST")
                 ->setBody($body);
 
-            $action = $this->actionFactory->createPostMessageAction($request, $room, $text);
+            $action = $this->actionFactory->createPostMessageAction($request, $room, $pendingMessage);
             $this->actionExecutor->enqueue($action);
-
-            $promise = $action->promise();
-            $promise->when(function ($error, $response = null) use ($room, $pendingMessage)
-            {
-                if ($error === null) {
-                    $this->storeMessageForRemoval(
-                        $response->getId(),
-                        $room->getIdentifier()->getId(),
-                        $pendingMessage->getCommandId()
-                    );
-                }
-            });
 
             return $action->promise();
         });
     }
 
-    private function storeMessageForRemoval(int $messageId, int $roomId, ?int $commandId)
+    public function moveMessages(ChatRoom $room, int $targetRoomId, int ...$messageIds): Promise
     {
-        if (!isset($this->storedMessages[$roomId])) {
-            $this->storedMessages[$roomId] = new Deque;
-        }
-
-        $this->storedMessages[$roomId]->push([
-            'messageId' => $messageId,
-            'commandId' => $commandId
-        ]);
-
-        if ($this->storedMessages[$roomId]->count() > self::MAXIMUM_MESSAGES_STORED) {
-            $this->storedMessages[$roomId]->shift();
-        }
-    }
-
-    public function getStoredMessages(ChatRoom $room)
-    {
-        if (!isset($this->storedMessages[$room->getIdentifier()->getId()])) {
-            return false;
-        }
-
-        return $this->storedMessages[$room->getIdentifier()->getId()];
-    }
-
-    public function getAndRemoveStoredMessage(ChatRoom $room)
-    {
-        $roomId = $room->getIdentifier()->getId();
-        if (!isset($this->storedMessages[$roomId]) || !$this->storedMessages[$roomId] instanceof Deque) {
-            return false;
-        }
-
-        $message = $this->storedMessages[$roomId]->pop();
-
-        if ($this->storedMessages[$roomId]->isEmpty()) {
-            unset($this->storedMessages[$roomId]);
-        }
-
-        return $message;
-    }
-
-    public function moveMessages(array $messageIds, ChatRoom $room): Promise
-    {
-       $messages = array_slice($messageIds, 0, self::MAXIMUM_MESSAGES_MOVED);
-
         $body = (new FormBody)
             ->addField("fkey", $room->getSession()->getFKey())
-            ->addField('ids', implode(',', $messages))
-            ->addField('to', self::BIN_ROOM_ID);
+            ->addField('ids', implode(',', $messageIds))
+            ->addField('to', $targetRoomId);
 
         $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::CHATROOM_MOVE_MESSAGE);
 
@@ -591,9 +539,10 @@ class ChatClient
 
     /**
      * @param PostedMessage|Message $origin
-     * @param string $text
+     * @param $pendingMessage
      * @param int $flags
      * @return Promise
+     * @internal param string $text
      */
     public function postReply($origin, $pendingMessage, int $flags = PostFlags::NONE): Promise
     {
@@ -604,8 +553,8 @@ class ChatClient
             $pendingMessage = new PendingMessage($pendingMessage);
         }
 
-        $pendingMessage->setMessage(
-            ":{$origin->getId()} {$pendingMessage->getMessage()}"
+        $pendingMessage->setText(
+            ":{$origin->getId()} {$pendingMessage->getText()}"
         );
 
         return $this->postMessage($origin->getRoom(), $pendingMessage, $flags);

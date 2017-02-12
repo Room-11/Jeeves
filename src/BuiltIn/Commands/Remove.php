@@ -6,6 +6,7 @@ use Amp\Promise;
 use function Amp\resolve;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PendingMessage;
+use Room11\Jeeves\Chat\Client\PostedMessageTracker;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
@@ -14,19 +15,23 @@ use Room11\Jeeves\System\BuiltInCommandInfo;
 
 class Remove implements BuiltInCommand
 {
+    const BIN_ROOM_ID = 48058;
+
     private $chatClient;
     private $admin;
+    private $tracker;
 
-    public function __construct(ChatClient $chatClient, AdminStorage $admin)
+    public function __construct(ChatClient $chatClient, AdminStorage $admin, PostedMessageTracker $tracker)
     {
         $this->chatClient = $chatClient;
         $this->admin = $admin;
+        $this->tracker = $tracker;
     }
 
     private function remove(CommandMessage $command): \Generator
     {
         if (!yield $command->getRoom()->isApproved()) {
-            return;
+            return null;
         }
 
         if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
@@ -39,8 +44,9 @@ class Remove implements BuiltInCommand
             );
         }
 
-        $messages = $this->chatClient->getStoredMessages($command->getRoom());
-        if ($messages === false || $messages->count() === 0) {
+        $messages = $this->tracker->getAll($command->getRoom());
+
+        if (count($messages) === 0) {
             return $this->chatClient->postReply(
                 $command, 
                 new PendingMessage(
@@ -50,29 +56,24 @@ class Remove implements BuiltInCommand
             );        
         }
 
-        $amount = $command->getParameter(0) ?? 1;
-        if ($amount > $messages->count()) {
-            $amount = $messages->count();
-        }
-
-        yield from $this->removeMessages($command->getRoom(), (int) $amount, $command->getId());
+        $count = (int)($command->getParameter(0) ?? 1);
+        yield from $this->removeMessages($command->getRoom(), $count, $command->getId());
     }
 
-    private function removeMessages(ChatRoom $room, int $amount, int $commandId)
+    private function removeMessages(ChatRoom $room, int $count, int $additionalMessageId)
     {
-        $messages = [];
-        $messages[] = $commandId;
+        $messages = [$additionalMessageId];
 
-        for ($i = 0; $i < $amount; $i++) {
-            $message = $this->chatClient->getAndRemoveStoredMessage($room);
-            $messages[] = $message['messageId'];
+        for ($i = 0; $i < $count && null !== $message = $this->tracker->popMessage($room); $i++) {
+            $messages[] = $message->getId();
 
-            if (!is_null($message['commandId'])) {
-                $messages[] = $message['commandId'];
+            $commandMessageIs = $message->getMessage()->getCommandMessageId();
+            if ($commandMessageIs !== null) {
+                $messages[] = $commandMessageIs;
             }
         }
 
-        yield $this->chatClient->moveMessages($messages, $room);
+        yield $this->chatClient->moveMessages($room, self::BIN_ROOM_ID, ...$messages);
     }
 
     public function handleCommand(CommandMessage $command): Promise

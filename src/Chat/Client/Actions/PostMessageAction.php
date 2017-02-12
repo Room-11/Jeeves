@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Chat\Client\Actions;
 
 use Amp\Artax\Request as HttpRequest;
 use Room11\Jeeves\Chat\Client\MessagePostFailureException;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostedMessageTracker;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
@@ -13,19 +14,19 @@ use Room11\Jeeves\Log\Logger;
 class PostMessageAction extends Action
 {
     private $tracker;
-    private $text;
+    private $message;
 
     public function __construct(
         Logger $logger,
         HttpRequest $request,
         ChatRoom $room,
         PostedMessageTracker $tracker,
-        string $text
+        PendingMessage $message
     ) {
         parent::__construct($logger, $request, $room);
 
         $this->tracker = $tracker;
-        $this->text = $text;
+        $this->message = $message;
     }
 
     public function getExceptionClassName(): string
@@ -35,20 +36,24 @@ class PostMessageAction extends Action
 
     public function isValid(): bool
     {
-        return $this->tracker->getLastPostedMessage($this->room) !== $this->text;
+        return $this->tracker->peekMessage($this->room) !== $this->message;
     }
 
     public function processResponse($response, int $attempt): int
     {
         if (isset($response["id"], $response["time"])) {
-            $this->tracker->setLastPostedMessage($this->room, $this->text);
-            $this->succeed(new PostedMessage($this->room, $response["id"], $response["time"]));
+            $postedMessage = new PostedMessage($this->room, $response["id"], $response["time"], $this->message);
+
+            $this->tracker->pushMessage($postedMessage);
+            $this->succeed($postedMessage);
+
             return self::SUCCESS;
         }
 
         if (!array_key_exists('id', $response)) {
             $this->logger->log(Level::ERROR, 'A JSON response that I don\'t understand was received', $response);
             $this->fail(new MessagePostFailureException("Invalid response from server"));
+
             return self::FAILURE;
         }
 

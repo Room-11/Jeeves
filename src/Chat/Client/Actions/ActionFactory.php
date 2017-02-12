@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Chat\Client\Actions;
 
 use Amp\Artax\Request;
+use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostedMessageTracker;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Logger;
@@ -18,9 +19,9 @@ class ActionFactory
         $this->tracker = $tracker;
     }
 
-    public function createPostMessageAction(Request $request, ChatRoom $room, string $messageText): PostMessageAction
+    public function createPostMessageAction(Request $request, ChatRoom $room, PendingMessage $message): PostMessageAction
     {
-        return new PostMessageAction($this->logger, $request, $room, $this->tracker, $messageText);
+        return new PostMessageAction($this->logger, $request, $room, $this->tracker, $message);
     }
 
     public function createEditMessageAction(Request $request, ChatRoom $room): EditMessageAction
