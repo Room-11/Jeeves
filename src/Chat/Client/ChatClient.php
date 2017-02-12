@@ -229,6 +229,15 @@ class ChatClient
     }
 
     /**
+     * @param ChatRoom $room
+     * @return Promise<bool>
+     */
+    public function isBotUserRoomOwner(ChatRoom $room): Promise
+    {
+        return $this->isRoomOwner($room, $room->getSession()->getUser()->getId());
+    }
+
+    /**
      * @param ChatRoom|ChatRoomIdentifier $room
      * @param int $messageId
      * @return Promise<ChatRoom>
