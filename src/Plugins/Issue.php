@@ -2,20 +2,20 @@
   
 namespace Room11\Jeeves\Plugins;
 
-use Amp\Success;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
-use Room11\Jeeves\External\GithubIssue\Credentials;
+use Amp\Artax\Response as HttpResponse;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\Jeeves\Chat\Client\MessageResolver;
-use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
+use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\External\GithubIssue\Credentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Issue extends BasePlugin
 {
-    const USAGE = 'Usage: `!!issue [<title> - <body>]`';
+    const USAGE = /** @lang text */ 'Usage: `!!issue [<title> - <body>]`';
     const CHAT_URL_EXP = '~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~';
     const PING_EXP = '/@([^\s]+)(?=$|\s)/';
 
@@ -83,6 +83,7 @@ class Issue extends BasePlugin
             ->setBody(json_encode($requestBody))
             ->setAllHeaders($this->getAuthHeader());
 
+        /** @var HttpResponse $result */
         $result = yield $this->httpClient->request($request);
 
         if ($result->getStatus() !== 201) {
@@ -122,7 +123,7 @@ class Issue extends BasePlugin
         return true;
     }
 
-    private function getTextFromCommand($text, $command)
+    private function getTextFromCommand($text, Command $command)
     {
         if (is_null($text)) {
             return null;
@@ -137,7 +138,7 @@ class Issue extends BasePlugin
         return yield from $this->replacePings($command, $text);
     }
 
-    private function replacePings($command, string $text)
+    private function replacePings(Command $command, string $text)
     {
         $room = $command->getRoom();
 

@@ -33,7 +33,7 @@ class Wikipedia extends BasePlugin
         return $this->httpClient->request(self::BASE_URL . '?' . http_build_query($parameters + $defaultParameters));
     }
 
-    public function search(Command $command): \Generator
+    public function search(Command $command)
     {
         if (!$command->hasParameters()) {
             return new Success();

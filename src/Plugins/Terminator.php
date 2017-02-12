@@ -2,9 +2,9 @@
 
 namespace Room11\Jeeves\Plugins;
 
-use Amp\Promise;
 use Amp\Success;
 use PeeHaa\AsyncChatterBot\Client\CleverBot;
+use PeeHaa\AsyncChatterBot\Response\CleverBot as ChatterBotResponse;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Message;
 
@@ -104,6 +104,7 @@ class Terminator extends BasePlugin
 
     private function buildCleverBotResponse(Message $message)
     {
+        /** @var ChatterBotResponse $response */
         $response = yield $this->chatBotClient->request($message->getText());
 
         return $response->getText();

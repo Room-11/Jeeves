@@ -10,8 +10,6 @@ interface Plugin
 
     public function getDescription(): string;
 
-    public function getHelpText(array $args): string;
-
     /**
      * @return PluginCommandEndpoint[]
      */

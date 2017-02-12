@@ -46,7 +46,7 @@ class PHPSrcGrok extends BasePlugin
         return [strtoupper($command->getParameter(1)), implode(' ', array_slice($parameters, 2))];
     }
 
-    private function getOpenGrokSearchResults(string $branch, array $params): \Generator
+    private function getOpenGrokSearchResults(string $branch, array $params)
     {
         $branch = ($branch === self::DEFAULT_BRANCH) ? $branch : $branch = 'PHP-' . $branch;
         $url = self::BASE_URL . '?project=' . $branch . '&n=10000&' . http_build_query($params);

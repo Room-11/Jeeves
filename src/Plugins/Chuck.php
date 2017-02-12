@@ -21,7 +21,7 @@ class Chuck extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
-    private function getJoke(): \Generator
+    private function getJoke()
     {
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(self::API_URL);
@@ -35,7 +35,7 @@ class Chuck extends BasePlugin
         return htmlspecialchars_decode($result['value']['joke']);
     }
 
-    public function getChuckJoke(Command $command): \Generator
+    public function getChuckJoke(Command $command)
     {
         try {
             $joke = yield from $this->getJoke();
@@ -48,7 +48,7 @@ class Chuck extends BasePlugin
         return $this->chatClient->postMessage($command->getRoom(), $joke);
     }
 
-    public function getSkeetJoke(Command $command): \Generator
+    public function getSkeetJoke(Command $command)
     {
         try {
             $joke = str_replace(['Chuck', 'Norris'], ['Jon', 'Skeet'], yield from $this->getJoke());

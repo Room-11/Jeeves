@@ -36,7 +36,7 @@ class Horoscope extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
-    public function divine(Command $command): \Generator
+    public function divine(Command $command)
     {
         $sign = strtolower((string)$command->getParameter(0));
 

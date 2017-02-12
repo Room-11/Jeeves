@@ -70,7 +70,7 @@ class Tweet extends BasePlugin
 
     private function replaceStrikeTags(\DOMDocument $dom) {
         foreach ($dom->getElementsByTagName('strike') as $node) {
-            $formattedNode = $dom->createTextNode("<strike>" . $node->textContent . "</strike>");
+            $formattedNode = $dom->createTextNode(/** @lang text */ "<strike>{$node->textContent}</strike>");
 
             $node->parentNode->replaceChild($formattedNode, $node);
         }

@@ -225,7 +225,7 @@ class Docs extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
-    private function preProcessMatch(HttpResponse $response, string $pattern) : \Generator
+    private function preProcessMatch(HttpResponse $response, string $pattern)
     {
         if (preg_match('#/book\.[^.]+\.php$#', $response->getRequest()->getUri(), $matches)) {
             /** @var HttpResponse $classResponse */
@@ -416,7 +416,8 @@ class Docs extends BasePlugin
         return trim(preg_replace('/\s+/', ' ', $message));
     }
 
-    private function getMessageFromSearch(HttpResponse $response): \Generator {
+    private function getMessageFromSearch(HttpResponse $response)
+    {
         try {
             $dom = domdocument_load_html($response->getBody());
 

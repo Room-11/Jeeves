@@ -87,11 +87,13 @@ class Scrabble extends BasePlugin
     {
         $total = 0;
         $result = '';
+
         foreach ($scores as $word => $score) {
             $result .= "$word = $score, ";
             $total += $score;
         }
-        return $result .= "TOTAL SCORE = $total";
+
+        return $result . "TOTAL SCORE = $total";
     }
 
     /**

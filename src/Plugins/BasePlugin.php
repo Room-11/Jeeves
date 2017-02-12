@@ -23,14 +23,6 @@ abstract class BasePlugin implements Plugin
     /**
      * @inheritdoc
      */
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement help
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function getCommandEndpoints(): array
     {
         return [];

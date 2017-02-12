@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Log;
 
 use Amp\Deferred;
+use Amp\File\Handle;
 use Amp\Promise;
 use Amp\Success;
 use Ds\Queue;
@@ -11,6 +12,7 @@ use function Amp\resolve;
 
 class File extends BaseLogger
 {
+    /** @var Handle */
     private $handle;
 
     private $writeQueue = false;

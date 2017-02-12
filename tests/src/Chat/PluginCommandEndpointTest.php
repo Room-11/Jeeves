@@ -20,7 +20,7 @@ class PluginCommandEndpointTest extends \PHPUnit_Framework_TestCase
 
     public function testGetCallback()
     {
-        $this->assertSame('testCallback', $this->pluginCommandEndpoint->getCallback()());
+        $this->assertSame('testCallback', call_user_func($this->pluginCommandEndpoint->getCallback()));
     }
 
     public function testGetDefaultCommand()

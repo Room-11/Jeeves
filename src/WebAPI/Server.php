@@ -48,7 +48,7 @@ class Server
         return $this->chatRooms->get($identifier);
     }
 
-    private function getJsonRequestBody(AerysRequest $request, AerysResponse $response): \Generator
+    private function getJsonRequestBody(AerysRequest $request, AerysResponse $response)
     {
         if ($request->getHeader('Content-Type') !== 'application/json') {
             $this->respondWithError($response, 400, 'Type of request body must be application/json');

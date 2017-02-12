@@ -6,7 +6,6 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request;
 use Amp\Artax\Response;
-use Generator;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
@@ -49,7 +48,7 @@ class Haskell extends BasePlugin {
         return "Something went wrong, it has to be fixed in code.";
     }
 
-    public function run(Command $command): Generator
+    public function run(Command $command)
     {
         if (!$command->hasParameters()) {
             return $this->chatClient->postMessage(

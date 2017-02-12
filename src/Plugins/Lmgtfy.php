@@ -3,17 +3,17 @@
 namespace Room11\Jeeves\Plugins;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\MessageResolver;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\Jeeves\Chat\Client\MessageResolver;
-use Room11\Jeeves\Chat\Room\Room;
 
 class Lmgtfy extends BasePlugin
 {
     const URL = 'http://lmgtfy.com/';
-    const USAGE = 'Usage: `!!lmgtfy [ <text> ]` / `!!lmgtfy [ <message URL> ]`';
+    const USAGE = /** @lang text */ 'Usage: `!!lmgtfy [ <text> ]` / `!!lmgtfy [ <message URL> ]`';
 
     private $chatClient;
+    private $messageResolver;
 
     public function __construct(ChatClient $chatClient, MessageResolver $messageResolver)
     {

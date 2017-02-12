@@ -55,7 +55,7 @@ class Translate extends BasePlugin
         return $accessToken;
     }
 
-    private function getTranslation(ChatRoom $room, string $text, string $toLanguage, string $fromLanguage = null): \Generator
+    private function getTranslation(ChatRoom $room, string $text, string $toLanguage, string $fromLanguage = null)
     {
         $accessToken = yield from $this->getAccessTokenForRoom($room);
 
@@ -68,7 +68,7 @@ class Translate extends BasePlugin
         return sprintf('%s (translated from %s)', $translation, self::$supportedLanguages[$fromLanguage]);
     }
 
-    private function getTextFromArguments(ChatRoom $room, array $args): \Generator
+    private function getTextFromArguments(ChatRoom $room, array $args)
     {
         if (count($args) > 1 || !preg_match('#/message/([0-9]+)#', $args[0], $match)) {
             return implode(' ', $args);
@@ -109,17 +109,17 @@ class Translate extends BasePlugin
         return $this->chatClient->postMessage($room, $message);
     }
 
-    public function magic(Command $command): \Generator
+    public function magic(Command $command)
     {
         return yield from $this->toLanguage($command, $command->getCommandName());
     }
 
-    public function toEnglish(Command $command): \Generator
+    public function toEnglish(Command $command)
     {
         return yield from $this->toLanguage($command, 'en');
     }
 
-    public function toLanguage(Command $command, string $toLanguage = null): \Generator
+    public function toLanguage(Command $command, string $toLanguage = null)
     {
         $params = $command->getParameters();
 

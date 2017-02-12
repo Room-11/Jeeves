@@ -23,9 +23,9 @@ class Reminder extends BasePlugin
     private $watchers;
     private $admin;
 
-    const USAGE = "Usage: `!!reminder [ examples | list | <text> [ at <time> | in <delay> ] | unset <id> ]` Try `!!reminder examples`" ;
-    const REMINDER_REGEX = "/(.*)\s+(?:in|at)\s+(.*)/ui";
-    const TIME_FORMAT_REGEX = "/(?<time>(?:\d|[01]\d|2[0-3]):[0-5]\d)[+-]?(?&time)?/ui";
+    const USAGE = /** @lang text */  "Usage: `!!reminder [ examples | list | <text> [ at <time> | in <delay> ] | unset <id> ]` Try `!!reminder examples`" ;
+    const REMINDER_REGEX = '/(.*)\s+(?:in|at)\s+(.*)/ui';
+    const TIME_FORMAT_REGEX = /** @lang regexp */ '/(?<time>(?:\d|[01]\d|2[0-3]):[0-5]\d)[+-]?(?&time)?/ui';
 
     public function __construct(ChatClient $chatClient, KeyValueStore $storage, AdminStore $admin, array $watchers = []) {
         $this->chatClient = $chatClient;
@@ -180,9 +180,9 @@ class Reminder extends BasePlugin
                 );
             }
 
-            if(count($timeouts) !== count($reminders)){
-                return $this->chatClient->postMessage($command->getRoom(), $message);
-            }
+            return count($timeouts) !== count($reminders)
+                ? $this->chatClient->postMessage($command->getRoom(), $message)
+                : null;
         });
     }
 
@@ -241,7 +241,7 @@ class Reminder extends BasePlugin
         });
     }
 
-    public function apologizeForExpiredReminders(ChatRoom $room, array $reminders): \Generator
+    public function apologizeForExpiredReminders(ChatRoom $room, array $reminders)
     {
         if(!$reminders) return;
 
@@ -267,7 +267,7 @@ class Reminder extends BasePlugin
         }
     }
 
-    public function rescheduleUpcomingReminders(ChatRoom $room, array $reminders): \Generator
+    public function rescheduleUpcomingReminders(ChatRoom $room, array $reminders)
     {
         if(!$reminders) return;
 

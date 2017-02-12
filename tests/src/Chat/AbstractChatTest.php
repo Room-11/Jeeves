@@ -7,7 +7,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 abstract class AbstractChatTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var ChatClient
+     * @var ChatClient|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $client;
 

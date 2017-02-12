@@ -126,7 +126,7 @@ class JeevesDad extends BasePlugin
 
     private function addCustomDadJoke(Command $command)
     {
-        static $expr = '#^(?<name>\w+)\s*/(?<setup>(?:[^\\\\/]++|\\\\\\\\|\\\\/|\\\\)++)/(?<punchline>.+)$#';
+        static $expr = /** @lang regexp */ '#^(?<name>\w+)\s*/(?<setup>(?:[^\\\\/]++|\\\\\\\\|\\\\/|\\\\)++)/(?<punchline>.+)$#';
 
         if (!preg_match($expr, implode(' ', $command->getParameters(1)), $match)) {
             return $this->chatClient->postReply($command, "Sorry, I don't get that joke, I need `name / setup / punchline`");

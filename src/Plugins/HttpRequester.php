@@ -32,7 +32,8 @@ class HttpRequester extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
-    private function getResult(HttpRequest $request, Command $command): \Generator {
+    private function getResult(HttpRequest $request, Command $command)
+    {
         try {
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($request, $this->getClientOptions($command));

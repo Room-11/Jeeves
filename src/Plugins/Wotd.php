@@ -36,7 +36,7 @@ class Wotd extends BasePlugin
         return '**['.$before[0].'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $before[0]).')**' . $after[0];
     }
 
-    public function fetch(Command $command): \Generator
+    public function fetch(Command $command)
     {
         $response = yield $this->httpClient->request(self::API_URL);
 

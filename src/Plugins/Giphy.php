@@ -67,7 +67,7 @@ class Giphy extends BasePlugin
             : $result['data']['image_url'];
     }
 
-    public function random(Command $command): \Generator
+    public function random(Command $command)
     {
         if (!$command->hasParameters()) {
             return new Success();

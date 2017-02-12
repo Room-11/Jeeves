@@ -129,7 +129,8 @@ class Google extends BasePlugin
         return $message;
     }
 
-    public function search(Command $command): \Generator {
+    public function search(Command $command)
+    {
         if (!$command->hasParameters()) {
             return new Success();
         }

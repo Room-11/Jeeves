@@ -78,7 +78,7 @@ class Imdb extends BasePlugin
 
         // Wait until all requests are done, allow failures.
         $allRequests = \Amp\some($this->httpClient->requestMulti($requests));
-        list($errors, $responses) = yield $allRequests;
+        list(, $responses) = yield $allRequests;
 
         $descriptionResults = [];
         foreach ($responses as $key => $response)

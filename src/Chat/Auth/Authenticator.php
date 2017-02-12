@@ -56,13 +56,15 @@ class Authenticator
         $this->queue->push([$identifier, $deferred]);
 
         if (!$this->haveLoop) {
+            /** @noinspection PhpVoidFunctionResultUsedInspection */
+            /** @noinspection PhpParamsInspection */
             resolve($this->executeActionsFromQueue());
         }
 
         return $deferred->promise();
     }
 
-    private function executeActionsFromQueue(): \Generator
+    private function executeActionsFromQueue()
     {
         $this->haveLoop = true;
 

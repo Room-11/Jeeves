@@ -152,6 +152,8 @@ class Admin implements BuiltInCommand
             case 'add':    return yield from $this->add($command, (int)$command->getParameter(1));
             case 'remove': return yield from $this->remove($command, (int)$command->getParameter(1));
         }
+
+        return null;
     }
 
     /**

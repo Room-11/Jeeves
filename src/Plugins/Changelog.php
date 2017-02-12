@@ -3,6 +3,7 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Exception;
@@ -29,7 +30,8 @@ class Changelog extends BasePlugin
         $this->pluginData = $pluginData;
     }
 
-    public function changelog(Command $command): \Generator {
+    public function changelog(Command $command)
+    {
 
         $repository = $command->getParameter(0) ?? 'Room-11/Jeeves';
 
@@ -37,7 +39,7 @@ class Changelog extends BasePlugin
             return yield from $this->getLastCommit($command, $repository);
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), "Usage: !!changelog [ <profile>/<repo> <branch>]");
+        return $this->chatClient->postMessage($command->getRoom(), /** @lang text */ "Usage: !!changelog [ <profile>/<repo> <branch>]");
     }
 
     protected function getCommitReference(Command $command, string $path)
@@ -52,6 +54,7 @@ class Changelog extends BasePlugin
             'branch' => $heads . urlencode($branch)
         ]);
 
+        /** @var HttpResponse[] $responses */
         $responses = yield all($promises);
 
         if($responses['heads']->getStatus() !== 200){
@@ -77,9 +80,9 @@ class Changelog extends BasePlugin
      *
      * @param Command $command
      * @param string $path
-     * @return \Generator
+     * @return Promise
      */
-    protected function getLastCommit(Command $command, string $path): \Generator
+    protected function getLastCommit(Command $command, string $path)
     {
         list($user, $repo) = explode('/', $path, 2);
 

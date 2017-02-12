@@ -53,6 +53,8 @@ class Ban implements BuiltInCommand
         } else if ($command->getCommandName() === "unban") {
             yield from $this->remove($command, (int)$command->getParameter(0));
         }
+
+        return null;
     }
 
     private function list(CommandMessage $command): \Generator

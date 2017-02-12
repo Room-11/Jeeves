@@ -18,7 +18,7 @@ class Canon extends BasePlugin
     private $storage;
     private $admin;
 
-    const USAGE = "Usage: `!!canon [ list | add <title> <url> | remove <title> ]`";
+    const USAGE = /** @lang text */ "Usage: `!!canon [ list | add <title> <url> | remove <title> ]`";
     const ACTIONS = ['add', 'remove', 'fire'];
 
     public function __construct(ChatClient $chatClient, KeyValueStore $storage, AdminStorage $admin) {
@@ -148,6 +148,8 @@ class Canon extends BasePlugin
                 case 'remove': return yield $this->remove($command, (string)$command->getParameter(1));
                 case 'fire': return yield $this->fire($command);
             }
+
+            return null;
         });
     }
 
