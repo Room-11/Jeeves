@@ -144,9 +144,11 @@ class RFC extends BasePlugin
     public function getRFC(Command $command)
     {
         $rfc = $command->getParameter(0);
+        $fullBreakdown = $command->getParameter(1) === 'full';
+
         if ($rfc === null) {
             // e.g.: !!rfc pipe-operator
-            return $this->chatClient->postMessage($command, "RFC id required");
+            return $this->chatClient->postMessage($command, "Usage: `!!rfc <id> [full]`");
         }
 
         $uri = self::BASE_URI . '/' . urlencode($rfc);
@@ -179,10 +181,40 @@ class RFC extends BasePlugin
                 'name' => $vote['name'],
                 'href' => $uri . '#' . $id,
                 'breakdown' => implode(', ', $breakdown),
+                'voters' => $vote['voters']
             ];
         }
 
+        if($fullBreakdown) {
+            return $this->chatClient->postMessage($command->getRoom(), implode("\n", array_map(function($message) {
+
+                $voters = implode("\n", array_map(function($voter) {
+
+                    if($voter['voted'] === false) {
+                        return sprintf('%s has not voted', $voter['name']);
+                    }
+
+                    return sprintf(
+                        '%s ⭢ %s',
+                        $voter['name'],
+                        $voter['choice']
+                    );
+
+                }, $message['voters']));
+
+                return sprintf(
+                    "%s %s - %s (%s)\n%s",
+                    self::BULLET,
+                    $message['name'],
+                    $message['breakdown'],
+                    $message['href'],
+                    $voters
+                );
+            }, $messages)));
+        }
+
         if (count($messages) === 1) {
+
             return $this->chatClient->postMessage(
                 $command,
                 sprintf(
@@ -221,6 +253,7 @@ class RFC extends BasePlugin
             $info = [
                 'name' => $id,
                 'votes' => [],
+                'voters' => []
             ];
             $options = [];
 
@@ -251,13 +284,37 @@ class RFC extends BasePlugin
                     continue;
                 }
 
+                $voterColumns = $row->getElementsByTagName('td');
+
+                if($voterColumns->length === 0) {
+                    continue;
+                }
+
+                $voter = [
+                    'name' => '',
+                    'voted' => false,
+                    'choice' => null,
+                    'at' => null
+                ];
+
                 /** @var \DOMElement $vote */
-                foreach ($row->getElementsByTagName('td') as $i => $vote) {
+                foreach ($voterColumns as $i => $vote) {
+
+                    if($i === 0) {
+                        $voter['name'] = $vote->getElementsByTagName('a')[0]->nodeValue;
+                    }
+
                     // Adjust by one to ignore voter name
-                    if ($vote->getElementsByTagName('img')->length > 0) {
+                    $voteImage = $vote->getElementsByTagName('img');
+                    if ($voteImage->length > 0) {
                         ++$info['votes'][$options[$i - 1]];
+                        $voter['voted'] = true;
+                        $voter['choice'] = $options[$i - 1];
+                        $voter['at'] = $voteImage[0]->getAttribute('title') ?: null;
                     }
                 }
+
+                $info['voters'][] = $voter;
             }
 
             $votes[$id] = $info;
