@@ -75,7 +75,7 @@ class PostedMessageTracker
     {
         $ident = $this->normalizeKey($room);
 
-        return !isset($this->messages[$ident])
+        return isset($this->messages[$ident])
             ? $this->messages[$ident]->last()
             : null;
     }
@@ -84,7 +84,7 @@ class PostedMessageTracker
     {
         $ident = $this->normalizeKey($room);
 
-        return !isset($this->messages[$ident])
+        return isset($this->messages[$ident])
             ? $this->messages[$ident]->toArray()
             : [];
     }
