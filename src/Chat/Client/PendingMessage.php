@@ -2,18 +2,17 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
+use Room11\Jeeves\Chat\Message\Command;
+
 class PendingMessage
 {
     private $text;
-    private $commandMessageId = null;
+    private $originatingCommand;
 
-    public function __construct(string $message, ?int $commandId = null)
+    public function __construct(string $text, Command $originatingCommand = null)
     {
-        $this->setText($message);
-
-        if (!is_null($commandId)) {
-            $this->setCommandMessageId((int)$commandId);
-        }
+        $this->text = $text;
+        $this->originatingCommand = $originatingCommand;
     }
 
     public function setText(string $text)
@@ -21,18 +20,13 @@ class PendingMessage
         $this->text = $text;
     }
 
-    public function getText()
+    public function getText(): string
     {
         return $this->text;
     }
 
-    public function setCommandMessageId(int $commandMessageId)
+    public function getOriginatingCommand(): Command
     {
-        $this->commandMessageId = $commandMessageId;
-    }
-
-    public function getCommandMessageId()
-    {
-        return $this->commandMessageId;
+        return $this->originatingCommand;
     }
 }

@@ -34,22 +34,22 @@ class Uptime implements BuiltInCommand
 
         $lastAccident = dateinterval_to_string((new \DateTime)->diff($this->startTime));
         $since = $this->startTime->format('Y-m-d H:i:s');
-        
+
         $lastAccidentMessage = " [" . $lastAccident . "] without an accident ";
         $sinceMessage = " since [" . $since . "] ";
-        
+
         $lineLength = max(strlen($lastAccidentMessage), strlen($sinceMessage));
-        
+
         $message  = "╔" . str_repeat("═", $lineLength) . "╗\n";
         $message .= "║" . str_pad($lastAccidentMessage, $lineLength, " ", STR_PAD_BOTH) . "║\n";
         $message .= "║" . str_pad($sinceMessage, $lineLength, " ", STR_PAD_BOTH) . "║\n";
         $message .= "╚" . str_repeat("═", $lineLength) . "╝\n";
-      
+
         return $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage($message, $command->getId()),
+            $command->getRoom(),
+            new PendingMessage($message, $command),
             PostFlags::FIXED_FONT
-        );      
+        );
     }
 
     /**

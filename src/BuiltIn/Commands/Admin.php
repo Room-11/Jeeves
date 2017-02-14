@@ -44,8 +44,8 @@ class Admin implements BuiltInCommand
 
         if ($admins['owners'] === [] && $admins['admins'] === []) {
             return $this->chatClient->postMessage(
-                $command->getRoom(), 
-                new PendingMessage('There are no registered admins', $command->getId())
+                $command->getRoom(),
+                new PendingMessage('There are no registered admins', $command)
             );
         }
 
@@ -62,8 +62,8 @@ class Admin implements BuiltInCommand
         }, $users));
 
         return $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage($list, $command->getId())
+            $command->getRoom(),
+            new PendingMessage($list, $command)
         );
     }
 
@@ -73,23 +73,23 @@ class Admin implements BuiltInCommand
 
         if (in_array($userId, $admins['admins'])) {
             return $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('User already on admin list.', $command->getId())
+                $command,
+                new PendingMessage('User already on admin list.', $command)
             );
         }
 
         if (in_array($userId, $admins['owners'])) {
             return $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('User is a room owner and has implicit admin rights.', $command->getId())
+                $command,
+                new PendingMessage('User is a room owner and has implicit admin rights.', $command)
             );
         }
 
         yield $this->storage->add($command->getRoom(), $userId);
 
         return $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage('User added to the admin list.', $command->getId())
+            $command->getRoom(),
+            new PendingMessage('User added to the admin list.', $command)
         );
     }
 
@@ -99,30 +99,30 @@ class Admin implements BuiltInCommand
 
         if (in_array($userId, $admins['owners'])) {
             return $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('User is a room owner and has implicit admin rights.', $command->getId())
+                $command,
+                new PendingMessage('User is a room owner and has implicit admin rights.', $command)
             );
         }
         if (!in_array($userId, $admins['admins'])) {
             return $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('User not currently on admin list.', $command->getId())
+                $command,
+                new PendingMessage('User not currently on admin list.', $command)
             );
         }
 
         yield $this->storage->remove($command->getRoom(), $userId);
 
         return $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage('User removed from the admin list.', $command->getId())
+            $command->getRoom(),
+            new PendingMessage('User removed from the admin list.', $command)
         );
     }
 
     private function showCommandHelp(CommandMessage $command): Promise
     {
         return $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage(self::COMMAND_HELP_TEXT, $command->getId()),
+            $command->getRoom(),
+            new PendingMessage(self::COMMAND_HELP_TEXT, $command),
             PostFlags::FIXED_FONT
         );
     }
@@ -143,8 +143,8 @@ class Admin implements BuiltInCommand
 
         if (!yield $this->storage->isAdmin($command->getRoom(), $command->getUserId())) {
             return $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command->getId())
+                $command,
+                new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command)
             );
         }
 

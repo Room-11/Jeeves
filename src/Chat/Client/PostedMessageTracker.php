@@ -41,7 +41,7 @@ class PostedMessageTracker
 
     public function pushMessage(PostedMessage $message)
     {
-        $ident = $message->getRoom()->getIdentifier()->getId();
+        $ident = $message->getRoom()->getIdentifier()->getIdentString();
 
         if (!isset($this->messages[$ident])) {
             $this->messages[$ident] = new Deque;
@@ -54,7 +54,11 @@ class PostedMessageTracker
         }
     }
 
-    public function popMessage(ChatRoom $room): PostedMessage
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @return PostedMessage
+     */
+    public function popMessage(ChatRoom $room)
     {
         $ident = $this->normalizeKey($room);
 
@@ -71,7 +75,11 @@ class PostedMessageTracker
         return $message;
     }
 
-    public function peekMessage($room): PostedMessage
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @return PostedMessage
+     */
+    public function peekMessage($room)
     {
         $ident = $this->normalizeKey($room);
 
@@ -80,9 +88,15 @@ class PostedMessageTracker
             : null;
     }
 
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @return PostedMessage[]
+     */
     public function getAll($room): array
     {
         $ident = $this->normalizeKey($room);
+
+        var_dump($this->messages);
 
         return isset($this->messages[$ident])
             ? $this->messages[$ident]->toArray()

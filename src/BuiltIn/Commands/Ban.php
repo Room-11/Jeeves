@@ -34,8 +34,8 @@ class Ban implements BuiltInCommand
 
         if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
             return $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command->getId())
+                $command,
+                new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command)
             );
         }
 
@@ -44,8 +44,8 @@ class Ban implements BuiltInCommand
         } else if ($command->getCommandName() === "ban") {
             if (!$command->hasParameters(2)) {
                 return $this->chatClient->postReply(
-                    $command, 
-                    new PendingMessage('Ban length must be specified', $command->getId())
+                    $command,
+                    new PendingMessage('Ban length must be specified', $command)
                 );
             }
 
@@ -63,8 +63,8 @@ class Ban implements BuiltInCommand
 
         if (!$bans) {
             yield $this->chatClient->postMessage(
-                $command->getRoom(), 
-                new PendingMessage('No users are currently on the naughty list.', $command->getId())
+                $command->getRoom(),
+                new PendingMessage('No users are currently on the naughty list.', $command)
             );
             return;
         }
@@ -74,8 +74,8 @@ class Ban implements BuiltInCommand
         }, $bans, array_keys($bans)));
 
         yield $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage($list, $command->getId())
+            $command->getRoom(),
+            new PendingMessage($list, $command)
         );
     }
 
@@ -83,8 +83,8 @@ class Ban implements BuiltInCommand
         yield $this->banStorage->add($command->getRoom(), $userId, $duration);
 
         yield $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage('User is banned.', $command->getId())
+            $command->getRoom(),
+            new PendingMessage('User is banned.', $command)
         );
     }
 
@@ -92,8 +92,8 @@ class Ban implements BuiltInCommand
         yield $this->banStorage->remove($command->getRoom(), $userId);
 
         yield $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage('User is unbanned.', $command->getId())
+            $command->getRoom(),
+            new PendingMessage('User is unbanned.', $command)
         );
     }
 

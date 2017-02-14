@@ -1,11 +1,10 @@
 <?php declare(strict_types=1);
-  
+
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
-use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\MessageResolver;
 use Room11\Jeeves\Chat\Message\Command;
@@ -23,11 +22,10 @@ class Issue extends BasePlugin
     private $messageResolver;
     private $httpClient;
     private $credentials;
-    private $response;
     private $admin;
 
     public function __construct(
-        ChatClient $chatClient, 
+        ChatClient $chatClient,
         MessageResolver $messageResolver,
         HttpClient $httpClient,
         Credentials $credentials,
@@ -57,7 +55,7 @@ class Issue extends BasePlugin
         if (empty($content[0]) || count($content) > 2) {
             return $this->chatClient->postReply($command, self::USAGE);
         }
-        
+
         $title = yield from $this->getTextFromCommand($content[0], $command);
         $body = null;
 
@@ -65,9 +63,13 @@ class Issue extends BasePlugin
             $body = yield from $this->getTextFromCommand($content[1], $command);
         }
 
-        yield from $this->createIssue($title, $body, $command->getId());
+        try {
+            $response = yield from $this->createIssue($title, $body, $command->getId());
+        } catch (\Throwable $e) {
+            $response = $e->getMessage();
+        }
 
-        return $this->chatClient->postReply($command, $this->response);
+        return $this->chatClient->postReply($command, $response);
     }
 
     private function createIssue(string $title, $body = '', int $id)
@@ -87,13 +89,12 @@ class Issue extends BasePlugin
         $result = yield $this->httpClient->request($request);
 
         if ($result->getStatus() !== 201) {
-            $this->response = 'I failed to create the issue :-(. You might want to create an issue about that';
-            return new Success();
+            throw new \RuntimeException('I failed to create the issue :-(. You might want to create an issue about that');
         }
 
-        $response = json_decode($result->getBody(), true);
-        $this->response = "Issue created - {$response['html_url']}";
-        return new Success();
+        $response = json_try_decode($result->getBody(), true);
+
+        return "Issue created - {$response['html_url']}";
     }
 
     private function getAuthHeader(): array
@@ -156,8 +157,8 @@ class Issue extends BasePlugin
             $pingableUsers[$name] = $users[$id];
         }
 
-        return preg_replace_callback(self::PING_EXP, 
-            function($match) use($pingableUsers) 
+        return preg_replace_callback(self::PING_EXP,
+            function($match) use($pingableUsers)
             {
                 if (isset($pingableUsers[$match[1]])) {
                     return '@' . $pingableUsers[$match[1]]->getGithubUsername();

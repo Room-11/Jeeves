@@ -50,8 +50,8 @@ class Plugin implements BuiltInCommand
         }
 
         yield $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage($result, $command->getId()), 
+            $command->getRoom(),
+            new PendingMessage($result, $command),
             PostFlags::FIXED_FONT
         );
     }
@@ -60,8 +60,8 @@ class Plugin implements BuiltInCommand
     {
         if (!$this->pluginManager->isPluginRegistered($plugin)) {
             yield $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('Invalid plugin name', $command->getId())
+                $command,
+                new PendingMessage('Invalid plugin name', $command)
             );
             return null;
         }
@@ -86,8 +86,8 @@ class Plugin implements BuiltInCommand
         }
 
         yield $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage($result, $command->getId()), 
+            $command->getRoom(),
+            new PendingMessage($result, $command),
             PostFlags::FIXED_FONT
         );
     }
@@ -108,37 +108,37 @@ class Plugin implements BuiltInCommand
         return resolve(function() use($command) {
             if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
                 return $this->chatClient->postReply(
-                    $command, 
-                    new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command->getId())
+                    $command,
+                    new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command)
                 );
             }
 
             if (null === $plugin = $command->getParameter(1)) {
                 return $this->chatClient->postReply(
-                    $command, 
-                    new PendingMessage('No plugin name supplied', $command->getId())
+                    $command,
+                    new PendingMessage('No plugin name supplied', $command)
                 );
             }
 
             if (!$this->pluginManager->isPluginRegistered($plugin)) {
                 return $this->chatClient->postReply(
-                    $command, 
-                    new PendingMessage('Invalid plugin name', $command->getId())
+                    $command,
+                    new PendingMessage('Invalid plugin name', $command)
                 );
             }
 
             if ($this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())) {
                 return $this->chatClient->postReply(
-                    $command, 
-                    new PendingMessage('Plugin already enabled in this room', $command->getId())
+                    $command,
+                    new PendingMessage('Plugin already enabled in this room', $command)
                 );
             }
 
             yield $this->pluginManager->enablePluginForRoom($plugin, $command->getRoom());
 
             return $this->chatClient->postMessage(
-                $command->getRoom(), 
-                new PendingMessage("Plugin '{$plugin}' is now enabled in this room", $command->getId())
+                $command->getRoom(),
+                new PendingMessage("Plugin '{$plugin}' is now enabled in this room", $command)
             );
         });
     }
@@ -148,37 +148,37 @@ class Plugin implements BuiltInCommand
         return resolve(function() use($command) {
             if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
                 return $this->chatClient->postReply(
-                    $command, 
-                    new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command->getId())
+                    $command,
+                    new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command)
                 );
             }
 
             if (null === $plugin = $command->getParameter(1)) {
                 return $this->chatClient->postReply(
-                    $command, 
-                    new PendingMessage('No plugin name supplied', $command->getId())
+                    $command,
+                    new PendingMessage('No plugin name supplied', $command)
                 );
             }
 
             if (!$this->pluginManager->isPluginRegistered($plugin)) {
                 return $this->chatClient->postReply(
-                    $command, 
-                    new PendingMessage('Invalid plugin name', $command->getId())
+                    $command,
+                    new PendingMessage('Invalid plugin name', $command)
                 );
             }
 
             if (!$this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())) {
                 return $this->chatClient->postReply(
-                    $command, 
-                    new PendingMessage('Plugin already disabled in this room', $command->getId())
+                    $command,
+                    new PendingMessage('Plugin already disabled in this room', $command)
                 );
             }
 
             yield $this->pluginManager->disablePluginForRoom($plugin, $command->getRoom());
 
             return $this->chatClient->postMessage(
-                $command->getRoom(), 
-                new PendingMessage("Plugin '{$plugin}' is now disabled in this room", $command->getId())
+                $command->getRoom(),
+                new PendingMessage("Plugin '{$plugin}' is now disabled in this room", $command)
             );
         });
     }
@@ -187,15 +187,15 @@ class Plugin implements BuiltInCommand
     {
         if (null === $plugin = $command->getParameter(1)) {
             return $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('No plugin name supplied', $command->getId())
+                $command,
+                new PendingMessage('No plugin name supplied', $command)
             );
         }
 
         if (!$this->pluginManager->isPluginRegistered($plugin)) {
             return $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('Invalid plugin name', $command->getId())
+                $command,
+                new PendingMessage('Invalid plugin name', $command)
             );
         }
 
@@ -204,8 +204,8 @@ class Plugin implements BuiltInCommand
             : "Plugin '{$plugin}' is currently disabled in this room";
 
         return $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage($message, $command->getId())
+            $command->getRoom(),
+            new PendingMessage($message, $command)
         );
     }
 
@@ -224,16 +224,16 @@ class Plugin implements BuiltInCommand
         }
 
         return $this->chatClient->postReply(
-            $command, 
-            new PendingMessage('Syntax: plugin [list|disable|enable] [plugin-name]', $command->getId())
+            $command,
+            new PendingMessage('Syntax: plugin [list|disable|enable] [plugin-name]', $command)
         );
     }
 
     private function showCommandHelp(CommandMessage $command): Promise
     {
         return $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage(self::COMMAND_HELP_TEXT, $command->getId()),
+            $command->getRoom(),
+            new PendingMessage(self::COMMAND_HELP_TEXT, $command),
             PostFlags::FIXED_FONT
         );
     }

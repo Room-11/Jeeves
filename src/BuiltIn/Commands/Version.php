@@ -40,8 +40,8 @@ class Version implements BuiltInCommand
         }, $version);
 
         yield $this->chatClient->postMessage(
-            $command->getRoom(), 
-            new PendingMessage($messageText, $command->getId())
+            $command->getRoom(),
+            new PendingMessage($messageText, $command)
         );
     }
 

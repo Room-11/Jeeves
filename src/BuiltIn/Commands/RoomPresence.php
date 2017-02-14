@@ -57,10 +57,10 @@ class RoomPresence implements BuiltInCommand
     {
         if (!$command->hasParameters()) {
             yield $this->chatClient->postReply(
-                $command, 
+                $command,
                 new PendingMessage(
                     'If you want to invite me somewhere, you have to tell me where...',
-                    $command->getId()
+                    $command
                 )
             );
             return;
@@ -70,10 +70,10 @@ class RoomPresence implements BuiltInCommand
             $identifier = $this->getRoomIdentifierFromArg($command->getParameter(0), $command->getRoom()->getIdentifier()->getHost());
         } catch (InvalidRoomIdentifierException $e) {
             yield $this->chatClient->postReply(
-                $command, 
+                $command,
                 new PendingMessage(
                     'Sorry, I can\'t work out where you are asking me to go',
-                    $command->getId()
+                    $command
                 )
             );
             return;
@@ -82,7 +82,7 @@ class RoomPresence implements BuiltInCommand
         if ($identifier->equals($command->getRoom()->getIdentifier())) {
             yield $this->chatClient->postReply(
                 $command,
-                new PendingMessage('Ummm... that\'s this room?', $command->getId())
+                new PendingMessage('Ummm... that\'s this room?', $command)
             );
             return;
         }
@@ -95,23 +95,23 @@ class RoomPresence implements BuiltInCommand
         try {
             yield $this->presenceManager->addRoom($identifier, $userId);
             yield $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('See you there shortly! :-)', $command->getId())
+                $command,
+                new PendingMessage('See you there shortly! :-)', $command)
             );
         } catch (RoomAlreadyExistsException $e) {
             yield $this->chatClient->postReply(
-                $command, 
+                $command,
                 new PendingMessage(
                     'I\'m already there, I don\'t need to be invited again',
-                    $command->getId()
+                    $command
                 )
             );
         } catch (\Throwable $e) {
             yield $this->chatClient->postReply(
-                $command, 
+                $command,
                 new PendingMessage(
                     'Something went pretty badly wrong there, please report this issue to my maintainers.',
-                    $command->getId()
+                    $command
                 )
             );
         }
@@ -122,10 +122,10 @@ class RoomPresence implements BuiltInCommand
         try {
             if ($command->getRoom()->isPermanent()) {
                 yield $this->chatClient->postReply(
-                    $command, 
+                    $command,
                     new PendingMessage(
                         'This room is my home! I don\'t need your approval to be here!',
-                        $command->getId()
+                        $command
                     )
                 );
                 return;
@@ -142,30 +142,30 @@ class RoomPresence implements BuiltInCommand
                 : ($requiredVotes - $currentVotes) . ' more votes are required to activated me.';
 
             yield $this->chatClient->postReply(
-                $command, 
-                new PendingMessage($message, $command->getId()), 
+                $command,
+                new PendingMessage($message, $command),
                 PostFlags::FORCE
             );
         } catch (AlreadyApprovedException $e) {
             yield $this->chatClient->postReply(
-                $command, 
+                $command,
                 new PendingMessage(
                     'I\'ve already been activated in this room, but it\'s nice you know you approve of me :-)',
-                    $command->getId()
+                    $command
                 )
             );
         } catch (UserNotAcceptableException $e) {
             yield $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('Sorry, only room owners can vote', $command->getId()), 
+                $command,
+                new PendingMessage('Sorry, only room owners can vote', $command),
                 PostFlags::FORCE
             );
         } catch (UserAlreadyVotedException $e) {
             yield $this->chatClient->postReply(
-                $command, 
+                $command,
                 new PendingMessage(
-                    'Sorry, you\'ve already voted, you can\'t vote again', 
-                    $command->getId(),
+                    'Sorry, you\'ve already voted, you can\'t vote again',
+                    $command,
                     PostFlags::FORCE
                 )
             );
@@ -177,10 +177,10 @@ class RoomPresence implements BuiltInCommand
         try {
             if ($command->getRoom()->isPermanent()) {
                 yield $this->chatClient->postReply(
-                    $command, 
+                    $command,
                     new PendingMessage(
                         'This room is my home! I don\'t need your approval to be here!',
-                        $command->getId()
+                        $command
                     )
                 );
                 return;
@@ -197,20 +197,20 @@ class RoomPresence implements BuiltInCommand
 
             $message = 'Your vote has been recorded. If I get one more vote within an hour I will leave the room.';
             yield $this->chatClient->postReply(
-                $command, 
-                new PendingMessage($message, $command->getId())
+                $command,
+                new PendingMessage($message, $command)
             );
         } catch (UserNotAcceptableException $e) {
             yield $this->chatClient->postReply(
-                $command, 
-                new PendingMessage('Sorry, only room owners can vote', $command->getId())
+                $command,
+                new PendingMessage('Sorry, only room owners can vote', $command)
             );
         } catch (UserAlreadyVotedException $e) {
             yield $this->chatClient->postReply(
-                $command, 
+                $command,
                 new PendingMessage(
                     'Sorry, you\'ve already voted, you can\'t vote again',
-                    $command->getId()
+                    $command
                 )
             );
         }

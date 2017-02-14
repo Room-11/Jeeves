@@ -36,10 +36,10 @@ class Remove implements BuiltInCommand
 
         if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
             return $this->chatClient->postReply(
-                $command, 
+                $command,
                 new PendingMessage(
-                    'Sorry, you\'re not cool enough to do that :(', 
-                    $command->getId()
+                    'Sorry, you\'re not cool enough to do that :(',
+                    $command
                 )
             );
         }
@@ -48,16 +48,16 @@ class Remove implements BuiltInCommand
 
         if (count($messages) === 0) {
             return $this->chatClient->postReply(
-                $command, 
+                $command,
                 new PendingMessage(
-                    'I don\'t have any messages stored for this room, sorry', 
-                    $command->getId()
+                    'I don\'t have any messages stored for this room, sorry',
+                    $command
                 )
-            );        
+            );
         }
 
         $count = (int)($command->getParameter(0) ?? 1);
-        yield from $this->removeMessages($command->getRoom(), $count, $command->getId());
+        yield $this->removeMessages($command->getRoom(), $count, $command->getId());
     }
 
     private function removeMessages(ChatRoom $room, int $count, int $additionalMessageId)
@@ -67,13 +67,13 @@ class Remove implements BuiltInCommand
         for ($i = 0; $i < $count && null !== $message = $this->tracker->popMessage($room); $i++) {
             $messages[] = $message->getId();
 
-            $commandMessageIs = $message->getMessage()->getCommandMessageId();
-            if ($commandMessageIs !== null) {
-                $messages[] = $commandMessageIs;
+            $commandMessage = $message->getMessage()->getOriginatingCommand();
+            if ($commandMessage !== null) {
+                $messages[] = $commandMessage->getId();
             }
         }
 
-        yield $this->chatClient->moveMessages($room, self::BIN_ROOM_ID, ...$messages);
+        return $this->chatClient->moveMessages($room, self::BIN_ROOM_ID, ...$messages);
     }
 
     public function handleCommand(CommandMessage $command): Promise

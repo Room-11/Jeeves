@@ -550,7 +550,7 @@ class ChatClient
         $flags &= ~PostFlags::FIXED_FONT;
 
         if (!$pendingMessage instanceof PendingMessage) {
-            $pendingMessage = new PendingMessage($pendingMessage);
+            $pendingMessage = new PendingMessage($pendingMessage, $origin);
         }
 
         $pendingMessage->setText(
