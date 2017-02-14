@@ -26,10 +26,10 @@ class MainSiteUser
 
         $twitterLink = $xpath->query("//li[span[" . xpath_html_class('icon-twitter') . "]]/a");
         $twitterHandle = $twitterLink->length > 0
-            ? trim($twitterLink->item(0)->textContent)
+            ? ltrim(trim($twitterLink->item(0)->textContent), '@')
             : null;
 
-        // cannot separate this because of static, bloody mancs. 
+        // cannot separate this because of static, bloody mancs.
         $githubLink = $xpath->query("//li[span[" . xpath_html_class('icon-github') . "]]/a");
         $githubUsername = $githubLink->length > 0
             ? trim($githubLink->item(0)->textContent)
