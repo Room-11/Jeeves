@@ -3,15 +3,14 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
-use function Amp\resolve;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostedMessageTracker;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
-use Room11\Jeeves\System\BuiltInCommand;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use function Amp\resolve;
 
 class Remove implements BuiltInCommand
 {
@@ -28,7 +27,7 @@ class Remove implements BuiltInCommand
         $this->tracker = $tracker;
     }
 
-    private function remove(CommandMessage $command): \Generator
+    private function remove(CommandMessage $command)
     {
         if (!yield $command->getRoom()->isApproved()) {
             return null;
@@ -44,9 +43,7 @@ class Remove implements BuiltInCommand
             );
         }
 
-        $messages = $this->tracker->getAll($command->getRoom());
-
-        if (count($messages) === 0) {
+        if ($this->tracker->getCount($command->getRoom()) === 0) {
             return $this->chatClient->postReply(
                 $command,
                 new PendingMessage(
@@ -56,13 +53,13 @@ class Remove implements BuiltInCommand
             );
         }
 
-        $count = (int)($command->getParameter(0) ?? 1);
-        yield $this->removeMessages($command->getRoom(), $count, $command->getId());
+        return $this->removeMessages($command, (int)($command->getParameter(0) ?? 1));
     }
 
-    private function removeMessages(ChatRoom $room, int $count, int $additionalMessageId)
+    private function removeMessages(CommandMessage $command, int $count)
     {
-        $messages = [$additionalMessageId];
+        $room = $command->getRoom();
+        $messages = [$command->getId()];
 
         for ($i = 0; $i < $count && null !== $message = $this->tracker->popMessage($room); $i++) {
             $messages[] = $message->getId();

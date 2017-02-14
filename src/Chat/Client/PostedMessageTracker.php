@@ -96,10 +96,21 @@ class PostedMessageTracker
     {
         $ident = $this->normalizeKey($room);
 
-        var_dump($this->messages);
-
         return isset($this->messages[$ident])
             ? $this->messages[$ident]->toArray()
             : [];
+    }
+
+    /**
+     * @param ChatRoom|ChatRoomIdentifier|string $room
+     * @return int
+     */
+    public function getCount($room): int
+    {
+        $ident = $this->normalizeKey($room);
+
+        return isset($this->messages[$ident])
+            ? $this->messages[$ident]->count()
+            : 0;
     }
 }
