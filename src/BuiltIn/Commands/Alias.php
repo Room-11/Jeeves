@@ -65,7 +65,7 @@ class Alias implements BuiltInCommand
         if (yield $this->aliasStorage->exists($room, $aliasCommand)) {
             return $this->chatClient->postReply(
                 $command,
-                new PendingMessage('Alias \'!!{$aliasCommand}\' already exists.', $command)
+                new PendingMessage("Alias '!!{$aliasCommand}' already exists.", $command)
             );
         }
 
@@ -74,7 +74,7 @@ class Alias implements BuiltInCommand
         return $this->chatClient->postMessage(
             $room,
             new PendingMessage(
-                'Command \'!!{$aliasCommand}\' aliased to \'!!{$mapping}\'',
+                "Command '!!{$aliasCommand}' aliased to '!!{\$mapping}'",
                 $command
             )
         );
@@ -87,7 +87,7 @@ class Alias implements BuiltInCommand
         if (!yield $this->aliasStorage->exists($command->getRoom(), $aliasCommand)) {
             return $this->chatClient->postMessage(
                 $command->getRoom(),
-                new PendingMessage('Alias \'!!{$aliasCommand}\' is not currently mapped', $command)
+                new PendingMessage("Alias '!!{$aliasCommand}' is not currently mapped", $command)
             );
         }
 
@@ -95,7 +95,7 @@ class Alias implements BuiltInCommand
 
         return $this->chatClient->postMessage(
             $command->getRoom(),
-            new PendingMessage('Alias \'!!{$aliasCommand}\' removed', $command)
+            new PendingMessage("Alias '!!{$aliasCommand}' removed", $command)
         );
     }
 
