@@ -74,7 +74,7 @@ class Alias implements BuiltInCommand
         return $this->chatClient->postMessage(
             $room,
             new PendingMessage(
-                "Command '!!{$aliasCommand}' aliased to '!!{\$mapping}'",
+                "Command '!!{$aliasCommand}' aliased to '!!{$mapping}'",
                 $command
             )
         );
