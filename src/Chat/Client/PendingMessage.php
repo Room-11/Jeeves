@@ -25,7 +25,7 @@ class PendingMessage
         return $this->text;
     }
 
-    public function getOriginatingCommand(): Command
+    public function getOriginatingCommand(): ?Command
     {
         return $this->originatingCommand;
     }
