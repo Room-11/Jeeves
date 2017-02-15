@@ -47,7 +47,7 @@ plugins:
   - Room11\Jeeves\Plugins\Man
   - Room11\Jeeves\Plugins\Mdn
   - Room11\Jeeves\Plugins\Packagist
-  - Room11\Jeeves\Plugins\PHPSrcGrok
+  - Room11\Jeeves\Plugins\OpenGrok
   - Room11\Jeeves\Plugins\Rebecca
   - Room11\Jeeves\Plugins\Regex
   - Room11\Jeeves\Plugins\Reminder
