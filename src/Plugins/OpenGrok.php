@@ -182,8 +182,8 @@ class OpenGrokHtmlSearcher implements Searcher
         $trim = strlen('/xref/' . $project);
         $codeResults = $testResults = [];
 
-        try {
-            foreach ($resultsTable->getElementsByTagName('tr') as $row) {
+        foreach ($resultsTable->getElementsByTagName('tr') as $row) {
+            try {
                 /** @var \DOMElement $row */
                 if (preg_match('#\bdir\b#', $row->getAttribute('class'))) {
                     $isCurrentDirTestSource = (bool)preg_match('#/tests/#i', xpath_get_element($row, './td/a')->textContent);
@@ -209,8 +209,8 @@ class OpenGrokHtmlSearcher implements Searcher
                         $codeResults[] = $result;
                     }
                 }
-            }
-        } catch (ElementNotFoundException $e) { /* ignore this and keep trying to make a result set */ }
+            } catch (ElementNotFoundException $e) { /* ignore this and keep trying to make a result set */ }
+        }
 
         return new OpenGrokSearchResultSet($project, $url, $codeResults, $testResults);
     }
