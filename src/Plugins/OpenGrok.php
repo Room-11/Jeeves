@@ -197,6 +197,10 @@ class OpenGrokHtmlSearcher implements Searcher
                     $code = '';
 
                     while ($el = $el->nextSibling) {
+                        if ($el instanceof \DOMElement && $el->tagName === 'i') {
+                            break;
+                        }
+
                         $code .= $el->textContent;
                     }
 
@@ -265,7 +269,7 @@ class PhpSrcOpenGrokSearchResultProcessor implements OpenGrokSearchResultProcess
             '/^(?:[a-z_][a-z0-9_]*\s+)+\**\s*' . $searchTerm . '\s*\([^;]+$/i',   // function definition
             '/^struct\s+' . $searchTerm . '/i',                                   // struct definition
             '/^typedef\s+(?:struct\s+)?[a-z_][a-z0-9_]*\s+' . $searchTerm . '/i', // typedef
-            '/^}\s+' . $searchTerm . '\s*;/i',                                    // typedef struct type name
+            '/^}\s*' . $searchTerm . '\s*;/',                                     // typedef struct type name
         ];
 
         foreach ($exprs as $expr) {
