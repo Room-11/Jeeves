@@ -47,10 +47,9 @@ class OpenGrokSearchFailureException extends Exception
 
 interface Searcher
 {
-    function search(string $project, string $url): Promise;
-    function getDefinitionSearchUrl(string $project, string $symbol): string;
-    function getReferenceSearchUrl(string $project, string $symbol): string;
-    function getFreeTextSearchUrl(string $project, string $text): string;
+    function searchDefinitions(string $project, string $symbol): Promise;
+    function searchReferences(string $project, string $symbol): Promise;
+    function searchFreeText(string $project, string $text): Promise;
 }
 
 class OpenGrokSearchResult
@@ -149,7 +148,7 @@ class OpenGrokHtmlSearcher implements Searcher
         $this->cookieJar = $cookieJar;
     }
 
-    private function getUrl(string $project, array $params): string
+    private function makeSearchUrl(string $project, array $params): string
     {
         return $this->baseUrl . '/search?' . http_build_query($params + ['project' => $project, 'n' => 10000]);
     }
@@ -215,24 +214,19 @@ class OpenGrokHtmlSearcher implements Searcher
         return new OpenGrokSearchResultSet($project, $url, $codeResults, $testResults);
     }
 
-    public function search(string $project, string $url): Promise
+    public function searchDefinitions(string $project, string $symbol): Promise
     {
-        return resolve($this->getResults($project, $url));
+        return resolve($this->getResults($project, $this->makeSearchUrl($project, ['defs' => $symbol])));
     }
 
-    public function getDefinitionSearchUrl(string $project, string $symbol): string
+    public function searchReferences(string $project, string $symbol): Promise
     {
-        return $this->getUrl($project, ['defs' => $symbol]);
+        return resolve($this->getResults($project, $this->makeSearchUrl($project, ['refs' => $symbol])));
     }
 
-    public function getReferenceSearchUrl(string $project, string $symbol): string
+    public function searchFreeText(string $project, string $text): Promise
     {
-        return $this->getUrl($project, ['defs' => $symbol]);
-    }
-
-    public function getFreeTextSearchUrl(string $project, string $text): string
-    {
-        return $this->getUrl($project, ['q' => $text]);
+        return resolve($this->getResults($project, $this->makeSearchUrl($project, ['q' => $text])));
     }
 }
 
@@ -335,11 +329,7 @@ class PhpSrcOpenGrokSearchResultProcessor implements OpenGrokSearchResultProcess
             return $result;
         }
 
-        if (null !== $result = $this->findPHPSymbolDefinition($results, $searchTerm)) {
-            return $result;
-        }
-
-        return null;
+        return $this->findPHPSymbolDefinition($results, $searchTerm);
     }
 
     /**
@@ -347,7 +337,11 @@ class PhpSrcOpenGrokSearchResultProcessor implements OpenGrokSearchResultProcess
      */
     public function processFreeTextSearchResults(OpenGrokSearchResultSet $results, string $searchTerm)
     {
-        if (null !== $result = $this->processReferenceSearchResults($results, $searchTerm)) {
+        if (null !== $result = $this->findCSymbolDefinition($results, $searchTerm)) {
+            return $result;
+        }
+
+        if (null !== $result = $this->findPHPSymbolDefinition($results, $searchTerm)) {
             return $result;
         }
 
@@ -444,8 +438,7 @@ class OpenGrok extends BasePlugin
         /** @var OpenGrokSearchResultProcessor $processor */
 
         try {
-            $url = $this->htmlSearcher->getDefinitionSearchUrl($project, $searchTerm);
-            $results = yield $this->htmlSearcher->search($project, $url);
+            $results = yield $this->htmlSearcher->searchDefinitions($project, $searchTerm);
         } catch (OpenGrokSearchFailureException $e) {
             return $this->chatClient->postReply($command, new PendingMessage($e->getMessageMarkdown(), $command));
         }
@@ -458,8 +451,7 @@ class OpenGrok extends BasePlugin
         }
 
         try {
-            $url = $this->htmlSearcher->getReferenceSearchUrl($project, $searchTerm);
-            $results = yield $this->htmlSearcher->search($project, $url);
+            $results = yield $this->htmlSearcher->searchReferences($project, $searchTerm);
         } catch (OpenGrokSearchFailureException $e) {
             return $this->chatClient->postReply($command, new PendingMessage($e->getMessageMarkdown(), $command));
         }
@@ -472,8 +464,7 @@ class OpenGrok extends BasePlugin
         }
 
         try {
-            $url = $this->htmlSearcher->getFreeTextSearchUrl($project, $searchTerm);
-            $results = yield $this->htmlSearcher->search($project, $url);
+            $results = yield $this->htmlSearcher->searchFreeText($project, $searchTerm);
         } catch (OpenGrokSearchFailureException $e) {
             return $this->chatClient->postReply($command, new PendingMessage($e->getMessageMarkdown(), $command));
         }
