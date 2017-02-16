@@ -488,15 +488,6 @@ class ChatClient
     public function postMessage($target, string $text, int $flags = PostFlags::NONE): Promise
     {
         return resolve(function() use ($target, $text, $flags) {
-            // the order of these two conditions is very important! MUST short circuit on $flags or new rooms will block on the welcome message!
-            if (!($flags & PostFlags::FORCE) && !(yield $target->isApproved())) {
-                throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
-            }
-
-            $originatingCommand = $target instanceof Command
-                ? $target
-                : null;
-
             if ($target instanceof ChatRoom) {
                 $room = $target;
             } else if ($target instanceof ChatRoomContainer) {
@@ -507,13 +498,22 @@ class ChatClient
                 );
             }
 
+            $originatingCommand = $target instanceof Command
+                ? $target
+                : null;
+
+            // the order of these two conditions is very important! MUST short circuit on $flags or new rooms will block on the welcome message!
+            if (!($flags & PostFlags::FORCE) && !(yield $room->isApproved())) {
+                throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
+            }
+
             $text = $this->applyPostFlagsToText($text, $flags);
 
             $body = (new FormBody)
                 ->addField("text", $text)
-                ->addField("fkey", (string)$target->getSession()->getFKey());
+                ->addField("fkey", (string)$room->getSession()->getFKey());
 
-            $url = $this->urlResolver->getEndpointURL($target, ChatRoomEndpoint::CHATROOM_POST_MESSAGE);
+            $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::CHATROOM_POST_MESSAGE);
 
             $request = (new HttpRequest)
                 ->setUri($url)
