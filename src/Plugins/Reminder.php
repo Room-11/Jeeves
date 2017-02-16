@@ -47,7 +47,7 @@ class Reminder extends BasePlugin
                     yield $this->storage->unset($key, $command->getRoom());
                 }
             }
-            return $this->chatClient->postMessage($command->getRoom(), "Reminders are gone.");
+            return $this->chatClient->postMessage($command, "Reminders are gone.");
         });
     }
 
@@ -61,7 +61,7 @@ class Reminder extends BasePlugin
 
             if (yield $this->storage->exists($messageId, $command->getRoom())) {
                 yield $this->storage->unset($messageId, $command->getRoom());
-                return $this->chatClient->postMessage($command->getRoom(), "Reminder $messageId was unset.");
+                return $this->chatClient->postMessage($command, "Reminder $messageId was unset.");
             }
 
             return $this->chatClient->postReply($command, "I'm sorry, I couldn't find that key.");
@@ -97,7 +97,7 @@ class Reminder extends BasePlugin
                     $parameters = implode(" ", $command->getParameters());
 
                     if(!preg_match(self::REMINDER_REGEX, $parameters, $matches)){
-                        return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+                        return $this->chatClient->postMessage($command, self::USAGE);
                     }
 
                     $time = $matches[2] ?? '';
@@ -110,8 +110,8 @@ class Reminder extends BasePlugin
                     break;
             }
 
-            if(!isset($time) || !$time) return $this->chatClient->postMessage($command->getRoom(), "Have a look at the time again, yo!");
-            if(!isset($text) || !$text) return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+            if(!isset($time) || !$time) return $this->chatClient->postMessage($command, "Have a look at the time again, yo!");
+            if(!isset($text) || !$text) return $this->chatClient->postMessage($command, self::USAGE);
 
             $timestamp = strtotime($time) ?: strtotime("+{$time}"); // false|int
 
@@ -123,7 +123,7 @@ class Reminder extends BasePlugin
                 $timestamp = strtotime("{$time} + 1 day");
             }
 
-            if (!$timestamp) return $this->chatClient->postMessage($command->getRoom(), "Have a look at the time again, yo!");
+            if (!$timestamp) return $this->chatClient->postMessage($command, "Have a look at the time again, yo!");
 
             $key = (string) $command->getId();
             $value = [
@@ -146,10 +146,10 @@ class Reminder extends BasePlugin
                 }, $seconds * 1000);
 
                 $this->watchers[] = $watcher;
-                return $this->chatClient->postMessage($command->getRoom(), "Reminder $key is set.");
+                return $this->chatClient->postMessage($command, "Reminder $key is set.");
             }
 
-            return $this->chatClient->postMessage($command->getRoom(), "Dunno what happened but I couldn't set the reminder.");
+            return $this->chatClient->postMessage($command, "Dunno what happened but I couldn't set the reminder.");
         });
     }
 
@@ -160,7 +160,7 @@ class Reminder extends BasePlugin
 
             $reminders = yield $this->storage->getAll($command->getRoom());
             if(!$reminders){
-                return $this->chatClient->postMessage($command->getRoom(), "There aren't any scheduled reminders.");
+                return $this->chatClient->postMessage($command, "There aren't any scheduled reminders.");
             }
 
             $timeouts = [];
@@ -189,7 +189,7 @@ class Reminder extends BasePlugin
             }
 
             return count($timeouts) !== count($reminders)
-                ? $this->chatClient->postMessage($command->getRoom(), $message)
+                ? $this->chatClient->postMessage($command, $message)
                 : null;
         });
     }
@@ -212,7 +212,7 @@ class Reminder extends BasePlugin
             $commandName = $command->getCommandName(); // <reminder|in|at>
 
             if ($command->hasParameters() === false && $commandName !== 'reminders') {
-                return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+                return $this->chatClient->postMessage($command, self::USAGE);
             }
 
             /* $command->getParameter(0) can be: list | examples | flush | unset | <text> | <time> */
@@ -339,7 +339,7 @@ class Reminder extends BasePlugin
             . Chars::BULLET . " !!at 22:00 Grab a beer!";
 
         return resolve(function () use($command, $examples) {
-            return $this->chatClient->postMessage($command->getRoom(), $examples);
+            return $this->chatClient->postMessage($command, $examples);
         });
     }
 

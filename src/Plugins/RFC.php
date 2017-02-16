@@ -52,7 +52,7 @@ class RFC extends BasePlugin
         $response = yield $this->httpClient->request($request);
 
         if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($room, "Nope, we can't have nice things.");
+            return $this->chatClient->postMessage($command, "Nope, we can't have nice things.");
         }
 
         $list = domdocument_load_html($response->getBody())
@@ -84,14 +84,14 @@ class RFC extends BasePlugin
         if (empty($rfcsInVoting)) {
             return all([
                 $this->clearLastPinId($room),
-                $this->chatClient->postMessage($room, "Sorry, but we can't have nice things."),
+                $this->chatClient->postMessage($command, "Sorry, but we can't have nice things."),
                 $this->unpinPreviousMessage($room, $pinInfoPromise),
             ]);
         }
 
         /** @var PostedMessage $postedMessage */
         $postedMessage = yield $this->chatClient->postMessage(
-            $room,
+            $command,
             sprintf(
                 "[tag:rfc-vote] %s",
                 implode(" | ", $rfcsInVoting)
@@ -146,7 +146,7 @@ class RFC extends BasePlugin
         $rfc = $command->getParameter(0);
         if ($rfc === null) {
             // e.g.: !!rfc pipe-operator
-            return $this->chatClient->postMessage($command->getRoom(), "RFC id required");
+            return $this->chatClient->postMessage($command, "RFC id required");
         }
 
         $uri = self::BASE_URI . '/' . urlencode($rfc);
@@ -155,12 +155,12 @@ class RFC extends BasePlugin
         $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command->getRoom(), "Nope, we can't have nice things.");
+            return $this->chatClient->postMessage($command, "Nope, we can't have nice things.");
         }
 
         $votes = self::parseVotes($response->getBody());
         if (empty($votes)) {
-            return $this->chatClient->postMessage($command->getRoom(), "No votes found");
+            return $this->chatClient->postMessage($command, "No votes found");
         }
 
         $messages = [];
@@ -184,7 +184,7 @@ class RFC extends BasePlugin
 
         if (count($messages) === 1) {
             return $this->chatClient->postMessage(
-                $command->getRoom(),
+                $command,
                 sprintf(
                     "[tag:rfc-vote] [%s](%s) %s",
                     $messages[0]['name'],
@@ -204,7 +204,7 @@ class RFC extends BasePlugin
             );
         }, $messages));
 
-        return $this->chatClient->postMessage($command->getRoom(), $message);
+        return $this->chatClient->postMessage($command, $message);
     }
 
     private static function parseVotes(string $html) {

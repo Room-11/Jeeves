@@ -71,7 +71,7 @@ class RePinner extends BasePlugin
 
         if (!in_array($id, yield $this->chatClient->getPinnedMessages($command->getRoom()))) {
             /** @var PostedMessage $posted */
-            $posted = yield $this->chatClient->postMessage($command->getRoom(), $message);
+            $posted = yield $this->chatClient->postMessage($command, $message);
             $id = $posted->getId();
             yield $this->chatClient->pinOrUnpinMessage($id, $command->getRoom());
         }
@@ -79,7 +79,7 @@ class RePinner extends BasePlugin
         yield $this->keyValueStore->set((string)$id, $message, $command->getRoom());
 
         return $this->chatClient->postMessage(
-            $command->getRoom(), "I will keep repinning message #{$id} until someone tells me to stop"
+            $command, "I will keep repinning message #{$id} until someone tells me to stop"
         );
     }
 
@@ -112,9 +112,7 @@ class RePinner extends BasePlugin
             yield $this->chatClient->pinOrUnpinMessage($id, $command->getRoom());
         }
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(), "I will no longer repin message #{$id}"
-        );
+        return $this->chatClient->postMessage($command, "I will no longer repin message #{$id}");
     }
 
     public function getDescription(): string

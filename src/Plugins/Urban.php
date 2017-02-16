@@ -48,7 +48,7 @@ class Urban extends BasePlugin
 
         $result = json_decode($response->getBody(), true);
 
-        return $this->chatClient->postMessage($command->getRoom(), $this->getMessage($result), PostFlags::TRUNCATE);
+        return $this->chatClient->postMessage($command, $this->getMessage($result), PostFlags::TRUNCATE);
     }
 
     public function getDescription(): string

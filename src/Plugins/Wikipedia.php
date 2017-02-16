@@ -59,7 +59,7 @@ class Wikipedia extends BasePlugin
 
         $page = json_try_decode($response->getBody(), true);
 
-        return $this->chatClient->postMessage($command->getRoom(), $page['query']['pages'][$firstHit['pageid']]['canonicalurl']);
+        return $this->chatClient->postMessage($command, $page['query']['pages'][$firstHit['pageid']]['canonicalurl']);
     }
 
     public function getDescription(): string

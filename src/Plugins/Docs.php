@@ -449,12 +449,12 @@ class Docs extends BasePlugin
                     ? $this->specialCases[substr($this->specialCases[$candidate], 1)]
                     : $this->specialCases[$candidate];
 
-                return $this->chatClient->postMessage($command->getRoom(), $result);
+                return $this->chatClient->postMessage($command, $result);
             }
         }
 
         if (substr($pattern, 0, 6) === "mysql_") {
-            return $this->chatClient->postMessage($command->getRoom(), $this->getMysqlMessage());
+            return $this->chatClient->postMessage($command, $this->getMysqlMessage());
         }
 
         $pattern = str_replace(['::', '->'], '.', $pattern);

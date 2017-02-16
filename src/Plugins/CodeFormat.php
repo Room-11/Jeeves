@@ -64,7 +64,7 @@ class CodeFormat extends BasePlugin
         }
 
         return $this->chatClient->postMessage(
-            $message->getRoom(),
+            $message,
             ":{$origin} Please format your code - hit Ctrl+K before sending and have a look at the [FAQ](http://chat.stackoverflow.com/faq)."
         );
     }

@@ -58,7 +58,7 @@ class Man extends BasePlugin
 
     private function postResult(Command $command, \DOMXPath $xpath, string $url): Promise {
         return $this->chatClient->postMessage(
-            $command->getRoom(),
+            $command,
             sprintf(
                 "[ [`%s`%s](%s) ] `%s`",
                 $this->getSymbolName($xpath),

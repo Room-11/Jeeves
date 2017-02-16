@@ -45,7 +45,7 @@ class Chuck extends BasePlugin
             );
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), $joke);
+        return $this->chatClient->postMessage($command, $joke);
     }
 
     public function getSkeetJoke(Command $command)
@@ -58,7 +58,7 @@ class Chuck extends BasePlugin
             );
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), $joke);
+        return $this->chatClient->postMessage($command, $joke);
     }
 
     public function getName(): string

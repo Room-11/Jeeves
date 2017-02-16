@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
+use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Message\Command;
@@ -33,8 +34,8 @@ class Imdb extends BasePlugin
         $search = $command->getText();
 
         $message = yield $this->chatClient->postMessage(
-            $command->getRoom(),
-            sprintf('_Looking for \'%s\' for you…_', $search)
+            $command,
+            sprintf("_Looking for '%s' for you%s_", $search, Chars::ELLIPSIS)
         );
 
         $params = $this->buildTitleSearchParams($search);
@@ -49,7 +50,7 @@ class Imdb extends BasePlugin
         $data = @json_decode($response->getBody());
 
         if (!$data || $data->Response === 'False') {
-            return $this->chatClient->postMessage($command->getRoom(), 'I couldn\'t find anything for that title.');
+            return $this->chatClient->postMessage($command, "I couldn't find anything for that title.");
         }
 
         $searchResults = [];

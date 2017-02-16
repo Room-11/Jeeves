@@ -65,7 +65,7 @@ class Horoscope extends BasePlugin
         }
 
         return $this->chatClient->postMessage(
-            $command->getRoom(),
+            $command,
             $this->formatResponse(
                 $sign,
                 $this->extractDate($sign, $xpath),

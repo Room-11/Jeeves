@@ -35,7 +35,7 @@ class Canon extends BasePlugin
             $canonicals = yield $this->storage->getAll($command->getRoom());
 
             if ($canonicals === []) {
-                return $this->chatClient->postMessage($command->getRoom(), "There are no registered canonicals.");
+                return $this->chatClient->postMessage($command, "There are no registered canonicals.");
             }
 
             ksort($canonicals);
@@ -50,7 +50,7 @@ class Canon extends BasePlugin
                 );
             }
 
-            return $this->chatClient->postMessage($command->getRoom(), $message);
+            return $this->chatClient->postMessage($command, $message);
         });
     }
 
@@ -58,15 +58,15 @@ class Canon extends BasePlugin
     {
         return resolve(function() use($command, $keyword) {
             if ($command->hasParameters() === false) {
-                return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+                return $this->chatClient->postMessage($command, self::USAGE);
             }
 
             if (false === yield $this->storage->exists(strtolower($keyword), $command->getRoom())) {
-                return $this->chatClient->postMessage($command->getRoom(), "Cannot find the canon for you... :-( Use `!!canon list` to list all supported canonicals.");
+                return $this->chatClient->postMessage($command, "Cannot find the canon for you... :-( Use `!!canon list` to list all supported canonicals.");
             }
 
             if ($canon = yield $this->storage->get(strtolower($keyword), $command->getRoom())) {
-                return $this->chatClient->postMessage($command->getRoom(), $canon["stackoverflow"]);
+                return $this->chatClient->postMessage($command, $canon["stackoverflow"]);
             }
 
             throw new \LogicException('Operation ' . $command->getParameter(0) . ' was considered valid but not handled??');
@@ -80,19 +80,19 @@ class Canon extends BasePlugin
         return resolve(function() use($command, $canonTitle, $url) {
 
             if(!$command->hasParameters(3)){
-                return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+                return $this->chatClient->postMessage($command, self::USAGE);
             }
 
             $canonicals = yield $this->storage->getKeys($command->getRoom());
 
             if (in_array($canonTitle, $canonicals)) {
-                return $this->chatClient->postMessage($command->getRoom(), "$canonTitle is already on canonicals.");
+                return $this->chatClient->postMessage($command, "$canonTitle is already on canonicals.");
             }
 
             $value = [ 'stackoverflow' => $url ];
             yield $this->storage->set($canonTitle, $value, $command->getRoom());
 
-            return $this->chatClient->postMessage($command->getRoom(), "Cannonball in place! I mean.. canonical was added successfully.");
+            return $this->chatClient->postMessage($command, "Cannonball in place! I mean.. canonical was added successfully.");
         });
     }
 
@@ -101,25 +101,25 @@ class Canon extends BasePlugin
 
         return resolve(function() use($command, $canonTitle) {
             if(!$command->hasParameters(2)){
-                return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+                return $this->chatClient->postMessage($command, self::USAGE);
             }
 
             $canonicals = yield $this->storage->getAll($command->getRoom());
 
             if (!in_array($canonTitle, array_keys($canonicals))) {
-                return $this->chatClient->postMessage($command->getRoom(), "Canonical is not on the list.");
+                return $this->chatClient->postMessage($command, "Canonical is not on the list.");
             }
 
             yield $this->storage->unset($canonTitle, $command->getRoom());
 
-            return $this->chatClient->postMessage($command->getRoom(), "Canonical removed from the list.");
+            return $this->chatClient->postMessage($command, "Canonical removed from the list.");
         });
     }
 
     public function fire(Command $command): Promise
     {  // !!canon fire
         return resolve(function () use($command){
-            return $this->chatClient->postMessage($command->getRoom(), "http://i.imgur.com/s7gEZZC.gif");
+            return $this->chatClient->postMessage($command, "http://i.imgur.com/s7gEZZC.gif");
         });
     }
     /**

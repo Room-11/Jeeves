@@ -38,7 +38,7 @@ class Scrabble extends BasePlugin
     public function scrabble(Command $command): Promise
     {
         if ($command->hasParameters() === false) {
-            return $this->chatClient->postMessage($command->getRoom(), self::USAGE);
+            return $this->chatClient->postMessage($command, self::USAGE);
         }
 
         return $this->chatClient->postReply(

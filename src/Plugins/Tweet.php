@@ -181,7 +181,7 @@ class Tweet extends BasePlugin
         $tweetInfo = json_decode($result->getBody(), true);
         $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
 
-        return $this->chatClient->postMessage($command->getRoom(), $tweetUri);
+        return $this->chatClient->postMessage($command, $tweetUri);
     }
 
     public function getName(): string

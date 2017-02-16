@@ -121,7 +121,7 @@ class JeevesDad extends BasePlugin
 
         $joke = $jokes[array_rand($jokes)];
 
-        return $this->chatClient->postMessage($command->getRoom(), sprintf('%s *%s*', $joke['setup'], $joke['punchline']));
+        return $this->chatClient->postMessage($command, sprintf('%s *%s*', $joke['setup'], $joke['punchline']));
     }
 
     private function addCustomDadJoke(Command $command)
@@ -224,7 +224,7 @@ class JeevesDad extends BasePlugin
                 }
 
                 yield from $this->setDadGreetEnabled($room, true);
-                return $this->chatClient->postMessage($room, 'Dad greeting is now enabled with a frequency of ' . (yield from $this->getDadGreetFrequency($room)));
+                return $this->chatClient->postMessage($command, 'Dad greeting is now enabled with a frequency of ' . (yield from $this->getDadGreetFrequency($room)));
 
             case 'off':
                 if (!yield $this->admin->isAdmin($room, $command->getUserId())) {
@@ -232,14 +232,14 @@ class JeevesDad extends BasePlugin
                 }
 
                 yield from $this->setDadGreetEnabled($room, false);
-                return $this->chatClient->postMessage($room, 'Dad greeting is now disabled');
+                return $this->chatClient->postMessage($command, 'Dad greeting is now disabled');
 
             case 'status':
                 $state = (yield from $this->isDadGreetEnabled($room))
                     ? 'enabled with a frequency of ' . (yield from $this->getDadGreetFrequency($room))
                     : 'disabled';
 
-                return $this->chatClient->postMessage($room, 'Dad greeting is currently ' . $state);
+                return $this->chatClient->postMessage($command, 'Dad greeting is currently ' . $state);
         }
 
         return $this->chatClient->postReply($command, 'Syntax: ' . $command->getCommandName() . ' on|off|status [frequency]');

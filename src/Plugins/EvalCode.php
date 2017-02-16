@@ -13,10 +13,9 @@ use Amp\Promisor;
 use Amp\Success;
 use Ds\Queue;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
+use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\resolve;
 
@@ -87,7 +86,7 @@ class EvalCode extends BasePlugin
 
         for ($i = 1; isset($parsedResult["output"][$i]) && $i < 4; $i++) {
             yield $this->chatClient->postMessage(
-                $message->getRoom(),
+                $message,
                 $this->getMessageText(
                     $parsedResult["output"][$i]["versions"],
                     htmlspecialchars_decode($parsedResult["output"][$i]["output"]),
@@ -102,7 +101,7 @@ class EvalCode extends BasePlugin
         return sprintf('[ [%s](%s) ] %s', $title, 'https://3v4l.org' . $url, $output);
     }
 
-    private function doEval(HttpRequest $request, ChatRoom $room): \Generator
+    private function doEval(HttpRequest $request, Command $command): \Generator
     {
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($request);
@@ -111,7 +110,7 @@ class EvalCode extends BasePlugin
         $text = $this->getMessageText('Waiting for results', '', $location);
 
         /** @var PostedMessage $chatMessage */
-        $chatMessage = yield $this->chatClient->postMessage($room, $text, PostFlags::SINGLE_LINE);
+        $chatMessage = yield $this->chatClient->postMessage($command, $text, PostFlags::SINGLE_LINE);
 
         yield from $this->pollUntilDone($location, $chatMessage);
     }
@@ -122,12 +121,12 @@ class EvalCode extends BasePlugin
 
         while ($this->queue->count() > 0) {
             /** @var HttpRequest $request */
-            /** @var ChatRoom $room */
+            /** @var Command $command */
             /** @var Promisor $promisor */
-            list($request, $room, $promisor) = $this->queue->pop();
+            list($request, $command, $promisor) = $this->queue->pop();
 
             try {
-                yield from $this->doEval($request, $room);
+                yield from $this->doEval($request, $command);
                 $promisor->succeed();
             } catch (\Throwable $e) {
                 $promisor->fail($e);
@@ -159,7 +158,7 @@ class EvalCode extends BasePlugin
 
         $deferred = new Deferred;
 
-        $this->queue->push([$request, $command->getRoom(), $deferred]);
+        $this->queue->push([$request, $command, $deferred]);
         if (!$this->haveLoop) {
             resolve($this->executeActionsFromQueue());
         }

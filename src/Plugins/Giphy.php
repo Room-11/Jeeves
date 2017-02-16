@@ -84,7 +84,7 @@ class Giphy extends BasePlugin
 
         $result = json_decode($response->getBody(), true);
 
-        return $this->chatClient->postMessage($command->getRoom(), $this->getMessage($result));
+        return $this->chatClient->postMessage($command, $this->getMessage($result));
     }
 
     public function getDescription(): string

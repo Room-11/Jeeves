@@ -25,7 +25,7 @@ class Mdn extends BasePlugin
     {
         $message = sprintf("[ [%s](%s) ] %s", $result["title"], $result["url"], $result["excerpt"]);
 
-        return $this->chatClient->postMessage($command->getRoom(), $message);
+        return $this->chatClient->postMessage($command, $message);
     }
 
     private function postNoResult(Command $command): Promise

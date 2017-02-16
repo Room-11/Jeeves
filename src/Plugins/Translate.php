@@ -98,7 +98,7 @@ class Translate extends BasePlugin
         return null;
     }
 
-    private function postSupportedLanguagesList(ChatRoom $room): Promise
+    private function postSupportedLanguagesList(Command $command): Promise
     {
         $message = "The languages I speak are:";
 
@@ -106,7 +106,7 @@ class Translate extends BasePlugin
             $message .= "\n{$name} ({$code})";
         }
 
-        return $this->chatClient->postMessage($room, $message);
+        return $this->chatClient->postMessage($command, $message);
     }
 
     public function magic(Command $command)
@@ -124,7 +124,7 @@ class Translate extends BasePlugin
         $params = $command->getParameters();
 
         if ($params[0] === 'list') {
-            return $this->postSupportedLanguagesList($command->getRoom());
+            return $this->postSupportedLanguagesList($command);
         }
 
         $toLanguage = $toLanguage ?? array_shift($params);
@@ -150,7 +150,7 @@ class Translate extends BasePlugin
         $text = yield from $this->getTextFromArguments($command->getRoom(), $params);
         $translation = yield from $this->getTranslation($command->getRoom(), $text, $toLanguageCode, $fromLanguageCode);
 
-        return $this->chatClient->postMessage($command->getRoom(), $translation);
+        return $this->chatClient->postMessage($command, $translation);
     }
 
     public function getDescription(): string

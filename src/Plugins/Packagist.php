@@ -67,7 +67,7 @@ class Packagist extends BasePlugin
             $data = json_try_decode($response->getBody());
 
             return $this->chatClient->postMessage(
-                $command->getRoom(),
+                $command,
                 sprintf(
                     "[ [%s](%s) ] %s",
                     $data->package->name,

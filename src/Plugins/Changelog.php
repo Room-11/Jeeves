@@ -39,7 +39,7 @@ class Changelog extends BasePlugin
             return yield from $this->getLastCommit($command, $repository);
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), /** @lang text */ "Usage: !!changelog [ <profile>/<repo> <branch>]");
+        return $this->chatClient->postMessage($command, /** @lang text */ "Usage: !!changelog [ <profile>/<repo> <branch>]");
     }
 
     protected function getCommitReference(Command $command, string $path)
@@ -89,7 +89,7 @@ class Changelog extends BasePlugin
         try {
             $sha = yield from $this->getCommitReference($command, $path);
         } catch (ReferenceNotFoundException $e) {
-            return $this->chatClient->postMessage($command->getRoom(), $e->getMessage());
+            return $this->chatClient->postMessage($command, $e->getMessage());
         }
 
         /** @var HttpResponse $response */
@@ -101,16 +101,16 @@ class Changelog extends BasePlugin
         );
 
         if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command->getRoom(), "Failed to fetch last commit for $path");
+            return $this->chatClient->postMessage($command, "Failed to fetch last commit for $path");
         }
 
         $json = json_decode($response->getBody());
         if (!isset($json->html_url)) {
-            return $this->chatClient->postMessage($command->getRoom(), "Unknown commit url for $path");
+            return $this->chatClient->postMessage($command, "Unknown commit url for $path");
         }
 
         return $this->chatClient->postMessage(
-            $command->getRoom(),
+            $command,
             sprintf(
                 "[ [%s](%s) ] [ [%s](%s) ] %s - Commited by: %s on %s",
                 $repo,

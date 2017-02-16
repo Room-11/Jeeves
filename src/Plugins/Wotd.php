@@ -40,7 +40,7 @@ class Wotd extends BasePlugin
     {
         $response = yield $this->httpClient->request(self::API_URL);
 
-        return $this->chatClient->postMessage($command->getRoom(), $this->getMessage($response));
+        return $this->chatClient->postMessage($command, $this->getMessage($response));
     }
 
     public function getDescription(): string

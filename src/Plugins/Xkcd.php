@@ -34,7 +34,7 @@ class Xkcd extends BasePlugin
 
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage(
-                $command->getRoom(),
+                $command,
                 "Useless error message here so debugging this is harder than needed."
             );
         }
@@ -46,22 +46,22 @@ class Xkcd extends BasePlugin
         /** @var \DOMElement $node */
         foreach ($nodes as $node) {
             if (preg_match('~^/url\?q=(https://xkcd\.com/\d+/)~', $node->getAttribute('href'), $matches)) {
-                return $this->chatClient->postMessage($command->getRoom(), $matches[1]);
+                return $this->chatClient->postMessage($command, $matches[1]);
             }
         }
 
         if (preg_match('/^(\d+)$/', trim(implode(' ', $command->getParameters())), $matches) !== 1) {
-            return $this->chatClient->postMessage($command->getRoom(), self::NOT_FOUND_COMIC);
+            return $this->chatClient->postMessage($command, self::NOT_FOUND_COMIC);
         }
 
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request('https://xkcd.com/' . $matches[1]);
 
         if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command->getRoom(), self::NOT_FOUND_COMIC);
+            return $this->chatClient->postMessage($command, self::NOT_FOUND_COMIC);
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), 'https://xkcd.com/' . $matches[1]);
+        return $this->chatClient->postMessage($command, 'https://xkcd.com/' . $matches[1]);
     }
 
     public function getName(): string

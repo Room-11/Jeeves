@@ -51,10 +51,7 @@ class Haskell extends BasePlugin {
     public function run(Command $command)
     {
         if (!$command->hasParameters()) {
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                self::USAGE
-            );
+            return $this->chatClient->postMessage($command, self::USAGE);
         }
 
         $form = (new FormBody)
@@ -67,10 +64,7 @@ class Haskell extends BasePlugin {
 
         $response = yield $this->httpClient->request($request);
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            $this->getMessage($response)
-        );
+        return $this->chatClient->postMessage($command, $this->getMessage($response));
     }
 
     public function getDescription(): string

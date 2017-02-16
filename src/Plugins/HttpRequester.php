@@ -38,9 +38,9 @@ class HttpRequester extends BasePlugin
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($request, $this->getClientOptions($command));
 
-            return $this->chatClient->postMessage($command->getRoom(), $this->formatResult($response));
+            return $this->chatClient->postMessage($command, $this->formatResult($response));
         } catch (\Throwable $e) {
-            return $this->chatClient->postMessage($command->getRoom(), $e->getMessage());
+            return $this->chatClient->postMessage($command, $e->getMessage());
         }
     }
 

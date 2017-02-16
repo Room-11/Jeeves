@@ -148,10 +148,7 @@ class Google extends BasePlugin
         $response = yield $this->httpClient->request($request);
 
         if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                "Google responded with {$response->getStatus()}"
-            );
+            return $this->chatClient->postMessage($command, "Google responded with {$response->getStatus()}");
         }
 
         if (preg_match('#charset\s*=\s*([^;]+)#i', trim(implode(', ', $response->getHeader('Content-Type'))), $match)
@@ -174,7 +171,7 @@ class Google extends BasePlugin
         $searchResults = $this->getSearchResults($nodes, $xpath);
         $postMessage   = $this->getPostMessage($searchResults, $uri, $searchTerm);
 
-        return $this->chatClient->postMessage($command->getRoom(),$postMessage);
+        return $this->chatClient->postMessage($command, $postMessage);
     }
 
     public function getDescription(): string

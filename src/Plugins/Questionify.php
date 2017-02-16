@@ -26,7 +26,7 @@ class Questionify extends BasePlugin
             return $this->chatClient->postReply($command, 'That\'s already a question');
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), rtrim($text) . '?');
+        return $this->chatClient->postMessage($command, rtrim($text) . '?');
     }
 
     /**

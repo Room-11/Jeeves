@@ -249,7 +249,7 @@ class BetterTweet extends BasePlugin
 
             $tweetURL = sprintf('https://twitter.com/%s/status/%s', $result['user']['screen_name'], $result['id_str']);
 
-            return $this->chatClient->postMessage($room, $tweetURL);
+            return $this->chatClient->postMessage($command, $tweetURL);
         } catch (NotConfiguredException $e) {
             return $this->chatClient->postReply($command, "I'm not currently configured for tweeting :-(");
         } catch (LibXMLFatalErrorException $e) {
