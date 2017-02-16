@@ -4,7 +4,6 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
@@ -54,21 +53,12 @@ class Alias implements BuiltInCommand
         }
 
         if (yield $this->aliasStorage->exists($room, $aliasCommand)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage("Alias '!!{$aliasCommand}' already exists.", $command)
-            );
+            return $this->chatClient->postReply($command, "Alias '!!{$aliasCommand}' already exists.");
         }
 
         yield $this->aliasStorage->add($room, $aliasCommand, $mapping);
 
-        return $this->chatClient->postMessage(
-            $room,
-            new PendingMessage(
-                "Command '!!{$aliasCommand}' aliased to '!!{$mapping}'",
-                $command
-            )
-        );
+        return $this->chatClient->postMessage($command, "Command '!!{$aliasCommand}' aliased to '!!{$mapping}'");
     }
 
     private function removeAlias(CommandMessage $command): \Generator
@@ -76,18 +66,12 @@ class Alias implements BuiltInCommand
         $aliasCommand = $command->getParameter(0);
 
         if (!yield $this->aliasStorage->exists($command->getRoom(), $aliasCommand)) {
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                new PendingMessage("Alias '!!{$aliasCommand}' is not currently mapped", $command)
-            );
+            return $this->chatClient->postMessage($command, "Alias '!!{$aliasCommand}' is not currently mapped");
         }
 
         yield $this->aliasStorage->remove($command->getRoom(), $aliasCommand);
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage("Alias '!!{$aliasCommand}' removed", $command)
-        );
+        return $this->chatClient->postMessage($command, "Alias '!!{$aliasCommand}' removed");
     }
 
     /**

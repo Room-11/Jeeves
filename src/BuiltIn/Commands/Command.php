@@ -4,7 +4,6 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -125,11 +124,8 @@ class Command implements BuiltInCommand
         yield $this->pluginManager->mapCommandForRoom($room, $plugin, $endpointName, $cmd);
 
         return $this->chatClient->postMessage(
-            $room,
-            new PendingMessage(
-                self::message('command_map_success', $cmd, $plugin->getName(), $endpointName),
-                $command
-            )
+            $command,
+            self::message('command_map_success', $cmd, $plugin->getName(), $endpointName)
         );
     }
 
@@ -157,10 +153,7 @@ class Command implements BuiltInCommand
 
         yield $this->pluginManager->unmapCommandForRoom($room, $cmd);
 
-        return $this->chatClient->postMessage(
-            $room,
-            new PendingMessage(self::message('command_unmap_success', $cmd), $command)
-        );
+        return $this->chatClient->postMessage($room, self::message('command_unmap_success', $cmd));
     }
 
     private /* async */ function remap(CommandMessage $command): \Generator
@@ -223,11 +216,8 @@ class Command implements BuiltInCommand
         yield $this->pluginManager->mapCommandForRoom($room, $plugin, $endpointName, $cmd);
 
         return $this->chatClient->postMessage(
-            $room,
-            new PendingMessage(
-                self::message('command_map_success', $cmd, $plugin->getName(), $endpointName),
-                $command
-            )
+            $command,
+            self::message('command_map_success', $cmd, $plugin->getName(), $endpointName)
         );
     }
 
@@ -271,11 +261,8 @@ class Command implements BuiltInCommand
         yield $this->pluginManager->mapCommandForRoom($room, $mapping['plugin_name'], $mapping['endpoint_name'], $newCmd);
 
         return $this->chatClient->postMessage(
-            $room,
-            new PendingMessage(
-                self::message('command_map_success', $newCmd, $mapping['plugin_name'], $mapping['endpoint_name']),
-                $command
-            )
+            $command,
+            self::message('command_map_success', $newCmd, $mapping['plugin_name'], $mapping['endpoint_name'])
         );
     }
 
@@ -322,20 +309,12 @@ class Command implements BuiltInCommand
             $result .= "\n {$cmd} - '{$alias}'";
         }
 
-        return $this->chatClient->postMessage(
-            $room,
-            new PendingMessage($result, $command),
-            PostFlags::FIXED_FONT
-        );
+        return $this->chatClient->postMessage($command, $result, PostFlags::FIXED_FONT);
     }
 
     private function showCommandHelp(CommandMessage $command): Promise
     {
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage(self::COMMAND_HELP_TEXT, $command),
-            PostFlags::FIXED_FONT
-        );
+        return $this->chatClient->postMessage($command, self::COMMAND_HELP_TEXT, PostFlags::FIXED_FONT);
     }
 
     public function __construct(
@@ -375,10 +354,7 @@ class Command implements BuiltInCommand
             return $this->chatClient->postReply($command, self::message('unexpected_error', $e->getMessage()));
         }
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage(self::message('syntax'), $command)
-        );
+        return $this->chatClient->postMessage($command, self::message('syntax'));
     }
 
     /**

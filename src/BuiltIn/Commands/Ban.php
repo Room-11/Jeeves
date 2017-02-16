@@ -5,13 +5,12 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\System\BuiltInCommand;
-use function Amp\resolve;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use function Amp\resolve;
 
 class Ban implements BuiltInCommand
 {
@@ -56,10 +55,7 @@ class Ban implements BuiltInCommand
         $bans = yield $this->banStorage->getAll($command->getRoom());
 
         if (!$bans) {
-            yield $this->chatClient->postMessage(
-                $command->getRoom(),
-                new PendingMessage('No users are currently on the naughty list.', $command)
-            );
+            yield $this->chatClient->postMessage($command, 'No users are currently on the naughty list.');
             return;
         }
 
@@ -67,28 +63,21 @@ class Ban implements BuiltInCommand
             return sprintf("%s (%s)", $userId, $expiration);
         }, $bans, array_keys($bans)));
 
-        yield $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage($list, $command)
-        );
+        yield $this->chatClient->postMessage($command, $list);
     }
 
-    private function add(CommandMessage $command, int $userId, string $duration): \Generator {
+    private function add(CommandMessage $command, int $userId, string $duration): \Generator
+    {
         yield $this->banStorage->add($command->getRoom(), $userId, $duration);
 
-        yield $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage('User is banned.', $command)
-        );
+        yield $this->chatClient->postMessage($command, 'User is banned.');
     }
 
-    private function remove(CommandMessage $command, int $userId): \Generator {
+    private function remove(CommandMessage $command, int $userId): \Generator
+    {
         yield $this->banStorage->remove($command->getRoom(), $userId);
 
-        yield $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage('User is unbanned.', $command)
-        );
+        yield $this->chatClient->postMessage($command, 'User is unbanned.');
     }
 
     /**

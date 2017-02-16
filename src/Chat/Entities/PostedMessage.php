@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Chat\Entities;
 
 use Room11\Jeeves\Chat\Client\IdentifiableMessage;
-use Room11\Jeeves\Chat\Client\PendingMessage;
+use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 class PostedMessage implements IdentifiableMessage
@@ -11,14 +11,16 @@ class PostedMessage implements IdentifiableMessage
     private $room;
     private $id;
     private $timestamp;
-    private $message;
+    private $text;
+    private $originatingCommand;
 
-    public function __construct(ChatRoom $room, int $id, int $timestamp, PendingMessage $message)
+    public function __construct(ChatRoom $room, int $id, int $timestamp, string $text, ?Command $originatingCommand)
     {
         $this->room = $room;
         $this->id = $id;
         $this->timestamp = new \DateTimeImmutable("@{$timestamp}");
-        $this->message = $message;
+        $this->text = $text;
+        $this->originatingCommand = $originatingCommand;
     }
 
     public function getRoom(): ChatRoom
@@ -31,9 +33,14 @@ class PostedMessage implements IdentifiableMessage
         return $this->id;
     }
 
-    public function getMessage(): PendingMessage
+    public function getText(): string
     {
-        return $this->message;
+        return $this->text;
+    }
+
+    public function getOriginatingCommand(): ?Command
+    {
+        return $this->originatingCommand;
     }
 
     public function getTimestamp(): \DateTimeImmutable

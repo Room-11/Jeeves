@@ -4,9 +4,9 @@ namespace Room11\Jeeves\Chat\Client\Actions;
 
 use Amp\Artax\Request as HttpRequest;
 use Room11\Jeeves\Chat\Client\MessagePostFailureException;
-use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostedMessageTracker;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
@@ -14,19 +14,22 @@ use Room11\Jeeves\Log\Logger;
 class PostMessageAction extends Action
 {
     private $tracker;
-    private $message;
+    private $text;
+    private $originatingCommand;
 
     public function __construct(
         Logger $logger,
         HttpRequest $request,
         ChatRoom $room,
         PostedMessageTracker $tracker,
-        PendingMessage $message
+        string $text,
+        ?Command $originatingCommand
     ) {
         parent::__construct($logger, $request, $room);
 
         $this->tracker = $tracker;
-        $this->message = $message;
+        $this->text = $text;
+        $this->originatingCommand = $originatingCommand;
     }
 
     public function getExceptionClassName(): string
@@ -36,13 +39,15 @@ class PostMessageAction extends Action
 
     public function isValid(): bool
     {
-        return $this->tracker->peekMessage($this->room) !== $this->message;
+        $lastMessage = $this->tracker->peekMessage($this->room);
+
+        return $lastMessage === null || $lastMessage->getText() !== $this->text;
     }
 
     public function processResponse($response, int $attempt): int
     {
         if (isset($response["id"], $response["time"])) {
-            $postedMessage = new PostedMessage($this->room, $response["id"], $response["time"], $this->message);
+            $postedMessage = new PostedMessage($this->room, $response["id"], $response["time"], $this->text, $this->originatingCommand);
 
             $this->tracker->pushMessage($postedMessage);
             $this->succeed($postedMessage);

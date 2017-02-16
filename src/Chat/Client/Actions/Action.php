@@ -6,10 +6,11 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Deferred;
 use Amp\Promisor;
 use Room11\Jeeves\Chat\Client\ActionExecutionFailureException;
+use Room11\Jeeves\Chat\Client\ChatRoomContainer;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Logger;
 
-abstract class Action implements Promisor
+abstract class Action implements Promisor, ChatRoomContainer
 {
     const SUCCESS = -1;
     const FAILURE = 0;

@@ -51,7 +51,7 @@ class Remove implements BuiltInCommand
         for ($i = 0; $i < $count && null !== $message = $this->tracker->popMessage($room); $i++) {
             $messages[] = $message->getId();
 
-            $commandMessage = $message->getMessage()->getOriginatingCommand();
+            $commandMessage = $message->getOriginatingCommand();
             if ($commandMessage !== null) {
                 $messages[] = $commandMessage->getId();
             }

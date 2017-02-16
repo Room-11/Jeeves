@@ -4,7 +4,6 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -40,7 +39,7 @@ class Plugin implements BuiltInCommand
         $this->adminStorage = $adminStorage;
     }
 
-    private function listPlugins(CommandMessage $command): \Generator
+    private function listPlugins(CommandMessage $command)
     {
         $result = 'Currently registered plugins:';
 
@@ -49,11 +48,7 @@ class Plugin implements BuiltInCommand
             $result .= "\n[{$check}] {$plugin->getName()} - {$plugin->getDescription()}";
         }
 
-        yield $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage($result, $command),
-            PostFlags::FIXED_FONT
-        );
+        return $this->chatClient->postMessage($command, $result, PostFlags::FIXED_FONT);
     }
 
     private function listPluginEndpoints(string $plugin, CommandMessage $command)
@@ -81,11 +76,7 @@ class Plugin implements BuiltInCommand
             $result .= "\n[{$check}] {$name} - {$endpoint['description']} (Default command: {$endpoint['default_command']}, {$map})";
         }
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage($result, $command),
-            PostFlags::FIXED_FONT
-        );
+        return $this->chatClient->postMessage($command, $result, PostFlags::FIXED_FONT);
     }
 
     private function list(CommandMessage $command): Promise
@@ -120,10 +111,7 @@ class Plugin implements BuiltInCommand
 
             yield $this->pluginManager->enablePluginForRoom($plugin, $command->getRoom());
 
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                new PendingMessage("Plugin '{$plugin}' is now enabled in this room", $command)
-            );
+            return $this->chatClient->postMessage($command, "Plugin '{$plugin}' is now enabled in this room");
         });
     }
 
@@ -148,10 +136,7 @@ class Plugin implements BuiltInCommand
 
             yield $this->pluginManager->disablePluginForRoom($plugin, $command->getRoom());
 
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                new PendingMessage("Plugin '{$plugin}' is now disabled in this room", $command)
-            );
+            return $this->chatClient->postMessage($command, "Plugin '{$plugin}' is now disabled in this room");
         });
     }
 
@@ -169,10 +154,7 @@ class Plugin implements BuiltInCommand
             ? "Plugin '{$plugin}' is currently enabled in this room"
             : "Plugin '{$plugin}' is currently disabled in this room";
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage($message, $command)
-        );
+        return $this->chatClient->postMessage($command, $message);
     }
 
     private function execute(CommandMessage $command)
@@ -194,11 +176,7 @@ class Plugin implements BuiltInCommand
 
     private function showCommandHelp(CommandMessage $command): Promise
     {
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage(self::COMMAND_HELP_TEXT, $command),
-            PostFlags::FIXED_FONT
-        );
+        return $this->chatClient->postMessage($command, self::COMMAND_HELP_TEXT, PostFlags::FIXED_FONT);
     }
 
     /**

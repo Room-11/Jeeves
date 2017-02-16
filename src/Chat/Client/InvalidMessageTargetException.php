@@ -4,4 +4,4 @@ namespace Room11\Jeeves\Chat\Client;
 
 use Room11\Jeeves\Exception;
 
-class InvalidMessageTypeException extends Exception {}
+class InvalidMessageTargetException extends Exception {}

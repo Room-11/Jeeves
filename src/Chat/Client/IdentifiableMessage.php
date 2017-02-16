@@ -2,10 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Client;
 
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-
-interface IdentifiableMessage
+interface IdentifiableMessage extends ChatRoomContainer
 {
-    function getRoom(): ChatRoom;
     function getId(): int;
 }

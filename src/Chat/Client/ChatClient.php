@@ -480,40 +480,47 @@ class ChatClient
     }
 
     /**
-     * @param ChatRoom $room
-     * @param $pendingMessage
+     * @param ChatRoom|ChatRoomContainer $target
+     * @param string $text
      * @param int $flags
      * @return Promise
      */
-    public function postMessage(ChatRoom $room, $pendingMessage, int $flags = PostFlags::NONE): Promise
+    public function postMessage($target, string $text, int $flags = PostFlags::NONE): Promise
     {
-        return resolve(function() use ($room, $pendingMessage, $flags) {
+        return resolve(function() use ($target, $text, $flags) {
             // the order of these two conditions is very important! MUST short circuit on $flags or new rooms will block on the welcome message!
-            if (!($flags & PostFlags::FORCE) && !(yield $room->isApproved())) {
+            if (!($flags & PostFlags::FORCE) && !(yield $target->isApproved())) {
                 throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
             }
 
-            if (is_string($pendingMessage)) {
-                $pendingMessage = new PendingMessage($pendingMessage);
-            } else if (!$pendingMessage instanceof PendingMessage) {
-                throw new InvalidMessageTypeException('Message must be a string or an instance of ' . PendingMessage::class);
+            $originatingCommand = $target instanceof Command
+                ? $target
+                : null;
+
+            if ($target instanceof ChatRoom) {
+                $room = $target;
+            } else if ($target instanceof ChatRoomContainer) {
+                $room = $target->getRoom();
+            } else {
+                throw new InvalidMessageTargetException(
+                    'Message target must be an instance of ' . ChatRoom::class . ' or ' . ChatRoomContainer::class
+                );
             }
 
-            $text = $this->applyPostFlagsToText($pendingMessage->getText(), $flags);
-            $pendingMessage->setText($text);
+            $text = $this->applyPostFlagsToText($text, $flags);
 
             $body = (new FormBody)
                 ->addField("text", $text)
-                ->addField("fkey", (string)$room->getSession()->getFKey());
+                ->addField("fkey", (string)$target->getSession()->getFKey());
 
-            $url = $this->urlResolver->getEndpointURL($room, ChatRoomEndpoint::CHATROOM_POST_MESSAGE);
+            $url = $this->urlResolver->getEndpointURL($target, ChatRoomEndpoint::CHATROOM_POST_MESSAGE);
 
             $request = (new HttpRequest)
                 ->setUri($url)
                 ->setMethod("POST")
                 ->setBody($body);
 
-            $action = $this->actionFactory->createPostMessageAction($request, $room, $pendingMessage);
+            $action = $this->actionFactory->createPostMessageAction($request, $room, $text, $originatingCommand);
             $this->actionExecutor->enqueue($action);
 
             return $action->promise();
@@ -540,25 +547,17 @@ class ChatClient
 
     /**
      * @param IdentifiableMessage $origin
-     * @param $pendingMessage
+     * @param string $text
      * @param int $flags
      * @return Promise
      * @internal param string $text
      */
-    public function postReply(IdentifiableMessage $origin, $pendingMessage, int $flags = PostFlags::NONE): Promise
+    public function postReply(IdentifiableMessage $origin, string $text, int $flags = PostFlags::NONE): Promise
     {
         $flags |= PostFlags::ALLOW_REPLIES;
         $flags &= ~PostFlags::FIXED_FONT;
 
-        if (!$pendingMessage instanceof PendingMessage && $origin instanceof Command) {
-            $pendingMessage = new PendingMessage($pendingMessage, $origin);
-        }
-
-        $pendingMessage->setText(
-            ":{$origin->getId()} {$pendingMessage->getText()}"
-        );
-
-        return $this->postMessage($origin->getRoom(), $pendingMessage, $flags);
+        return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}", $flags);
     }
 
     /**

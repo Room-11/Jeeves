@@ -2,9 +2,6 @@
 
 namespace Room11\Jeeves\Chat\Event;
 
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\Client\ChatRoomContainer;
 
-interface RoomSourcedEvent extends Event
-{
-    public function getRoom(): ChatRoom;
-}
+interface RoomSourcedEvent extends Event, ChatRoomContainer {}

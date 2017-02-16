@@ -9,7 +9,6 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\DOMUtils\ElementNotFoundException;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\System\PluginCommandEndpoint;
@@ -440,7 +439,7 @@ class OpenGrok extends BasePlugin
         try {
             list($project, $processor, $searchTerm) = $this->parseArguments($command);
         } catch (\InvalidArgumentException $e) {
-            return $this->chatClient->postReply($command, new PendingMessage($e->getMessage(), $command));
+            return $this->chatClient->postReply($command, $e->getMessage());
         }
 
         /** @var OpenGrokSearchResultSet $results */
@@ -449,40 +448,31 @@ class OpenGrok extends BasePlugin
         try {
             $results = yield $this->htmlSearcher->searchDefinitions($project, $searchTerm);
         } catch (OpenGrokSearchFailureException $e) {
-            return $this->chatClient->postReply($command, new PendingMessage($e->getMessageMarkdown(), $command));
+            return $this->chatClient->postReply($command, $e->getMessageMarkdown());
         }
 
         if (null !== $result = $processor->processDefinitionSearchResults($results, $searchTerm)) {
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                new PendingMessage($this->formatResultMessage($result), $command)
-            );
+            return $this->chatClient->postMessage($command, $this->formatResultMessage($result));
         }
 
         try {
             $results = yield $this->htmlSearcher->searchReferences($project, $searchTerm);
         } catch (OpenGrokSearchFailureException $e) {
-            return $this->chatClient->postReply($command, new PendingMessage($e->getMessageMarkdown(), $command));
+            return $this->chatClient->postReply($command, $e->getMessageMarkdown());
         }
 
         if (null !== $result = $processor->processReferenceSearchResults($results, $searchTerm)) {
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                new PendingMessage($this->formatResultMessage($result), $command)
-            );
+            return $this->chatClient->postMessage($command, $this->formatResultMessage($result));
         }
 
         try {
             $results = yield $this->htmlSearcher->searchFreeText($project, $searchTerm);
         } catch (OpenGrokSearchFailureException $e) {
-            return $this->chatClient->postReply($command, new PendingMessage($e->getMessageMarkdown(), $command));
+            return $this->chatClient->postReply($command, $e->getMessageMarkdown());
         }
 
         if (null !== $result = $processor->processFreeTextSearchResults($results, $searchTerm)) {
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                new PendingMessage($this->formatResultMessage($result), $command)
-            );
+            return $this->chatClient->postMessage($command, $this->formatResultMessage($result));
         }
 
         return $this->chatClient->postReply($command, 'Nothing went wrong but I couldn\'t find a suitable definition');

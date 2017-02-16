@@ -5,14 +5,13 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Artax\HttpClient;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Entities\ChatUser;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
-use function Amp\resolve;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use function Amp\resolve;
 
 class Admin implements BuiltInCommand
 {
@@ -43,10 +42,7 @@ class Admin implements BuiltInCommand
         $admins = yield $this->storage->getAll($command->getRoom());
 
         if ($admins['owners'] === [] && $admins['admins'] === []) {
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                new PendingMessage('There are no registered admins', $command)
-            );
+            return $this->chatClient->postMessage($command, 'There are no registered admins');
         }
 
         $userIds = array_merge($admins['owners'], $admins['admins']);
@@ -61,10 +57,7 @@ class Admin implements BuiltInCommand
                 : $user->getName();
         }, $users));
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage($list, $command)
-        );
+        return $this->chatClient->postMessage($command, $list);
     }
 
     private function add(CommandMessage $command, int $userId)
@@ -81,10 +74,7 @@ class Admin implements BuiltInCommand
 
         yield $this->storage->add($command->getRoom(), $userId);
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage('User added to the admin list.', $command)
-        );
+        return $this->chatClient->postMessage($command, 'User added to the admin list.');
     }
 
     private function remove(CommandMessage $command, int $userId)
@@ -101,19 +91,12 @@ class Admin implements BuiltInCommand
 
         yield $this->storage->remove($command->getRoom(), $userId);
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage('User removed from the admin list.', $command)
-        );
+        return $this->chatClient->postMessage($command, 'User removed from the admin list.');
     }
 
     private function showCommandHelp(CommandMessage $command): Promise
     {
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            new PendingMessage(self::COMMAND_HELP_TEXT, $command),
-            PostFlags::FIXED_FONT
-        );
+        return $this->chatClient->postMessage($command, self::COMMAND_HELP_TEXT, PostFlags::FIXED_FONT);
     }
 
     private function execute(CommandMessage $command)
