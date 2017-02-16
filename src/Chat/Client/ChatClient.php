@@ -14,6 +14,7 @@ use Room11\Jeeves\Chat\EndpointURLResolver;
 use Room11\Jeeves\Chat\Entities\ChatUser;
 use Room11\Jeeves\Chat\Entities\MainSiteUser;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\IdentifierFactory as ChatRoomIdentifierFactory;
@@ -538,18 +539,18 @@ class ChatClient
     }
 
     /**
-     * @param PostedMessage|Message $origin
+     * @param IdentifiableMessage $origin
      * @param $pendingMessage
      * @param int $flags
      * @return Promise
      * @internal param string $text
      */
-    public function postReply($origin, $pendingMessage, int $flags = PostFlags::NONE): Promise
+    public function postReply(IdentifiableMessage $origin, $pendingMessage, int $flags = PostFlags::NONE): Promise
     {
         $flags |= PostFlags::ALLOW_REPLIES;
         $flags &= ~PostFlags::FIXED_FONT;
 
-        if (!$pendingMessage instanceof PendingMessage) {
+        if (!$pendingMessage instanceof PendingMessage && $origin instanceof Command) {
             $pendingMessage = new PendingMessage($pendingMessage, $origin);
         }
 

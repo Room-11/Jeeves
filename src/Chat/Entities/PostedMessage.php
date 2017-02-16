@@ -2,10 +2,11 @@
 
 namespace Room11\Jeeves\Chat\Entities;
 
+use Room11\Jeeves\Chat\Client\IdentifiableMessage;
 use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
-class PostedMessage
+class PostedMessage implements IdentifiableMessage
 {
     private $room;
     private $id;

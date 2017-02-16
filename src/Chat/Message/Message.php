@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\Chat\Message;
 
+use Room11\Jeeves\Chat\Client\IdentifiableMessage;
 use Room11\Jeeves\Chat\Event\DeleteMessage;
 use Room11\Jeeves\Chat\Event\EditMessage;
 use Room11\Jeeves\Chat\Event\MessageEvent;
@@ -9,7 +10,7 @@ use Room11\Jeeves\Chat\Event\NewMessage;
 use Room11\Jeeves\Chat\Event\ReplyMessage;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
-class Message
+class Message implements IdentifiableMessage
 {
     const TYPE_NEW = 1;
     const TYPE_EDIT = 2;
