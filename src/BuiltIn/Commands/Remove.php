@@ -4,7 +4,6 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PendingMessage;
 use Room11\Jeeves\Chat\Client\PostedMessageTracker;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -34,23 +33,11 @@ class Remove implements BuiltInCommand
         }
 
         if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(
-                    'Sorry, you\'re not cool enough to do that :(',
-                    $command
-                )
-            );
+            return $this->chatClient->postReply($command, "Sorry, you're not cool enough to do that :(");
         }
 
         if ($this->tracker->getCount($command->getRoom()) === 0) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(
-                    'I don\'t have any messages stored for this room, sorry',
-                    $command
-                )
-            );
+            return $this->chatClient->postReply($command, "I don't have any messages stored for this room, sorry");
         }
 
         return $this->removeMessages($command, (int)($command->getParameter(0) ?? 1));

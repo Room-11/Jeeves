@@ -69,17 +69,11 @@ class Command implements BuiltInCommand
         $room = $command->getRoom();
 
         if (!yield $this->adminStorage->isAdmin($room, $command->getUserId())) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('user_not_admin'), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('user_not_admin'));
         }
 
         if (!$command->hasParameters(3)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('syntax'), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('syntax'));
         }
 
         $cmd = $command->getParameter(1);
@@ -87,36 +81,21 @@ class Command implements BuiltInCommand
         $endpointName = $command->getParameter(3);
 
         if ($this->builtInCommandManager->hasRegisteredCommand($cmd)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('command_built_in', $cmd), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('command_built_in', $cmd));
         }
 
         if ($this->pluginManager->isCommandMappedForRoom($room, $cmd)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('command_already_mapped', $cmd), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('command_already_mapped', $cmd));
         }
 
         if (!$this->pluginManager->isPluginRegistered($pluginName)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('unknown_plugin', $pluginName), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('unknown_plugin', $pluginName));
         }
 
         $plugin = $this->pluginManager->getPluginByName($pluginName);
 
         if (!$this->pluginManager->isPluginEnabledForRoom($plugin, $room)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(
-                    self::message('plugin_not_enabled', $plugin->getName()),
-                    $command
-                )
-            );
+            return $this->chatClient->postReply($command, self::message('plugin_not_enabled', $plugin->getName()));
         }
 
         $endpoints = $this->pluginManager->getPluginCommandEndpoints($plugin);
@@ -125,13 +104,7 @@ class Command implements BuiltInCommand
             $count = count($endpoints);
 
             if ($count > 1) {
-                return $this->chatClient->postReply(
-                    $command,
-                    new PendingMessage(
-                        self::message('multiple_endpoints', $pluginName, $count),
-                        $command
-                    )
-                );
+                return $this->chatClient->postReply($command, self::message('multiple_endpoints', $pluginName, $count));
             }
 
             reset($endpoints);
@@ -145,13 +118,7 @@ class Command implements BuiltInCommand
             }
 
             if (!$validEndpoint) {
-                return $this->chatClient->postReply(
-                    $command,
-                    new PendingMessage(
-                        self::message('unknown_endpoint', $endpointName, $pluginName),
-                        $command
-                    )
-                );
+                return $this->chatClient->postReply($command, self::message('unknown_endpoint', $endpointName, $pluginName));
             }
         }
 
@@ -171,33 +138,21 @@ class Command implements BuiltInCommand
         $room = $command->getRoom();
 
         if (!yield $this->adminStorage->isAdmin($room, $command->getUserId())) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('user_not_admin'), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('user_not_admin'));
         }
 
         if (!$command->hasParameters(2)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('syntax'), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('syntax'));
         }
 
         $cmd = $command->getParameter(1);
 
         if ($this->builtInCommandManager->hasRegisteredCommand($cmd)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('command_built_in', $cmd), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('command_built_in', $cmd));
         }
 
         if (!$this->pluginManager->isCommandMappedForRoom($room, $cmd)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('command_not_mapped', $cmd), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('command_not_mapped', $cmd));
         }
 
         yield $this->pluginManager->unmapCommandForRoom($room, $cmd);
@@ -213,17 +168,11 @@ class Command implements BuiltInCommand
         $room = $command->getRoom();
 
         if (!yield $this->adminStorage->isAdmin($room, $command->getUserId())) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('user_not_admin'), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('user_not_admin'));
         }
 
         if (!$command->hasParameters(3)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('syntax'), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('syntax'));
         }
 
         $cmd = $command->getParameter(1);
@@ -231,30 +180,17 @@ class Command implements BuiltInCommand
         $endpointName = $command->getParameter(3);
 
         if ($this->builtInCommandManager->hasRegisteredCommand($cmd)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('command_built_in', $cmd), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('command_built_in', $cmd));
         }
 
         if (!$this->pluginManager->isPluginRegistered($pluginName)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('unknown_plugin', $pluginName), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('unknown_plugin', $pluginName));
         }
 
         $plugin = $this->pluginManager->getPluginByName($pluginName);
 
         if (!$this->pluginManager->isPluginEnabledForRoom($plugin, $room)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(
-                    self::message('plugin_not_enabled', $plugin->getName()),
-                    $command
-                )
-
-            );
+            return $this->chatClient->postReply($command, self::message('plugin_not_enabled', $plugin->getName()));
         }
 
         $endpoints = $this->pluginManager->getPluginCommandEndpoints($plugin);
@@ -263,13 +199,7 @@ class Command implements BuiltInCommand
             $count = count($endpoints);
 
             if ($count > 1) {
-                return $this->chatClient->postReply(
-                    $command,
-                    new PendingMessage(
-                        self::message('multiple_endpoints', $pluginName, $count),
-                        $command
-                    )
-                );
+                return $this->chatClient->postReply($command, self::message('multiple_endpoints', $pluginName, $count));
             }
 
             reset($endpoints);
@@ -283,13 +213,7 @@ class Command implements BuiltInCommand
             }
 
             if (!$validEndpoint) {
-                return $this->chatClient->postReply(
-                    $command,
-                    new PendingMessage(
-                        self::message('unknown_endpoint', $endpointName, $pluginName),
-                        $command
-                    )
-                );
+                return $this->chatClient->postReply($command, self::message('unknown_endpoint', $endpointName, $pluginName));
             }
         }
 
@@ -312,60 +236,36 @@ class Command implements BuiltInCommand
         $room = $command->getRoom();
 
         if (!yield $this->adminStorage->isAdmin($room, $command->getUserId())) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('user_not_admin'), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('user_not_admin'));
         }
 
         if (!$command->hasParameters(2)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('syntax'), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('syntax'));
         }
 
         $newCmd = $command->getParameter(1);
         $oldCmd = $command->getParameter(2);
 
         if ($this->builtInCommandManager->hasRegisteredCommand($newCmd)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('command_built_in', $newCmd), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('command_built_in', $newCmd));
         }
 
         if ($this->pluginManager->isCommandMappedForRoom($room, $newCmd)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('command_already_mapped', $newCmd), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('command_already_mapped', $newCmd));
         }
 
         if ($this->builtInCommandManager->hasRegisteredCommand($oldCmd)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('command_built_in', $oldCmd), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('command_built_in', $oldCmd));
         }
 
         if (!$this->pluginManager->isCommandMappedForRoom($room, $oldCmd)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(self::message('command_not_mapped', $oldCmd), $command)
-            );
+            return $this->chatClient->postReply($command, self::message('command_not_mapped', $oldCmd));
         }
 
         $mapping = $this->pluginManager->getMappedCommandsForRoom($room)[$oldCmd];
 
         if (!$this->pluginManager->isPluginEnabledForRoom($mapping['plugin_name'], $room)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(
-                    self::message('plugin_not_enabled', $mapping['plugin_name']),
-                    $command
-                )
-            );
+            return $this->chatClient->postReply($command, self::message('plugin_not_enabled', $mapping['plugin_name']));
         }
 
         yield $this->pluginManager->mapCommandForRoom($room, $mapping['plugin_name'], $mapping['endpoint_name'], $newCmd);
@@ -472,13 +372,7 @@ class Command implements BuiltInCommand
                 case 'unmap': return yield from $this->unmap($command);
             }
         } catch (\Throwable $e) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(
-                    self::message('unexpected_error', $e->getMessage()),
-                    $command
-                )
-            );
+            return $this->chatClient->postReply($command, self::message('unexpected_error', $e->getMessage()));
         }
 
         return $this->chatClient->postMessage(

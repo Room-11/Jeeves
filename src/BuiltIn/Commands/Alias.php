@@ -43,22 +43,13 @@ class Alias implements BuiltInCommand
         $mapping = implode(' ', $command->getParameters(1));
 
         if ($this->builtInCommandManager->hasRegisteredCommand($aliasCommand)) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage(
-                    "Command '{$aliasCommand}' is built in and cannot be altered",
-                    $command
-                )
-            );
+            return $this->chatClient->postReply($command, "Command '{$aliasCommand}' is built in and cannot be altered");
         }
 
         if ($this->pluginManager->isCommandMappedForRoom($room, $aliasCommand)) {
             return $this->chatClient->postReply(
                 $command,
-                new PendingMessage(
-                    "Command '{$aliasCommand}' is already mapped. Use `!!command list` to display the currently mapped commands.",
-                    $command
-                )
+                "Command '{$aliasCommand}' is already mapped. Use `!!command list` to display the currently mapped commands."
             );
         }
 
@@ -113,10 +104,7 @@ class Alias implements BuiltInCommand
             }
 
             if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
-                return $this->chatClient->postReply(
-                    $command,
-                    new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command)
-                );
+                return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
             }
 
             return $command->getCommandName() === 'alias'

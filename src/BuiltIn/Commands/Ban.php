@@ -33,20 +33,14 @@ class Ban implements BuiltInCommand
         }
 
         if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
-            return $this->chatClient->postReply(
-                $command,
-                new PendingMessage('I\'m sorry Dave, I\'m afraid I can\'t do that', $command)
-            );
+            return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
         }
 
         if ($command->getCommandName() === "ban" && $command->getParameter(0) === 'list') {
             yield from $this->list($command);
         } else if ($command->getCommandName() === "ban") {
             if (!$command->hasParameters(2)) {
-                return $this->chatClient->postReply(
-                    $command,
-                    new PendingMessage('Ban length must be specified', $command)
-                );
+                return $this->chatClient->postReply($command, 'Ban length must be specified');
             }
 
             yield from $this->add($command, (int)$command->getParameter(0), $command->getParameter(1));
