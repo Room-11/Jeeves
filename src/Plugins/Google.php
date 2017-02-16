@@ -2,44 +2,32 @@
 
 namespace Room11\Jeeves\Plugins;
 
-use Amp\Artax\HttpClient;
-use Amp\Artax\Request as HttpRequest;
-use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
+use Room11\GoogleSearcher\Searcher as GoogleSearcher;
+use Room11\GoogleSearcher\SearchFailedException;
+use Room11\GoogleSearcher\SearchResultSet;
 use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\MessageFetchFailureException;
 use Room11\Jeeves\Chat\Client\MessageResolver;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use function Room11\DOMUtils\domdocument_load_html;
 
 class Google extends BasePlugin
 {
-    const USER_AGENT = 'Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko';
-    const ENCODING = 'UTF-8';
-    const ENCODING_REGEX = '#^utf-?8$#i';
-
-    const BASE_URL = 'https://www.google.com/search';
+    private const MAX_RESULTS = 3;
+    private const ENCODING = 'UTF-8';
 
     private $chatClient;
-
-    private $httpClient;
-
+    private $searcher;
     private $messageResolver;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, MessageResolver $messageResolver) {
-        $this->chatClient  = $chatClient;
-        $this->httpClient  = $httpClient;
-        $this->messageResolver = $messageResolver;
-    }
-
-    private function getSearchURL(string $searchTerm): string
+    public function __construct(ChatClient $chatClient, GoogleSearcher $httpClient, MessageResolver $messageResolver)
     {
-        return self::BASE_URL . '?' . http_build_query([
-            'q' => $searchTerm,
-            'lr' => 'lang_en',
-        ]);
+        $this->chatClient  = $chatClient;
+        $this->searcher  = $httpClient;
+        $this->messageResolver = $messageResolver;
     }
 
     private function postNoResultsMessage(Command $command): Promise
@@ -52,45 +40,7 @@ class Google extends BasePlugin
         return $this->chatClient->postReply($command, $message);
     }
 
-    private function getResultNodes(\DOMXPath $xpath): \DOMNodeList
-    {
-        return $xpath->evaluate("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]");
-    }
-
-    private function getSearchResults(\DOMNodeList $nodes, \DOMXPath $xpath): array {
-        $nodesInformation = [];
-
-        foreach ($nodes as $node) {
-            $linkNodes = $xpath->evaluate(".//h3/a", $node);
-
-            if (!$linkNodes->length) {
-                continue;
-            }
-
-            /** @var \DOMElement $linkNode */
-            $linkNode = $linkNodes->item(0);
-
-
-            $descriptionNodes = $xpath->query('.//span[@class="st"]', $node);
-            $description = $descriptionNodes->length !== 0
-                ? $descriptionNodes->item(0)->textContent
-                : 'No description available';
-
-            $nodesInformation[] = [
-                "url"         => $linkNode->getAttribute("href"),
-                "title"       => $linkNode->textContent,
-                "description" => $this->formatDescription($description),
-            ];
-
-            if (count($nodesInformation) === 3) {
-                break;
-            }
-        }
-
-        return $nodesInformation;
-    }
-
-    private function ellipsise(string $string, int $length): string
+    private function ellipsize(string $string, int $length): string
     {
         if (mb_strlen($string, self::ENCODING) < $length) {
             return $string;
@@ -99,30 +49,37 @@ class Google extends BasePlugin
         return trim(mb_substr($string, 0, $length - 1, self::ENCODING)) . Chars::ELLIPSIS;
     }
 
-    private function formatDescription(string $description): string {
+    private function formatDescription(string $description): string
+    {
         static $removeLineBreaksExpr = '#(?:\r?\n)+#';
-        static $stripDateExpr = '#^\s*[0-9]{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+[0-9]{4}\s*#iu';
         static $stripLeadingSeparatorExpr = '#^\s*(\.\.\.|-)\s*#u';
 
         $description = preg_replace($removeLineBreaksExpr, ' ', $description);
-        $description = strip_tags($description);
-        $description = preg_replace($stripDateExpr, '', $description);
         $description = preg_replace($stripLeadingSeparatorExpr, '', $description);
         $description = str_replace('...', Chars::ELLIPSIS, $description);
 
         return $description;
     }
 
-    private function getPostMessage(array $searchResults, string $searchURL, string $searchTerm): string {
-        $message = sprintf('Search for "%s" (%s)', $searchTerm, $searchURL);
+    /**
+     * @param SearchResultSet $results
+     * @return string
+     */
+    private function getFormattedResultsMessage(SearchResultSet $results): string
+    {
+        $message = sprintf('Search for "%s" (%s)', $results->getSearchTerm(), $results->getSearchUrl());
 
-        foreach ($searchResults as $result) {
+        foreach ($results->getResults() as $i => $result) {
+            if ($i === self::MAX_RESULTS) {
+                break;
+            }
+
             $message .= sprintf(
                 "\n%s %s - %s (%s)",
                 Chars::BULLET,
-                $this->ellipsise($result['title'], 50),
-                $this->ellipsise($result['description'], 100),
-                $result['url']
+                $this->ellipsize($result->getTitle(), 50),
+                $this->ellipsize($this->formatDescription($result->getDescription()), 100),
+                $result->getUrl()
             );
         }
 
@@ -136,40 +93,22 @@ class Google extends BasePlugin
         }
 
         $text = implode(' ', $command->getParameters());
-        $searchTerm = yield $this->messageResolver->resolveMessageText($command->getRoom(), $text);
-        $uri = $this->getSearchURL($searchTerm);
 
-        $request = (new HttpRequest)
-            ->setMethod('GET')
-            ->setUri($uri)
-            ->setHeader('User-Agent', self::USER_AGENT);
-
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($request);
-
-        if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command, "Google responded with {$response->getStatus()}");
+        try {
+            $searchTerm = yield $this->messageResolver->resolveMessageText($command->getRoom(), $text);
+            $searchResults = yield $this->searcher->search($searchTerm);
+        } catch (MessageFetchFailureException $e) {
+            return $this->chatClient->postReply($command, 'Failed to get message text for search');
+        } catch (SearchFailedException $e) {
+            return $this->chatClient->postReply($command, "Error when searching Google: {$e->getMessage()}");
         }
 
-        if (preg_match('#charset\s*=\s*([^;]+)#i', trim(implode(', ', $response->getHeader('Content-Type'))), $match)
-            && !preg_match('/' . preg_quote(self::ENCODING, '/') . '/i', $match[1])) {
-            $body = iconv($match[1], self::ENCODING, $response->getBody());
-        }
-
-        if (empty($body)) {
-            $body = $response->getBody();
-        }
-
-        $dom = domdocument_load_html($body);
-        $xpath = new \DOMXPath($dom);
-        $nodes = $this->getResultNodes($xpath);
-
-        if($nodes->length === 0) {
+        /** @var SearchResultSet $searchResults */
+        if (count($searchResults->getResults()) === 0) {
             return $this->postNoResultsMessage($command);
         }
 
-        $searchResults = $this->getSearchResults($nodes, $xpath);
-        $postMessage   = $this->getPostMessage($searchResults, $uri, $searchTerm);
+        $postMessage = $this->getFormattedResultsMessage($searchResults);
 
         return $this->chatClient->postMessage($command, $postMessage);
     }

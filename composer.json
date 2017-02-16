@@ -40,6 +40,7 @@
         "rdlowrey/auryn": "^1.1",
         "room11/openid": "~1.0",
         "room11/dom-utils": "~1.0",
+        "room11/google-searcher": "~1.0",
         "sabre/uri": "^1.0",
         "sebastian/version": "^1.0",
         "symfony/yaml": "^3.0"
