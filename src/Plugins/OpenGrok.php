@@ -74,7 +74,12 @@ class OpenGrokSearchResult
 
     public function getFilePath(): string
     {
-        return $this->filePath;
+        return urldecode($this->filePath);
+    }
+
+    public function getFileHref(): string
+    {
+        return '/xref/' . urlencode($this->project) . $this->filePath . '#' . $this->lineNo;
     }
 
     public function getLineNo(): int
@@ -178,7 +183,7 @@ class OpenGrokHtmlSearcher implements Searcher
         }
 
         $isCurrentDirTestSource = false;
-        $trim = strlen('/xref/' . $project);
+        $trimLength = strlen('/xref/' . urlencode($project));
         $codeResults = $testResults = [];
 
         foreach ($resultsTable->getElementsByTagName('tr') as $row) {
@@ -191,7 +196,7 @@ class OpenGrokHtmlSearcher implements Searcher
 
                 foreach (xpath_get_elements($row, "./td/tt/a[@class='s']") as $resultAnchor) {
                     $hrefAttr = $resultAnchor->getAttribute('href');
-                    list($path, $lineNo) = explode('#', substr($hrefAttr, $trim));
+                    list($path, $lineNo) = explode('#', substr($hrefAttr, $trimLength));
 
                     $el = xpath_get_element($resultAnchor, "./span[@class='l']");
                     $code = '';
@@ -421,7 +426,7 @@ class OpenGrok extends BasePlugin
         return sprintf(
             '[ [%s](%s) ] `%s`',
             $result->getFilePath() . '#' . $result->getLineNo(),
-            self::BASE_URL . '/xref/' . $result->getProject() . $result->getFilePath() . '#' . $result->getLineNo(),
+            self::BASE_URL . $result->getFileHref(),
             $result->getCode()
         );
     }
