@@ -68,7 +68,7 @@ class Command extends Message
     public function getText(): string
     {
         if (!isset($this->text)) {
-            $this->text = ltrim(substr(parent::getText(), strlen($this->commandName) + 2));
+            $this->text = ltrim(substr(parent::getText(), strlen($this->commandName) + 2) ?: '');
         }
 
         return $this->text;
