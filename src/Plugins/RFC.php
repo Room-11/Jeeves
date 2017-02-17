@@ -5,6 +5,7 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
@@ -82,11 +83,16 @@ class RFC extends BasePlugin
         }
 
         if (empty($rfcsInVoting)) {
-            return all([
-                $this->clearLastPinId($room),
-                $this->chatClient->postMessage($command, "Sorry, but we can't have nice things."),
-                $this->unpinPreviousMessage($room, $pinInfoPromise),
-            ]);
+            yield $this->chatClient->postMessage($command, "Sorry, but we can't have nice things.");
+
+            if ($this->chatClient->isBotUserRoomOwner($room)) {
+                return all([
+                    $this->clearLastPinId($room),
+                    $this->unpinPreviousMessage($room, $pinInfoPromise),
+                ]);
+            }
+
+            return new Success();
         }
 
         /** @var PostedMessage $postedMessage */
@@ -98,10 +104,14 @@ class RFC extends BasePlugin
             )
         );
 
-        return all([
-            $this->unpinPreviousMessage($room, $pinInfoPromise),
-            $this->pinCurrentMessage($room, $postedMessage),
-        ]);
+        if ($this->chatClient->isBotUserRoomOwner($room)) {
+            return all([
+                $this->unpinPreviousMessage($room, $pinInfoPromise),
+                $this->pinCurrentMessage($room, $postedMessage),
+            ]);
+        }
+
+        return new Success();
     }
 
     private function pinCurrentMessage(ChatRoom $room, PostedMessage $message): Promise
