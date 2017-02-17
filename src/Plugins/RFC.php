@@ -225,19 +225,25 @@ class RFC extends BasePlugin
 
         return $this->chatClient->postMessage($command, implode("\n", array_map(function ($message) {
 
-            $voters = implode("\n", array_map(function ($voter) {
+            $formattedVotes = implode("\n", array_map(function ($option) use ($message) {
 
-                if ($voter['voted'] === false) {
-                    return sprintf('%s has not voted', $voter['name']);
-                }
+                $voters = implode(
+                    ', ',
+                    array_column(
+                        array_filter($message['voters'], function ($voter) use ($option) {
+                            return $voter['voted'] && $voter['choice'] === $option;
+                        }),
+                        'name'
+                    )
+                );
 
                 return sprintf(
-                    '%s %s %s',
-                    $voter['name'],
-                    Chars::RIGHTWARDS_ARROW,
-                    $voter['choice']
+                    '%s %s: %s',
+                    Chars::ZWNJ . Chars::EM_SPACE . Chars::WHITE_BULLET,
+                    $option,
+                    $voters
                 );
-            }, $message['voters']));
+            }, $message['options']));
 
             return sprintf(
                 "%s %s - %s (%s)\n%s",
@@ -245,7 +251,7 @@ class RFC extends BasePlugin
                 $message['name'],
                 $message['breakdown'],
                 $message['href'],
-                $voters
+                $formattedVotes
             );
         }, $messages)));
     }
@@ -274,6 +280,7 @@ class RFC extends BasePlugin
                 'name' => $vote['name'],
                 'href' => $uri . '#' . $id,
                 'breakdown' => implode(', ', $breakdown),
+                'options' => array_keys($vote['votes']),
                 'voters' => $vote['voters']
             ];
         }
