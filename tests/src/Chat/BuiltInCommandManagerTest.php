@@ -41,8 +41,8 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->expects($this->exactly(2))
             ->method('log')
             ->withConsecutive(
-                [Level::DEBUG, 'Registering command name \'foo\' with built in command ' . get_class($command)],
-                [Level::DEBUG, 'Registering command name \'bar\' with built in command ' . get_class($command)]
+                [Level::DEBUG, 'Registered command name \'foo\' with built in command ' . get_class($command)],
+                [Level::DEBUG, 'Registered command name \'bar\' with built in command ' . get_class($command)]
             )
         ;
 
@@ -141,7 +141,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->expects($this->exactly(2))
             ->method('log')
             ->withConsecutive(
-                [Level::DEBUG, 'Registering command name \'foo\' with built in command ' . get_class($command)],
+                [Level::DEBUG, 'Registered command name \'foo\' with built in command ' . get_class($command)],
                 [Level::DEBUG, 'User #14 is banned, ignoring event #721 for built in commands']
             )
         ;
@@ -256,7 +256,7 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->expects($this->exactly(2))
             ->method('log')
             ->withConsecutive(
-                [Level::DEBUG, 'Registering command name \'foo\' with built in command ' . get_class($registeredCommand)],
+                [Level::DEBUG, 'Registered command name \'foo\' with built in command ' . get_class($registeredCommand)],
                 [Level::DEBUG, 'Passing event #721 to built in command handler ' . get_class($registeredCommand)]
             )
         ;
