@@ -12,7 +12,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Imdb extends BasePlugin
 {
-    const OMDB_API_ENDPOINT = 'http://www.omdbapi.com/';
+    const OMDB_API_ENDPOINT = 'https://www.omdbapi.com/';
     private $chatClient;
     private $httpClient;
 
@@ -22,12 +22,12 @@ class Imdb extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
-    public function search(Command $command): \Generator
+    public function search(Command $command)
     {
         if (!$command->hasParameters()) {
             return $this->chatClient->postReply(
                 $command,
-                'Mhm, I need a film title you want me to look for.'
+                'Mhm, I need a film title you want me to look for. (Usage: !!imdb <film title>)'
             );
         }
 
@@ -46,11 +46,24 @@ class Imdb extends BasePlugin
             sprintf('%s?%s', self::OMDB_API_ENDPOINT, http_build_query($params))
         );
 
+        if ($response->getStatus() !== 200) {
+            return $this->chatClient->postMessage(
+                $command,
+                sprintf(
+                    "Sorry, the [OMDB API](https://www.omdbapi.com) is currently unavailable. (%d)",
+                    $response->getStatus()
+                )
+            );
+        }
+
         /** @var \stdClass $data */
         $data = @json_decode($response->getBody());
 
         if (!$data || $data->Response === 'False') {
-            return $this->chatClient->postMessage($command, "I couldn't find anything for that title.");
+            return $this->chatClient->postMessage(
+                $command,
+                sprintf("Sorry, I couldn't find anything like what you asked for.", $search)
+            );
         }
 
         $searchResults = [];
@@ -135,7 +148,8 @@ class Imdb extends BasePlugin
             }
 
             $outputLines[] = sprintf(
-                '%s (%d) [ %s ]%s',
+                '%s %s (%d) [ %s ]%s',
+                Chars::BULLET,
                 $searchResult->Title,
                 $searchResult->Year,
                 $this->getImdbUrlById($searchResult->imdbID),
