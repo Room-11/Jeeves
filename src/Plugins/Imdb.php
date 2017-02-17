@@ -95,10 +95,9 @@ class Imdb extends BasePlugin
         list(, $responses) = yield $allRequests;
 
         $descriptionResults = [];
-        foreach ($responses as $key => $response)
-        {
+        foreach ($responses as $key => $response) {
             $responseBody = @json_decode($response->getBody());
-            if(!$responseBody || $responseBody->Response === 'False') {
+            if (!$responseBody || $responseBody->Response === 'False') {
                 continue;
             }
 
@@ -109,7 +108,6 @@ class Imdb extends BasePlugin
             $message,
             $this->formatSearchResults($searchResults, $descriptionResults)
         );
-
     }
 
     /**
@@ -139,8 +137,7 @@ class Imdb extends BasePlugin
     {
         $outputLines = [];
 
-        foreach ($searchResults as $id => $searchResult)
-        {
+        foreach ($searchResults as $id => $searchResult) {
             $description = '';
 
             if (is_array($deepResults) && isset($deepResults[$id])) {
@@ -201,7 +198,7 @@ class Imdb extends BasePlugin
     private function truncate(string $string, int $length): string
     {
         $string = trim($string);
-        if(strlen($string) > $length) {
+        if (strlen($string) > $length) {
             $string = rtrim(substr($string, 0, $length), '. ') . '…';
         }
         return $string;
@@ -219,7 +216,7 @@ class Imdb extends BasePlugin
 
         // IMDB Film Rating
 
-        if($this->hasData($result->imdbRating)) {
+        if ($this->hasData($result->imdbRating)) {
             $output[] = [
                 'symbol' => '♥',
                 'rating' => $result->imdbRating,
@@ -243,7 +240,8 @@ class Imdb extends BasePlugin
      * @param string $string
      * @return bool
      */
-    private function hasData(string $string): bool {
+    private function hasData(string $string): bool
+    {
         return $string !== 'N/A';
     }
 
