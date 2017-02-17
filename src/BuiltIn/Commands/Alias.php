@@ -38,7 +38,7 @@ class Alias implements BuiltInCommand
     private function addAlias(CommandMessage $command)
     {
         $room = $command->getRoom();
-        $aliasCommand = $command->getParameter(0);
+        $aliasCommand = strtolower($command->getParameter(0));
         $mapping = implode(' ', $command->getParameters(1));
 
         if ($this->builtInCommandManager->hasRegisteredCommand($aliasCommand)) {
@@ -63,7 +63,7 @@ class Alias implements BuiltInCommand
 
     private function removeAlias(CommandMessage $command): \Generator
     {
-        $aliasCommand = $command->getParameter(0);
+        $aliasCommand = strtolower($command->getParameter(0));
 
         if (!yield $this->aliasStorage->exists($command->getRoom(), $aliasCommand)) {
             return $this->chatClient->postMessage($command, "Alias '!!{$aliasCommand}' is not currently mapped");

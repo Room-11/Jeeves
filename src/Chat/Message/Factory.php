@@ -20,7 +20,7 @@ class Factory
     private function buildCommand(MessageEvent $event)
     {
         $aliasMapping = preg_match('#^!!(\S+)#u', $event->getMessageContent()->textContent, $match)
-            ? yield $this->aliasMap->get($event->getRoom(), $match[1])
+            ? yield $this->aliasMap->get($event->getRoom(), strtolower($match[1]))
             : null;
 
         return new Command($event, $event->getRoom(), $aliasMapping);

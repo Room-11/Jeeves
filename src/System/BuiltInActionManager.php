@@ -43,9 +43,12 @@ class BuiltInActionManager
         $className = get_class($command);
 
         foreach ($command->getCommandInfo() as $commandInfo) {
-            $this->logger->log(Level::DEBUG, "Registering command name '{$commandInfo->getCommand()}' with built in command {$className}");
-            $this->commands[$commandInfo->getCommand()] = $command;
-            $this->commandInfo[$commandInfo->getCommand()] = $commandInfo;
+            $commandName = strtolower($commandInfo->getCommand());
+
+            $this->commands[$commandName] = $command;
+            $this->commandInfo[$commandName] = $commandInfo;
+
+            $this->logger->log(Level::DEBUG, "Registered command name '{$commandName}' with built in command {$className}");
         }
 
         ksort($this->commandInfo);
@@ -67,7 +70,7 @@ class BuiltInActionManager
 
     public function hasRegisteredCommand(string $command): bool
     {
-        return isset($this->commands[$command]);
+        return isset($this->commands[strtolower($command)]);
     }
 
     /**
@@ -92,7 +95,8 @@ class BuiltInActionManager
     public function handleCommand(Command $command): Promise
     {
         return resolve(function() use($command) {
-            $commandName = $command->getCommandName();
+            $commandName = strtolower($command->getCommandName());
+
             if (!isset($this->commands[$commandName])) {
                 return;
             }

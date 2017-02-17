@@ -126,7 +126,7 @@ class PluginManager
     private function invokeHandlerForCommand(Command $command): Promise
     {
         $roomIdent = $command->getRoom()->getIdentifier()->getIdentString();
-        $commandName = $command->getCommandName();
+        $commandName = strtolower($command->getCommandName());
 
         if (!isset($this->commandMap[$roomIdent][$commandName])) {
             return new Success();
@@ -312,7 +312,7 @@ class PluginManager
      */
     public function isCommandMappedForRoom($room, string $command): bool
     {
-        return isset($this->commandMap[$this->connectedRooms->get($room)->getIdentifier()->getIdentString()][$command]);
+        return isset($this->commandMap[$this->connectedRooms->get($room)->getIdentifier()->getIdentString()][strtolower($command)]);
     }
 
     /**
@@ -325,6 +325,8 @@ class PluginManager
     public function mapCommandForRoom($room, $plugin, string $endpoint, string $command): Promise
     {
         $room = $this->connectedRooms->get($room);
+
+        $command = strtolower($command);
 
         if ($this->builtInActionManager->hasRegisteredCommand($command)) {
             throw new \LogicException("Command '{$command}' is built in");
@@ -362,6 +364,7 @@ class PluginManager
     public function unmapCommandForRoom($room, string $command): Promise
     {
         $room = $this->connectedRooms->get($room);
+        $command = strtolower($command);
 
         if ($this->builtInActionManager->hasRegisteredCommand($command)) {
             throw new \LogicException("Command '{$command}' is built in");
