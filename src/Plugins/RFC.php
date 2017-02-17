@@ -196,7 +196,7 @@ class RFC extends BasePlugin
         $rfc = $command->getParameter(0);
 
         if ($rfc === null) {
-            return $this->chatClient->postMessage($command->getRoom(), "Usage: `!!voting <id>`");
+            return $this->chatClient->postMessage($command, "Usage: `!!voting <id>`");
         }
 
         $uri = self::BASE_URI . '/' . urlencode($rfc);
@@ -205,97 +205,16 @@ class RFC extends BasePlugin
         $response = yield $this->httpClient->request($uri);
 
         if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command->getRoom(), "Nope, we can't have nice things.");
+            return $this->chatClient->postMessage($command, "Nope, we can't have nice things.");
         }
 
         $messages = $this->prepareVotes($response->getBody(), $uri);
 
         if(count($messages) === 0) {
-            return $this->chatClient->postMessage($command->getRoom(), "No votes found.");
+            return $this->chatClient->postMessage($command, "No votes found.");
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), implode("\n", array_map(function($message) {
-
-            $voters = implode("\n", array_map(function($voter) {
-
-                if($voter['voted'] === false) {
-                    return sprintf('%s has not voted', $voter['name']);
-                }
-
-                return sprintf(
-                    '%s ⭢ %s',
-                    $voter['name'],
-                    $voter['choice']
-                );
-
-            }, $message['voters']));
-
-            return sprintf(
-                "%s %s - %s (%s)\n%s",
-                self::BULLET,
-                $message['name'],
-                $message['breakdown'],
-                $message['href'],
-                $voters
-            );
-        }, $messages)));
-    }
-
-    private function prepareVotes(string $rfcData, string $uri): array
-    {
-
-        $votes = self::parseVotes($rfcData);
-        if (empty($votes)) {
-            return [];
-        }
-
-        $messages = [];
-
-        foreach ($votes as $id => $vote) {
-            $breakdown = [];
-
-            $total = array_sum($vote['votes']);
-            if ($total > 0) {
-                foreach ($vote['votes'] as $option => $value) {
-                    $breakdown[] = sprintf("%s (%d: %d%%)", $option, $value, 100 * $value / $total);
-                }
-            }
-
-            $messages[] = [
-                'name' => $vote['name'],
-                'href' => $uri . '#' . $id,
-                'breakdown' => implode(', ', $breakdown),
-                'voters' => $vote['voters']
-            ];
-        }
-
-        return $messages;
-    }
-
-    public function getRFCVotes(Command $command)
-    {
-        $rfc = $command->getParameter(0);
-
-        if ($rfc === null) {
-            return $this->chatClient->postMessage($command->getRoom(), "Usage: `!!voting <id>`");
-        }
-
-        $uri = self::BASE_URI . '/' . urlencode($rfc);
-
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($uri);
-
-        if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command->getRoom(), "Nope, we can't have nice things.");
-        }
-
-        $messages = $this->prepareVotes($response->getBody(), $uri);
-
-        if(count($messages) === 0) {
-            return $this->chatClient->postMessage($command->getRoom(), "No votes found.");
-        }
-
-        return $this->chatClient->postMessage($command->getRoom(), implode("\n", array_map(function($message) {
+        return $this->chatClient->postMessage($command, implode("\n", array_map(function($message) {
 
             $voters = implode("\n", array_map(function($voter) {
 
