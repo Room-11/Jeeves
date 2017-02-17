@@ -336,12 +336,15 @@ class RFC extends BasePlugin
                     }
 
                     // Adjust by one to ignore voter name
-                    $voteImage = $vote->getElementsByTagName('img');
-                    if ($voteImage->length > 0) {
+                    $voteImageCollection = $vote->getElementsByTagName('img');
+
+                    if ($voteImageCollection->length > 0) {
+                        /** @var \DOMElement $voteImage */
+                        $voteImage = $voteImageCollection[0];
                         ++$info['votes'][$options[$i - 1]];
                         $voter['voted'] = true;
                         $voter['choice'] = $options[$i - 1];
-                        $voter['at'] = $voteImage[0]->getAttribute('title') ?: null;
+                        $voter['at'] = $voteImage->getAttribute('title') ?: null;
                     }
                 }
 
