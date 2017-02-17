@@ -103,7 +103,7 @@ class ActionExecutor
 
     private function getBackOffDelay(string $body): int
     {
-        if (!preg_match('/You can perform this action again in (\d+) seconds/i', $body, $matches)) {
+        if (!preg_match('/You can perform this action again in (\d+) second/i', $body, $matches)) {
             throw new \InvalidArgumentException;
         }
 
