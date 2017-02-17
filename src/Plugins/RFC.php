@@ -5,6 +5,8 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
+use Amp\Success;
+use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Message\Command;
@@ -22,7 +24,6 @@ class RFC extends BasePlugin
     private $pluginData;
 
     const BASE_URI = 'https://wiki.php.net/rfc';
-    const BULLET   = "\xE2\x80\xA2";
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
@@ -82,11 +83,16 @@ class RFC extends BasePlugin
         }
 
         if (empty($rfcsInVoting)) {
-            return all([
-                $this->clearLastPinId($room),
-                $this->chatClient->postMessage($command, "Sorry, but we can't have nice things."),
-                $this->unpinPreviousMessage($room, $pinInfoPromise),
-            ]);
+            yield $this->chatClient->postMessage($command, "Sorry, but we can't have nice things.");
+
+            if (yield $this->chatClient->isBotUserRoomOwner($room)) {
+                return all([
+                    $this->clearLastPinId($room),
+                    $this->unpinPreviousMessage($room, $pinInfoPromise),
+                ]);
+            }
+
+            return new Success();
         }
 
         /** @var PostedMessage $postedMessage */
@@ -98,10 +104,14 @@ class RFC extends BasePlugin
             )
         );
 
-        return all([
-            $this->unpinPreviousMessage($room, $pinInfoPromise),
-            $this->pinCurrentMessage($room, $postedMessage),
-        ]);
+        if (yield $this->chatClient->isBotUserRoomOwner($room)) {
+            return all([
+                $this->unpinPreviousMessage($room, $pinInfoPromise),
+                $this->pinCurrentMessage($room, $postedMessage),
+            ]);
+        }
+
+        return new Success();
     }
 
     private function pinCurrentMessage(ChatRoom $room, PostedMessage $message): Promise
@@ -114,7 +124,7 @@ class RFC extends BasePlugin
 
     private function getLastPinId(ChatRoom $room): Promise
     {
-        return resolve(function() use($room) {
+        return resolve(function () use ($room) {
             return (yield $this->pluginData->exists('lastpinid', $room))
                 ? yield $this->pluginData->get('lastpinid', $room)
                 : -1;
@@ -123,7 +133,7 @@ class RFC extends BasePlugin
 
     private function clearLastPinId(ChatRoom $room): Promise
     {
-        return resolve(function() use($room) {
+        return resolve(function () use ($room) {
             if (yield $this->pluginData->exists('lastpinid', $room)) {
                 yield $this->pluginData->unset('lastpinid', $room);
             }
@@ -132,7 +142,7 @@ class RFC extends BasePlugin
 
     private function unpinPreviousMessage(ChatRoom $room, Promise $pinInfoPromise): Promise
     {
-        return resolve(function() use($room, $pinInfoPromise) {
+        return resolve(function () use ($room, $pinInfoPromise) {
             list($pinnedMessages, $lastPinId) = yield $pinInfoPromise;
 
             if (in_array($lastPinId, $pinnedMessages)) {
@@ -144,9 +154,10 @@ class RFC extends BasePlugin
     public function getRFC(Command $command)
     {
         $rfc = $command->getParameter(0);
+
         if ($rfc === null) {
             // e.g.: !!rfc pipe-operator
-            return $this->chatClient->postMessage($command, "RFC id required");
+            return $this->chatClient->postMessage($command, "Usage: `!!rfc <id>`");
         }
 
         $uri = self::BASE_URI . '/' . urlencode($rfc);
@@ -158,9 +169,99 @@ class RFC extends BasePlugin
             return $this->chatClient->postMessage($command, "Nope, we can't have nice things.");
         }
 
-        $votes = self::parseVotes($response->getBody());
+        $messages = $this->prepareVotes($response->getBody(), $uri);
+
+        if (count($messages) === 0) {
+            return $this->chatClient->postMessage($command, "No votes found.");
+        }
+
+        if (count($messages) === 1) {
+            return $this->chatClient->postMessage(
+                $command,
+                sprintf(
+                    "[tag:rfc-vote] [%s](%s) %s",
+                    $messages[0]['name'],
+                    $messages[0]['href'],
+                    $messages[0]['breakdown']
+                )
+            );
+        }
+
+        $message = implode("\n", array_map(function ($message) {
+            return sprintf(
+                '%s %s - %s (%s)',
+                Chars::BULLET,
+                $message['name'],
+                $message['breakdown'],
+                $message['href']
+            );
+        }, $messages));
+
+        return $this->chatClient->postMessage($command, $message);
+    }
+
+    public function getRFCVotes(Command $command)
+    {
+        $rfc = $command->getParameter(0);
+
+        if ($rfc === null) {
+            return $this->chatClient->postMessage($command, "Usage: `!!voting <id>`");
+        }
+
+        $uri = self::BASE_URI . '/' . urlencode($rfc);
+
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request($uri);
+
+        if ($response->getStatus() !== 200) {
+            return $this->chatClient->postMessage($command, "Nope, we can't have nice things.");
+        }
+
+        $messages = $this->prepareVotes($response->getBody(), $uri);
+
+        if (count($messages) === 0) {
+            return $this->chatClient->postMessage($command, "No votes found.");
+        }
+
+        return $this->chatClient->postMessage($command, implode("\n", array_map(function ($message) {
+
+            $formattedVotes = implode("\n", array_map(function ($option) use ($message) {
+
+                $voters = implode(
+                    ', ',
+                    array_column(
+                        array_filter($message['voters'], function ($voter) use ($option) {
+                            return $voter['voted'] && $voter['choice'] === $option;
+                        }),
+                        'name'
+                    )
+                );
+
+                return sprintf(
+                    '%s %s: %s',
+                    Chars::ZWNJ . Chars::EM_SPACE . Chars::WHITE_BULLET,
+                    $option,
+                    $voters
+                );
+            }, $message['options']));
+
+            return sprintf(
+                "%s %s - %s (%s)\n%s",
+                Chars::BULLET,
+                $message['name'],
+                $message['breakdown'],
+                $message['href'],
+                $formattedVotes
+            );
+        }, $messages)));
+    }
+
+    private function prepareVotes(string $rfcData, string $uri): array
+    {
+
+        $votes = self::parseVotes($rfcData);
         if (empty($votes)) {
-            return $this->chatClient->postMessage($command, "No votes found");
+            return [];
         }
 
         $messages = [];
@@ -179,35 +280,16 @@ class RFC extends BasePlugin
                 'name' => $vote['name'],
                 'href' => $uri . '#' . $id,
                 'breakdown' => implode(', ', $breakdown),
+                'options' => array_keys($vote['votes']),
+                'voters' => $vote['voters']
             ];
         }
 
-        if (count($messages) === 1) {
-            return $this->chatClient->postMessage(
-                $command,
-                sprintf(
-                    "[tag:rfc-vote] [%s](%s) %s",
-                    $messages[0]['name'],
-                    $messages[0]['href'],
-                    $messages[0]['breakdown']
-                )
-            );
-        }
-
-        $message = implode("\n", array_map(function($message) {
-            return sprintf(
-                '%s %s - %s (%s)',
-                self::BULLET,
-                $message['name'],
-                $message['breakdown'],
-                $message['href']
-            );
-        }, $messages));
-
-        return $this->chatClient->postMessage($command, $message);
+        return $messages;
     }
 
-    private static function parseVotes(string $html) {
+    private static function parseVotes(string $html)
+    {
         $dom = domdocument_load_html($html);
         $votes = [];
 
@@ -221,6 +303,7 @@ class RFC extends BasePlugin
             $info = [
                 'name' => $id,
                 'votes' => [],
+                'voters' => []
             ];
             $options = [];
 
@@ -251,13 +334,39 @@ class RFC extends BasePlugin
                     continue;
                 }
 
+                $voterColumns = $row->getElementsByTagName('td');
+
+                if ($voterColumns->length === 0) {
+                    continue;
+                }
+
+                $voter = [
+                    'name' => '',
+                    'voted' => false,
+                    'choice' => null,
+                    'at' => null
+                ];
+
                 /** @var \DOMElement $vote */
-                foreach ($row->getElementsByTagName('td') as $i => $vote) {
+                foreach ($voterColumns as $i => $vote) {
+                    if ($i === 0) {
+                        $voter['name'] = $vote->getElementsByTagName('a')[0]->nodeValue;
+                    }
+
                     // Adjust by one to ignore voter name
-                    if ($vote->getElementsByTagName('img')->length > 0) {
+                    $voteImageCollection = $vote->getElementsByTagName('img');
+
+                    if ($voteImageCollection->length > 0) {
+                        /** @var \DOMElement $voteImage */
+                        $voteImage = $voteImageCollection[0];
                         ++$info['votes'][$options[$i - 1]];
+                        $voter['voted'] = true;
+                        $voter['choice'] = $options[$i - 1];
+                        $voter['at'] = $voteImage->getAttribute('title') ?: null;
                     }
                 }
+
+                $info['voters'][] = $voter;
             }
 
             $votes[$id] = $info;
@@ -282,8 +391,24 @@ class RFC extends BasePlugin
     public function getCommandEndpoints(): array
     {
         return [
-            new PluginCommandEndpoint('Search', [$this, 'search'], 'rfcs', 'List RFCs currently in voting, or get the current vote status of a given RFC'),
-            new PluginCommandEndpoint('Votes', [$this, 'getRFC'], 'rfc', 'Get the current vote status of a given RFC'),
+            new PluginCommandEndpoint(
+                'Search',
+                [$this, 'search'],
+                'rfcs',
+                'List RFCs currently in voting, or get the current vote status of a given RFC'
+            ),
+            new PluginCommandEndpoint(
+                'Votes',
+                [$this, 'getRFC'],
+                'rfc',
+                'Get the current vote status of a given RFC'
+            ),
+            new PluginCommandEndpoint(
+                'Voting',
+                [$this, 'getRFCVotes'],
+                'voting',
+                'List all voters of a given RFC.'
+            ),
         ];
     }
 }
