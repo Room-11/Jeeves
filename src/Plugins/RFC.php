@@ -85,7 +85,7 @@ class RFC extends BasePlugin
         if (empty($rfcsInVoting)) {
             yield $this->chatClient->postMessage($command, "Sorry, but we can't have nice things.");
 
-            if ($this->chatClient->isBotUserRoomOwner($room)) {
+            if (yield $this->chatClient->isBotUserRoomOwner($room)) {
                 return all([
                     $this->clearLastPinId($room),
                     $this->unpinPreviousMessage($room, $pinInfoPromise),
@@ -104,7 +104,7 @@ class RFC extends BasePlugin
             )
         );
 
-        if ($this->chatClient->isBotUserRoomOwner($room)) {
+        if (yield $this->chatClient->isBotUserRoomOwner($room)) {
             return all([
                 $this->unpinPreviousMessage($room, $pinInfoPromise),
                 $this->pinCurrentMessage($room, $postedMessage),
