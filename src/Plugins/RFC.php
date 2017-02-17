@@ -5,6 +5,7 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
+use Room11\Jeeves\Chat\Client\Chars;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Message\Command;
@@ -22,7 +23,6 @@ class RFC extends BasePlugin
     private $pluginData;
 
     const BASE_URI = 'https://wiki.php.net/rfc';
-    const BULLET   = "\xE2\x80\xA2";
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
@@ -180,7 +180,7 @@ class RFC extends BasePlugin
         $message = implode("\n", array_map(function ($message) {
             return sprintf(
                 '%s %s - %s (%s)',
-                self::BULLET,
+                Chars::BULLET,
                 $message['name'],
                 $message['breakdown'],
                 $message['href']
@@ -222,15 +222,16 @@ class RFC extends BasePlugin
                 }
 
                 return sprintf(
-                    '%s ⭢ %s',
+                    '%s %s %s',
                     $voter['name'],
+                    Chars::RIGHTWARDS_ARROW,
                     $voter['choice']
                 );
             }, $message['voters']));
 
             return sprintf(
                 "%s %s - %s (%s)\n%s",
-                self::BULLET,
+                Chars::BULLET,
                 $message['name'],
                 $message['breakdown'],
                 $message['href'],
