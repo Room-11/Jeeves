@@ -136,7 +136,7 @@ class RoomPresence implements BuiltInCommand
             $message = "Sorry, you've already voted, you can't vote again";
         }
 
-        return $this->chatClient->postReply($command, $message);
+        return $this->chatClient->postReply($command, $message, PostFlags::FORCE);
     }
 
     public function handleCommand(CommandMessage $command): Promise
