@@ -114,7 +114,7 @@ class RFC extends BasePlugin
 
     private function getLastPinId(ChatRoom $room): Promise
     {
-        return resolve(function() use($room) {
+        return resolve(function () use ($room) {
             return (yield $this->pluginData->exists('lastpinid', $room))
                 ? yield $this->pluginData->get('lastpinid', $room)
                 : -1;
@@ -123,7 +123,7 @@ class RFC extends BasePlugin
 
     private function clearLastPinId(ChatRoom $room): Promise
     {
-        return resolve(function() use($room) {
+        return resolve(function () use ($room) {
             if (yield $this->pluginData->exists('lastpinid', $room)) {
                 yield $this->pluginData->unset('lastpinid', $room);
             }
@@ -132,7 +132,7 @@ class RFC extends BasePlugin
 
     private function unpinPreviousMessage(ChatRoom $room, Promise $pinInfoPromise): Promise
     {
-        return resolve(function() use($room, $pinInfoPromise) {
+        return resolve(function () use ($room, $pinInfoPromise) {
             list($pinnedMessages, $lastPinId) = yield $pinInfoPromise;
 
             if (in_array($lastPinId, $pinnedMessages)) {
@@ -166,7 +166,6 @@ class RFC extends BasePlugin
         }
 
         if (count($messages) === 1) {
-
             return $this->chatClient->postMessage(
                 $command,
                 sprintf(
@@ -178,7 +177,7 @@ class RFC extends BasePlugin
             );
         }
 
-        $message = implode("\n", array_map(function($message) {
+        $message = implode("\n", array_map(function ($message) {
             return sprintf(
                 '%s %s - %s (%s)',
                 self::BULLET,
@@ -210,15 +209,15 @@ class RFC extends BasePlugin
 
         $messages = $this->prepareVotes($response->getBody(), $uri);
 
-        if(count($messages) === 0) {
+        if (count($messages) === 0) {
             return $this->chatClient->postMessage($command, "No votes found.");
         }
 
-        return $this->chatClient->postMessage($command, implode("\n", array_map(function($message) {
+        return $this->chatClient->postMessage($command, implode("\n", array_map(function ($message) {
 
-            $voters = implode("\n", array_map(function($voter) {
+            $voters = implode("\n", array_map(function ($voter) {
 
-                if($voter['voted'] === false) {
+                if ($voter['voted'] === false) {
                     return sprintf('%s has not voted', $voter['name']);
                 }
 
@@ -227,7 +226,6 @@ class RFC extends BasePlugin
                     $voter['name'],
                     $voter['choice']
                 );
-
             }, $message['voters']));
 
             return sprintf(
@@ -272,7 +270,8 @@ class RFC extends BasePlugin
         return $messages;
     }
 
-    private static function parseVotes(string $html) {
+    private static function parseVotes(string $html)
+    {
         $dom = domdocument_load_html($html);
         $votes = [];
 
@@ -319,7 +318,7 @@ class RFC extends BasePlugin
 
                 $voterColumns = $row->getElementsByTagName('td');
 
-                if($voterColumns->length === 0) {
+                if ($voterColumns->length === 0) {
                     continue;
                 }
 
@@ -332,8 +331,7 @@ class RFC extends BasePlugin
 
                 /** @var \DOMElement $vote */
                 foreach ($voterColumns as $i => $vote) {
-
-                    if($i === 0) {
+                    if ($i === 0) {
                         $voter['name'] = $vote->getElementsByTagName('a')[0]->nodeValue;
                     }
 
@@ -372,9 +370,24 @@ class RFC extends BasePlugin
     public function getCommandEndpoints(): array
     {
         return [
-            new PluginCommandEndpoint('Search', [$this, 'search'], 'rfcs', 'List RFCs currently in voting, or get the current vote status of a given RFC'),
-            new PluginCommandEndpoint('Votes', [$this, 'getRFC'], 'rfc', 'Get the current vote status of a given RFC'),
-            new PluginCommandEndpoint('Voting', [$this, 'getRFCVotes'], 'voting', 'List all voters of a given RFC.'),
+            new PluginCommandEndpoint(
+                'Search',
+                [$this, 'search'],
+                'rfcs',
+                'List RFCs currently in voting, or get the current vote status of a given RFC'
+            ),
+            new PluginCommandEndpoint(
+                'Votes',
+                [$this, 'getRFC'],
+                'rfc',
+                'Get the current vote status of a given RFC'
+            ),
+            new PluginCommandEndpoint(
+                'Voting',
+                [$this, 'getRFCVotes'],
+                'voting',
+                'List all voters of a given RFC.'
+            ),
         ];
     }
 }
