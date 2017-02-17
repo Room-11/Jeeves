@@ -12,7 +12,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Imdb extends BasePlugin
 {
-    const OMDB_API_ENDPOINT = 'http://www.omdbapi.com/';
+    const OMDB_API_ENDPOINT = 'https://www.omdbapi.com/';
     private $chatClient;
     private $httpClient;
 
@@ -22,12 +22,12 @@ class Imdb extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
-    public function search(Command $command): \Generator
+    public function search(Command $command)
     {
         if (!$command->hasParameters()) {
             return $this->chatClient->postReply(
                 $command,
-                'Mhm, I need a film title you want me to look for.'
+                'Mhm, I need a film title you want me to look for. (Usage: !!imdb <film title>)'
             );
         }
 
@@ -46,11 +46,24 @@ class Imdb extends BasePlugin
             sprintf('%s?%s', self::OMDB_API_ENDPOINT, http_build_query($params))
         );
 
+        if ($response->getStatus() !== 200) {
+            return $this->chatClient->postMessage(
+                $command,
+                sprintf(
+                    "Sorry, the [OMDB API](https://www.omdbapi.com) is currently unavailable. (%d)",
+                    $response->getStatus()
+                )
+            );
+        }
+
         /** @var \stdClass $data */
         $data = @json_decode($response->getBody());
 
         if (!$data || $data->Response === 'False') {
-            return $this->chatClient->postMessage($command, "I couldn't find anything for that title.");
+            return $this->chatClient->postMessage(
+                $command,
+                sprintf("Sorry, I couldn't find anything like what you asked for.", $search)
+            );
         }
 
         $searchResults = [];
@@ -82,10 +95,9 @@ class Imdb extends BasePlugin
         list(, $responses) = yield $allRequests;
 
         $descriptionResults = [];
-        foreach ($responses as $key => $response)
-        {
+        foreach ($responses as $key => $response) {
             $responseBody = @json_decode($response->getBody());
-            if(!$responseBody || $responseBody->Response === 'False') {
+            if (!$responseBody || $responseBody->Response === 'False') {
                 continue;
             }
 
@@ -96,7 +108,6 @@ class Imdb extends BasePlugin
             $message,
             $this->formatSearchResults($searchResults, $descriptionResults)
         );
-
     }
 
     /**
@@ -126,8 +137,7 @@ class Imdb extends BasePlugin
     {
         $outputLines = [];
 
-        foreach ($searchResults as $id => $searchResult)
-        {
+        foreach ($searchResults as $id => $searchResult) {
             $description = '';
 
             if (is_array($deepResults) && isset($deepResults[$id])) {
@@ -135,7 +145,8 @@ class Imdb extends BasePlugin
             }
 
             $outputLines[] = sprintf(
-                '%s (%d) [ %s ]%s',
+                '%s %s (%d) [ %s ]%s',
+                Chars::BULLET,
                 $searchResult->Title,
                 $searchResult->Year,
                 $this->getImdbUrlById($searchResult->imdbID),
@@ -187,7 +198,7 @@ class Imdb extends BasePlugin
     private function truncate(string $string, int $length): string
     {
         $string = trim($string);
-        if(strlen($string) > $length) {
+        if (strlen($string) > $length) {
             $string = rtrim(substr($string, 0, $length), '. ') . '…';
         }
         return $string;
@@ -205,7 +216,7 @@ class Imdb extends BasePlugin
 
         // IMDB Film Rating
 
-        if($this->hasData($result->imdbRating)) {
+        if ($this->hasData($result->imdbRating)) {
             $output[] = [
                 'symbol' => '♥',
                 'rating' => $result->imdbRating,
@@ -229,7 +240,8 @@ class Imdb extends BasePlugin
      * @param string $string
      * @return bool
      */
-    private function hasData(string $string): bool {
+    private function hasData(string $string): bool
+    {
         return $string !== 'N/A';
     }
 
