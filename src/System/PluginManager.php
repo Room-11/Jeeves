@@ -18,6 +18,7 @@ use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
+use Room11\Jeeves\Storage\Mute as MuteStorage;
 use function Amp\all;
 use function Amp\resolve;
 
@@ -25,6 +26,7 @@ class PluginManager
 {
     private $banStorage;
     private $pluginStorage;
+    private $muteStorage;
     private $logger;
     private $filterBuilder;
     private $builtInActionManager;
@@ -134,14 +136,30 @@ class PluginManager
 
         return resolve(function() use($command, $roomIdent, $commandName) {
             $userId = $command->getUserId();
+            $eventId = $command->getEvent()->getId();
             $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
 
             if ($userIsBanned) {
                 $this->logger->log(Level::DEBUG,
-                    "User #{$userId} is banned, ignoring event #{$command->getEvent()->getId()} for plugin command endpoints"
+                    "User #{$userId} is banned, ignoring event #{$eventId} for plugin command endpoints"
                     . " (command: {$commandName})"
                 );
 
+                return;
+            }
+
+            $roomIdentifier = $command->getRoom()->getIdentifier();
+            $roomIsMuted = yield $this->muteStorage->isMuted($roomIdentifier);
+            if ($roomIsMuted) {
+                $this->logger->log(
+                    Level::DEBUG,
+                    sprintf(
+                        "Muted for Room #%s, ignoring event #%s for built in commands (command: %s)",
+                        $roomIdentifier->getIdentString(),
+                        $eventId,
+                        $commandName
+                    )
+                );
                 return;
             }
 
@@ -180,6 +198,7 @@ class PluginManager
 
     public function __construct(
         BanStorage $banStorage,
+        MuteStorage $muteStorage,
         PluginStorage $pluginStorage,
         Logger $logger,
         EventFilterBuilder $filterBuilder,
@@ -187,6 +206,7 @@ class PluginManager
         ConnectedRoomCollection $connectedRooms
     ) {
         $this->banStorage = $banStorage;
+        $this->muteStorage = $muteStorage;
         $this->pluginStorage = $pluginStorage;
         $this->logger = $logger;
         $this->filterBuilder = $filterBuilder;

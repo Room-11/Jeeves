@@ -9,12 +9,14 @@ use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\Jeeves\Storage\Mute as MuteStorage;
 use function Amp\all;
 use function Amp\resolve;
 
 class BuiltInActionManager
 {
     private $banStorage;
+    private $muteStorage;
     private $logger;
 
     /**
@@ -32,9 +34,10 @@ class BuiltInActionManager
      */
     private $eventHandlers = [];
 
-    public function __construct(BanStorage $banStorage, Logger $logger)
+    public function __construct(BanStorage $banStorage, MuteStorage $muteStorage, Logger $logger)
     {
         $this->banStorage = $banStorage;
+        $this->muteStorage = $muteStorage;
         $this->logger = $logger;
     }
 
@@ -110,6 +113,19 @@ class BuiltInActionManager
 
                 if ($userIsBanned) {
                     $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
+                    return;
+                }
+
+                $roomIdentifier = $command->getRoom()->getIdentifier();
+                $roomIsMuted = yield $this->muteStorage->isMuted($roomIdentifier);
+                if ($roomIsMuted && $command->getCommandName() !== 'unmute') {
+                    $this->logger->log(
+                        Level::DEBUG,
+                        sprintf(
+                            "Muted for Room #%s, ignoring event #{$eventId} for built in commands"
+                        )
+
+                    );
                     return;
                 }
 

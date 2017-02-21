@@ -27,6 +27,7 @@ storage:
   keyvalue: Room11\Jeeves\Storage\File\KeyValue
   plugin: Room11\Jeeves\Storage\File\Plugin
   room: Room11\Jeeves\Storage\File\Room
+  mute: Room11\Jeeves\Storage\File\Mute
 
 plugins:
   - Room11\Jeeves\Plugins\Lmgtfy
