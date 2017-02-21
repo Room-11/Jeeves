@@ -13,6 +13,7 @@ use Room11\Jeeves\BuiltIn\Commands\Admin as AdminBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Alias as AliasBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Ban as BanBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Command as CommandBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Mute as MuteBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Plugin as PluginBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\RoomPresence;
 use Room11\Jeeves\BuiltIn\Commands\Uptime as UptimeBuiltIn;
@@ -37,10 +38,12 @@ use Room11\Jeeves\Storage\File\CommandAlias as FileCommandAliasStorage;
 use Room11\Jeeves\Storage\File\KeyValue as FileKeyValueStorage;
 use Room11\Jeeves\Storage\File\Plugin as FilePluginStorage;
 use Room11\Jeeves\Storage\File\Room as FileRoomStorage;
+use Room11\Jeeves\Storage\File\Mute as FileMuteStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStorage;
 use Room11\Jeeves\Storage\KeyValueFactory as KeyValueStorageFactory;
 use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use Room11\Jeeves\Storage\Room as RoomStorage;
+use Room11\Jeeves\Storage\Mute as MuteStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginManager;
@@ -59,6 +62,7 @@ $builtInCommands = [
     AliasBuiltIn::class,
     BanBuiltIn::class,
     CommandBuiltIn::class,
+    MuteBuiltIn::class,
     PluginBuiltIn::class,
     RoomPresence::class,
     UptimeBuiltIn::class,
@@ -79,6 +83,7 @@ $injector->alias(KeyValueStorage::class, $config['storage']['keyvalue'] ?? FileK
 $injector->alias(KeyValueStorageFactory::class, ($config['storage']['keyvalue'] ?? FileKeyValueStorage::class) . 'Factory');
 $injector->alias(PluginStorage::class,   $config['storage']['plugin']   ?? FilePluginStorage::class);
 $injector->alias(RoomStorage::class,     $config['storage']['room']     ?? FileRoomStorage::class);
+$injector->alias(MuteStorage::class,     $config['storage']['mute']     ?? FileMuteStorage::class);
 
 $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);
 

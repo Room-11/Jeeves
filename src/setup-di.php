@@ -32,6 +32,7 @@ use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
 use Room11\Jeeves\Storage\File\Admin as FileAdminStorage;
 use Room11\Jeeves\Storage\File\Ban as FileBanStorage;
+use Room11\Jeeves\Storage\File\Mute as MuteStorage;
 use Room11\Jeeves\Storage\File\CommandAlias as FileCommandAliasStorage;
 use Room11\Jeeves\Storage\File\JsonFileAccessor;
 use Room11\Jeeves\Storage\File\KeyValueFactory as FileKeyValueStorageFactory;
@@ -56,6 +57,7 @@ $injector->alias(TwitterClient::class, ArtaxTwitterClient::class);
 
 $injector->define(FileAdminStorage::class, [":dataFile" => DATA_BASE_DIR . "/admins.%s.json"]);
 $injector->define(FileBanStorage::class, [":dataFile" => DATA_BASE_DIR . "/bans.%s.json"]);
+$injector->define(MuteStorage::class, [":dataFile" => DATA_BASE_DIR . "/mutes.json"]);
 $injector->define(FileCommandAliasStorage::class, [":dataFile" => DATA_BASE_DIR . "/alias.%s.json"]);
 $injector->define(FilePluginStorage::class, [":dataFile" => DATA_BASE_DIR . "/plugins.%s.json"]);
 $injector->define(FileKeyValueStorageFactory::class, [":dataFileTemplate" => DATA_BASE_DIR . "/keyvalue.%s.json"]);
@@ -64,6 +66,7 @@ $injector->define(FileRoomStorage::class, [":dataFile" => DATA_BASE_DIR . "/room
 $injector->share(ActionFactory::class);
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);
+$injector->share(MuteStorage::class);
 $injector->share(BitlyClient::class);
 $injector->share(BitlyLinkAccessor::class);
 $injector->share(BuiltInActionManager::class);
