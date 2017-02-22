@@ -7,6 +7,7 @@ use Aerys\Bootstrapper;
 use Aerys\Host;
 use Auryn\Injector;
 use DaveRandom\AsyncBitlyClient\Client as BitlyClient;
+use PeeHaa\AsyncChatterBot\Credential\CleverBot as CleverBotCredentials;
 use PeeHaa\AsyncTwitter\Credentials\Application as TwitterApplicationCredentials;
 use Room11\Jeeves\External\GithubIssue\Credentials as GithubIssueCredentials;
 use Room11\Jeeves\BuiltIn\Commands\Admin as AdminBuiltIn;
@@ -87,6 +88,10 @@ $injector->alias(PluginStorage::class,   $config['storage']['plugin']   ?? FileP
 $injector->alias(RoomStorage::class,     $config['storage']['room']     ?? FileRoomStorage::class);
 
 $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);
+
+$injector->define(CleverBotCredentials::class, [
+    ':key' => $config['cleverbot']['key'],
+]);
 
 $injector->define(TwitterApplicationCredentials::class, [
     ':key' => $config['twitter']['consumerKey'],

@@ -4,8 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "f4cb8c3d82a7b8e5d3029771ae454bbe",
-    "content-hash": "382a1eae3918b18e94d6c8328f0d27df",
+    "content-hash": "c9b67ae2c5a5f0f0bcef013a6f4f0db7",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -85,7 +84,7 @@
                 "server",
                 "websocket"
             ],
-            "time": "2017-02-07 01:03:33"
+            "time": "2017-02-07T01:03:33+00:00"
         },
         {
             "name": "amphp/amp",
@@ -142,7 +141,7 @@
                 "non-blocking",
                 "promise"
             ],
-            "time": "2016-05-12 12:54:59"
+            "time": "2016-05-12T12:54:59+00:00"
         },
         {
             "name": "amphp/artax",
@@ -200,7 +199,7 @@
                 "parallel",
                 "rest"
             ],
-            "time": "2016-08-08 16:27:01"
+            "time": "2016-08-08T16:27:01+00:00"
         },
         {
             "name": "amphp/cache",
@@ -248,7 +247,7 @@
             ],
             "description": "A promise-aware caching API built on the amp concurrency framework",
             "homepage": "https://github.com/amphp/cache",
-            "time": "2015-09-08 22:26:20"
+            "time": "2015-09-08T22:26:20+00:00"
         },
         {
             "name": "amphp/dns",
@@ -318,7 +317,7 @@
                 "dns",
                 "resolve"
             ],
-            "time": "2017-02-05 22:17:40"
+            "time": "2017-02-05T22:17:40+00:00"
         },
         {
             "name": "amphp/file",
@@ -378,7 +377,7 @@
                 "non-blocking",
                 "static"
             ],
-            "time": "2016-10-01 17:43:52"
+            "time": "2016-10-01T17:43:52+00:00"
         },
         {
             "name": "amphp/process",
@@ -421,7 +420,7 @@
             ],
             "description": "Asynchronous process manager",
             "homepage": "https://github.com/amphp/process",
-            "time": "2016-09-24 10:49:26"
+            "time": "2016-09-24T10:49:26+00:00"
         },
         {
             "name": "amphp/socket",
@@ -476,7 +475,7 @@
                 "tcp",
                 "tls"
             ],
-            "time": "2016-07-18 22:03:24"
+            "time": "2016-07-18T22:03:24+00:00"
         },
         {
             "name": "amphp/websocket",
@@ -573,7 +572,7 @@
                 }
             ],
             "description": "Windows Registry Reader.",
-            "time": "2017-01-04 23:52:31"
+            "time": "2017-01-04T23:52:31+00:00"
         },
         {
             "name": "daverandom/async-bitly-client",
@@ -623,7 +622,7 @@
                 "client",
                 "non-blocking"
             ],
-            "time": "2016-10-19 14:29:05"
+            "time": "2016-10-19T14:29:05+00:00"
         },
         {
             "name": "daverandom/exceptional-json",
@@ -658,7 +657,7 @@
                 }
             ],
             "description": "JSON encoding and decoding that throws exceptions on failure",
-            "time": "2016-05-04 15:52:54"
+            "time": "2016-05-04T15:52:54+00:00"
         },
         {
             "name": "daverandom/libdns",
@@ -691,7 +690,7 @@
             "keywords": [
                 "dns"
             ],
-            "time": "2016-04-29 20:47:45"
+            "time": "2016-04-29T20:47:45+00:00"
         },
         {
             "name": "daverandom/mutex",
@@ -727,7 +726,7 @@
                 }
             ],
             "description": "Basic common mutex framework for amp",
-            "time": "2016-05-19 22:28:27"
+            "time": "2016-05-19T22:28:27+00:00"
         },
         {
             "name": "ekinhbayar/interval-parser",
@@ -770,7 +769,7 @@
                 "parser",
                 "time"
             ],
-            "time": "2016-09-27 15:46:47"
+            "time": "2016-09-27T15:46:47+00:00"
         },
         {
             "name": "league/climate",
@@ -821,7 +820,7 @@
                 "php",
                 "terminal"
             ],
-            "time": "2016-04-04 20:24:59"
+            "time": "2016-04-04T20:24:59+00:00"
         },
         {
             "name": "nikic/fast-route",
@@ -864,20 +863,20 @@
                 "router",
                 "routing"
             ],
-            "time": "2017-01-19 11:35:12"
+            "time": "2017-01-19T11:35:12+00:00"
         },
         {
             "name": "peehaa/async-chatter-bot",
-            "version": "v0.1.1",
+            "version": "v0.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PeeHaa/async-chatter-bot.git",
-                "reference": "8ab7ceb48f0e213c621cdb3146ec68817cfde122"
+                "reference": "5c0db24794b5e1662ea7cf13bb4eb8bda5a510c0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PeeHaa/async-chatter-bot/zipball/8ab7ceb48f0e213c621cdb3146ec68817cfde122",
-                "reference": "8ab7ceb48f0e213c621cdb3146ec68817cfde122",
+                "url": "https://api.github.com/repos/PeeHaa/async-chatter-bot/zipball/5c0db24794b5e1662ea7cf13bb4eb8bda5a510c0",
+                "reference": "5c0db24794b5e1662ea7cf13bb4eb8bda5a510c0",
                 "shasum": ""
             },
             "require": {
@@ -914,7 +913,7 @@
                 "parallel",
                 "terminator"
             ],
-            "time": "2017-01-23 15:09:51"
+            "time": "2017-02-22T20:21:43+00:00"
         },
         {
             "name": "peehaa/async-twitter",
@@ -922,15 +921,16 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PeeHaa/AsyncTwitter.git",
-                "reference": "d137b654e31ad259599824f6f49483117333cdca"
+                "reference": "850d7f522196e7c83a9b6134f866846bd3004331"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/d137b654e31ad259599824f6f49483117333cdca",
-                "reference": "d137b654e31ad259599824f6f49483117333cdca",
+                "url": "https://api.github.com/repos/PeeHaa/AsyncTwitter/zipball/850d7f522196e7c83a9b6134f866846bd3004331",
+                "reference": "850d7f522196e7c83a9b6134f866846bd3004331",
                 "shasum": ""
             },
             "require": {
+                "amphp/amp": "^1",
                 "amphp/artax": "^2",
                 "daverandom/exceptional-json": "^1.0",
                 "php": "^7"
@@ -965,7 +965,7 @@
                 "parallel",
                 "twitter"
             ],
-            "time": "2016-10-20 20:59:38"
+            "time": "2017-02-22 13:48:30"
         },
         {
             "name": "php-ds/php-ds",
@@ -1012,7 +1012,7 @@
                 "php",
                 "polyfill"
             ],
-            "time": "2016-08-08 13:04:16"
+            "time": "2016-08-08T13:04:16+00:00"
         },
         {
             "name": "psr/log",
@@ -1059,7 +1059,7 @@
                 "psr",
                 "psr-3"
             ],
-            "time": "2016-10-10 12:19:37"
+            "time": "2016-10-10T12:19:37+00:00"
         },
         {
             "name": "rdlowrey/auryn",
@@ -1120,7 +1120,7 @@
                 "dic",
                 "ioc"
             ],
-            "time": "2016-03-14 20:10:19"
+            "time": "2016-03-14T20:10:19+00:00"
         },
         {
             "name": "room11/dom-utils",
@@ -1155,7 +1155,7 @@
                 }
             ],
             "description": "Utility functions for the PHP DOM extension",
-            "time": "2016-10-19 15:15:02"
+            "time": "2016-10-19T15:15:02+00:00"
         },
         {
             "name": "room11/google-searcher",
@@ -1193,7 +1193,7 @@
                 }
             ],
             "description": "Retrieves results from the first page of a Google search",
-            "time": "2017-02-16 21:03:08"
+            "time": "2017-02-16T21:03:08+00:00"
         },
         {
             "name": "room11/openid",
@@ -1235,27 +1235,27 @@
                 }
             ],
             "description": "OpenID consumer",
-            "time": "2016-10-19 13:37:18"
+            "time": "2016-10-19T13:37:18+00:00"
         },
         {
             "name": "sabre/uri",
-            "version": "1.2.0",
+            "version": "1.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/fruux/sabre-uri.git",
-                "reference": "8545a3335f741d4b7700bb14efb41b4c03775dcd"
+                "reference": "ada354d83579565949d80b2e15593c2371225e61"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/fruux/sabre-uri/zipball/8545a3335f741d4b7700bb14efb41b4c03775dcd",
-                "reference": "8545a3335f741d4b7700bb14efb41b4c03775dcd",
+                "url": "https://api.github.com/repos/fruux/sabre-uri/zipball/ada354d83579565949d80b2e15593c2371225e61",
+                "reference": "ada354d83579565949d80b2e15593c2371225e61",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.4.7"
             },
             "require-dev": {
-                "phpunit/phpunit": "*",
+                "phpunit/phpunit": ">=4.0,<6.0",
                 "sabre/cs": "~1.0.0"
             },
             "type": "library",
@@ -1286,7 +1286,7 @@
                 "uri",
                 "url"
             ],
-            "time": "2016-12-07 01:17:59"
+            "time": "2017-02-20T19:59:28+00:00"
         },
         {
             "name": "sebastian/version",
@@ -1321,7 +1321,7 @@
             ],
             "description": "Library that helps with managing the version number of Git-hosted PHP projects",
             "homepage": "https://github.com/sebastianbergmann/version",
-            "time": "2015-06-21 13:59:46"
+            "time": "2015-06-21T13:59:46+00:00"
         },
         {
             "name": "seld/cli-prompt",
@@ -1369,20 +1369,20 @@
                 "input",
                 "prompt"
             ],
-            "time": "2016-04-18 09:31:41"
+            "time": "2016-04-18T09:31:41+00:00"
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.2.3",
+            "version": "v3.2.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "e1718c6bf57e1efbb8793ada951584b2ab27775b"
+                "reference": "9724c684646fcb5387d579b4bfaa63ee0b0c64c8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/e1718c6bf57e1efbb8793ada951584b2ab27775b",
-                "reference": "e1718c6bf57e1efbb8793ada951584b2ab27775b",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/9724c684646fcb5387d579b4bfaa63ee0b0c64c8",
+                "reference": "9724c684646fcb5387d579b4bfaa63ee0b0c64c8",
                 "shasum": ""
             },
             "require": {
@@ -1424,7 +1424,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2017-01-21 17:06:35"
+            "time": "2017-02-16T22:46:52+00:00"
         }
     ],
     "packages-dev": [
@@ -1480,7 +1480,7 @@
                 "constructor",
                 "instantiate"
             ],
-            "time": "2015-06-14 21:17:01"
+            "time": "2015-06-14T21:17:01+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -1522,7 +1522,7 @@
                 "object",
                 "object graph"
             ],
-            "time": "2017-01-26 22:05:40"
+            "time": "2017-01-26T22:05:40+00:00"
         },
         {
             "name": "phpdocumentor/reflection-common",
@@ -1576,7 +1576,7 @@
                 "reflection",
                 "static analysis"
             ],
-            "time": "2015-12-27 11:43:31"
+            "time": "2015-12-27T11:43:31+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
@@ -1621,7 +1621,7 @@
                 }
             ],
             "description": "With this component, a library can provide support for annotations via DocBlocks or otherwise retrieve information that is embedded in a DocBlock.",
-            "time": "2016-09-30 07:12:33"
+            "time": "2016-09-30T07:12:33+00:00"
         },
         {
             "name": "phpdocumentor/type-resolver",
@@ -1668,7 +1668,7 @@
                     "email": "me@mikevanriel.com"
                 }
             ],
-            "time": "2016-11-25 06:54:22"
+            "time": "2016-11-25T06:54:22+00:00"
         },
         {
             "name": "phpspec/prophecy",
@@ -1731,7 +1731,7 @@
                 "spy",
                 "stub"
             ],
-            "time": "2016-11-21 14:58:47"
+            "time": "2016-11-21T14:58:47+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -1794,7 +1794,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2016-05-27 16:24:29"
+            "time": "2016-05-27T16:24:29+00:00"
         },
         {
             "name": "phpunit/php-file-iterator",
@@ -1841,7 +1841,7 @@
                 "filesystem",
                 "iterator"
             ],
-            "time": "2016-10-03 07:40:28"
+            "time": "2016-10-03T07:40:28+00:00"
         },
         {
             "name": "phpunit/php-text-template",
@@ -1882,7 +1882,7 @@
             "keywords": [
                 "template"
             ],
-            "time": "2015-06-21 13:50:34"
+            "time": "2015-06-21T13:50:34+00:00"
         },
         {
             "name": "phpunit/php-timer",
@@ -1926,7 +1926,7 @@
             "keywords": [
                 "timer"
             ],
-            "time": "2016-05-12 18:03:57"
+            "time": "2016-05-12T18:03:57+00:00"
         },
         {
             "name": "phpunit/php-token-stream",
@@ -1975,7 +1975,7 @@
             "keywords": [
                 "tokenizer"
             ],
-            "time": "2016-11-15 14:06:22"
+            "time": "2016-11-15T14:06:22+00:00"
         },
         {
             "name": "phpunit/phpunit",
@@ -2050,7 +2050,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2016-06-03 09:42:56"
+            "time": "2016-06-03T09:42:56+00:00"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -2106,7 +2106,7 @@
                 "mock",
                 "xunit"
             ],
-            "time": "2016-04-20 14:39:26"
+            "time": "2016-04-20T14:39:26+00:00"
         },
         {
             "name": "sebastian/code-unit-reverse-lookup",
@@ -2151,7 +2151,7 @@
             ],
             "description": "Looks up which function or method a line of code belongs to",
             "homepage": "https://github.com/sebastianbergmann/code-unit-reverse-lookup/",
-            "time": "2016-02-13 06:45:14"
+            "time": "2016-02-13T06:45:14+00:00"
         },
         {
             "name": "sebastian/comparator",
@@ -2215,7 +2215,7 @@
                 "compare",
                 "equality"
             ],
-            "time": "2017-01-29 09:50:25"
+            "time": "2017-01-29T09:50:25+00:00"
         },
         {
             "name": "sebastian/diff",
@@ -2267,7 +2267,7 @@
             "keywords": [
                 "diff"
             ],
-            "time": "2015-12-08 07:14:41"
+            "time": "2015-12-08T07:14:41+00:00"
         },
         {
             "name": "sebastian/environment",
@@ -2317,7 +2317,7 @@
                 "environment",
                 "hhvm"
             ],
-            "time": "2016-08-18 05:49:44"
+            "time": "2016-08-18T05:49:44+00:00"
         },
         {
             "name": "sebastian/exporter",
@@ -2384,7 +2384,7 @@
                 "export",
                 "exporter"
             ],
-            "time": "2016-06-17 09:04:28"
+            "time": "2016-06-17T09:04:28+00:00"
         },
         {
             "name": "sebastian/global-state",
@@ -2435,7 +2435,7 @@
             "keywords": [
                 "global state"
             ],
-            "time": "2015-10-12 03:26:01"
+            "time": "2015-10-12T03:26:01+00:00"
         },
         {
             "name": "sebastian/object-enumerator",
@@ -2481,7 +2481,7 @@
             ],
             "description": "Traverses array structures and object graphs to enumerate all referenced objects",
             "homepage": "https://github.com/sebastianbergmann/object-enumerator/",
-            "time": "2016-01-28 13:25:10"
+            "time": "2016-01-28T13:25:10+00:00"
         },
         {
             "name": "sebastian/recursion-context",
@@ -2534,7 +2534,7 @@
             ],
             "description": "Provides functionality to recursively process PHP variables",
             "homepage": "http://www.github.com/sebastianbergmann/recursion-context",
-            "time": "2015-11-11 19:50:13"
+            "time": "2015-11-11T19:50:13+00:00"
         },
         {
             "name": "sebastian/resource-operations",
@@ -2576,7 +2576,7 @@
             ],
             "description": "Provides a list of PHP built-in functions that operate on resources",
             "homepage": "https://www.github.com/sebastianbergmann/resource-operations",
-            "time": "2015-07-28 20:34:47"
+            "time": "2015-07-28T20:34:47+00:00"
         },
         {
             "name": "webmozart/assert",
@@ -2626,7 +2626,7 @@
                 "check",
                 "validate"
             ],
-            "time": "2016-11-23 20:04:58"
+            "time": "2016-11-23T20:04:58+00:00"
         }
     ],
     "aliases": [],

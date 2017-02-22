@@ -94,3 +94,6 @@ github:
   username: %username%
   password: %password%
   token:
+
+cleverbot:
+  key: yourcleverbotapikey
