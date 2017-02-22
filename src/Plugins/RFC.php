@@ -83,7 +83,7 @@ class RFC extends BasePlugin
         }
 
         if (empty($rfcsInVoting)) {
-            yield $this->chatClient->postMessage($command, "Sorry, but we can't have nice things.");
+            yield $this->chatClient->postMessage($command, "There are no RFCs in voting. Sorry, but we can't have nice things.");
 
             if (yield $this->chatClient->isBotUserRoomOwner($room)) {
                 return all([
