@@ -3,9 +3,12 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
+use Amp\Artax\Response;
 use PeeHaa\AsyncTwitter\Api\Client\Client as TwitterClient;
 use PeeHaa\AsyncTwitter\Api\Client\ClientFactory as TwitterClientFactory;
 use PeeHaa\AsyncTwitter\Api\Client\Exception\RequestFailed as TwitterRequestFailedException;
+use PeeHaa\AsyncTwitter\Api\Request\Media\Response\UploadResponse;
+use PeeHaa\AsyncTwitter\Api\Request\Media\Upload;
 use PeeHaa\AsyncTwitter\Api\Request\Status\Retweet as RetweetRequest;
 use PeeHaa\AsyncTwitter\Api\Request\Status\Update as UpdateRequest;
 use PeeHaa\AsyncTwitter\Credentials\AccessTokenFactory as TwitterAccessTokenFactory;
@@ -115,12 +118,27 @@ class BetterTweet extends BasePlugin
 
     private function replaceImages(\DOMDocument $dom)
     {
+        $files = [];
+
         foreach ($dom->getElementsByTagName('img') as $node) {
             /** @var \DOMElement $node */
-            $formattedNode = $dom->createTextNode($node->getAttribute('src'));
+            $target = $node->getAttribute('src');
 
-            $node->parentNode->parentNode->replaceChild($formattedNode, $node->parentNode);
+            if (substr($target, 0, 2) === '//') {
+                $target = 'https:' . $target;
+            }
+
+            /** @var Response $response */
+            $response = yield $this->httpClient->request($target);
+            $tmpFilePath = \Room11\Jeeves\DATA_BASE_DIR . '/' . uniqid('twitter-media-', true);
+            yield \Amp\File\put($tmpFilePath, $response->getBody());
+
+            $node->parentNode->parentNode->removeChild($node->parentNode);
+
+            $files[] = $tmpFilePath;
         }
+
+        return $files;
     }
 
     private function replaceHrefs(\DOMDocument $dom)
@@ -166,7 +184,7 @@ class BetterTweet extends BasePlugin
             return $handle !== null ? '@' . $handle : $match[1];
         }, $text);
     }
-    
+
     private function fixBrokenImgurUrls(string $text)
     {
         return preg_replace('~((?!https?:)//i(?:.stack)?.imgur.com/)~', 'https:\1', $text);
@@ -204,10 +222,10 @@ class BetterTweet extends BasePlugin
     {
         $this->replaceEmphasizeTags($dom);
         $this->replaceStrikeTags($dom);
-        $this->replaceImages($dom);
+        $files = yield from $this->replaceImages($dom);
         $this->replaceHrefs($dom);
 
-        $text = yield from $this->replacePings($room, $dom->textContent);
+        $text = trim(yield from $this->replacePings($room, $dom->textContent));
         $text = $this->fixBrokenImgurUrls($text);
         $text = \Normalizer::normalize(trim($text), \Normalizer::FORM_C);
 
@@ -219,7 +237,31 @@ class BetterTweet extends BasePlugin
             throw new TweetLengthLimitExceededException;
         }
 
-        return new UpdateRequest($text);
+        $result = new UpdateRequest($text);
+
+        if (count($files) > 0) {
+            $mediaIds = yield from $this->uploadMediaFiles($room, $files);
+            $result->setMediaIds(...$mediaIds);
+        }
+
+        return $result;
+    }
+
+    private function uploadMediaFiles(ChatRoom $room, array $files)
+    {
+        /** @var TwitterClient $client */
+        $client = yield from $this->getClientForRoom($room);
+        $ids = [];
+
+        foreach ($files as $file) {
+            /** @var UploadResponse $result */
+            $result = yield $client->request((new Upload)->setFilePath($file));
+            $ids[] = $result->getMediaId();
+
+            yield \Amp\File\unlink($file);
+        }
+
+        return $ids;
     }
 
     private function buildTwitterRequest(ChatRoom $room, \DOMDocument $dom)

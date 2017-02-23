@@ -34,7 +34,7 @@
         "daverandom/exceptional-json": "^1.0",
         "daverandom/mutex": "~0.0",
         "php-ds/php-ds": "*",
-        "peehaa/async-twitter": "dev-master",
+        "peehaa/async-twitter": "dev-feature/media-upload",
         "peehaa/async-chatter-bot": "^0.2",
         "ekinhbayar/interval-parser": "^0.1",
         "rdlowrey/auryn": "^1.1",
