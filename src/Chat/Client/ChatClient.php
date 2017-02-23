@@ -73,6 +73,11 @@ class ChatClient
         return $text;
     }
 
+    public function stripPingsFromText(string $text): string
+    {
+        return preg_replace('#@((?:\p{L}|\p{N})(?:\p{L}|\p{N}|\.|-|_|\')*)#u', "@\u{2060}$1", $text);
+    }
+
     private function applyPostFlagsToText(string $text, int $flags): string
     {
         $text = rtrim($this->checkAndNormaliseEncoding($text));
@@ -84,7 +89,7 @@ class ChatClient
             $text = preg_replace('#(^|\r?\n)#', '$1    ', $text);
         }
         if (!($flags & PostFlags::ALLOW_PINGS)) {
-            $text = preg_replace('#@((?:\p{L}|\p{N})(?:\p{L}|\p{N}|\.|-|_|\')*)#u', "@\u{2060}$1", $text);
+            $text = $this->stripPingsFromText($text);
         }
         if (!($flags & PostFlags::ALLOW_REPLIES)) {
             $text = preg_replace('#^:([0-9]+)\s*#', '', $text);
