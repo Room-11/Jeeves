@@ -90,12 +90,12 @@ $injector->alias(RoomStorage::class,     $config['storage']['room']     ?? FileR
 $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['accessToken']]);
 
 $injector->define(CleverBotCredentials::class, [
-    ':key' => $config['cleverbot']['key'],
+    ':key' => $config['cleverbot']['key'] ?? '',
 ]);
 
 $injector->define(TwitterApplicationCredentials::class, [
-    ':key' => $config['twitter']['consumerKey'],
-    ':secret' => $config['twitter']['consumerSecret'],
+    ':key' => $config['twitter']['consumerKey'] ?? '',
+    ':secret' => $config['twitter']['consumerSecret'] ?? '',
 ]);
 
 $injector->define(TranslationAPICredentials::class, [
