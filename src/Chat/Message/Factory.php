@@ -41,8 +41,6 @@ class Factory
 
         $parameters = preg_split('#\s+#', $parameterString, -1, PREG_SPLIT_NO_EMPTY);
 
-        var_dump($commandName, $parameters);
-
         return new Command($event, $event->getRoom(), $commandName, $parameters);
     }
 
