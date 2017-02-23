@@ -83,11 +83,9 @@ class Plugin implements BuiltInCommand
     {
         $plugin = $command->getParameter(1);
 
-        return resolve(
-            $plugin === null
-                ? $this->listPlugins($command)
-                : $this->listPluginEndpoints($plugin, $command)
-        );
+        return $plugin === null
+            ? $this->listPlugins($command)
+            : $this->listPluginEndpoints($plugin, $command);
     }
 
     private function enable(CommandMessage $command): Promise
