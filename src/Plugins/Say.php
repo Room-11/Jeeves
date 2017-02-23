@@ -40,7 +40,12 @@ class Say extends BasePlugin
             $components[] = trim($current);
         }
 
-        list($string, $args) = yield from $this->processPingFormatSpecifiers($command->getRoom(), $components);
+        try {
+            list($string, $args) = yield from $this->preProcessFormatSpecifiers($command->getRoom(), $components);
+        } catch (\InvalidArgumentException $e) {
+            return $this->chatClient->postReply($command, 'Only if you say it first');
+        }
+
         $string = $this->chatClient->stripPingsFromText($string);
 
         if (false === $result = @\vsprintf($string, $args)) {
@@ -50,7 +55,7 @@ class Say extends BasePlugin
         return $this->chatClient->postMessage($command, $result, PostFlags::ALLOW_PINGS);
     }
 
-    private function processPingFormatSpecifiers(ChatRoom $room, array $components)
+    private function preProcessFormatSpecifiers(ChatRoom $room, array $components)
     {
         static $expr = /** @lang RegExp */ "/
           %
@@ -71,6 +76,11 @@ class Say extends BasePlugin
         }
 
         foreach ($matches as $i => $match) {
+            if (($match[5][0] !== '' && ((int)$match[5][0]) > ChatClient::TRUNCATION_LIMIT)
+                || ($match[6][0] !== '' && ((int)substr($match[6][0], 1)) > ChatClient::TRUNCATION_LIMIT)) {
+                throw new \InvalidArgumentException;
+            }
+
             if ($match[7][0] !== 'p') {
                 continue;
             }
