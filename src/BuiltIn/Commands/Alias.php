@@ -38,8 +38,9 @@ class Alias implements BuiltInCommand
     private function addAlias(CommandMessage $command)
     {
         $room = $command->getRoom();
-        $aliasCommand = strtolower($command->getParameter(0));
-        $mapping = implode(' ', $command->getParameters(1));
+
+        $markdown = yield $this->chatClient->getCommandParametersAsMarkdown($command);
+        list($aliasCommand, $mapping) = preg_split('/\s+/', $markdown, 2, PREG_SPLIT_NO_EMPTY);
 
         if ($this->builtInCommandManager->hasRegisteredCommand($aliasCommand)) {
             return $this->chatClient->postReply($command, "Command '{$aliasCommand}' is built in and cannot be altered");

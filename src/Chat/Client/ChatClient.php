@@ -462,6 +462,24 @@ class ChatClient
     }
 
     /**
+     * @param Command $command
+     * @return Promise
+     */
+    public function getCommandParametersAsMarkdown(Command $command): Promise
+    {
+        return resolve(function() use($command) {
+            $text = yield $this->getMessageText($command->getRoom(), $command->getId());
+            $commandLen = strlen($command->getCommandName());
+
+            if (substr($text, 2, $commandLen) !== $command->getCommandName()) {
+                throw new MessageFetchFailureException('Message markdown does not match passed command');
+            }
+
+            return trim(substr($text, $commandLen + 2));
+        });
+    }
+
+    /**
      * @param ChatRoom|ChatRoomIdentifier $room
      * @param int $id
      * @return Promise
