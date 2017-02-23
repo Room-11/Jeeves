@@ -13,21 +13,12 @@ class Command extends Message
 
     private $text;
 
-    public function __construct(MessageEvent $event, ChatRoom $room, string $aliasMapping = null)
+    public function __construct(MessageEvent $event, ChatRoom $room, string $commandName, array $parameters)
     {
         parent::__construct($event, $room);
 
-        $commandParts = preg_split('#\s+#', trim(parent::getText()), -1, PREG_SPLIT_NO_EMPTY);
-
-        if ($aliasMapping !== null) {
-            $aliasParts = preg_split('#\s+#', $aliasMapping, -1, PREG_SPLIT_NO_EMPTY);
-            $this->commandName = array_shift($aliasParts);
-            array_splice($commandParts, 0, 1, $aliasParts);
-        } else {
-            $this->commandName = substr(array_shift($commandParts), 2);
-        }
-
-        $this->parameters = $commandParts;
+        $this->commandName = $commandName;
+        $this->parameters = $parameters;
     }
 
     public function getCommandName(): string
