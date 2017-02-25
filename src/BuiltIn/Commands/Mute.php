@@ -13,7 +13,6 @@ use function Amp\resolve;
 
 /**
  * Class Mute
- * TODO: Mute Duration
  * @package Room11\Jeeves\BuiltIn\Commands
  */
 class Mute implements BuiltInCommand
