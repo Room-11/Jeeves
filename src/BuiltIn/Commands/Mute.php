@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
+use IntervalParser\IntervalParser;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\Chat\Room\PresenceManager;
@@ -17,6 +18,8 @@ use function Amp\resolve;
  */
 class Mute implements BuiltInCommand
 {
+    const TIME_FORMAT_REGEX = /** @lang regexp */ '/(?<time>(?:\d|[01]\d|2[0-3]):[0-5]\d)[+-]?(?&time)?/ui';
+
     private $chatClient;
     private $adminStorage;
     private $presenceManager;
@@ -51,12 +54,34 @@ class Mute implements BuiltInCommand
     /**
      * Handle muting a room from a command.
      * @param CommandMessage $command
-     * @return \Generator
+     * @return \Generator|Promise
      */
     private function mute(CommandMessage $command): \Generator
     {
+        $time = $command->getParameter(0);
+
+        if ($time !== null) {
+            $timestamp = strtotime($time) ?: strtotime("+{$time}"); // false|int
+
+            if ($timestamp === false) {
+                return $this->chatClient->postReply($command, "Usage: `!!mute [ <time> ]`");
+            }
+
+            if ($timestamp <= time() && preg_match(self::TIME_FORMAT_REGEX, $time) === 1) {
+                // If the string was just a time, we might have passed it. If so, move the target time 1 day ahead.
+                $timestamp = strtotime("{$time} + 1 day");
+            }
+
+            if ($timestamp && $timestamp <= time()) {
+                return $this->chatClient->postReply($command, "That's in the past, silly.");
+            }
+
+            yield $this->chatClient->postMessage($command, "I'll be quiet until then.");
+            return $this->presenceManager->muteUntil($command->getRoom()->getIdentifier(), $timestamp);
+        }
+
         yield $this->chatClient->postMessage($command, "I'll be quiet.");
-        yield $this->presenceManager->muteForever($command->getRoom()->getIdentifier());
+        return $this->presenceManager->muteForever($command->getRoom()->getIdentifier());
     }
 
     /**
