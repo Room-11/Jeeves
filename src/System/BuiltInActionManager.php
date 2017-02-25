@@ -9,14 +9,12 @@ use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
-use Room11\Jeeves\Storage\Mute as MuteStorage;
 use function Amp\all;
 use function Amp\resolve;
 
 class BuiltInActionManager
 {
     private $banStorage;
-    private $muteStorage;
     private $logger;
 
     /**
@@ -34,10 +32,9 @@ class BuiltInActionManager
      */
     private $eventHandlers = [];
 
-    public function __construct(BanStorage $banStorage, MuteStorage $muteStorage, Logger $logger)
+    public function __construct(BanStorage $banStorage, Logger $logger)
     {
         $this->banStorage = $banStorage;
-        $this->muteStorage = $muteStorage;
         $this->logger = $logger;
     }
 
@@ -97,7 +94,7 @@ class BuiltInActionManager
 
     public function handleCommand(Command $command): Promise
     {
-        return resolve(function() use($command) {
+        return resolve(function () use ($command) {
             $commandName = strtolower($command->getCommandName());
 
             if (!isset($this->commands[$commandName])) {
@@ -116,13 +113,13 @@ class BuiltInActionManager
                     return;
                 }
 
-                $roomIdentifier = $command->getRoom()->getIdentifier();
-                $roomIsMuted = yield $this->muteStorage->isMuted($roomIdentifier);
-                if ($roomIsMuted && $command->getCommandName() !== 'unmute') {
+                $roomIsMuted = yield $command->getRoom()->isMuted();
+                if ($roomIsMuted) {
                     $this->logger->log(
                         Level::DEBUG,
                         sprintf(
-                            "Muted for Room #%s, ignoring event #{$eventId} for built in commands"
+                            "Muted for Room #%s, ignoring event #{$eventId} for built in commands",
+                            $command->getRoom()->getIdentifier()->getIdentString()
                         )
 
                     );
