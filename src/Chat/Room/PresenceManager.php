@@ -399,6 +399,16 @@ class PresenceManager
         }
     }
 
+    private function checkIfRoomIsApproved(Identifier $identifier)
+    {
+        return yield $this->storage->isApproved($identifier);
+    }
+
+    private function checkIfMutedInRoom(Identifier $identifier)
+    {
+        return yield $this->storage->isMuted($identifier);
+    }
+
     private function processDisconnectAndReconnectIfNecessary(Identifier $identifier)
     {
         yield $this->eventDispatcher->processDisconnect($identifier);
@@ -470,5 +480,68 @@ class PresenceManager
     public function processDisconnect(Identifier $identifier): Promise
     {
         return $this->enqueueAction([$this, 'processDisconnectAndReconnectIfNecessary'], $identifier);
+    }
+
+    public function isApproved(Identifier $identifier): Promise
+    {
+        return isset($this->permanentRooms[$identifier->getIdentString()])
+            ? new Success(true)
+            : $this->enqueueAction([$this, 'checkIfRoomIsApproved'], $identifier);
+    }
+
+    /**
+     * Check if Jeeves is muted in this room.
+     * @param Identifier $identifier
+     * @return Promise
+     */
+    public function isMuted(Identifier $identifier): Promise
+    {
+        return $this->enqueueAction([$this, 'checkIfMutedInRoom'], $identifier);
+    }
+
+    /**
+     * Check if Jeeves has permission to perform actions in this room.
+     * @param Identifier $identifier
+     * @return Promise
+     */
+    public function canTalk(Identifier $identifier): Promise
+    {
+        return resolve(function () use ($identifier) {
+            return
+                yield $this->isApproved($identifier)
+                && yield $this->isMuted($identifier);
+        });
+    }
+
+    /**
+     * Mute Jeeves in a room until the given timestamp.
+     * @param Identifier $identifier
+     * @param int $expires A UNIX timestamp, indicates when the mute will expire.
+     * @return Promise
+     */
+    public function muteUntil(Identifier $identifier, $expires): Promise
+    {
+        return $this->storage->mute($identifier, $expires);
+    }
+
+    /**
+     * Indefinitely mute Jeeves in a room.
+     * @param Identifier $identifier
+     * @return Promise
+     */
+    public function muteForever(Identifier $identifier): Promise
+    {
+        return $this->storage->muteForever($identifier);
+    }
+
+    /**
+     * Un-mute Jeeves in a given room.
+     * Should also resolve successfully if Jeeves was never muted.
+     * @param Identifier $identifier
+     * @return Promise
+     */
+    public function unMute(Identifier $identifier): Promise
+    {
+        return $this->storage->unMute($identifier);
     }
 }

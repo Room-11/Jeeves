@@ -56,6 +56,23 @@ class Room
         return $this->keyValueStore;
     }
 
+    public function isApproved(): Promise
+    {
+        return $this->permanent
+            ? new Success(true)
+            : $this->presenceManager->isApproved($this->identifier);
+    }
+
+    public function isMuted(): Promise
+    {
+        return $this->presenceManager->isMuted($this->identifier);
+    }
+
+    public function canTalk(): Promise
+    {
+        return $this->presenceManager->canTalk($this->identifier);
+    }
+
     public function __debugInfo()
     {
         return [
