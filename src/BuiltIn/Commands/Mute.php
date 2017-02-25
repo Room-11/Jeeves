@@ -5,15 +5,14 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Room\PresenceManager;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
-use Room11\Jeeves\Storage\Mute as MuteStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use function Amp\resolve;
 
 /**
  * Class Mute
- * TODO: Global Mute
  * TODO: Mute Duration
  * @package Room11\Jeeves\BuiltIn\Commands
  */
@@ -21,13 +20,13 @@ class Mute implements BuiltInCommand
 {
     private $chatClient;
     private $adminStorage;
-    private $muteStorage;
+    private $presenceManager;
 
-    public function __construct(ChatClient $chatClient, AdminStorage $adminStorage, MuteStorage $muteStorage)
+    public function __construct(ChatClient $chatClient, AdminStorage $adminStorage, PresenceManager $presenceManager)
     {
         $this->chatClient   = $chatClient;
         $this->adminStorage = $adminStorage;
-        $this->muteStorage = $muteStorage;
+        $this->presenceManager = $presenceManager;
     }
 
     private function execute(CommandMessage $command)
@@ -50,15 +49,25 @@ class Mute implements BuiltInCommand
         return null;
     }
 
+    /**
+     * Handle muting a room from a command.
+     * @param CommandMessage $command
+     * @return \Generator
+     */
     private function mute(CommandMessage $command): \Generator
     {
         yield $this->chatClient->postMessage($command, "I'll be quiet.");
-        yield $this->muteStorage->add($command->getRoom()->getIdentifier());
+        yield $this->presenceManager->muteForever($command->getRoom()->getIdentifier());
     }
 
+    /**
+     * Handle unmuting a room from a command.
+     * @param CommandMessage $command
+     * @return \Generator
+     */
     private function unMute(CommandMessage $command): \Generator
     {
-        yield $this->muteStorage->remove($command->getRoom()->getIdentifier());
+        yield $this->presenceManager->unMute($command->getRoom()->getIdentifier());
 
         yield $this->chatClient->postMessage($command, 'Speaking freely.');
     }
