@@ -580,7 +580,7 @@ class ChatClient
         $flags |= PostFlags::ALLOW_REPLIES;
         $flags &= ~PostFlags::FIXED_FONT;
 
-        return $this->postMessage($origin->getRoom(), ":{$origin->getId()} {$text}", $flags);
+        return $this->postMessage($origin, ":{$origin->getId()} {$text}", $flags);
     }
 
     /**
