@@ -27,7 +27,7 @@ class Imdb extends BasePlugin
         if (!$command->hasParameters()) {
             return $this->chatClient->postReply(
                 $command,
-                'Mhm, I need a film title you want me to look for. (Usage: !!imdb <film title>)'
+                /** @lang text */ 'Mhm, I need a film title you want me to look for. (Usage: !!imdb film-title)'
             );
         }
 

@@ -157,7 +157,7 @@ class RFC extends BasePlugin
 
         if ($rfc === null) {
             // e.g.: !!rfc pipe-operator
-            return $this->chatClient->postMessage($command, "Usage: `!!rfc <id>`");
+            return $this->chatClient->postMessage($command, /** @lang text */ "Usage: `!!rfc <id>`");
         }
 
         $uri = self::BASE_URI . '/' . urlencode($rfc);
@@ -205,7 +205,7 @@ class RFC extends BasePlugin
         $rfc = $command->getParameter(0);
 
         if ($rfc === null) {
-            return $this->chatClient->postMessage($command, "Usage: `!!voting <id>`");
+            return $this->chatClient->postMessage($command, /** @lang text */ "Usage: `!!voting <id>`");
         }
 
         $uri = self::BASE_URI . '/' . urlencode($rfc);

@@ -112,7 +112,7 @@ class Changelog extends BasePlugin
         return $this->chatClient->postMessage(
             $command,
             sprintf(
-                "[ [%s](%s) ] [ [%s](%s) ] %s - Commited by: %s on %s",
+                "[ [%s](%s) ] [ [%s](%s) ] %s - Committed by: %s on %s",
                 $repo,
                 "https://github.com/" . urlencode($user) . '/' . urlencode($repo),
                 substr($sha, 0, 7),

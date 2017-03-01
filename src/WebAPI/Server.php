@@ -97,8 +97,12 @@ class Server
         return $this->router;
     }
 
-    public function getRoomBans(AerysRequest $request, AerysResponse $response, array $route)
-    {
+    public function getRoomBans(
+        /** @noinspection PhpUnusedParameterInspection */
+        AerysRequest $request,
+        AerysResponse $response,
+        array $route
+    ) {
         if (!$room = $this->getRoomFromRoute($response, $route)) {
             return;
         }
@@ -109,8 +113,12 @@ class Server
         $response->end(json_encode((object)$bans));
     }
 
-    public function banUserInRoom(AerysRequest $request, AerysResponse $response, array $route)
-    {
+    public function banUserInRoom(
+        /** @noinspection PhpUnusedParameterInspection */
+        AerysRequest $request,
+        AerysResponse $response,
+        array $route
+    ) {
         if (!$room = $this->getRoomFromRoute($response, $route)) {
             return;
         }
@@ -162,8 +170,11 @@ class Server
         $response->end();
     }
 
-    public function getAllRooms(AerysRequest $request, AerysResponse $response)
-    {
+    public function getAllRooms(
+        /** @noinspection PhpUnusedParameterInspection */
+        AerysRequest $request,
+        AerysResponse $response
+    ) {
         $result = [];
 
         /** @var ChatRoom $room */
@@ -178,8 +189,12 @@ class Server
         $response->end(json_encode($result));
     }
 
-    public function getRoomInfo(AerysRequest $request, AerysResponse $response, array $route)
-    {
+    public function getRoomInfo(
+        /** @noinspection PhpUnusedParameterInspection */
+        AerysRequest $request,
+        AerysResponse $response,
+        array $route
+    ) {
         if (!$room = $this->getRoomFromRoute($response, $route)) {
             return;
         }

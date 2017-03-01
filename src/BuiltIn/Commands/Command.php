@@ -27,10 +27,10 @@ class Command implements BuiltInCommand
                                   . "the command should be mapped. Use `!!plugin list %1\$s` to display information "
                                   . "about the available endpoints.",
         'plugin_not_enabled'     => "Plugin '%s' is not currently enabled",
-        'syntax'                 => /** @lang text */ "    Syntax: command [map|remap] <command> <plugin> [<endpoint>]\n"
-                                  . /** @lang text */ "            command unmap <command>\n"
-                                  . /** @lang text */ "            command clone <new command> <existing command>\n"
-                                  . /** @lang text */ "            command list",
+        'syntax'                 => "    Syntax: command [map|remap] command plugin [endpoint]\n"
+                                  . "            command unmap command\n"
+                                  . "            command clone new-command existing-command\n"
+                                  . "            command list",
         'unexpected_error'       => "Something really unexpected happened: %s",
         'unknown_endpoint'       => "Unknown endpoint name '%s' for plugin '%s'",
         'unknown_plugin'         => "Unknown plugin '%s'. Use `!!plugin list` to display the currently registered "
