@@ -13,6 +13,10 @@ function dateinterval_to_string(\DateInterval $interval, string $precision = 's'
         'h' => 'hour', 'i' => 'minute', 's' => 'second',
     ];
 
+    // because apparently DateInterval is pointless
+    $now = new \DateTimeImmutable();
+    $interval = $now->diff($now->add($interval));
+
     $precision = strtolower($precision);
 
     if (!isset($unitNames[$precision])) {
