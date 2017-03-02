@@ -9,6 +9,7 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use function Room11\Jeeves\dateinterval_to_string;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\Admin as AdminStore;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
@@ -225,7 +226,7 @@ class Reminder extends BasePlugin
                 Chars::RIGHTWARDS_ARROW,
                 date('l, dS F Y H:i (e)', $value[self::STRUCT_KEY_TIMESTAMP]),
                 'Set by ' . $value[self::STRUCT_KEY_USER_NAME],
-                'Seconds left: ' . $seconds
+                'Seconds left: ' . dateinterval_to_string(new \DateInterval("{$seconds} seconds"))
             );
         }
 
