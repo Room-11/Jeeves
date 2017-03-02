@@ -149,6 +149,23 @@ class Reminder extends BasePlugin
         ];
     }
 
+    private function unsetReminderAndPostMessage(string $key, $messageOrigin, string $message)
+    {
+        if ($messageOrigin instanceof Command) {
+            $room = $messageOrigin->getRoom();
+            $command = $messageOrigin;
+        } else {
+            $room = $messageOrigin;
+            $command = null;
+        }
+
+        yield $this->storage->unset($key, $room);
+
+        return isset($command)
+            ? $this->chatClient->postReply($command, $message, PostFlags::ALLOW_PINGS)
+            : $this->chatClient->postMessage($room, $message, PostFlags::ALLOW_PINGS);
+    }
+
     private function setReminder(Command $command)
     {
         try {
@@ -174,8 +191,7 @@ class Reminder extends BasePlugin
         }
 
         $this->watchers[] = once(function() use ($command, $value) {
-            yield $this->storage->unset($value[self::STRUCT_KEY_ID], $command->getRoom());
-            return $this->chatClient->postReply($command, $value[self::STRUCT_KEY_TEXT]);
+            resolve($this->unsetReminderAndPostMessage($value[self::STRUCT_KEY_ID], $command, $value[self::STRUCT_KEY_TEXT]));
         }, $seconds * 1000);
 
         return $this->chatClient->postMessage($command, "Reminder {$value[self::STRUCT_KEY_ID]} is set.");
@@ -237,9 +253,8 @@ class Reminder extends BasePlugin
 
             $reply = "@{$pingableName} I guess I'm late: {$value[self::STRUCT_KEY_TEXT]}";
 
-            $this->watchers[] = once(function () use ($room, $key, $reply) {
-                yield $this->storage->unset($key, $room);
-                return $this->chatClient->postMessage($room, $reply, PostFlags::ALLOW_PINGS);
+            $this->watchers[] = once(function () use ($key, $room, $reply) {
+                resolve($this->unsetReminderAndPostMessage($key, $room, $reply));
             }, 1000);
         }
     }
@@ -268,9 +283,8 @@ class Reminder extends BasePlugin
                 $target = "@{$pingableName}";
                 $reply = $target . " " . $text;
 
-                $this->watchers[] = once(function () use ($room, $key, $reply) {
-                    yield $this->storage->unset($key, $room);
-                    return $this->chatClient->postMessage($room, $reply, PostFlags::ALLOW_PINGS);
+                $this->watchers[] = once(function () use ($key, $room, $reply) {
+                    resolve($this->unsetReminderAndPostMessage($key, $room, $reply));
                 }, $seconds * 1000);
             }
         }
