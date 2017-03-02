@@ -226,7 +226,7 @@ class Reminder extends BasePlugin
                 Chars::RIGHTWARDS_ARROW,
                 date('l, dS F Y H:i (e)', $value[self::STRUCT_KEY_TIMESTAMP]),
                 'Set by ' . $value[self::STRUCT_KEY_USER_NAME],
-                'Seconds left: ' . dateinterval_to_string(new \DateInterval("PT{$seconds}S"))
+                'Time left: ' . dateinterval_to_string(new \DateInterval("PT{$seconds}S"))
             );
         }
 
