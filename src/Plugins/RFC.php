@@ -272,7 +272,7 @@ class RFC extends BasePlugin
             $total = array_sum($vote['votes']);
             if ($total > 0) {
                 foreach ($vote['votes'] as $option => $value) {
-                    $breakdown[] = sprintf("%s (%d: %d%%)", $option, $value, 100 * $value / $total);
+                    $breakdown[] = sprintf("%s (%d: %.1f%%)", $option, $value, 100 * $value / $total);
                 }
             }
 
