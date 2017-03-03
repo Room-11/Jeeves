@@ -46,10 +46,10 @@ class Factory
 
     private function isCommandMessage(MessageEvent $event)
     {
-        $commandDom = $event->getMessageContent();
+        $messageElement = $event->getMessageContent()->documentElement;
 
-        return $commandDom->firstChild instanceof \DOMText
-            && strpos($commandDom->textContent, self::INVOKER) === 0;
+        return $messageElement->firstChild instanceof \DOMText
+            && strpos($messageElement->textContent, self::INVOKER) === 0;
     }
 
     public function build(MessageEvent $event): Promise
