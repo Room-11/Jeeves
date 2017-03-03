@@ -101,7 +101,7 @@ class Message implements IdentifiableMessage
         }
 
         $userName = preg_quote($this->event->getRoom()->getSession()->getUser()->getName(), '#');
-        $expr = '#@' . $userName . '(?:\s|$)#i';
+        $expr = '#@' . $userName . '(?:[\s,.\'?!;:<>\#@~{}"%^&*-]|$)#iu';
 
         return (bool)preg_match($expr, $this->getText());
     }
