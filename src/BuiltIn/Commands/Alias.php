@@ -42,6 +42,8 @@ class Alias implements BuiltInCommand
         $markdown = yield $this->chatClient->getCommandParametersAsMarkdown($command);
         list($aliasCommand, $mapping) = preg_split('/\s+/', $markdown, 2, PREG_SPLIT_NO_EMPTY);
 
+        $aliasCommand = strtolower($aliasCommand);
+
         if ($this->builtInCommandManager->hasRegisteredCommand($aliasCommand)) {
             return $this->chatClient->postReply($command, "Command '{$aliasCommand}' is built in and cannot be altered");
         }
