@@ -48,7 +48,8 @@ class Factory
     {
         $messageElement = $event->getMessageContent()->documentElement;
 
-        return $messageElement->firstChild instanceof \DOMText
+        return $messageElement instanceof \DOMElement
+            && strtolower($messageElement->tagName) === 'p'
             && strpos($messageElement->textContent, self::INVOKER) === 0;
     }
 
