@@ -105,7 +105,7 @@ class Terminator extends BasePlugin
     private function buildCleverBotResponse(Message $message)
     {
         $botPingableName = preg_replace('#\s+#', '', $message->getRoom()->getSession()->getUser()->getName());
-        $messageText = preg_replace('#\b@' . preg_quote($botPingableName, '#') . '\b#', '', trim($message->getText()));
+        $messageText = preg_replace('#\b@' . preg_quote($botPingableName, '#') . '\b#iu', '', trim($message->getText()));
 
         /** @var ChatterBotResponse $response */
         $response = yield $this->chatBotClient->request($messageText);
