@@ -36,6 +36,10 @@ class Remove implements BuiltInCommand
             return $this->chatClient->postReply($command, "Sorry, you're not cool enough to do that :(");
         }
 
+        if (!yield $this->chatClient->isBotUserRoomOwner($command->getRoom())) {
+            return $this->chatClient->postReply($command, "Sorry, I'm not a room owner so I can't do that :(");
+        }
+
         if ($this->tracker->getCount($command->getRoom()) === 0) {
             return $this->chatClient->postReply($command, "I don't have any messages stored for this room, sorry");
         }
