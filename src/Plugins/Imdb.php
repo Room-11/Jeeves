@@ -12,7 +12,8 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Imdb extends BasePlugin
 {
-    const OMDB_API_ENDPOINT = 'https://www.omdbapi.com/';
+    private const OMDB_API_ENDPOINT = 'https://www.omdbapi.com/';
+
     private $chatClient;
     private $httpClient;
 
@@ -47,8 +48,8 @@ class Imdb extends BasePlugin
         );
 
         if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage(
-                $command,
+            return $this->chatClient->editMessage(
+                $message,
                 sprintf(
                     "Sorry, the [OMDB API](https://www.omdbapi.com) is currently unavailable. (%d)",
                     $response->getStatus()
@@ -60,9 +61,9 @@ class Imdb extends BasePlugin
         $data = @json_decode($response->getBody());
 
         if (!$data || $data->Response === 'False') {
-            return $this->chatClient->postMessage(
-                $command,
-                sprintf("Sorry, I couldn't find anything like what you asked for.", $search)
+            return $this->chatClient->editMessage(
+                $message,
+                sprintf("Sorry, I couldn't find anything like '%s'.", $search)
             );
         }
 
