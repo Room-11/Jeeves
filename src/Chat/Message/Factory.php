@@ -50,6 +50,7 @@ class Factory
 
         return $messageElement instanceof \DOMElement
             && strtolower($messageElement->tagName) === 'p'
+            && $messageElement->firstChild instanceof \DOMText
             && strpos($messageElement->textContent, self::INVOKER) === 0;
     }
 

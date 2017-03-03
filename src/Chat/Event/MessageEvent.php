@@ -42,7 +42,7 @@ abstract class MessageEvent extends BaseEvent implements UserSourcedEvent, RoomS
 
         $this->messageId = (int)$data['message_id'];
         $this->messageContent = domdocument_load_html(
-            (string)($data['content'] ?? ''),
+            '<p>' . ($data['content'] ?? '') . '</p>',
             LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
         );
 
