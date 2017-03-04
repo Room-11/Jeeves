@@ -355,7 +355,7 @@ class Reminder extends BasePlugin
             }
         }
 
-        return $this->setReminder($command);
+        return resolve($this->setReminder($command));
     }
 
     public function enableForRoom(ChatRoom $room, bool $persist = true)
