@@ -14,6 +14,7 @@ use Room11\Jeeves\BuiltIn\Commands\Admin as AdminBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Alias as AliasBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Ban as BanBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Command as CommandBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Mute as MuteBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Plugin as PluginBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\RoomPresence;
 use Room11\Jeeves\BuiltIn\Commands\Uptime as UptimeBuiltIn;
@@ -63,6 +64,7 @@ $builtInCommands = [
     AliasBuiltIn::class,
     BanBuiltIn::class,
     CommandBuiltIn::class,
+    MuteBuiltIn::class,
     PluginBuiltIn::class,
     RoomPresence::class,
     UptimeBuiltIn::class,

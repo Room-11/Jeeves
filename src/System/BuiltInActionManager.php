@@ -94,7 +94,7 @@ class BuiltInActionManager
 
     public function handleCommand(Command $command): Promise
     {
-        return resolve(function() use($command) {
+        return resolve(function () use ($command) {
             $commandName = strtolower($command->getCommandName());
 
             if (!isset($this->commands[$commandName])) {
@@ -110,6 +110,19 @@ class BuiltInActionManager
 
                 if ($userIsBanned) {
                     $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
+                    return;
+                }
+
+                $roomIsMuted = yield $command->getRoom()->isMuted();
+                if ($roomIsMuted) {
+                    $this->logger->log(
+                        Level::DEBUG,
+                        sprintf(
+                            "Muted for Room #%s, ignoring event #{$eventId} for built in commands",
+                            $command->getRoom()->getIdentifier()->getIdentString()
+                        )
+
+                    );
                     return;
                 }
 

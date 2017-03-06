@@ -134,14 +134,29 @@ class PluginManager
 
         return resolve(function() use($command, $roomIdent, $commandName) {
             $userId = $command->getUserId();
+            $eventId = $command->getEvent()->getId();
             $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
 
             if ($userIsBanned) {
                 $this->logger->log(Level::DEBUG,
-                    "User #{$userId} is banned, ignoring event #{$command->getEvent()->getId()} for plugin command endpoints"
+                    "User #{$userId} is banned, ignoring event #{$eventId} for plugin command endpoints"
                     . " (command: {$commandName})"
                 );
 
+                return;
+            }
+
+
+            if (yield $command->getRoom()->isMuted()) {
+                $this->logger->log(
+                    Level::DEBUG,
+                    sprintf(
+                        "Muted for Room #%s, ignoring event #%s for built in commands (command: %s)",
+                        $command->getRoom()->getIdentifier()->getIdentString(),
+                        $eventId,
+                        $commandName
+                    )
+                );
                 return;
             }
 

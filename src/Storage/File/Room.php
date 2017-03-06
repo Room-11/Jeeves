@@ -55,6 +55,7 @@ class Room implements RoomStorage
                 'approve_votes'    => [],
                 'leave_votes'      => [],
                 'is_approved'      => false,
+                'is_muted_until'   => false,
                 'invite_timestamp' => $inviteTimestamp,
             ];
 
@@ -152,5 +153,93 @@ class Room implements RoomStorage
             $data = yield $this->accessor->read($this->dataFileTemplate);
             return $data[$identifier->getIdentString()]['is_approved'] ?? false;
         });
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isMuted(ChatRoomIdentifier $identifier): Promise
+    {
+        return resolve(function () use ($identifier) {
+            $data = yield $this->accessor->read($this->dataFileTemplate);
+            $until = $data[$identifier->getIdentString()]['is_muted_until'] ?? false;
+
+            if ($until === false || $until === true) {
+                // Un-muted or indefinitely muted.
+                return $until;
+            }
+
+            if ($until < time()) {
+                // Was muted, but the duration has passed.
+                yield $this->unMute($identifier);
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isMutedForever(ChatRoomIdentifier $identifier): Promise
+    {
+        return resolve(function () use ($identifier) {
+            $data = yield $this->accessor->read($this->dataFileTemplate);
+            $until = $data[$identifier->getIdentString()]['is_muted_until'] ?? false;
+            return $until === true;
+        });
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getMuteExpiration(ChatRoomIdentifier $identifier): Promise
+    {
+        return resolve(function () use ($identifier) {
+            $data = yield $this->accessor->read($this->dataFileTemplate);
+            $until = $data[$identifier->getIdentString()]['is_muted_until'] ?? false;
+            if ($until === true || $until === false) {
+                return null;
+            }
+
+            return $until;
+        });
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function mute(ChatRoomIdentifier $identifier, int $expires): Promise
+    {
+        return $this->accessor->writeCallback(function ($data) use ($identifier, $expires) {
+            $data[$identifier->getIdentString()]['is_muted_until'] = $expires;
+            return $data;
+        }, $this->dataFileTemplate);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function muteForever(ChatRoomIdentifier $identifier): Promise
+    {
+        return $this->accessor->writeCallback(function ($data) use ($identifier) {
+            $data[$identifier->getIdentString()]['is_muted_until'] = true;
+            return $data;
+        }, $this->dataFileTemplate);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function unMute(ChatRoomIdentifier $identifier): Promise
+    {
+        return $this->accessor->writeCallback(function ($data) use ($identifier) {
+            $identifierString = $identifier->getIdentString();
+            if (array_key_exists('is_muted_until', $data[$identifierString])) {
+                unset($data[$identifierString]['is_muted_until']);
+            }
+            return $data;
+        }, $this->dataFileTemplate);
     }
 }
