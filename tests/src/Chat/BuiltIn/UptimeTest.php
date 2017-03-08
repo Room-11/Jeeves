@@ -25,14 +25,8 @@ class UptimeTest extends AbstractBuiltInTest
         }
 
         $this->builtIn = new Uptime($this->client);
-
-        $this->command = $this->getMockBuilder(Command::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $this->room = $this->getMockBuilder(Room::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $this->command = $this->createMock(Command::class);
+        $this->room = $this->createMock(Room::class);
     }
 
     public function testCommandInfo()
@@ -48,30 +42,40 @@ class UptimeTest extends AbstractBuiltInTest
             ->with(
                 $this->identicalTo($this->command),
                 $this->matchesRegularExpression(self::VALID_UPTIME_EXP)
-            );
-
+            )
+            ->will($this->returnValue(new Success(true)))
+        ;
+        
         $this->command
             ->expects($this->once())
             ->method('getRoom')
-            ->will($this->returnValue($this->room));
+            ->will($this->returnValue($this->room))
+        ;
 
         $this->room
-            ->expects($this->exactly(5000))
+            ->expects($this->once())
             ->method('isApproved')
-            ->will($this->returnValue(new Success(true)));
+            ->will($this->returnValue(new Success(true)))
+        ;
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testUnApprovedUptimeCommand()
     {
+        $this->command
+            ->expects($this->once())
+            ->method('getRoom')
+            ->will($this->returnValue($this->room))
+        ;
+
         $this->room
             ->expects($this->once())
             ->method('isApproved')
-            ->will($this->returnValue(false));
+            ->will($this->returnValue(new Success(false)))
+        ;
 
-        $response = yield $this->builtIn->handleCommand($this->command);
-
+        $response = \Amp\wait($this->builtIn->handleCommand($this->command));
         $this->assertNull($response);
     }
 }
