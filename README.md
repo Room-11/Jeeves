@@ -17,7 +17,7 @@ Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for
 1. Clone the project.
 1. Copy `config/config.sample.yml` to `config/config.yml`.
 1. Replace all configuration variables with your values.
-1. Run the bot using `php ./cli/run.php`.
+1. Run the bot using `php ./bin/jeeves`.
 
 ### JAAS (Jeeves as a Service)
 
@@ -25,7 +25,7 @@ If you want to run the bot as a systemd service:
 
 1. Copy `config/jeeves.sample.service` to `/etc/systemd/system/jeeves.service`.
 1. Replace the path with your installation location.
-1. Make the `cli/run.php` file executable
+1. Make sure the `bin/jeeves` file is executable
 1. If you want to service to automatically start run `systemctl enable jeeves`
 1. Start the service using `systemctl start jeeves`
 
