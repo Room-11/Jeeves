@@ -27,7 +27,11 @@ class StdOut extends BaseLogger
         printf("{$this->format}\n", $message, (new \DateTime())->format('Y-m-d H:i:s'));
 
         if ($extraData !== null && $this->meetsLogLevel(Level::EXTRA_DATA)) {
-            var_dump($extraData);
+            if ($extraData instanceof \Throwable) {
+                echo "{$extraData}\n"; // stringified exceptions are much more useful than var_dump'd ones...
+            } else {
+                var_dump($extraData);
+            }
         }
 
         return new Success();
