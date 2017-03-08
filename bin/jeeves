@@ -24,6 +24,7 @@ function startup_enable_debug_mode()
 
     // Show PHP errors on STDERR only
     ini_set('log_errors', '1');
+    ini_set('error_log', '');
     ini_set('display_errors', '0');
 
     // Make sure assertion will be checked and will throw, warn if we can't do that
