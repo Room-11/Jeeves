@@ -52,10 +52,10 @@ class UptimeTest extends AbstractBuiltInTest
             ->method('postMessage')
             ->with(
                 $this->identicalTo($this->command),
-                $this->matchingRegularExpression(self::VALID_UPTIME_EXP)
+                $this->matchesRegularExpression(self::VALID_UPTIME_EXP)
             );
 
-        yield $this->builtIn->handleCommand($this->command);
+        \amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testUnApprovedUptimeCommand()
