@@ -1,4 +1,3 @@
-#!/usr/bin/env php
 <?php declare(strict_types = 1);
 
 namespace Room11\Jeeves;
@@ -109,7 +108,8 @@ $injector->define(WebSocketEventDispatcher::class, [
 ]);
 
 $injector->delegate(Logger::class, function () use ($config) {
-    $flags = array_map('trim', explode('|', $config['logging']['level'] ?? ''));
+    $logLevel = getenv('JEEVES_LOG_LEVEL') ?: ($config['logging']['level'] ?? '');
+    $flags = array_map('trim', explode('|', $logLevel));
 
     if (empty($flags[0])) {
         $flags = LogLevel::ALL;
