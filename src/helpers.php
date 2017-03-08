@@ -2,9 +2,21 @@
 
 namespace Room11\Jeeves;
 
+use SebastianBergmann\Version as SebastianVersion;
+
 const DNS_NAME_EXPR = '(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)\.)*(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)';
 const ROOM_IDENTIFIER_EXPR = '(' . DNS_NAME_EXPR . ')#([0-9]+)';
-define(__NAMESPACE__ . '\\APP_BASE', realpath(__DIR__ . '/..'));
+
+function get_current_version(): VersionIdentifier
+{
+    $version = (new SebastianVersion(VERSION, APP_BASE))->getVersion();
+
+    if (!preg_match('@^(.+?)(?:-([0-9]+)-g([0-9a-f]+))?$@', $version, $match)) {
+        throw new InvalidVersionStringException('Invalid version string: ' . $version);
+    }
+
+    return new VersionIdentifier($match[0], $match[1], (int)($match[2] ?? 0), $match[3] ?? '');
+}
 
 function dateinterval_to_string(\DateInterval $interval, string $precision = 's'): string
 {
