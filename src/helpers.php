@@ -69,8 +69,8 @@ function normalize_stack_exchange_url(string $url): string
         '[a-z0-9]+\.stackexchange\.com',
     ];
 
-    $questionOrAnswerExpr = $questionExpr ?? '~^https?://(?:www\.)?(' . implode('|', $domains) . ')/q(?:uestions)?/([0-9]+)(?:[^#]+#([0-9]+))?~';
-    $answerExpr = $answerExpr ?? '#^https?://(?:www\.)?(' . implode('|', $domains) . ')/a/([0-9]+)#';
+    $questionOrAnswerExpr = $questionExpr ?? '~^https?://(?:www\.|meta\.)?(' . implode('|', $domains) . ')/q(?:uestions)?/([0-9]+)(?:[^#]+#([0-9]+))?~';
+    $answerExpr = $answerExpr ?? '#^https?://(?:www\.|meta\.)?(' . implode('|', $domains) . ')/a/([0-9]+)#';
 
     if (preg_match($questionOrAnswerExpr, $url, $match)) {
         return !empty($match[3])
@@ -82,5 +82,5 @@ function normalize_stack_exchange_url(string $url): string
         return 'https://' . $match[1] . '/a/' . $match[2];
     }
 
-    throw new \Exception('Unrecognised SE URL format');
+    throw new InvalidStackExchangeUrlException('Unrecognised Stack Exchange URL format');
 }
