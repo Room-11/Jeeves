@@ -55,17 +55,17 @@ class Canon extends BasePlugin
 
     private function getMessage(Command $command)
     {
-        if ($command->hasParameters() === false) {
+        if (!$command->hasParameters(2)){
             return $this->chatClient->postMessage($command, self::USAGE);
         }
 
-        $keyword = implode(" ", $command->getParameters());
+        $canonTitle = strtolower($command->getParameter(1));
 
-        if (!yield $this->storage->exists(strtolower($keyword), $command->getRoom())) {
+        if (!yield $this->storage->exists($canonTitle, $command->getRoom())) {
             return $this->chatClient->postMessage($command, "Cannot find the canon for you... :-( Use `!!canon list` to list all supported canonicals.");
         }
 
-        if ($canon = yield $this->storage->get(strtolower($keyword), $command->getRoom())) {
+        if ($canon = yield $this->storage->get($canonTitle, $command->getRoom())) {
             return $this->chatClient->postMessage($command, $canon["stackoverflow"]);
         }
 
@@ -78,7 +78,7 @@ class Canon extends BasePlugin
             return $this->chatClient->postMessage($command, self::USAGE);
         }
 
-        $canonTitle = $command->getParameter(1);
+        $canonTitle = strtolower($command->getParameter(1));
 
         if (yield $this->storage->exists($canonTitle, $command->getRoom())) {
             return $this->chatClient->postMessage($command, "{$canonTitle} is already on canonicals.");
@@ -101,7 +101,7 @@ class Canon extends BasePlugin
             return $this->chatClient->postMessage($command, self::USAGE);
         }
 
-        $canonTitle = $command->getParameter(1);
+        $canonTitle = strtolower($command->getParameter(1));
 
         if (!yield $this->storage->exists($canonTitle, $command->getRoom())) {
             return $this->chatClient->postMessage($command, "Canonical is not on the list.");
