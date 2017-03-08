@@ -1,4 +1,55 @@
 #!/usr/bin/env php
 <?php declare(strict_types = 1);
 
+namespace Room11\Jeeves;
+
+const JEEVES_SHORT_OPTS = '';
+const JEEVES_LONG_OPTS = [
+    'debug',
+    'loglevel:',
+];
+
+function startup_set_log_level_string(string $level)
+{
+    putenv('JEEVES_LOG_LEVEL=' . $level);
+}
+
+function startup_enable_debug_mode()
+{
+    // Log everything
+    startup_set_log_level_string('ALL | DEBUG');
+
+    // Report all PHP errors
+    error_reporting(~0);
+
+    // Show PHP errors on STDERR only
+    ini_set('log_errors', '1');
+    ini_set('display_errors', '0');
+
+    // Make sure assertion will be checked and will throw, warn if we can't do that
+    if (ini_get('zend.assertions') === '-1') {
+        trigger_error(
+            'The process was started with the --debug flag, but the zend.assertions ini setting is set to production'
+            . ' mode (-1) - assertions will not be checked!',
+            E_USER_WARNING
+        );
+    } else {
+        ini_set('zend.assertions', '1');
+        ini_set('assert.exception', '1');
+    }
+}
+
+if (false === $parsedArgs = getopt(JEEVES_SHORT_OPTS, JEEVES_LONG_OPTS)) {
+    fwrite(STDERR, "Error parsing command line options\n");
+    exit;
+}
+
+if (isset($parsedArgs['loglevel'])) {
+    startup_set_log_level_string($parsedArgs['loglevel']);
+}
+
+if (isset($parsedArgs['debug'])) {
+    startup_enable_debug_mode();
+}
+
 require __DIR__ . '/../src/launcher.php';
