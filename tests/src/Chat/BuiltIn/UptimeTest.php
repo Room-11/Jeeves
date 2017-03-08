@@ -11,7 +11,7 @@ use Room11\Jeeves\System\BuiltInCommandInfo;
 
 class UptimeTest extends AbstractBuiltInTest
 {
-    const VALID_UPTIME_EXP = "\d \bsecond(s)?\b|\d \bminute(s)?\b|\d \bday(s)?\b|\d \bhour(s)?\b";
+    const VALID_UPTIME_EXP = "/\d \bsecond(s)?\b|\d \bminute(s)?\b|\d \bday(s)?\b|\d \bhour(s)?\b/";
 
     private $command; 
     private $room;
@@ -21,7 +21,7 @@ class UptimeTest extends AbstractBuiltInTest
         parent::setUp();
 
         if (!defined('Room11\\Jeeves\\PROCESS_START_TIME')) {
-            define('Room11\\Jeeves\\PROCESS_START_TIME', time());
+            define('Room11\\Jeeves\\PROCESS_START_TIME', 1489013652);
         }
 
         $this->builtIn = new Uptime($this->client);
@@ -42,11 +42,6 @@ class UptimeTest extends AbstractBuiltInTest
 
     public function testUptimeCommand()
     {
-        $this->room
-            ->expects($this->exactly(5000))
-            ->method('isApproved')
-            ->will($this->returnValue(new Success(true)));
-
         $this->client
             ->expects($this->once())
             ->method('postMessage')
@@ -54,6 +49,16 @@ class UptimeTest extends AbstractBuiltInTest
                 $this->identicalTo($this->command),
                 $this->matchesRegularExpression(self::VALID_UPTIME_EXP)
             );
+
+        $this->command
+            ->expects($this->once())
+            ->method('getRoom')
+            ->will($this->returnValue($this->room));
+
+        $this->room
+            ->expects($this->exactly(5000))
+            ->method('isApproved')
+            ->will($this->returnValue(new Success(true)));
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
