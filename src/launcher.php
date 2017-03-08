@@ -5,7 +5,6 @@ namespace Room11\Jeeves;
 
 use Aerys\Bootstrapper;
 use Aerys\Host;
-use Auryn\Injector;
 use DaveRandom\AsyncBitlyClient\Client as BitlyClient;
 use PeeHaa\AsyncChatterBot\Credential\CleverBot as CleverBotCredentials;
 use PeeHaa\AsyncTwitter\Credentials\Application as TwitterApplicationCredentials;
@@ -53,10 +52,8 @@ use Symfony\Component\Yaml\Yaml;
 use function Amp\onError;
 use function Amp\run;
 
-require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../version.php';
-
-define(__NAMESPACE__ . '\\PROCESS_START_TIME', time());
+require __DIR__ . '/bootstrap.php';
+$injector = require __DIR__ . '/setup-di.php';
 
 $builtInCommands = [
     AdminBuiltIn::class,
@@ -75,9 +72,6 @@ $builtInEventHandlers = [
 ];
 
 $config = Yaml::parse(file_get_contents(__DIR__ . '/../config/config.yml'));
-
-$injector = new Injector();
-require_once __DIR__ . '/setup-di.php';
 
 $injector->alias(AdminStorage::class,    $config['storage']['admin']    ?? FileAdminStorage::class);
 $injector->alias(BanStorage::class,      $config['storage']['ban']      ?? FileBanStorage::class);
@@ -173,6 +167,7 @@ foreach ($builtInEventHandlers as $className) {
     $builtInActionManager->registerEventHandler($injector->make($className));
 }
 
+/** @var PluginManager $pluginManager */
 $pluginManager = $injector->make(PluginManager::class);
 
 foreach ($config['plugins'] ?? [] as $pluginClass) {

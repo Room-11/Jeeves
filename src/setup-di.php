@@ -45,7 +45,7 @@ use Room11\Jeeves\WebAPI\Server as WebAPIServer;
 use Room11\OpenId\Authenticator as OpenIdAuthenticator;
 use Room11\OpenId\StackExchangeAuthenticator;
 
-const DATA_BASE_DIR = __DIR__ . '/../data';
+$injector = new Injector();
 
 /** @var Injector $injector */
 $injector->alias(HttpClient::class, ArtaxClient::class);
@@ -90,3 +90,5 @@ $injector->share(RoomStorage::class);
 $injector->share(WebAPIServer::class);
 $injector->share(WebSocketEventDispatcher::class);
 $injector->share(WebSocketHandlerFactory::class);
+
+return $injector;
