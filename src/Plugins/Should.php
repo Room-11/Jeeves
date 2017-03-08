@@ -42,7 +42,7 @@ class Should extends BasePlugin
         static $expr = '~(\S+?)\s+(.*?)\sor\s(?:(?:should\s+\1|rather)\s+)?(.*?)(?:\?|$)~i';
 
         if (!preg_match($expr, implode(" ", $command->getParameters()), $match)) {
-            return $this->chatClient->postMessage($command, "Dunno.");
+            return $this->is($command);
         }
 
         $yes = $match[2];
