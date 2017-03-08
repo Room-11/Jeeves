@@ -51,7 +51,6 @@ use Symfony\Component\Yaml\Yaml;
 use function Amp\onError;
 use function Amp\run;
 
-require __DIR__ . '/bootstrap.php';
 $injector = require __DIR__ . '/setup-di.php';
 
 $builtInCommands = [
