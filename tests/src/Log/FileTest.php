@@ -8,7 +8,7 @@ use Room11\Jeeves\Log\BaseLogger;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\Level;
 
-class FileTest extends \PHPUnit_Framework_TestCase
+class FileTest extends \PHPUnit\Framework\TestCase
 {
     private $logFile;
 

@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Test\Chat;
 
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
-class PluginCommandEndpointTest extends \PHPUnit_Framework_TestCase
+class PluginCommandEndpointTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var PluginCommandEndpoint

@@ -42,10 +42,10 @@
         "room11/dom-utils": "~1.0",
         "room11/google-searcher": "~1.0",
         "sabre/uri": "^1.0",
-        "sebastian/version": "^1.0",
-        "symfony/yaml": "^3.0"
+        "sebastian/version": "^2.0",
+        "symfony/yaml": "^3.0",
+        "phpunit/phpunit": "^6.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "5.3.*"
     }
 }

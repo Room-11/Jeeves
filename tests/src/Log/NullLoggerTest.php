@@ -7,7 +7,7 @@ use Room11\Jeeves\Log\NullLogger;
 use Room11\Jeeves\Log\BaseLogger;
 use Room11\Jeeves\Log\Logger;
 
-class NullLoggerTest extends \PHPUnit_Framework_TestCase
+class NullLoggerTest extends \PHPUnit\Framework\TestCase
 {
     public function testImplementsCorrectInterface()
     {

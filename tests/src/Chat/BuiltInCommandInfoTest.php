@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Tests\Chat;
 
 use Room11\Jeeves\System\BuiltInCommandInfo;
 
-class BuiltInCommandInfoTest extends \PHPUnit_Framework_TestCase
+class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
 {
     public function testGetCommand()
     {

@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Tests\Chat;
 
 use Room11\Jeeves\Chat\Client\ChatClient;
 
-abstract class AbstractChatTest extends \PHPUnit_Framework_TestCase
+abstract class AbstractChatTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var ChatClient|\PHPUnit_Framework_MockObject_MockObject

@@ -5,7 +5,7 @@ namespace Room11\Jeeves\Test\Chat\Event;
 use Room11\Jeeves\Chat\Event\BaseEvent;
 use Room11\Jeeves\Chat\Event\Event;
 
-class BaseEventTest extends \PHPUnit_Framework_TestCase
+class BaseEventTest extends \PHPUnit\Framework\TestCase
 {
     /** @var BaseEvent */
     private $event;

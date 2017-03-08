@@ -8,7 +8,7 @@ use Room11\Jeeves\Log\BaseLogger;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\Level;
 
-class StdOutTest extends \PHPUnit_Framework_TestCase
+class StdOutTest extends \PHPUnit\Framework\TestCase
 {
     private function tellXDebugToFuckOff()
     {

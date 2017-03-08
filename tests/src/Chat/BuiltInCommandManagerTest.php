@@ -14,13 +14,20 @@ use function Amp\wait;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 
 
-class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
+class BuiltInCommandManagerTest extends \PHPUnit\Framework\TestCase
 {
     public function testRegisterLogs()
     {
-        $info1 = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
-        $info2 = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
-        $command = $this->getMock(BuiltInCommand::class);
+        $info1 = $this->getMockBuilder(BuiltInCommandInfo::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $info2 = $this->getMockBuilder(BuiltInCommandInfo::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $command = $this->getMockBuilder(BuiltInCommand::class)
+            ->getMock();
 
         $info1
             ->method('getCommand')
@@ -35,7 +42,8 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->method('getCommandInfo')
             ->will($this->returnValue([$info1, $info2]));
 
-        $logger = $this->getMock(Logger::class);
+        $logger = $this->getMockBuilder(Logger::class)
+            ->getMock();
 
         $logger
             ->expects($this->exactly(2))
@@ -46,7 +54,12 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             )
         ;
 
-        $builtInCommandManager = new BuiltInActionManager($this->getMock(BanStorage::class), $logger);
+
+        $builtInCommandManager = new BuiltInActionManager(
+            $this->getMockBuilder(BanStorage::class)
+                ->getMock(),
+            $logger
+        );
 
         $this->assertSame($builtInCommandManager, $builtInCommandManager->registerCommand($command));
     }
@@ -54,12 +67,18 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
     public function testHasRegisteredCommand()
     {
         $builtInCommandManager = new BuiltInActionManager(
-            $this->getMock(BanStorage::class),
-            $this->getMock(Logger::class)
+            $this->getMockBuilder(BanStorage::class)
+                ->getMock(),
+            $this->getMockBuilder(Logger::class)
+                ->getMock()
         );
 
-        $info = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
-        $command = $this->getMock(BuiltInCommand::class);
+        $info = $this->getMockBuilder(BuiltInCommandInfo::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $command = $this->getMockBuilder(BuiltInCommand::class)
+            ->getMock();
 
         $info
             ->method('getCommand')
@@ -79,12 +98,18 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
     public function testGetRegisteredCommands()
     {
         $builtInCommandManager = new BuiltInActionManager(
-            $this->getMock(BanStorage::class),
-            $this->getMock(Logger::class)
+            $this->getMockBuilder(BanStorage::class)
+                ->getMock(),
+            $this->getMockBuilder(Logger::class)
+                ->getMock()
         );
 
-        $info = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
-        $command = $this->getMock(BuiltInCommand::class);
+        $info = $this->getMockBuilder(BuiltInCommandInfo::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $command = $this->getMockBuilder(BuiltInCommand::class)
+            ->getMock();
 
         $info
             ->method('getCommand')
@@ -103,8 +128,10 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
     public function testHandleCommandDoesntMatch()
     {
         $builtInCommandManager = new BuiltInActionManager(
-            $this->getMock(BanStorage::class),
-            $this->getMock(Logger::class)
+            $this->getMockBuilder(BanStorage::class)
+                ->getMock(),
+            $this->getMockBuilder(Logger::class)
+                ->getMock()
         );
 
         $command = $this->getMockBuilder(Command::class)
@@ -123,8 +150,12 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
 
     public function testHandleCommandWhenBanned()
     {
-        $info = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
-        $command = $this->getMock(BuiltInCommand::class);
+        $info = $this->getMockBuilder(BuiltInCommandInfo::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $command = $this->getMockBuilder(BuiltInCommand::class)
+            ->getMock();
 
         $info
             ->method('getCommand')
@@ -135,7 +166,8 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->method('getCommandInfo')
             ->will($this->returnValue([$info]));
 
-        $logger = $this->getMock(Logger::class);
+        $logger = $this->getMockBuilder(Logger::class)
+            ->getMock();
 
         $logger
             ->expects($this->exactly(2))
@@ -146,7 +178,8 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             )
         ;
 
-        $banStorage = $this->getMock(BanStorage::class);
+        $banStorage = $this->getMockBuilder(BanStorage::class)
+            ->getMock();
 
         $banStorage
             ->expects($this->once())
@@ -231,8 +264,12 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->willReturn(14)
         ;
 
-        $info = $this->getMockWithoutInvokingTheOriginalConstructor(BuiltInCommandInfo::class);
-        $registeredCommand = $this->getMock(BuiltInCommand::class);
+        $info = $this->getMockBuilder(BuiltInCommandInfo::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $registeredCommand = $this->getMockBuilder(BuiltInCommand::class)
+            ->getMock();
 
         $info
             ->method('getCommand')
@@ -250,7 +287,8 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             ->willReturn(new Success())
         ;
 
-        $logger = $this->getMock(Logger::class);
+        $logger = $this->getMockBuilder(Logger::class)
+            ->getMock();
 
         $logger
             ->expects($this->exactly(2))
@@ -261,7 +299,8 @@ class BuiltInCommandManagerTest extends \PHPUnit_Framework_TestCase
             )
         ;
 
-        $banStorage = $this->getMock(BanStorage::class);
+        $banStorage = $this->getMockBuilder(BanStorage::class)
+            ->getMock();
 
         $banStorage
             ->expects($this->once())

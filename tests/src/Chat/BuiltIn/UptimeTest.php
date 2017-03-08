@@ -55,7 +55,7 @@ class UptimeTest extends AbstractBuiltInTest
                 $this->matchesRegularExpression(self::VALID_UPTIME_EXP)
             );
 
-        \amp\wait($this->builtIn->handleCommand($this->command));
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testUnApprovedUptimeCommand()
