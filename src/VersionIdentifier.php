@@ -39,9 +39,9 @@ class VersionIdentifier
 
     public function getGithubUrl(): string
     {
-        $path = $this->commitHash !== null
+        $path = $this->commitsSinceTag > 0 && $this->commitHash !== null
             ? '/commit/' . $this->commitHash
-            : '/tree/' . $this->lastTag;
+            : '/tree/' . urlencode($this->lastTag);
 
         return GITHUB_PROJECT_URL . $path;
     }
