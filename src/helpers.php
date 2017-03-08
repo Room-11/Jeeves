@@ -61,14 +61,13 @@ function dateinterval_to_string(\DateInterval $interval, string $precision = 's'
 
 function normalize_stack_exchange_url(string $url): string
 {
-    static $domains, $questionExpr, $answerExpr;
-
-    $domains = $domains ?? [
-            'stackoverflow\.com',
-            'superuser\.com',
-            'serverfault\.com',
-            '[a-z0-9]+\.stackexchange\.com',
-        ];
+    static $questionExpr, $answerExpr;
+    static $domains = [
+        'stackoverflow\.com',
+        'superuser\.com',
+        'serverfault\.com',
+        '[a-z0-9]+\.stackexchange\.com',
+    ];
 
     $questionOrAnswerExpr = $questionExpr ?? '~^https?://(?:www\.)?(' . implode('|', $domains) . ')/q(?:uestions)?/([0-9]+)(?:[^#]+#([0-9]+))?~';
     $answerExpr = $answerExpr ?? '#^https?://(?:www\.)?(' . implode('|', $domains) . ')/a/([0-9]+)#';
