@@ -59,7 +59,7 @@ function dateinterval_to_string(\DateInterval $interval, string $precision = 's'
         : $last;
 }
 
-function getNormalisedStackExchangeURL(string $url): string
+function normalize_stack_exchange_url(string $url): string
 {
     static $domains, $questionExpr, $answerExpr;
 

@@ -10,7 +10,7 @@ use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\resolve;
-use function Room11\Jeeves\getNormalisedStackExchangeURL;
+use function Room11\Jeeves\normalize_stack_exchange_url;
 
 class Canon extends BasePlugin
 {
@@ -75,7 +75,7 @@ class Canon extends BasePlugin
 
     private function add(Command $command, string $canonTitle, string $url): Promise
     {   // !!canon add mysql http://stackoverflow.com/questions/12859942
-        $url = getNormalisedStackExchangeURL($url);
+        $url = normalize_stack_exchange_url($url);
 
         return resolve(function() use($command, $canonTitle, $url) {
 
