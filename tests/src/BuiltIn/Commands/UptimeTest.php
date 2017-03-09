@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\Tests\Chat\BuiltIn;
+namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 
 use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Uptime;
@@ -8,7 +8,7 @@ use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 
-class UptimeTest extends AbstractBuiltInTest
+class UptimeTest extends AbstractCommandTest
 {
     const VALID_UPTIME_EXP = "/\d \bsecond(s)?\b|\d \bminute(s)?\b|\d \bday(s)?\b|\d \bhour(s)?\b/";
 

@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\Tests\Chat\BuiltIn;
+namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 
 use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Version;
@@ -14,7 +14,7 @@ require __DIR__ . '/../../../../version.php';
 define('Room11\\Jeeves\\APP_BASE', realpath(__DIR__ . '/../../../../'));
 define('Room11\\Jeeves\\GITHUB_PROJECT_URL', 'https://github.com/Room-11/Jeeves');
 
-class VersionTest extends AbstractBuiltInTest
+class VersionTest extends AbstractCommandTest
 {
     private $command; 
     private $room;

@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\Tests\Chat\BuiltIn;
+namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 
 use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Remove;
@@ -11,7 +11,7 @@ use Room11\Jeeves\Chat\Client\PostedMessageTracker;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 
-class RemoveTest extends AbstractBuiltInTest
+class RemoveTest extends AbstractCommandTest
 {
     private $command; 
     private $room;
