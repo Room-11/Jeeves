@@ -1,6 +1,6 @@
 <?php declare(strict_types = 1);
 
-namespace Room11\Jeeves\Tests\Chat\builtIn;
+namespace Room11\Jeeves\Tests\Chat\BuiltIn;
 
 use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\Tests\Chat\AbstractChatTest;

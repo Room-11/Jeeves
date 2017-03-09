@@ -3,7 +3,6 @@
 namespace Room11\Jeeves\Tests\Chat\BuiltIn;
 
 use Amp\Success;
-use AsyncInterop\Loop;
 use Room11\Jeeves\BuiltIn\Commands\Uptime;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room;
