@@ -47,12 +47,14 @@ class RemoveTest extends AbstractCommandTest
             ->with(
                 $this->equalTo(0)
             )
-            ->will($this->returnValue(1));        
+            ->will($this->returnValue(1))
+        ;        
 
         $this->command
             ->expects($this->once())
             ->method('getId')
-            ->will($this->returnValue(113));
+            ->will($this->returnValue(113))
+        ;
 
         $message = $this->createMock(PostedMessage::class);
         $command = $this->createMock(Command::class);
@@ -87,9 +89,9 @@ class RemoveTest extends AbstractCommandTest
             ->with(
                 $this->identicalTo($this->room),
                 $this->isType('int'),
-                $this->equalTo(113),
-                $this->equalTo(112),
-                $this->equalTo(111)
+                $this->identicalTo(113),
+                $this->identicalTo(112),
+                $this->identicalTo(111)
             )
             ->will($this->returnValue(new Success(true)))
         ;
