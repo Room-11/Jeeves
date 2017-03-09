@@ -7,8 +7,6 @@ use Amp\Artax\HttpClient;
 use Room11\Jeeves\BuiltIn\Commands\Admin;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Entities\ChatUser;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Chat\Client\PostedMessageTracker;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommandInfo;
@@ -181,6 +179,11 @@ class AdminTest extends AbstractCommandTest
  
         $response = \amp\wait($this->builtIn->handleCommand($this->command));
         $this->assertNull($response); 
+    }
+    
+    public function testCommandInfo()
+    {
+        $this->assertInstanceOf(BuiltInCommandInfo::class, $this->builtIn->getCommandInfo()[0]);
     }
 
     private function setAdmin(bool $isAdmin)
