@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Tests\Chat\BuiltIn;
 
 use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Remove;
+use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Chat\Client\PostedMessageTracker;
@@ -46,7 +47,39 @@ class RemoveTest extends AbstractBuiltInTest
             ->with(
                 $this->equalTo(0)
             )
-            ->will($this->returnValue(5));
+            ->will($this->returnValue(1));        
+
+        $this->command
+            ->expects($this->once())
+            ->method('getId')
+            ->will($this->returnValue(113));
+
+        $message = $this->createMock(PostedMessage::class);
+        $command = $this->createMock(Command::class);
+
+        $this->tracker
+            ->expects($this->once())
+            ->method('popMessage')
+            ->will($this->returnValue($message))
+        ;
+
+        $message
+            ->expects($this->once())
+            ->method('getId')
+            ->will($this->returnValue(112))
+        ;
+
+        $message
+            ->expects($this->once())
+            ->method('getOriginatingCommand')
+            ->will($this->returnValue($command))
+        ;
+
+        $command
+            ->expects($this->once())
+            ->method('getId')
+            ->will($this->returnValue(111))
+        ;
 
         $this->client
             ->expects($this->once())
@@ -54,7 +87,9 @@ class RemoveTest extends AbstractBuiltInTest
             ->with(
                 $this->identicalTo($this->room),
                 $this->isType('int'),
-                $this->isType('int')
+                $this->equalTo(113),
+                $this->equalTo(112),
+                $this->equalTo(111)
             )
             ->will($this->returnValue(new Success(true)))
         ;
