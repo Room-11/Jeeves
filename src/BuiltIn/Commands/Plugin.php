@@ -155,19 +155,6 @@ class Plugin implements BuiltInCommand
         return $this->chatClient->postMessage($command, $message);
     }
 
-    private function execute(CommandMessage $command)
-    {
-        switch ($command->getParameter(0)) {
-            case 'help':    return $this->showCommandHelp($command);
-            case 'list':    return $this->list($command);
-            case 'enable':  return $this->enable($command);
-            case 'disable': return $this->disable($command);
-            case 'status':  return $this->status($command);
-        }
-
-        return $this->chatClient->postReply($command, 'Syntax: plugin [list|disable|enable] [plugin-name]');
-    }
-
     private function showCommandHelp(CommandMessage $command): Promise
     {
         return $this->chatClient->postMessage($command, self::COMMAND_HELP_TEXT, PostFlags::FIXED_FONT);
@@ -181,7 +168,15 @@ class Plugin implements BuiltInCommand
      */
     public function handleCommand(CommandMessage $command): Promise
     {
-        return resolve($this->execute($command));
+        switch ($command->getParameter(0)) {
+            case 'help':    return $this->showCommandHelp($command);
+            case 'list':    return $this->list($command);
+            case 'enable':  return $this->enable($command);
+            case 'disable': return $this->disable($command);
+            case 'status':  return $this->status($command);
+        }
+
+        return $this->chatClient->postReply($command, 'Syntax: plugin [list|disable|enable] [plugin-name]');
     }
 
     /**

@@ -9,7 +9,6 @@ use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use const Room11\Jeeves\PROCESS_START_TIME;
-use function Amp\resolve;
 use function Room11\Jeeves\dateinterval_to_string;
 
 class Uptime implements BuiltInCommand
@@ -25,7 +24,13 @@ class Uptime implements BuiltInCommand
         $this->startTime = new \DateTimeImmutable('@' . PROCESS_START_TIME);
     }
 
-    private function execute(CommandMessage $command)
+    /**
+     * Handle a command message
+     *
+     * @param CommandMessage $command
+     * @return Promise
+     */
+    public function handleCommand(CommandMessage $command): Promise
     {
         $lastAccident = dateinterval_to_string((new \DateTime)->diff($this->startTime));
         $since = $this->startTime->format('Y-m-d H:i:s');
@@ -41,17 +46,6 @@ class Uptime implements BuiltInCommand
         $message .= "╚" . str_repeat("═", $lineLength) . "╝\n";
 
         return $this->chatClient->postMessage($command, $message, PostFlags::FIXED_FONT);
-    }
-
-    /**
-     * Handle a command message
-     *
-     * @param CommandMessage $command
-     * @return Promise
-     */
-    public function handleCommand(CommandMessage $command): Promise
-    {
-        return resolve($this->execute($command));
     }
 
     /**
