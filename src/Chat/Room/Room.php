@@ -2,8 +2,6 @@
 
 namespace Room11\Jeeves\Chat\Room;
 
-use Amp\Promise;
-use Amp\Success;
 use Room11\Jeeves\Chat\Auth\Session;
 use Room11\Jeeves\Chat\WebSocket\Handler as WebSocketHandler;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
@@ -56,13 +54,6 @@ class Room
     public function getKeyValueStore(): KeyValueStore
     {
         return $this->keyValueStore;
-    }
-
-    public function isApproved(): Promise
-    {
-        return $this->permanent
-            ? new Success(true)
-            : $this->presenceManager->isApproved($this->identifier);
     }
 
     public function __debugInfo()

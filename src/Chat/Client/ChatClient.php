@@ -23,6 +23,7 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Chat\Room\UserAccessType as ChatRoomAccessType;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\Storage\Room as RoomStorage;
 use function Amp\all;
 use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
@@ -41,6 +42,7 @@ class ChatClient
     private $actionFactory;
     private $urlResolver;
     private $identifierFactory;
+    private $roomStorage;
 
     public function __construct(
         HttpClient $httpClient,
@@ -48,7 +50,8 @@ class ChatClient
         ActionExecutor $actionExecutor,
         ActionFactory $actionFactory,
         EndpointURLResolver $urlResolver,
-        ChatRoomIdentifierFactory $identifierFactory
+        ChatRoomIdentifierFactory $identifierFactory,
+        RoomStorage $roomStorage
     ) {
         $this->httpClient = $httpClient;
         $this->logger = $logger;
@@ -56,6 +59,7 @@ class ChatClient
         $this->actionFactory = $actionFactory;
         $this->urlResolver = $urlResolver;
         $this->identifierFactory = $identifierFactory;
+        $this->roomStorage = $roomStorage;
     }
 
     private function checkAndNormaliseEncoding(string $text): string
@@ -526,7 +530,7 @@ class ChatClient
                 : null;
 
             // the order of these two conditions is very important! MUST short circuit on $flags or new rooms will block on the welcome message!
-            if (!($flags & PostFlags::FORCE) && !(yield $room->isApproved())) {
+            if (!($flags & PostFlags::FORCE) && !(yield $this->roomStorage->isApproved($room->getIdentifier()))) {
                 throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
             }
 
