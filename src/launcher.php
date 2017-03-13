@@ -20,7 +20,8 @@ use Room11\Jeeves\BuiltIn\Commands\Remove as RemoveBuiltIn;
 use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
 use Room11\Jeeves\Chat\Room\CredentialManager;
 use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
-use Room11\Jeeves\Chat\Room\PresenceManager;
+use Room11\Jeeves\Chat\Room\StatusManager as ChatRoomStatusManager;
+use Room11\Jeeves\Chat\Room\PresenceManager as ChatRoomPresenceManager;
 use Room11\Jeeves\Chat\WebSocket\EventDispatcher as WebSocketEventDispatcher;
 use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Log\AerysLogger;
@@ -106,6 +107,15 @@ $injector->define(WebSocketEventDispatcher::class, [
    ':devMode' => $config['dev-mode']['enable'] ?? false,
 ]);
 
+$permanentRooms = array_map(function($room) {
+    return new ChatRoomIdentifier(
+        $room['id'],
+        $room['hostname'] ?? 'chat.stackoverflow.com'
+    );
+}, $config['rooms']);
+
+$injector->define(ChatRoomStatusManager::class, [':permanentRooms' => $permanentRooms]);
+
 $injector->delegate(Logger::class, function () use ($config) {
     $logLevel = getenv('JEEVES_LOG_LEVEL') ?: ($config['logging']['level'] ?? '');
     $flags = array_map('trim', explode('|', $logLevel));
@@ -184,12 +194,7 @@ foreach ($config['plugins'] ?? [] as $pluginClass) {
     $pluginManager->registerPlugin($injector->make($pluginClass));
 }
 
-$injector->make(PresenceManager::class)->restoreRooms(array_map(function($room) {
-    return new ChatRoomIdentifier(
-        $room['id'],
-        $room['hostname'] ?? 'chat.stackoverflow.com'
-    );
-}, $config['rooms']));
+$injector->make(ChatRoomPresenceManager::class)->restoreRooms($permanentRooms);
 
 if ($config['web-api']['enable'] ?? false) {
     $host = new Host;

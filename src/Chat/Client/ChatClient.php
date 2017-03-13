@@ -20,10 +20,10 @@ use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Chat\Room\IdentifierFactory as ChatRoomIdentifierFactory;
 use Room11\Jeeves\Chat\Room\NotApprovedException as RoomNotApprovedException;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\Room\StatusManager;
 use Room11\Jeeves\Chat\Room\UserAccessType as ChatRoomAccessType;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\Storage\Room as RoomStorage;
 use function Amp\all;
 use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
@@ -42,7 +42,7 @@ class ChatClient
     private $actionFactory;
     private $urlResolver;
     private $identifierFactory;
-    private $roomStorage;
+    private $roomStatusManager;
 
     public function __construct(
         HttpClient $httpClient,
@@ -51,7 +51,7 @@ class ChatClient
         ActionFactory $actionFactory,
         EndpointURLResolver $urlResolver,
         ChatRoomIdentifierFactory $identifierFactory,
-        RoomStorage $roomStorage
+        StatusManager $roomStatusManager
     ) {
         $this->httpClient = $httpClient;
         $this->logger = $logger;
@@ -59,7 +59,7 @@ class ChatClient
         $this->actionFactory = $actionFactory;
         $this->urlResolver = $urlResolver;
         $this->identifierFactory = $identifierFactory;
-        $this->roomStorage = $roomStorage;
+        $this->roomStatusManager = $roomStatusManager;
     }
 
     private function checkAndNormaliseEncoding(string $text): string
@@ -530,7 +530,7 @@ class ChatClient
                 : null;
 
             // the order of these two conditions is very important! MUST short circuit on $flags or new rooms will block on the welcome message!
-            if (!($flags & PostFlags::FORCE) && !(yield $this->roomStorage->isApproved($room->getIdentifier()))) {
+            if (!($flags & PostFlags::FORCE) && !(yield $this->roomStatusManager->isApproved($room->getIdentifier()))) {
                 throw new RoomNotApprovedException('Bot is not approved for message posting in this room');
             }
 

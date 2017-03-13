@@ -8,7 +8,6 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Deferred;
 use Amp\Pause;
 use Amp\Promise;
-use Amp\Success;
 use Ds\Queue;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Client\PostFlags;
@@ -29,6 +28,7 @@ class PresenceManager
     const MAX_RECONNECT_ATTEMPTS = 1500; // a little over 1 day, in practice
 
     private $storage;
+    private $statusManager;
     private $chatClient;
     private $httpClient;
     private $urlResolver;
@@ -40,10 +40,10 @@ class PresenceManager
 
     private $actionQueues = [];
     private $timerWatchers = [];
-    private $permanentRooms = [];
 
     public function __construct(
         RoomStorage $storage,
+        StatusManager $statusManager,
         ChatClient $chatClient,
         HttpClient $httpClient,
         EndpointURLResolver $urlResolver,
@@ -54,6 +54,7 @@ class PresenceManager
         Logger $logger
     ) {
         $this->storage = $storage;
+        $this->statusManager = $statusManager;
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
         $this->urlResolver = $urlResolver;
@@ -196,7 +197,7 @@ class PresenceManager
 
     private function connectRoom(Identifier $identifier)
     {
-        $room = yield $this->connector->connect($identifier, $this, isset($this->permanentRooms[$identifier->getIdentString()]));
+        $room = yield $this->connector->connect($identifier, $this, $this->statusManager->isPermanent($identifier));
         $this->connectedRooms->add($room);
 
         yield $this->eventDispatcher->processConnect($identifier);
@@ -324,7 +325,7 @@ class PresenceManager
 
     private function checkAndAddRoom(Identifier $identifier, int $invitingUserID)
     {
-        if (isset($this->permanentRooms[$identifier->getIdentString()]) || yield $this->storage->containsRoom($identifier)) {
+        if ($this->statusManager->isPermanent($identifier) || yield $this->storage->containsRoom($identifier)) {
             throw new RoomAlreadyExistsException("Already present in {$identifier->getIdentString()}");
         }
 
@@ -375,11 +376,6 @@ class PresenceManager
         }
     }
 
-    private function checkIfRoomIsApproved(Identifier $identifier)
-    {
-        return yield $this->storage->isApproved($identifier);
-    }
-
     private function processDisconnectAndReconnectIfNecessary(Identifier $identifier)
     {
         yield $this->eventDispatcher->processDisconnect($identifier);
@@ -423,7 +419,6 @@ class PresenceManager
             $promises = [];
 
             foreach ($permanentRoomIdentifiers as $identifier) {
-                $this->permanentRooms[$identifier->getIdentString()] = true;
                 $promises[] = resolve($this->connectRoom($identifier));
             }
 
@@ -452,12 +447,5 @@ class PresenceManager
     public function processDisconnect(Identifier $identifier): Promise
     {
         return $this->enqueueAction([$this, 'processDisconnectAndReconnectIfNecessary'], $identifier);
-    }
-
-    public function isApproved(Identifier $identifier): Promise
-    {
-        return isset($this->permanentRooms[$identifier->getIdentString()])
-            ? new Success(true)
-            : $this->enqueueAction([$this, 'checkIfRoomIsApproved'], $identifier);
     }
 }
