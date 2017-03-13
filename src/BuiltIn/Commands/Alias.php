@@ -108,8 +108,8 @@ class Alias implements BuiltInCommand
     public function getCommandInfo(): array
     {
         return [
-            new BuiltInCommandInfo('alias', 'Add a bash-style alias', true),
-            new BuiltInCommandInfo('unalias', 'Remove a bash-style alias', true)
+            new BuiltInCommandInfo('alias', 'Add a bash-style alias', BuiltInCommandInfo::REQUIRE_ADMIN_USER),
+            new BuiltInCommandInfo('unalias', 'Remove a bash-style alias', BuiltInCommandInfo::REQUIRE_ADMIN_USER)
         ];
     }
 }

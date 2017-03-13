@@ -285,7 +285,7 @@ class Command implements BuiltInCommand
         }
 
         foreach ($builtInCommands as $info) {
-            $admin = $info->isAdminOnly() ? '*' : '';
+            $admin = $info->requiresAdminUser() ? '*' : '';
             $result .= "\n {$admin}{$info->getCommand()} - {$info->getDescription()}";
         }
 

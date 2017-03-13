@@ -72,7 +72,7 @@ class Remove implements BuiltInCommand
     public function getCommandInfo(): array
     {
         return [
-            new BuiltInCommandInfo('remove', "Remove the last x messages posted by the bot", true),
+            new BuiltInCommandInfo('remove', "Remove the last x messages posted by the bot", BuiltInCommandInfo::REQUIRE_ADMIN_USER),
         ];
     }
 }

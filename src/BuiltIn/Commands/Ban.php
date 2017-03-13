@@ -101,8 +101,8 @@ class Ban implements BuiltInCommand
     public function getCommandInfo(): array
     {
         return [
-            new BuiltInCommandInfo('ban', 'Ban a user from interacting with the bot for a specified period of time', true),
-            new BuiltInCommandInfo('unban', "Remove a user's ban status", true),
+            new BuiltInCommandInfo('ban', 'Ban a user from interacting with the bot for a specified period of time', BuiltInCommandInfo::REQUIRE_ADMIN_USER),
+            new BuiltInCommandInfo('unban', "Remove a user's ban status", BuiltInCommandInfo::REQUIRE_ADMIN_USER),
         ];
     }
 }
