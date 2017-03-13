@@ -28,10 +28,6 @@ class Remove implements BuiltInCommand
 
     private function remove(CommandMessage $command)
     {
-        if (!yield $command->getRoom()->isApproved()) {
-            return null;
-        }
-
         if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
             return $this->chatClient->postReply($command, "Sorry, you're not cool enough to do that :(");
         }
@@ -72,7 +68,7 @@ class Remove implements BuiltInCommand
     public function getCommandInfo(): array
     {
         return [
-            new BuiltInCommandInfo('remove', "Remove the last x messages posted by the bot", true),
+            new BuiltInCommandInfo('remove', "Remove the last x messages posted by the bot", BuiltInCommandInfo::REQUIRE_ADMIN_USER),
         ];
     }
 }

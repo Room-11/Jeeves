@@ -4,15 +4,18 @@ namespace Room11\Jeeves\System;
 
 class BuiltInCommandInfo
 {
+    const REQUIRE_ADMIN_USER = 0b01;
+    const ALLOW_UNAPPROVED_ROOM = 0b10;
+
     private $command;
     private $description;
-    private $adminOnly;
+    private $flags;
 
-    public function __construct(string $command, string $description, bool $adminOnly = false)
+    public function __construct(string $command, string $description, int $flags = 0)
     {
         $this->command = $command;
         $this->description = $description;
-        $this->adminOnly = $adminOnly;
+        $this->flags = $flags;
     }
 
     public function getCommand(): string
@@ -25,8 +28,13 @@ class BuiltInCommandInfo
         return $this->description;
     }
 
-    public function isAdminOnly(): bool
+    public function requiresAdminUser(): bool
     {
-        return $this->adminOnly;
+        return (bool)($this->flags & self::REQUIRE_ADMIN_USER);
+    }
+
+    public function requiresApprovedRoom(): bool
+    {
+        return !($this->flags & self::ALLOW_UNAPPROVED_ROOM);
     }
 }

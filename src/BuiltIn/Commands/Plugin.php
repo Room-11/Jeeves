@@ -157,10 +157,6 @@ class Plugin implements BuiltInCommand
 
     private function execute(CommandMessage $command)
     {
-        if (!yield $command->getRoom()->isApproved()) {
-            return null;
-        }
-
         switch ($command->getParameter(0)) {
             case 'help':    return $this->showCommandHelp($command);
             case 'list':    return $this->list($command);

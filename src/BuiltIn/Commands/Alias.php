@@ -86,10 +86,6 @@ class Alias implements BuiltInCommand
     public function handleCommand(CommandMessage $command): Promise
     {
         return resolve(function() use($command) {
-            if (!yield $command->getRoom()->isApproved()) {
-                return null;
-            }
-
             if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
                 return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
             }
@@ -108,8 +104,8 @@ class Alias implements BuiltInCommand
     public function getCommandInfo(): array
     {
         return [
-            new BuiltInCommandInfo('alias', 'Add a bash-style alias', true),
-            new BuiltInCommandInfo('unalias', 'Remove a bash-style alias', true)
+            new BuiltInCommandInfo('alias', 'Add a bash-style alias', BuiltInCommandInfo::REQUIRE_ADMIN_USER),
+            new BuiltInCommandInfo('unalias', 'Remove a bash-style alias', BuiltInCommandInfo::REQUIRE_ADMIN_USER)
         ];
     }
 }

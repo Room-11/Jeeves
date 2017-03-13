@@ -27,10 +27,6 @@ class Ban implements BuiltInCommand
 
     private function execute(CommandMessage $command)
     {
-        if (!yield $command->getRoom()->isApproved()) {
-            return null;
-        }
-
         if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
         }
@@ -101,8 +97,8 @@ class Ban implements BuiltInCommand
     public function getCommandInfo(): array
     {
         return [
-            new BuiltInCommandInfo('ban', 'Ban a user from interacting with the bot for a specified period of time', true),
-            new BuiltInCommandInfo('unban', "Remove a user's ban status", true),
+            new BuiltInCommandInfo('ban', 'Ban a user from interacting with the bot for a specified period of time', BuiltInCommandInfo::REQUIRE_ADMIN_USER),
+            new BuiltInCommandInfo('unban', "Remove a user's ban status", BuiltInCommandInfo::REQUIRE_ADMIN_USER),
         ];
     }
 }

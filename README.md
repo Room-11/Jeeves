@@ -4,6 +4,7 @@ Jeeves
 Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for async magic sauce.
 
 [![Build Status](https://travis-ci.org/Room-11/Jeeves.svg?branch=master)](https://travis-ci.org/Room-11/Jeeves)
+[![@PeeHaa's FAULT](https://img.shields.io/badge/@PeeHaa's-FAULT-red.svg)](https://github.com/PeeHaa)
 
 ## Requirements
 
@@ -39,7 +40,7 @@ If you want to run the bot as a systemd service:
 ## Documentation
 
 Documentation is something other people do. Despite this, there is some information in the [wiki](https://github.com/Room-11/Jeeves/wiki)
- 
+
 ## License
- 
+
  The source code of this project is licensed under the [MIT license](https://opensource.org/licenses/mit-license.php).

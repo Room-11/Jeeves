@@ -285,7 +285,7 @@ class Command implements BuiltInCommand
         }
 
         foreach ($builtInCommands as $info) {
-            $admin = $info->isAdminOnly() ? '*' : '';
+            $admin = $info->requiresAdminUser() ? '*' : '';
             $result .= "\n {$admin}{$info->getCommand()} - {$info->getDescription()}";
         }
 
@@ -337,10 +337,6 @@ class Command implements BuiltInCommand
             return yield from $this->list($command);
         }
 
-        if (!yield $command->getRoom()->isApproved()) {
-            return null;
-        }
-
         try {
             switch ($command->getParameter(0)) {
                 case 'help':  return $this->showCommandHelp($command);
@@ -377,7 +373,7 @@ class Command implements BuiltInCommand
     {
         return [
             new BuiltInCommandInfo('command', "Manage command mappings. Use 'command help' for details."),
-            new BuiltInCommandInfo('help', "Alias of 'command list'"),
+            new BuiltInCommandInfo('help', "Alias of 'command list'", BuiltInCommandInfo::ALLOW_UNAPPROVED_ROOM),
         ];
     }
 }

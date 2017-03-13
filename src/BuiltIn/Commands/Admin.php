@@ -101,10 +101,6 @@ class Admin implements BuiltInCommand
 
     private function execute(CommandMessage $command)
     {
-        if (!yield $command->getRoom()->isApproved()) {
-            return null;
-        }
-
         if ($command->getParameter(0) === "help") {
             return $this->showCommandHelp($command);
         }
