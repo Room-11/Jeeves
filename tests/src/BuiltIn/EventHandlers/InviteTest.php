@@ -61,7 +61,7 @@ class InviteTest extends \PHPUnit\Framework\TestCase
             ->will($this->returnValue(new Success()))
         ;
 
-        \amp\wait($this->event->handleEvent($event));
+        \Amp\wait($this->event->handleEvent($event));
     }
 
     public function testGetEventTypes()

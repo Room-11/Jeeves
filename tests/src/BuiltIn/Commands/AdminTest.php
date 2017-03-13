@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
- 
+
 namespace Room11\Jeeves\Tests\BuiltIn\Commands;
- 
+
 use Amp\Success;
 use Amp\Artax\HttpClient;
 use Room11\Jeeves\BuiltIn\Commands\Admin;
@@ -22,11 +22,11 @@ class AdminTest extends AbstractCommandTest
     private $command;
     private $httpClient;
     private $room;
- 
+
     public function setUp()
     {
         parent::setUp();
- 
+
         $this->admin = $this->createMock(AdminStorage::class);
         $this->client = $this->createMock(ChatClient::class);
         $this->command = $this->createMock(Command::class);
@@ -72,7 +72,7 @@ class AdminTest extends AbstractCommandTest
         $this->setAdminsInStorage([456], []);
         $this->expectReply("User is a room owner and has implicit admin rights.");
 
-        \Amp\wait($this->builtIn->handleCommand($this->command));         
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testRemoveCommandNotAdmin()
@@ -83,7 +83,7 @@ class AdminTest extends AbstractCommandTest
         $this->setAdminsInStorage([], []);
         $this->expectReply("User not currently on admin list.");
 
-        \Amp\wait($this->builtIn->handleCommand($this->command));        
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testAddCommand()
@@ -104,7 +104,7 @@ class AdminTest extends AbstractCommandTest
 
         $this->expectMessage("User added to the admin list.");
 
-        \Amp\wait($this->builtIn->handleCommand($this->command)); 
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testAddCommandAlreadyOwner()
@@ -115,7 +115,7 @@ class AdminTest extends AbstractCommandTest
         $this->setAdminsInStorage([456], []);
         $this->expectReply("User is a room owner and has implicit admin rights.");
 
-        \Amp\wait($this->builtIn->handleCommand($this->command));        
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testAddCommandAlreadyAdmin()
@@ -137,7 +137,7 @@ class AdminTest extends AbstractCommandTest
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
- 
+
     public function testCommandList()
     {
         $this->setReturnValue($this->room, 'isApproved', new Success(true));
@@ -147,9 +147,9 @@ class AdminTest extends AbstractCommandTest
         $this->client
             ->method('getChatUsers')
             ->will($this->returnValue(new Success([
-                    new ChatUser(['id' => 123, 'name' => 'firstOwner']), 
-                    new ChatUser(['id' => 456, 'name' => 'secondOwner']), 
-                    new ChatUser(['id' => 789, 'name' => 'firstAdmin']), 
+                    new ChatUser(['id' => 123, 'name' => 'firstOwner']),
+                    new ChatUser(['id' => 456, 'name' => 'secondOwner']),
+                    new ChatUser(['id' => 789, 'name' => 'firstAdmin']),
                     new ChatUser(['id' => 101112, 'name' => 'secondAdmin'])
                 ])
             ))
@@ -161,27 +161,27 @@ class AdminTest extends AbstractCommandTest
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
- 
+
     public function testCommandListWithNoAdmins()
     {
         $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setCommandParameter(0, 'list');
         $this->setAdminsInStorage([], []);
         $this->expectMessage('There are no registered admins');
- 
+
         \Amp\wait($this->builtIn->handleCommand($this->command));
- 
+
     }
- 
+
     public function testCommandHelp()
     {
         $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setCommandParameter(0, 'help');
         $this->expectMessage($this->builtIn::COMMAND_HELP_TEXT);
- 
+
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
- 
+
     public function testCommandWithoutApproval()
     {
         $this->setReturnValue($this->room, 'isApproved', new Success(false));
@@ -189,7 +189,7 @@ class AdminTest extends AbstractCommandTest
 
         $this->assertNull($response); 
     }
-    
+
     public function testCommandInfo()
     {
         $this->assertInstanceOf(BuiltInCommandInfo::class, $this->builtIn->getCommandInfo()[0]);
@@ -206,7 +206,7 @@ class AdminTest extends AbstractCommandTest
             ->will($this->returnValue(new Success($isAdmin)))
         ;
     }
- 
+
     private function setAdminsInStorage(array $owners, array $admins)
     {
         $this->admin
@@ -217,7 +217,7 @@ class AdminTest extends AbstractCommandTest
                     'admins' => $admins
                 ])
             ))
-        ;        
+        ;
     }
 
     private function setCommandParameters(array $parameters)
@@ -249,7 +249,7 @@ class AdminTest extends AbstractCommandTest
             ->will($this->returnValue(new Success(true)))
         ;
     }
- 
+
     private function expectMessage(string $message)
     {
         $this->client
@@ -260,6 +260,6 @@ class AdminTest extends AbstractCommandTest
                 $this->equalTo($message)
             )
             ->will($this->returnValue(new Success(true)))
-        ;       
+        ;
     }
 }
