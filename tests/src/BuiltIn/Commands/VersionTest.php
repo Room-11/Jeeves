@@ -6,7 +6,6 @@ use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Version;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use function Room11\Jeeves\get_current_version;
 
@@ -29,14 +28,10 @@ class VersionTest extends AbstractCommandTest
         $this->client = $this->createMock(ChatClient::class);
         $this->builtIn = new Version($this->client);
         $this->command = $this->createMock(Command::class);
-        $this->room = $this->createMock(Room::class);
-
-        $this->setReturnValue($this->command, 'getRoom', $this->room);
     }
 
     public function testVersionCommand()
     {
-        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $version = get_current_version();
 
         $this->client
@@ -56,14 +51,6 @@ class VersionTest extends AbstractCommandTest
         ;
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
-    }
-
-    public function testCommandWithoutApproval()
-    {
-        $this->setReturnValue($this->room, 'isApproved', new Success(false));
-        $response = \Amp\wait($this->builtIn->handleCommand($this->command));
-
-        $this->assertNull($response);
     }
 
     public function testCommandInfo()

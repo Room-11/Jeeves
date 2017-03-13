@@ -6,7 +6,6 @@ use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Uptime;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 
 class UptimeTest extends AbstractCommandTest
@@ -16,7 +15,6 @@ class UptimeTest extends AbstractCommandTest
     private $builtIn;
     private $client;
     private $command;
-    private $room;
 
     public function setUp()
     {
@@ -29,9 +27,6 @@ class UptimeTest extends AbstractCommandTest
         $this->client = $this->createMock(ChatClient::class);
         $this->command = $this->createMock(Command::class);
         $this->builtIn = new Uptime($this->client);
-        $this->room = $this->createMock(Room::class);
-
-        $this->setReturnValue($this->command, 'getRoom', $this->room);
     }
 
     public function testCommandInfo()
@@ -41,8 +36,6 @@ class UptimeTest extends AbstractCommandTest
 
     public function testUptimeCommand()
     {
-        $this->setReturnValue($this->room, 'isApproved', new Success(true));
-
         $this->client
             ->expects($this->once())
             ->method('postMessage')
@@ -54,13 +47,5 @@ class UptimeTest extends AbstractCommandTest
         ;
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
-    }
-
-    public function testUnApprovedUptimeCommand()
-    {
-        $this->setReturnValue($this->room, 'isApproved', new Success(false));
-        $response = \Amp\wait($this->builtIn->handleCommand($this->command));
-
-        $this->assertNull($response);
     }
 }

@@ -41,7 +41,6 @@ class RemoveTest extends AbstractCommandTest
 
     public function testCommand()
     {
-        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setReturnValue($this->admin, 'isAdmin', new Success(true));
         $this->setReturnValue($this->client, 'isBotUserRoomOwner', new Success(true));
         $this->setReturnValue($this->tracker, 'getCount', 1, 1);
@@ -88,17 +87,8 @@ class RemoveTest extends AbstractCommandTest
         $this->assertInstanceOf(BuiltInCommandInfo::class, $this->builtIn->getCommandInfo()[0]);
     }
 
-    public function testCommandWithoutApproval()
-    {
-        $this->setReturnValue($this->room, 'isApproved', new Success(false));
-        $response = \Amp\wait($this->builtIn->handleCommand($this->command));
-
-        $this->assertNull($response);
-    }
-
     public function testCommandWithoutAdmin()
     {
-        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setReturnValue($this->admin, 'isAdmin', new Success(false));
         $this->expectReply("Sorry, you're not cool enough to do that :(");
 
@@ -107,7 +97,6 @@ class RemoveTest extends AbstractCommandTest
 
     public function testCommandWithoutRoomOwner()
     {
-        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setReturnValue($this->admin, 'isAdmin', new Success(true));
         $this->setReturnValue($this->client, 'isBotUserRoomOwner', new Success(false));
         $this->expectReply("Sorry, I'm not a room owner so I can't do that :(");
@@ -117,7 +106,6 @@ class RemoveTest extends AbstractCommandTest
 
     public function testCommandWithEmptyTracker()
     {
-        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setReturnValue($this->admin, 'isAdmin', new Success(true));
         $this->setReturnValue($this->client, 'isBotUserRoomOwner', new Success(true));
         $this->setReturnValue($this->tracker, 'getCount', 0, 1);
