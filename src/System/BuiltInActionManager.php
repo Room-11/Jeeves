@@ -6,17 +6,17 @@ use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Chat\Event\Event;
 use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Room\StatusManager;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
-use Room11\Jeeves\Storage\Room as RoomStorage;
 use function Amp\all;
 use function Amp\resolve;
 
 class BuiltInActionManager
 {
     private $banStorage;
-    private $roomStorage;
+    private $roomStatusManager;
     private $logger;
 
     /**
@@ -34,10 +34,10 @@ class BuiltInActionManager
      */
     private $eventHandlers = [];
 
-    public function __construct(BanStorage $banStorage, RoomStorage $roomStorage, Logger $logger)
+    public function __construct(BanStorage $banStorage, StatusManager $roomStatusManager, Logger $logger)
     {
         $this->banStorage = $banStorage;
-        $this->roomStorage = $roomStorage;
+        $this->roomStatusManager = $roomStatusManager;
         $this->logger = $logger;
     }
 
@@ -106,7 +106,7 @@ class BuiltInActionManager
 
             $room = $command->getRoom();
 
-            if ($this->commandInfo[$commandName]->requiresApprovedRoom() && !yield $this->roomStorage->isApproved($room->getIdentifier())) {
+            if ($this->commandInfo[$commandName]->requiresApprovedRoom() && !yield $this->roomStatusManager->isApproved($room->getIdentifier())) {
                 return;
             }
 

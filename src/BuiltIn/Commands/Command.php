@@ -331,28 +331,6 @@ class Command implements BuiltInCommand
         $this->aliasStorage = $aliasStorage;
     }
 
-    private function execute(CommandMessage $command)
-    {
-        if ($command->getCommandName() === 'help') {
-            return yield from $this->list($command);
-        }
-
-        try {
-            switch ($command->getParameter(0)) {
-                case 'help':  return $this->showCommandHelp($command);
-                case 'list':  return yield from $this->list($command);
-                case 'clone': return yield from $this->clone($command);
-                case 'map':   return yield from $this->map($command);
-                case 'remap': return yield from $this->remap($command);
-                case 'unmap': return yield from $this->unmap($command);
-            }
-        } catch (\Throwable $e) {
-            return $this->chatClient->postReply($command, self::message('unexpected_error', $e->getMessage()));
-        }
-
-        return $this->chatClient->postMessage($command, self::message('syntax'));
-    }
-
     /**
      * Handle a command message
      *
@@ -361,7 +339,24 @@ class Command implements BuiltInCommand
      */
     public function handleCommand(CommandMessage $command): Promise
     {
-        return resolve($this->execute($command));
+        if ($command->getCommandName() === 'help') {
+            return resolve($this->list($command));
+        }
+
+        try {
+            switch ($command->getParameter(0)) {
+                case 'help':  return $this->showCommandHelp($command);
+                case 'list':  return resolve($this->list($command));
+                case 'clone': return resolve($this->clone($command));
+                case 'map':   return resolve($this->map($command));
+                case 'remap': return resolve($this->remap($command));
+                case 'unmap': return resolve($this->unmap($command));
+            }
+        } catch (\Throwable $e) {
+            return $this->chatClient->postReply($command, self::message('unexpected_error', $e->getMessage()));
+        }
+
+        return $this->chatClient->postMessage($command, self::message('syntax'));
     }
 
     /**

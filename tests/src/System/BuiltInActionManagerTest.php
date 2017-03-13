@@ -2,19 +2,20 @@
 
 namespace Room11\Jeeves\Tests\Chat;
 
-use Room11\Jeeves\System\BuiltInActionManager;
-use Room11\Jeeves\Storage\Ban as BanStorage;
-use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\Log\Level;
-use Room11\Jeeves\System\BuiltInCommand;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Event\MessageEvent;
 use Amp\Success;
-use function Amp\wait;
+use Room11\Jeeves\Chat\Event\MessageEvent;
+use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Room\StatusManager;
+use Room11\Jeeves\Log\Level;
+use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\Jeeves\System\BuiltInActionManager;
+use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use function Amp\wait;
 
 
-class BuiltInCommandManagerTest extends \PHPUnit\Framework\TestCase
+class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
 {
     public function testRegisterLogs()
     {
@@ -58,6 +59,9 @@ class BuiltInCommandManagerTest extends \PHPUnit\Framework\TestCase
         $builtInCommandManager = new BuiltInActionManager(
             $this->getMockBuilder(BanStorage::class)
                 ->getMock(),
+            $this->getMockBuilder(StatusManager::class)
+                ->disableOriginalConstructor()
+                ->getMock(),
             $logger
         );
 
@@ -68,6 +72,9 @@ class BuiltInCommandManagerTest extends \PHPUnit\Framework\TestCase
     {
         $builtInCommandManager = new BuiltInActionManager(
             $this->getMockBuilder(BanStorage::class)
+                ->getMock(),
+            $this->getMockBuilder(StatusManager::class)
+                ->disableOriginalConstructor()
                 ->getMock(),
             $this->getMockBuilder(Logger::class)
                 ->getMock()
@@ -100,6 +107,9 @@ class BuiltInCommandManagerTest extends \PHPUnit\Framework\TestCase
         $builtInCommandManager = new BuiltInActionManager(
             $this->getMockBuilder(BanStorage::class)
                 ->getMock(),
+            $this->getMockBuilder(StatusManager::class)
+                ->disableOriginalConstructor()
+                ->getMock(),
             $this->getMockBuilder(Logger::class)
                 ->getMock()
         );
@@ -129,6 +139,9 @@ class BuiltInCommandManagerTest extends \PHPUnit\Framework\TestCase
     {
         $builtInCommandManager = new BuiltInActionManager(
             $this->getMockBuilder(BanStorage::class)
+                ->getMock(),
+            $this->getMockBuilder(StatusManager::class)
+                ->disableOriginalConstructor()
                 ->getMock(),
             $this->getMockBuilder(Logger::class)
                 ->getMock()
@@ -181,13 +194,17 @@ class BuiltInCommandManagerTest extends \PHPUnit\Framework\TestCase
         $banStorage = $this->getMockBuilder(BanStorage::class)
             ->getMock();
 
+        $roomStorage = $this->getMockBuilder(StatusManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $banStorage
             ->expects($this->once())
             ->method('isBanned')
             ->willReturn(new Success(true))
         ;
 
-        $builtInCommandManager = new BuiltInActionManager($banStorage, $logger);
+        $builtInCommandManager = new BuiltInActionManager($banStorage, $roomStorage, $logger);
 
         $builtInCommandManager->registerCommand($command);
 
@@ -302,13 +319,17 @@ class BuiltInCommandManagerTest extends \PHPUnit\Framework\TestCase
         $banStorage = $this->getMockBuilder(BanStorage::class)
             ->getMock();
 
+        $roomStorage = $this->getMockBuilder(StatusManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $banStorage
             ->expects($this->once())
             ->method('isBanned')
             ->willReturn(new Success(false))
         ;
 
-        $builtInCommandManager = new BuiltInActionManager($banStorage, $logger);
+        $builtInCommandManager = new BuiltInActionManager($banStorage, $roomStorage, $logger);
 
         $builtInCommandManager->registerCommand($registeredCommand);
 
