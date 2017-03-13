@@ -45,7 +45,7 @@ class AdminTest extends AbstractCommandTest
 
     public function testRemoveCommand()
     {
-        $this->setRoomApproval($this->room, true);
+        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'remove'], [1, 456]]);
         $this->setAdminsInStorage([], [456]);
@@ -66,7 +66,7 @@ class AdminTest extends AbstractCommandTest
 
     public function testRemoveCommandAlreadyOwner()
     {
-        $this->setRoomApproval($this->room, true);
+        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'remove'], [1, 456]]);
         $this->setAdminsInStorage([456], []);
@@ -77,7 +77,7 @@ class AdminTest extends AbstractCommandTest
 
     public function testRemoveCommandNotAdmin()
     {
-        $this->setRoomApproval($this->room, true);
+        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'remove'], [1, 456]]);
         $this->setAdminsInStorage([], []);
@@ -88,7 +88,7 @@ class AdminTest extends AbstractCommandTest
 
     public function testAddCommand()
     {
-        $this->setRoomApproval($this->room, true);
+        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'add'], [1, 456]]);
         $this->setAdminsInStorage([], []);
@@ -109,7 +109,7 @@ class AdminTest extends AbstractCommandTest
 
     public function testAddCommandAlreadyOwner()
     {
-        $this->setRoomApproval($this->room, true);
+        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'add'], [1, 456]]);
         $this->setAdminsInStorage([456], []);
@@ -120,7 +120,7 @@ class AdminTest extends AbstractCommandTest
 
     public function testAddCommandAlreadyAdmin()
     {
-        $this->setRoomApproval($this->room, true);
+        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'add'], [1, 456]]);
         $this->setAdminsInStorage([], [456]);
@@ -131,7 +131,7 @@ class AdminTest extends AbstractCommandTest
 
     public function testCommandWithoutAdmin()
     {
-        $this->setRoomApproval($this->room, true);
+        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setAdmin(false);
         $this->expectReply("I'm sorry Dave, I'm afraid I can't do that");
 
@@ -140,7 +140,7 @@ class AdminTest extends AbstractCommandTest
  
     public function testCommandList()
     {
-        $this->setRoomApproval($this->room, true);
+        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setCommandParameter(0, 'list');
         $this->setAdminsInStorage([123, 456], [789, 101112]);
 
@@ -164,7 +164,7 @@ class AdminTest extends AbstractCommandTest
  
     public function testCommandListWithNoAdmins()
     {
-        $this->setRoomApproval($this->room, true);
+        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setCommandParameter(0, 'list');
         $this->setAdminsInStorage([], []);
         $this->expectMessage('There are no registered admins');
@@ -175,7 +175,7 @@ class AdminTest extends AbstractCommandTest
  
     public function testCommandHelp()
     {
-        $this->setRoomApproval($this->room, true);
+        $this->setReturnValue($this->room, 'isApproved', new Success(true));
         $this->setCommandParameter(0, 'help');
         $this->expectMessage($this->builtIn::COMMAND_HELP_TEXT);
  
@@ -184,9 +184,9 @@ class AdminTest extends AbstractCommandTest
  
     public function testCommandWithoutApproval()
     {
-        $this->setRoomApproval($this->room, false);
+        $this->setReturnValue($this->room, 'isApproved', new Success(false));
         $response = \Amp\wait($this->builtIn->handleCommand($this->command));
-        
+
         $this->assertNull($response); 
     }
     

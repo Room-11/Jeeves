@@ -8,14 +8,6 @@ use Room11\Jeeves\Chat\Message\Command;
  
 abstract class AbstractCommandTest extends \PHPUnit\Framework\TestCase
 {
-    protected function setRoomApproval(Room $room, bool $approved)
-    {
-        $room
-            ->method('isApproved')
-            ->will($this->returnValue(new Success($approved)))
-        ;
-    }
-
     protected function setReturnValue($mock, string $method, $value, int $expectedCalls = null)
     {
         $mock
