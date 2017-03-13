@@ -154,8 +154,14 @@ class RoomPresence implements BuiltInCommand
     {
         return [
             new BuiltInCommandInfo('invite', "Invite the bot to join a room. This can also be done through the chat web interface."),
-            new BuiltInCommandInfo('approve', "Approve the bot for talking in this room. Room owners only.", BuiltInCommandInfo::REQUIRE_ADMIN_USER),
-            new BuiltInCommandInfo('leave', "Ask the bot to leave the room. Room owners only.", BuiltInCommandInfo::REQUIRE_ADMIN_USER),
+            new BuiltInCommandInfo(
+                'approve', "Approve the bot for talking in this room. Room owners only.",
+                BuiltInCommandInfo::REQUIRE_ADMIN_USER | BuiltInCommandInfo::ALLOW_UNAPPROVED_ROOM
+            ),
+            new BuiltInCommandInfo(
+                'leave', "Ask the bot to leave the room. Room owners only.",
+                BuiltInCommandInfo::REQUIRE_ADMIN_USER | BuiltInCommandInfo::ALLOW_UNAPPROVED_ROOM
+            ),
         ];
     }
 }

@@ -27,10 +27,6 @@ class Ban implements BuiltInCommand
 
     private function execute(CommandMessage $command)
     {
-        if (!yield $command->getRoom()->isApproved()) {
-            return null;
-        }
-
         if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
         }

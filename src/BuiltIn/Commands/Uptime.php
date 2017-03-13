@@ -27,10 +27,6 @@ class Uptime implements BuiltInCommand
 
     private function execute(CommandMessage $command)
     {
-        if (!yield $command->getRoom()->isApproved()) {
-            return null;
-        }
-
         $lastAccident = dateinterval_to_string((new \DateTime)->diff($this->startTime));
         $since = $this->startTime->format('Y-m-d H:i:s');
 

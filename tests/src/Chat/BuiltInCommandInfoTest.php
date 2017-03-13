@@ -26,7 +26,7 @@ class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($description, $commandInfo->getDescription());
     }
 
-    public function testIsAdminOnlyDefaultNotSet()
+    public function testRequiresAdminUserDefaultNotSet()
     {
         $command = 'foo';
         $description = 'foo command';
@@ -36,7 +36,7 @@ class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(false, $commandInfo->requiresAdminUser());
     }
 
-    public function testIsAdminOnlyExplicitNotSet()
+    public function testRequiresAdminUserExplicitNotSet()
     {
         $command = 'foo';
         $description = 'foo command';
@@ -47,7 +47,7 @@ class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(false, $commandInfo->requiresAdminUser());
     }
 
-    public function testIsAdminOnlyExplicitTrue()
+    public function testRequiresAdminUserExplicitSet()
     {
         $command = 'foo';
         $description = 'foo command';
@@ -56,5 +56,37 @@ class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
         $commandInfo = new BuiltInCommandInfo($command, $description, $flags);
 
         $this->assertSame(true, $commandInfo->requiresAdminUser());
+    }
+
+    public function testRequiresApprovedRoomDefaultSet()
+    {
+        $command = 'foo';
+        $description = 'foo command';
+
+        $commandInfo = new BuiltInCommandInfo($command, $description);
+
+        $this->assertSame(true, $commandInfo->requiresApprovedRoom());
+    }
+
+    public function testRequiresApprovedRoomExplicitSet()
+    {
+        $command = 'foo';
+        $description = 'foo command';
+        $flags = ~BuiltInCommandInfo::ALLOW_UNAPPROVED_ROOM;
+
+        $commandInfo = new BuiltInCommandInfo($command, $description, $flags);
+
+        $this->assertSame(true, $commandInfo->requiresApprovedRoom());
+    }
+
+    public function testRequiresApprovedRoomExplicitNotSet()
+    {
+        $command = 'foo';
+        $description = 'foo command';
+        $flags = BuiltInCommandInfo::ALLOW_UNAPPROVED_ROOM;
+
+        $commandInfo = new BuiltInCommandInfo($command, $description, $flags);
+
+        $this->assertSame(false, $commandInfo->requiresApprovedRoom());
     }
 }

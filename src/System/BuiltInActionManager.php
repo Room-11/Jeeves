@@ -9,12 +9,14 @@ use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\Jeeves\Storage\Room as RoomStorage;
 use function Amp\all;
 use function Amp\resolve;
 
 class BuiltInActionManager
 {
     private $banStorage;
+    private $roomStorage;
     private $logger;
 
     /**
@@ -32,9 +34,10 @@ class BuiltInActionManager
      */
     private $eventHandlers = [];
 
-    public function __construct(BanStorage $banStorage, Logger $logger)
+    public function __construct(BanStorage $banStorage, RoomStorage $roomStorage, Logger $logger)
     {
         $this->banStorage = $banStorage;
+        $this->roomStorage = $roomStorage;
         $this->logger = $logger;
     }
 
@@ -101,12 +104,18 @@ class BuiltInActionManager
                 return;
             }
 
+            $room = $command->getRoom();
+
+            if ($this->commandInfo[$commandName]->requiresApprovedRoom() && !yield $this->roomStorage->isApproved($room->getIdentifier())) {
+                return;
+            }
+
             $eventId = $command->getEvent()->getId();
 
             $userId = $command->getUserId();
 
             try {
-                $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
+                $userIsBanned = yield $this->banStorage->isBanned($room, $userId);
 
                 if ($userIsBanned) {
                     $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");

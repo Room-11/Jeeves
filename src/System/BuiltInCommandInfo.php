@@ -5,6 +5,7 @@ namespace Room11\Jeeves\System;
 class BuiltInCommandInfo
 {
     const REQUIRE_ADMIN_USER = 0b01;
+    const ALLOW_UNAPPROVED_ROOM = 0b10;
 
     private $command;
     private $description;
@@ -30,5 +31,10 @@ class BuiltInCommandInfo
     public function requiresAdminUser(): bool
     {
         return (bool)($this->flags & self::REQUIRE_ADMIN_USER);
+    }
+
+    public function requiresApprovedRoom(): bool
+    {
+        return !($this->flags & self::ALLOW_UNAPPROVED_ROOM);
     }
 }

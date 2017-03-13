@@ -7,7 +7,6 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
-use function Amp\resolve;
 
 class Version implements BuiltInCommand
 {
@@ -18,21 +17,6 @@ class Version implements BuiltInCommand
         $this->chatClient = $chatClient;
     }
 
-    private function getVersion(CommandMessage $command)
-    {
-        if (!yield $command->getRoom()->isApproved()) {
-            return null;
-        }
-
-        $version = \Room11\Jeeves\get_current_version();
-
-        return $this->chatClient->postMessage($command, sprintf(
-            "[%s](%s)",
-            $version->getVersionString(),
-            $version->getGithubUrl()
-        ));
-    }
-
     /**
      * Handle a command message
      *
@@ -41,7 +25,13 @@ class Version implements BuiltInCommand
      */
     public function handleCommand(CommandMessage $command): Promise
     {
-        return resolve($this->getVersion($command));
+        $version = \Room11\Jeeves\get_current_version();
+
+        return $this->chatClient->postMessage($command, sprintf(
+            "[%s](%s)",
+            $version->getVersionString(),
+            $version->getGithubUrl()
+        ));
     }
 
     /**
