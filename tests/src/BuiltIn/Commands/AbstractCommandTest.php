@@ -5,31 +5,25 @@ namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 use Amp\Success;
 use Room11\Jeeves\Chat\Room\Room;
 use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Tests\BuiltIn\AbstractBuiltInTest;
  
-abstract class AbstractCommandTest extends AbstractBuiltInTest
+abstract class AbstractCommandTest extends \PHPUnit\Framework\TestCase
 {
-    protected $builtIn;
-    protected $room;
-    protected $command;
- 
-    public function setUp()
+    protected function setRoomApproval(Room $room, bool $approved)
     {
-        parent::setUp();
-        $this->room = $this->createMock(Room::class);
-        $this->command = $this->createMock(Command::class);
- 
-        $this->command
-            ->method('getRoom')
-            ->will($this->returnValue($this->room))
-        ;
-    }
- 
-    protected function setRoomApproval(bool $approved)
-    {
-        $this->room
+        $room
             ->method('isApproved')
             ->will($this->returnValue(new Success($approved)))
+        ;
+    }
+
+    protected function setReturnValue($mock, string $method, $value, int $expectedCalls = null)
+    {
+        $mock
+            ->expects(
+                $expectedCalls ? $this->exactly($expectedCalls) : $this->any()
+            )
+            ->method($method)
+            ->will($this->returnValue($value))
         ;
     }
 }

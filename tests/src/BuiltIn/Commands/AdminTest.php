@@ -5,39 +5,47 @@ namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 use Amp\Success;
 use Amp\Artax\HttpClient;
 use Room11\Jeeves\BuiltIn\Commands\Admin;
+use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Client\PostedMessageTracker;
 use Room11\Jeeves\Chat\Entities\PostedMessage;
 use Room11\Jeeves\Chat\Entities\ChatUser;
-use Room11\Jeeves\Chat\Client\PostedMessageTracker;
+use Room11\Jeeves\Chat\Room\Room;
+use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommandInfo;
- 
+
 class AdminTest extends AbstractCommandTest
 {
     private $admin;
+    private $builtIn;
+    private $client;
+    private $command;
     private $httpClient;
+    private $room;
  
     public function setUp()
     {
         parent::setUp();
  
-        $this->httpClient = $this->createMock(HttpClient::class);
         $this->admin = $this->createMock(AdminStorage::class);
- 
+        $this->client = $this->createMock(ChatClient::class);
+        $this->command = $this->createMock(Command::class);
+        $this->httpClient = $this->createMock(HttpClient::class);
+        $this->room = $this->createMock(Room::class);
+
         $this->builtIn = new Admin(
             $this->client,
             $this->httpClient,
             $this->admin
         );
 
-        $this->command
-            ->method('getUserId')
-            ->will($this->returnValue(123))
-        ;
+        $this->setReturnValue($this->command, 'getUserId', 123);
+        $this->setReturnValue($this->command, 'getRoom', $this->room);
     }
 
     public function testRemoveCommand()
     {
-        $this->setRoomApproval(true);
+        $this->setRoomApproval($this->room, true);
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'remove'], [1, 456]]);
         $this->setAdminsInStorage([], [456]);
@@ -52,34 +60,35 @@ class AdminTest extends AbstractCommandTest
         ;
 
         $this->expectMessage("User removed from the admin list.");
-        \amp\wait($this->builtIn->handleCommand($this->command));
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testRemoveCommandAlreadyOwner()
     {
-        $this->setRoomApproval(true);
+        $this->setRoomApproval($this->room, true);
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'remove'], [1, 456]]);
         $this->setAdminsInStorage([456], []);
-
         $this->expectReply("User is a room owner and has implicit admin rights.");
-        \amp\wait($this->builtIn->handleCommand($this->command));         
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));         
     }
 
     public function testRemoveCommandNotAdmin()
     {
-        $this->setRoomApproval(true);
+        $this->setRoomApproval($this->room, true);
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'remove'], [1, 456]]);
         $this->setAdminsInStorage([], []);
-
         $this->expectReply("User not currently on admin list.");
-        \amp\wait($this->builtIn->handleCommand($this->command));        
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));        
     }
 
     public function testAddCommand()
     {
-        $this->setRoomApproval(true);
+        $this->setRoomApproval($this->room, true);
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'add'], [1, 456]]);
         $this->setAdminsInStorage([], []);
@@ -94,43 +103,44 @@ class AdminTest extends AbstractCommandTest
         ;
 
         $this->expectMessage("User added to the admin list.");
-        \amp\wait($this->builtIn->handleCommand($this->command)); 
+
+        \Amp\wait($this->builtIn->handleCommand($this->command)); 
     }
 
     public function testAddCommandAlreadyOwner()
     {
-        $this->setRoomApproval(true);
+        $this->setRoomApproval($this->room, true);
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'add'], [1, 456]]);
         $this->setAdminsInStorage([456], []);
-
         $this->expectReply("User is a room owner and has implicit admin rights.");
-        \amp\wait($this->builtIn->handleCommand($this->command));        
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));        
     }
 
     public function testAddCommandAlreadyAdmin()
     {
-        $this->setRoomApproval(true);
+        $this->setRoomApproval($this->room, true);
         $this->setAdmin(true);
         $this->setCommandParameters([[0, 'add'], [1, 456]]);
         $this->setAdminsInStorage([], [456]);
-
         $this->expectReply("User already on admin list.");
-        \amp\wait($this->builtIn->handleCommand($this->command));
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testCommandWithoutAdmin()
     {
-        $this->setRoomApproval(true);
+        $this->setRoomApproval($this->room, true);
         $this->setAdmin(false);
         $this->expectReply("I'm sorry Dave, I'm afraid I can't do that");
 
-        \amp\wait($this->builtIn->handleCommand($this->command));
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
  
     public function testCommandList()
     {
-        $this->setRoomApproval(true);
+        $this->setRoomApproval($this->room, true);
         $this->setCommandParameter(0, 'list');
         $this->setAdminsInStorage([123, 456], [789, 101112]);
 
@@ -149,35 +159,34 @@ class AdminTest extends AbstractCommandTest
             "firstAdmin, *firstOwner*, secondAdmin, *secondOwner*"
         );
 
-        \amp\wait($this->builtIn->handleCommand($this->command));
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
  
     public function testCommandListWithNoAdmins()
     {
-        $this->setRoomApproval(true);
+        $this->setRoomApproval($this->room, true);
         $this->setCommandParameter(0, 'list');
         $this->setAdminsInStorage([], []);
- 
         $this->expectMessage('There are no registered admins');
  
-        \amp\wait($this->builtIn->handleCommand($this->command));
+        \Amp\wait($this->builtIn->handleCommand($this->command));
  
     }
  
     public function testCommandHelp()
     {
-        $this->setRoomApproval(true);
+        $this->setRoomApproval($this->room, true);
         $this->setCommandParameter(0, 'help');
         $this->expectMessage($this->builtIn::COMMAND_HELP_TEXT);
  
-        \amp\wait($this->builtIn->handleCommand($this->command));
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
  
     public function testCommandWithoutApproval()
     {
-        $this->setRoomApproval(false);
- 
-        $response = \amp\wait($this->builtIn->handleCommand($this->command));
+        $this->setRoomApproval($this->room, false);
+        $response = \Amp\wait($this->builtIn->handleCommand($this->command));
+        
         $this->assertNull($response); 
     }
     
