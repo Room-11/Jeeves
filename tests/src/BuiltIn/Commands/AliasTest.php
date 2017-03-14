@@ -49,10 +49,100 @@ class AliasTest extends AbstractCommandTest
         $this->setReturnValue($this->command, 'getRoom', $this->room);
     }
 
+    public function testUnAliasCommand()
+    {
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'getCommandName', 'unalias');
+        $this->setCommandParameter('test');
+        $this->setAliasStorageExists('test', new Success(true));
+
+        $this->aliasStorage
+            ->expects($this->once())
+            ->method('remove')
+            ->with(
+                $this->identicalTo($this->room),
+                $this->identicalTo('test')
+            )
+            ->will($this->returnValue(new Success(true)))
+        ;
+
+        $this->expectMessage("Alias '!!test' removed");
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testUnAliasOnUnknownCommand()
+    {
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'getCommandName', 'unalias');
+        $this->setCommandParameter('test');
+        $this->setAliasStorageExists('test', new Success(false));
+        $this->expectMessage("Alias '!!test' is not currently mapped");
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testAliasCommand()
+    {
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'getCommandName', 'alias');
+        $this->setCommandParameterAsMarkdown(new Success('uptime test'));
+        $this->setHasRegisteredCommand(false);
+        $this->setIsCommandMappedForRoom(false);
+        $this->setAliasStorageExists('uptime', new Success(false));
+
+        $this->aliasStorage
+            ->expects($this->once())
+            ->method('add')
+            ->with(
+                $this->identicalTo($this->room),
+                $this->identicalTo('uptime'),
+                $this->identicalTo('test')
+            )
+            ->will($this->returnValue(new Success(true)))
+        ;
+
+        $this->expectMessage("Command '!!uptime' aliased to '!!test'");
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testAliasCommandOnExisting()
+    {
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'getCommandName', 'alias');
+        $this->setCommandParameterAsMarkdown(new Success('uptime test'));
+        $this->setHasRegisteredCommand(false);
+        $this->setIsCommandMappedForRoom(false);
+        $this->setAliasStorageExists('uptime', new Success(true));
+        $this->expectReply("Alias '!!uptime' already exists.");
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testAliasCommandOnMapped()
+    {
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'getCommandName', 'alias');
+        $this->setCommandParameterAsMarkdown(new Success('uptime test'));
+        $this->setHasRegisteredCommand(false);
+        $this->setIsCommandMappedForRoom(true);
+        $this->expectReply(
+            "Command 'uptime' is already mapped. Use `!!command list` to display the currently mapped commands."
+        );
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
     public function testAliasCommandOnBuiltIn()
     {
         $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'getCommandName', 'alias');
+        $this->setCommandParameterAsMarkdown(new Success('uptime test'));
+        $this->setHasRegisteredCommand(true);
+        $this->expectReply("Command 'uptime' is built in and cannot be altered");
 
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testCommandWithoutAdmin()
@@ -103,6 +193,57 @@ class AliasTest extends AbstractCommandTest
                 $this->equalTo($message)
             )
             ->will($this->returnValue(new Success(true)))
+        ;
+    }
+
+    private function setCommandParameterAsMarkdown($value)
+    {
+        $this->client
+            ->method('getCommandParametersAsMarkdown')
+            ->with($this->identicalTo($this->command))
+            ->will($this->returnValue($value))
+        ;
+    }
+
+    private function setHasRegisteredCommand(bool $value)
+    {
+        $this->builtInCommandManager
+            ->method('hasRegisteredCommand')
+            ->with($this->identicalTo('uptime'))
+            ->will($this->returnValue($value))
+        ;
+    }
+
+    private function setIsCommandMappedForRoom(bool $value)
+    {
+        $this->pluginManager
+            ->method('isCommandMappedForRoom')
+            ->with(
+                $this->identicalTo($this->room),
+                $this->identicalTo('uptime')
+            )
+            ->will($this->returnValue($value))
+        ;
+    }
+
+    private function setAliasStorageExists(string $aliasCommand, $value)
+    {
+        $this->aliasStorage
+            ->method('exists')
+            ->with(
+                $this->identicalTo($this->room),
+                $this->identicalTo($aliasCommand)
+            )
+            ->will($this->returnValue($value))
+        ;
+    }
+
+    private function setCommandParameter($value)
+    {
+        $this->command
+            ->method('getParameter')
+            ->with($this->identicalTo(0))
+            ->will($this->returnValue($value))
         ;
     }
 }
