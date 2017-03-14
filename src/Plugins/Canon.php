@@ -55,21 +55,19 @@ class Canon extends BasePlugin
 
     private function getMessage(Command $command)
     {
-        if (!$command->hasParameters(2)){
+        if (!$command->hasParameters(1)){
             return $this->chatClient->postMessage($command, self::USAGE);
         }
 
-        $canonTitle = strtolower($command->getParameter(1));
+        $canonTitle = strtolower($command->getParameter(0));
 
         if (!yield $this->storage->exists($canonTitle, $command->getRoom())) {
             return $this->chatClient->postMessage($command, "Cannot find the canon for you... :-( Use `!!canon list` to list all supported canonicals.");
         }
 
-        if ($canon = yield $this->storage->get($canonTitle, $command->getRoom())) {
-            return $this->chatClient->postMessage($command, $canon["stackoverflow"]);
-        }
+        $canon = yield $this->storage->get($canonTitle, $command->getRoom());
 
-        throw new \LogicException('Operation ' . $command->getParameter(0) . ' was considered valid but not handled??');
+        return $this->chatClient->postMessage($command, $canon["stackoverflow"]);
     }
 
     private function add(Command $command)
