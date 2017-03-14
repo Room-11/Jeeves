@@ -13,12 +13,12 @@ interface BuiltInCommand
      * @param CommandMessage $command
      * @return Promise
      */
-    public function handleCommand(CommandMessage $command): Promise;
+    function handleCommand(CommandMessage $command): Promise;
 
     /**
      * Get a list of specific commands handled by this built-in
      *
      * @return BuiltInCommandInfo[]
      */
-    public function getCommandInfo(): array;
+    function getCommandInfo(): array;
 }

@@ -7,13 +7,13 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 interface CommandAlias
 {
-    public function getAll(ChatRoom $room): Promise;
+    function getAll(ChatRoom $room): Promise;
 
-    public function add(ChatRoom $room, string $command, string $mapping): Promise;
+    function add(ChatRoom $room, string $command, string $mapping): Promise;
 
-    public function remove(ChatRoom $room, string $command): Promise;
+    function remove(ChatRoom $room, string $command): Promise;
 
-    public function exists(ChatRoom $room, string $command): Promise;
+    function exists(ChatRoom $room, string $command): Promise;
 
-    public function get(ChatRoom $room, string $command): Promise;
+    function get(ChatRoom $room, string $command): Promise;
 }

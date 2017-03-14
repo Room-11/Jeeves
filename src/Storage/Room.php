@@ -9,29 +9,29 @@ interface Room
 {
     const MAX_LEAVE_VOTE_AGE = 3600; // -1 day
 
-    public function containsRoom(ChatRoomIdentifier $identifier): Promise;
+    function containsRoom(ChatRoomIdentifier $identifier): Promise;
 
-    public function addRoom(ChatRoomIdentifier $identifier, int $inviteTimestamp): Promise;
+    function addRoom(ChatRoomIdentifier $identifier, int $inviteTimestamp): Promise;
 
-    public function removeRoom(ChatRoomIdentifier $identifier): Promise;
+    function removeRoom(ChatRoomIdentifier $identifier): Promise;
 
-    public function getAllRooms(): Promise;
+    function getAllRooms(): Promise;
 
-    public function getInviteTimestamp(ChatRoomIdentifier $identifier): Promise;
+    function getInviteTimestamp(ChatRoomIdentifier $identifier): Promise;
 
-    public function containsApproveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
+    function containsApproveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
 
-    public function addApproveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
+    function addApproveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
 
-    public function getApproveVotes(ChatRoomIdentifier $identifier): Promise;
+    function getApproveVotes(ChatRoomIdentifier $identifier): Promise;
 
-    public function containsLeaveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
+    function containsLeaveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
 
-    public function addLeaveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
+    function addLeaveVote(ChatRoomIdentifier $identifier, int $userId): Promise;
 
-    public function getLeaveVotes(ChatRoomIdentifier $identifier): Promise;
+    function getLeaveVotes(ChatRoomIdentifier $identifier): Promise;
 
-    public function setApproved(ChatRoomIdentifier $identifier, bool $approved): Promise;
+    function setApproved(ChatRoomIdentifier $identifier, bool $approved): Promise;
 
-    public function isApproved(ChatRoomIdentifier $identifier): Promise;
+    function isApproved(ChatRoomIdentifier $identifier): Promise;
 }

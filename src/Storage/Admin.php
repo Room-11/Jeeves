@@ -7,11 +7,11 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 interface Admin
 {
-    public function getAll(ChatRoom $room): Promise;
+    function getAll(ChatRoom $room): Promise;
 
-    public function isAdmin(ChatRoom $room, int $userId): Promise;
+    function isAdmin(ChatRoom $room, int $userId): Promise;
 
-    public function add(ChatRoom $room, int $userId): Promise;
+    function add(ChatRoom $room, int $userId): Promise;
 
-    public function remove(ChatRoom $room, int $userId): Promise;
+    function remove(ChatRoom $room, int $userId): Promise;
 }

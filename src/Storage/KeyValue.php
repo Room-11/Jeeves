@@ -12,7 +12,7 @@ interface KeyValue
      *
      * @return string
      */
-    public function getPartitionName(): string;
+    function getPartitionName(): string;
 
     /**
      * Determine whether a key exists in the data store
@@ -20,7 +20,7 @@ interface KeyValue
      * @param ChatRoom|null $room
      * @return Promise<bool>
      */
-    public function clear(ChatRoom $room = null): Promise;
+    function clear(ChatRoom $room = null): Promise;
 
     /**
      * Determine whether a key exists in the data store
@@ -29,7 +29,7 @@ interface KeyValue
      * @param ChatRoom|null $room
      * @return Promise<bool>
      */
-    public function exists(string $key, ChatRoom $room = null): Promise;
+    function exists(string $key, ChatRoom $room = null): Promise;
 
     /**
      * Get the value from the data store for the specified key
@@ -38,7 +38,7 @@ interface KeyValue
      * @return Promise<mixed>
      * @throws \LogicException when the specified key does not exist
      */
-    public function getAll(ChatRoom $room = null): Promise;
+    function getAll(ChatRoom $room = null): Promise;
 
     /**
      * Get the value from the data store for the specified key
@@ -47,7 +47,7 @@ interface KeyValue
      * @return Promise<mixed>
      * @throws \LogicException when the specified key does not exist
      */
-    public function getKeys(ChatRoom $room = null): Promise;
+    function getKeys(ChatRoom $room = null): Promise;
 
     /**
      * Get the value from the data store for the specified key
@@ -57,7 +57,7 @@ interface KeyValue
      * @return Promise<mixed>
      * @throws \LogicException when the specified key does not exist
      */
-    public function get(string $key, ChatRoom $room = null): Promise;
+    function get(string $key, ChatRoom $room = null): Promise;
 
     /**
      * Set the value in the data store for the specified key
@@ -67,7 +67,7 @@ interface KeyValue
      * @param ChatRoom|null $room
      * @return Promise<void>
      */
-    public function set(string $key, $value, ChatRoom $room = null): Promise;
+    function set(string $key, $value, ChatRoom $room = null): Promise;
 
     /**
      * Remove the value from the data store for the specified key
@@ -77,5 +77,5 @@ interface KeyValue
      * @throws \LogicException when the specified key does not exist
      * @return Promise<void>
      */
-    public function unset(string $key, ChatRoom $room = null): Promise;
+    function unset(string $key, ChatRoom $room = null): Promise;
 }
