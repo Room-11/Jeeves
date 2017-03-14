@@ -9,7 +9,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Lick extends BasePlugin
 {
-    const RESPONSES = [
+    private const RESPONSES = [
         "Eeeeeeew",
         "That's sticky.",
         "At least buy me a drink first."

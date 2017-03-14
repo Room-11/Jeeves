@@ -22,7 +22,7 @@ use function Amp\resolve;
 class EvalCode extends BasePlugin
 {
     // limit the number of requests while polling for results
-    const REQUEST_LIMIT = 20;
+    private const REQUEST_LIMIT = 20;
 
     private $chatClient;
 

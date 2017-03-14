@@ -10,8 +10,8 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Rebecca extends BasePlugin
 {
-    const FRIDAY_VIDEO_URL = 'https://www.youtube.com/watch?v=kfVsfOSbJY0';
-    const SATURDAY_VIDEO_URL = 'https://www.youtube.com/watch?v=GVCzdpagXOQ';
+    private const FRIDAY_VIDEO_URL = 'https://www.youtube.com/watch?v=kfVsfOSbJY0';
+    private const SATURDAY_VIDEO_URL = 'https://www.youtube.com/watch?v=GVCzdpagXOQ';
 
     private $chatClient;
 

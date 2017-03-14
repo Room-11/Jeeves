@@ -11,7 +11,7 @@ use function Room11\DOMUtils\domdocument_load_html;
 
 class Wotd extends BasePlugin
 {
-    const API_URL = 'http://www.dictionary.com/wordoftheday/wotd.rss';
+    private const API_URL = 'http://www.dictionary.com/wordoftheday/wotd.rss';
 
     private $chatClient;
     private $httpClient;

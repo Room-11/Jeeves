@@ -14,8 +14,8 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class JeevesDad extends BasePlugin
 {
-    const DEFAULT_GREET_FREQUENCY = 1000;
-    const JOKE_URL = 'http://niceonedad.com/assets/js/niceonedad.js';
+    private const DEFAULT_GREET_FREQUENCY = 1000;
+    private const JOKE_URL = 'http://niceonedad.com/assets/js/niceonedad.js';
 
     private $chatClient;
     private $httpClient;

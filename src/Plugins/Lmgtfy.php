@@ -9,8 +9,8 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Lmgtfy extends BasePlugin
 {
-    const URL = 'http://lmgtfy.com/';
-    const USAGE = /** @lang text */ 'Usage: `!!lmgtfy [ <text> ]` / `!!lmgtfy [ <message URL> ]`';
+    private const URL = 'http://lmgtfy.com/';
+    private const USAGE = /** @lang text */ 'Usage: `!!lmgtfy [ <text> ]` / `!!lmgtfy [ <message URL> ]`';
 
     private $chatClient;
     private $messageResolver;

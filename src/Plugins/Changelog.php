@@ -16,8 +16,8 @@ class ReferenceNotFoundException extends Exception {}
 
 class Changelog extends BasePlugin
 {
-    const EXPRESSION = '~^[^/]+/[^/]+$~';
-    const BASE_URL = 'https://api.github.com';
+    private const EXPRESSION = '~^[^/]+/[^/]+$~';
+    private const BASE_URL = 'https://api.github.com';
 
     private $chatClient;
     private $httpClient;

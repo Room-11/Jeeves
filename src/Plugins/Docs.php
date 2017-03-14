@@ -16,9 +16,9 @@ class NoComprendeException extends \RuntimeException {}
 
 class Docs extends BasePlugin
 {
-    const URL_BASE = 'http://php.net';
-    const LOOKUP_URL_BASE = self::URL_BASE . '/manual-lookup.php?scope=quickref&pattern=';
-    const MANUAL_URL_BASE = self::URL_BASE . '/manual/en';
+    private const URL_BASE = 'http://php.net';
+    private const LOOKUP_URL_BASE = self::URL_BASE . '/manual-lookup.php?scope=quickref&pattern=';
+    private const MANUAL_URL_BASE = self::URL_BASE . '/manual/en';
 
     private $chatClient;
 

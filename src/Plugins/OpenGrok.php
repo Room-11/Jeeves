@@ -426,8 +426,9 @@ namespace Room11\Jeeves\Plugins
     class OpenGrok extends BasePlugin
     {
         const BASE_URL = 'https://lxr.room11.org';
-        const SEARCHER_CLASS = HtmlSearcher::class;
-        const RESULT_PROCESSORS = [ // keys are lower-case
+
+        private const SEARCHER_CLASS = HtmlSearcher::class;
+        private const RESULT_PROCESSORS = [ // keys are lower-case
             'php-src' => PhpSrcResultProcessor::class,
             'php'     => GenericPhpResultProcessor::class,
         ];

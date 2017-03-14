@@ -11,9 +11,9 @@ use function Amp\resolve;
 
 class Consumer
 {
-    const AUTH_URL      = 'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13/';
-    const BASE_URL      = 'http://api.microsofttranslator.com';
-    const SERVICE_URL    = self::BASE_URL . '/V2/Http.svc';
+    private const AUTH_URL = 'https://datamarket.accesscontrol.windows.net/v2/OAuth2-13/';
+    private const BASE_URL = 'http://api.microsofttranslator.com';
+    private const SERVICE_URL = self::BASE_URL . '/V2/Http.svc';
 
     private $httpClient;
 

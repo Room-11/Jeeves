@@ -10,7 +10,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 class Goochle extends BasePlugin
 {
     // From https://en.wikipedia.org/wiki/List_of_English_prepositions
-    const PREPOSITIONS = [
+    private const PREPOSITIONS = [
         'a',
         'an',
         'aboard',

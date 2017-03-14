@@ -11,16 +11,16 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Giphy extends BasePlugin
 {
-    const API_BASE_URL = 'http://api.giphy.com/';
-    const PUBLIC_BETA_API_KEY = 'dc6zaTOxFJmzC';
+    private const API_BASE_URL = 'http://api.giphy.com/';
+    private const PUBLIC_BETA_API_KEY = 'dc6zaTOxFJmzC';
 
-    const RATING_Y = 'y';
-    const RATING_G = 'g';
-    const RATING_PG = 'pg';
-    const RATING_PG13 = 'pg-13';
-    const RATING_R = 'r';
+    private const RATING_Y = 'y';
+    private const RATING_G = 'g';
+    private const RATING_PG = 'pg';
+    private const RATING_PG13 = 'pg-13';
+    private const RATING_R = 'r';
 
-    const VALID_RATINGS = [
+    private const VALID_RATINGS = [
         self::RATING_Y,
         self::RATING_G,
         self::RATING_PG,

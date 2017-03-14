@@ -13,7 +13,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Translate extends BasePlugin
 {
-    const ACCESS_TOKEN_LIFETIME = 580; // really 10 minutes but this should avoid us needing to handle expired tokens
+    private const ACCESS_TOKEN_LIFETIME = 580; // really 10 minutes but this should avoid us needing to handle expired tokens
 
     private $chatClient;
     private $apiConsumer;

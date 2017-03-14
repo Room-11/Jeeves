@@ -19,8 +19,8 @@ class Canon extends BasePlugin
     private $storage;
     private $admin;
 
-    const USAGE = /** @lang text */ "Usage: `!!canon [ list | add <title> <url> | remove <title> ]`";
-    const ADMIN_ACTIONS = ['add', 'remove', 'fire'];
+    private const USAGE = /** @lang text */ "Usage: `!!canon [ list | add <title> <url> | remove <title> ]`";
+    private const ADMIN_ACTIONS = ['add', 'remove', 'fire'];
 
     public function __construct(ChatClient $chatClient, KeyValueStore $storage, AdminStorage $admin) {
         $this->chatClient = $chatClient;

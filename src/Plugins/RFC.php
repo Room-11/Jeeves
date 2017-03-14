@@ -23,7 +23,7 @@ class RFC extends BasePlugin
     private $httpClient;
     private $pluginData;
 
-    const BASE_URI = 'https://wiki.php.net/rfc';
+    private const BASE_URI = 'https://wiki.php.net/rfc';
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {

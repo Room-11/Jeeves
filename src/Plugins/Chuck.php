@@ -10,7 +10,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Chuck extends BasePlugin
 {
-    const API_URL = 'http://api.icndb.com/jokes/random/';
+    private const API_URL = 'http://api.icndb.com/jokes/random/';
 
     private $chatClient;
 

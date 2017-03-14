@@ -9,9 +9,7 @@ use Room11\Jeeves\Chat\Message\Message;
 
 class SwordFight extends BasePlugin
 {
-    const COMMAND = 'swordfight';
-
-    const MINIMUM_MATCH_PERCENTAGE = 60;
+    private const MINIMUM_MATCH_PERCENTAGE = 60;
 
     private $chatClient;
 

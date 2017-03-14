@@ -19,7 +19,7 @@ use function Amp\resolve;
 
 class EventDispatcher
 {
-    const BUFFER_SIZE = 20;
+    private const BUFFER_SIZE = 20;
 
     private $pluginManager;
     private $builtInActionManager;

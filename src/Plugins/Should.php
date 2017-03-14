@@ -10,7 +10,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Should extends BasePlugin
 {
-    const RESPONSES = [
+    private const RESPONSES = [
         "yes" => [
             "Yes.",
             "I think so.",

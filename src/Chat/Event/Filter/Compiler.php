@@ -11,9 +11,9 @@ use const Room11\Jeeves\ROOM_IDENTIFIER_EXPR;
 
 class Compiler
 {
-    const FIELD_TYPE = 'type';
-    const FIELD_ROOM = 'room';
-    const FIELD_CLASS = 'class';
+    private const FIELD_TYPE = 'type';
+    private const FIELD_ROOM = 'room';
+    private const FIELD_CLASS = 'class';
 
     private function getValidatedConditions(array $conditions): array
     {

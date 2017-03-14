@@ -14,9 +14,9 @@ use function Amp\resolve;
 
 class HttpRequester extends BasePlugin
 {
-    const FLAGS = ['chrome', 'firefox', 'googlebot', 'nofollow'];
+    private const FLAGS = ['chrome', 'firefox', 'googlebot', 'nofollow'];
 
-    const USER_AGENTS = [
+    private const USER_AGENTS = [
         'chrome'    => 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
         'firefox'   => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1',
         'googlebot' => 'Googlebot/2.1 (+http://www.googlebot.com/bot.html)',

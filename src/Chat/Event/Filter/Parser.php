@@ -4,16 +4,16 @@ namespace Room11\Jeeves\Chat\Event\Filter;
 
 class Parser
 {
-    const STATE_FIELD_NAME_START = 0;
-    const STATE_FIELD_NAME       = 1;
-    const STATE_FIELD_NAME_END   = 2;
-    const STATE_VALUE_START      = 3;
-    const STATE_VALUE            = 4;
-    const STATE_VALUE_END        = 5;
-    const STATE_SET_MEMBER_START = 6;
-    const STATE_SET_MEMBER       = 7;
-    const STATE_SET_MEMBER_END   = 8;
-    const STATE_EXPECT_BOUNDARY  = 9;
+    private const STATE_FIELD_NAME_START = 0;
+    private const STATE_FIELD_NAME       = 1;
+    private const STATE_FIELD_NAME_END   = 2;
+    private const STATE_VALUE_START      = 3;
+    private const STATE_VALUE            = 4;
+    private const STATE_VALUE_END        = 5;
+    private const STATE_SET_MEMBER_START = 6;
+    private const STATE_SET_MEMBER       = 7;
+    private const STATE_SET_MEMBER_END   = 8;
+    private const STATE_EXPECT_BOUNDARY  = 9;
 
     public function parse(string $string): array
     {

@@ -10,8 +10,6 @@ use Room11\Jeeves\Chat\Message\Message;
 
 class Terminator extends BasePlugin
 {
-    const COMMAND = 'terminator';
-
     private $chatClient;
 
     private $chatBotClient;

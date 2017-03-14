@@ -10,8 +10,8 @@ use Room11\Jeeves\Chat\Message\Message;
 class AntiW3Schools extends BasePlugin
 {
 
-    const BAD_HOST_PATTERN = 'w3schools\.com';
-    const W3S_CATEGORY_RESPONSES = [
+    private const BAD_HOST_PATTERN = 'w3schools\.com';
+    private const W3S_CATEGORY_RESPONSES = [
         'html' => '[Check the Mozilla Developer Network HTML documentation](https://developer.mozilla.org/docs/Web/HTML) for help with HTML.',
         'css' => '[Check the Mozilla Developer Network CSS documentation](https://developer.mozilla.org/docs/Web/CSS) for help with CSS.',
         'js' => '[Check the Mozilla Developer Network JS documentation](https://developer.mozilla.org/docs/Web/JavaScript) for help with JavaScript.',

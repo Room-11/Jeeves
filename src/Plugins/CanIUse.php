@@ -9,8 +9,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class CanIUse extends BasePlugin
 {
-
-    const DOMAIN = 'http://caniuse.com';
+    private const DOMAIN = 'http://caniuse.com';
 
     private $chatClient;
 
