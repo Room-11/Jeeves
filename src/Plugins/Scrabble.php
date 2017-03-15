@@ -9,9 +9,9 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Scrabble extends BasePlugin
 {
-    const USAGE = "Usage: `!!scrabble [words to calculate score for]`";
+    private const USAGE = "Usage: `!!scrabble [words to calculate score for]`";
 
-    const SCORES = [
+    private const SCORES = [
         'en' => [
             1 => 'EAIONRTLSU',
             2 => 'DG',

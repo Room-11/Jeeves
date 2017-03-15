@@ -14,7 +14,7 @@ use function Aerys\router;
 
 class Server
 {
-    const ROOM_IDENTIFIER_EXPR = '{site:' . DNS_NAME_EXPR . '}/{roomid:[0-9]+}';
+    private const ROOM_IDENTIFIER_EXPR = '{site:' . DNS_NAME_EXPR . '}/{roomid:[0-9]+}';
 
     private $router;
 

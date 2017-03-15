@@ -17,7 +17,7 @@ use function Amp\once;
 
 class Handler implements Websocket
 {
-    const HEARTBEAT_TIMEOUT_SECONDS = 40;
+    private const HEARTBEAT_TIMEOUT_SECONDS = 40;
 
     private $eventBuilder;
     private $eventDispatcher;

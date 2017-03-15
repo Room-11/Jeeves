@@ -4,11 +4,11 @@ namespace Room11\Jeeves\Chat\Event;
 
 interface Event
 {
-    public function getTypeId(): int;
+    function getTypeId(): int;
 
-    public function getId(): int;
+    function getId(): int;
 
-    public function getTimestamp(): \DateTimeImmutable;
+    function getTimestamp(): \DateTimeImmutable;
 
-    public function getHost(): string;
+    function getHost(): string;
 }

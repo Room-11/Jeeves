@@ -32,7 +32,6 @@ use function Room11\DOMUtils\xpath_get_elements;
 
 class ChatClient
 {
-    const MAX_POST_ATTEMPTS = 5;
     const ENCODING = 'UTF-8';
     const TRUNCATION_LIMIT = 500;
 

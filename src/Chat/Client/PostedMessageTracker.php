@@ -11,7 +11,7 @@ use const Room11\Jeeves\ROOM_IDENTIFIER_EXPR;
 
 class PostedMessageTracker
 {
-    const BUFFER_SIZE = 20;
+    private const BUFFER_SIZE = 20;
 
     /**
      * @var Deque[]

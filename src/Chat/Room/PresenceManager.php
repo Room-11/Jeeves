@@ -25,7 +25,10 @@ use function Amp\resolve;
 
 class PresenceManager
 {
-    const MAX_RECONNECT_ATTEMPTS = 1500; // a little over 1 day, in practice
+    private const MAX_RECONNECT_ATTEMPTS = 1500; // a little over 1 day, in practice
+    private const UNAPPROVED_REMINDER_1_DELAY_SECS = 60 * 60 * 12;
+    private const UNAPPROVED_REMINDER_2_DELAY_SECS = 60 * 60 * 23;
+    private const UNAPPROVED_LEAVE_DELAY_SECS = 60 * 60 * 24;
 
     private $storage;
     private $statusManager;
@@ -156,34 +159,43 @@ class PresenceManager
         yield $this->leaveRoom($room);
     }
 
-    private function scheduleActionsForUnapprovedRoom(Identifier $identifier)
+    private function scheduleActionsForUnapprovedRoom(Identifier $identifier, int $inviteTimestamp)
     {
         $now = time();
-        $inviteTime = yield $this->storage->getInviteTimestamp($identifier);
-        $remind1Delay = ($now - ($inviteTime + (3600 * 12))) * 1000;
-        $remind2Delay = ($now - ($inviteTime + (3600 * 23))) * 1000;
-        $leaveDelay = ($now - ($inviteTime + (3600 * 24))) * 1000;
 
-        if ($remind1Delay > 0) {
-            $this->timerWatchers[$identifier->getIdentString()]['remind1'] = once(function() use($identifier) {
-                unset($this->timerWatchers[$identifier->getIdentString()]['remind1']);
-                $this->enqueueAction([$this, 'unapprovedRoomFirstReminder'], $identifier);
-            }, $remind1Delay);
+        $leaveDelay = ($now - ($inviteTimestamp + self::UNAPPROVED_LEAVE_DELAY_SECS)) * 1000;
+
+        if ($leaveDelay < 0) {
+            $this->enqueueAction([$this, 'unapprovedRoomLeave'], $identifier);
+            return;
         }
 
-        if ($remind2Delay > 0) {
-            $this->timerWatchers[$identifier->getIdentString()]['remind2'] = once(function() use($identifier) {
-                unset($this->timerWatchers[$identifier->getIdentString()]['remind2']);
-                $this->enqueueAction([$this, 'unapprovedRoomSecondReminder'], $identifier);
-            }, $remind2Delay);
+        $ident = $identifier->getIdentString();
+
+        $this->timerWatchers[$ident]['leave'] = once(function() use($identifier) {
+            unset($this->timerWatchers[$identifier->getIdentString()]['leave']);
+            $this->enqueueAction([$this, 'unapprovedRoomLeave'], $identifier);
+        }, $leaveDelay);
+
+        $remind2Delay = ($now - ($inviteTimestamp + self::UNAPPROVED_REMINDER_2_DELAY_SECS)) * 1000;
+        if ($remind2Delay < 0) {
+            return;
         }
 
-        if ($leaveDelay > 0) {
-            $this->timerWatchers[$identifier->getIdentString()]['leave'] = once(function() use($identifier) {
-                unset($this->timerWatchers[$identifier->getIdentString()]['leave']);
-                $this->enqueueAction([$this, 'unapprovedRoomLeave'], $identifier);
-            }, $leaveDelay);
+        $this->timerWatchers[$ident]['remind2'] = once(function() use($identifier) {
+            unset($this->timerWatchers[$identifier->getIdentString()]['remind2']);
+            $this->enqueueAction([$this, 'unapprovedRoomSecondReminder'], $identifier);
+        }, $remind2Delay);
+
+        $remind1Delay = ($now - ($inviteTimestamp + self::UNAPPROVED_REMINDER_1_DELAY_SECS)) * 1000;
+        if ($remind1Delay < 0) {
+            return;
         }
+
+        $this->timerWatchers[$ident]['remind1'] = once(function() use($identifier) {
+            unset($this->timerWatchers[$identifier->getIdentString()]['remind1']);
+            $this->enqueueAction([$this, 'unapprovedRoomFirstReminder'], $identifier);
+        }, $remind1Delay);
     }
 
     private function removeScheduledActionsForUnapprovedRoom(Identifier $identifier)
@@ -228,10 +240,18 @@ class PresenceManager
 
     private function restoreTransientRoom(Identifier $identifier)
     {
+        $isApproved = yield $this->storage->isApproved($identifier);
+        $inviteTimestamp = yield $this->storage->getInviteTimestamp($identifier);
+
+        if (!$isApproved && time() > $inviteTimestamp + self::UNAPPROVED_LEAVE_DELAY_SECS) {
+            $this->storage->removeRoom($identifier);
+            return;
+        }
+
         yield from $this->connectRoom($identifier);
 
-        if (!yield $this->storage->isApproved($identifier)) {
-            yield from $this->scheduleActionsForUnapprovedRoom($identifier);
+        if (!$isApproved) {
+            yield from $this->scheduleActionsForUnapprovedRoom($identifier, $inviteTimestamp);
         }
     }
 
@@ -331,8 +351,11 @@ class PresenceManager
 
         /** @var Room $room */
         $room = yield from $this->connectRoom($identifier);
-        yield $this->storage->addRoom($identifier, time());
-        yield from $this->scheduleActionsForUnapprovedRoom($identifier);
+
+        $inviteTimestamp = time();
+
+        yield $this->storage->addRoom($identifier, $inviteTimestamp);
+        yield from $this->scheduleActionsForUnapprovedRoom($identifier, $inviteTimestamp);
 
         $isApproved = false;
         $currentVotes = 0;

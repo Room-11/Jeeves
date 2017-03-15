@@ -3,17 +3,17 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
+use DaveRandom\AsyncMicrosoftTranslate\Client as TranslationAPIClient;
+use DaveRandom\AsyncMicrosoftTranslate\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\External\MicrosoftTranslationAPI\Consumer as TranslationAPIConsumer;
-use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Translate extends BasePlugin
 {
-    const ACCESS_TOKEN_LIFETIME = 580; // really 10 minutes but this should avoid us needing to handle expired tokens
+    private const ACCESS_TOKEN_LIFETIME = 580; // really 10 minutes but this should avoid us needing to handle expired tokens
 
     private $chatClient;
     private $apiConsumer;
@@ -24,7 +24,7 @@ class Translate extends BasePlugin
 
     public function __construct(
         ChatClient $chatClient,
-        TranslationAPIConsumer $apiConsumer,
+        TranslationAPIClient $apiConsumer,
         KeyValueStore $storage,
         /* todo: replace with room-specific settings */
         TranslationAPICredentials $apiCredentials
@@ -45,10 +45,7 @@ class Translate extends BasePlugin
             }
         }
 
-        $accessToken = yield $this->apiConsumer->getAccessToken(
-            $this->apiCredentials->getClientId(),
-            $this->apiCredentials->getClientSecret()
-        );
+        $accessToken = yield $this->apiConsumer->getAccessToken($this->apiCredentials);
 
         yield $this->storage->set('access_token', [$accessToken, time() + self::ACCESS_TOKEN_LIFETIME], $room);
 

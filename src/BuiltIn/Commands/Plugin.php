@@ -18,7 +18,7 @@ class Plugin implements BuiltInCommand
     private $chatClient;
     private $adminStorage;
 
-    const COMMAND_HELP_TEXT =
+    private const COMMAND_HELP_TEXT =
         "Sub-commands (* indicates admin-only):"
         . "\n"
         . "\n help     - display this message"

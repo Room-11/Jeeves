@@ -13,12 +13,12 @@ interface BuiltInEventHandler
      * @param Event $event
      * @return Promise
      */
-    public function handleEvent(Event $event): Promise;
+    function handleEvent(Event $event): Promise;
 
     /**
      * Get a list of event type IDs handled by this built-in
      *
      * @return int[]
      */
-    public function getEventTypes(): array;
+    function getEventTypes(): array;
 }

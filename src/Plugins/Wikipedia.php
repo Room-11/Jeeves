@@ -12,7 +12,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Wikipedia extends BasePlugin
 {
-    const BASE_URL = 'https://en.wikipedia.org/w/api.php';
+    private const BASE_URL = 'https://en.wikipedia.org/w/api.php';
 
     private $chatClient;
     private $httpClient;

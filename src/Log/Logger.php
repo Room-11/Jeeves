@@ -6,5 +6,5 @@ use Amp\Promise;
 
 interface Logger
 {
-    public function log(int $level, string $message, $extraData = null): Promise;
+    function log(int $level, string $message, $extraData = null): Promise;
 }

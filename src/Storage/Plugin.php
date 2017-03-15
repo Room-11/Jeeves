@@ -7,13 +7,13 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 
 interface Plugin
 {
-    public function isPluginEnabled(ChatRoom $room, string $plugin): Promise;
+    function isPluginEnabled(ChatRoom $room, string $plugin): Promise;
 
-    public function setPluginEnabled(ChatRoom $room, string $plugin, bool $enabled): Promise;
+    function setPluginEnabled(ChatRoom $room, string $plugin, bool $enabled): Promise;
 
-    public function getAllMappedCommands(ChatRoom $room, string $plugin): Promise;
+    function getAllMappedCommands(ChatRoom $room, string $plugin): Promise;
 
-    public function addCommandMapping(ChatRoom $room, string $plugin, string $command, string $endpoint): Promise;
+    function addCommandMapping(ChatRoom $room, string $plugin, string $command, string $endpoint): Promise;
 
-    public function removeCommandMapping(ChatRoom $room, string $plugin, string $command): Promise;
+    function removeCommandMapping(ChatRoom $room, string $plugin, string $command): Promise;
 }

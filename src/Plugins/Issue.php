@@ -14,9 +14,9 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Issue extends BasePlugin
 {
-    const USAGE = /** @lang text */ 'Usage: `!!issue [<title> - <body>]`';
-    const CHAT_URL_EXP = '~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~';
-    const PING_EXP = '/@([^\s]+)(?=$|\s)/';
+    private const USAGE = /** @lang text */ 'Usage: `!!issue [<title> - <body>]`';
+    private const CHAT_URL_EXP = '~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~';
+    private const PING_EXP = '/@([^\s]+)(?=$|\s)/';
 
     private $chatClient;
     private $messageResolver;

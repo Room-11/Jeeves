@@ -11,8 +11,8 @@ use function Room11\DOMUtils\domdocument_load_html;
 
 class Horoscope extends BasePlugin
 {
-    const HOROSCOPE_URL = "http://www.theonion.com/features/horoscope";
-    const SIGNS = [
+    private const HOROSCOPE_URL = "http://www.theonion.com/features/horoscope";
+    private const SIGNS = [
         "aries" => "♈",
         "taurus" => "♉",
         "gemini" => "♊",

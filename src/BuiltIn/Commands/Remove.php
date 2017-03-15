@@ -13,7 +13,7 @@ use function Amp\resolve;
 
 class Remove implements BuiltInCommand
 {
-    const BIN_ROOM_ID = 48058;
+    private const BIN_ROOM_ID = 48058;
 
     private $chatClient;
     private $admin;

@@ -31,9 +31,10 @@
         "amphp/file": "0.1.*",
         "daverandom/async-bitly-client": "^0.1",
         "daverandom/exceptional-json": "^1.0",
+        "daverandom/async-microsoft-translate-client": "^1.0",
         "daverandom/mutex": "~0.0",
         "php-ds/php-ds": "*",
-        "peehaa/async-twitter": "dev-feature/media-upload",
+        "peehaa/async-twitter": "dev-master",
         "peehaa/async-chatter-bot": "^0.2",
         "ekinhbayar/interval-parser": "^0.1",
         "rdlowrey/auryn": "^1.1",
@@ -41,10 +42,10 @@
         "room11/dom-utils": "~1.0",
         "room11/google-searcher": "~1.0",
         "sabre/uri": "^1.0",
+        "sebastian/version": "^2.0",
         "symfony/yaml": "^3.0"
     },
     "require-dev": {
-        "sebastian/version": "^2.0",
         "phpunit/phpunit": "^6.0"
     }
 }

@@ -10,8 +10,9 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Message\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
-class Haskell extends BasePlugin {
-    const USAGE = "Usage example: !!haskell sin(pi/2)";
+class Haskell extends BasePlugin
+{
+    private const USAGE = "Usage example: !!haskell sin(pi/2)";
 
     private $chatClient;
     private $httpClient;
