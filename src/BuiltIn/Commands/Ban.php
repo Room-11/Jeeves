@@ -4,8 +4,8 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\StackChat\Client\Client;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\System\BuiltInCommand;
@@ -18,7 +18,7 @@ class Ban implements BuiltInCommand
     private $adminStorage;
     private $banStorage;
 
-    public function __construct(ChatClient $chatClient, AdminStorage $adminStorage, BanStorage $banStorage)
+    public function __construct(Client $chatClient, AdminStorage $adminStorage, BanStorage $banStorage)
     {
         $this->chatClient   = $chatClient;
         $this->adminStorage = $adminStorage;

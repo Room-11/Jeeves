@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Chat\Client\Actions;
 
 use Amp\Artax\Request;
 use Room11\Jeeves\Chat\Client\PostedMessageTracker;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Log\Logger;
 

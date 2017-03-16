@@ -2,17 +2,17 @@
 
 namespace Room11\Jeeves\Plugins;
 
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
+use Room11\Jeeves\Chat\Command;
+use Room11\StackChat\Room\Room as ChatRoom;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Say extends BasePlugin
 {
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient)
+    public function __construct(Client $chatClient)
     {
         $this->chatClient = $chatClient;
     }
@@ -76,8 +76,8 @@ class Say extends BasePlugin
         }
 
         foreach ($matches as $i => $match) {
-            if (($match[5][0] !== '' && ((int)$match[5][0]) > ChatClient::TRUNCATION_LIMIT)
-                || ($match[6][0] !== '' && ((int)substr($match[6][0], 1)) > ChatClient::TRUNCATION_LIMIT)) {
+            if (($match[5][0] !== '' && ((int)$match[5][0]) > Client::TRUNCATION_LIMIT)
+                || ($match[6][0] !== '' && ((int)substr($match[6][0], 1)) > Client::TRUNCATION_LIMIT)) {
                 throw new \InvalidArgumentException;
             }
 

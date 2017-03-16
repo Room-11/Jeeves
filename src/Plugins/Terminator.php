@@ -5,8 +5,8 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Success;
 use PeeHaa\AsyncChatterBot\Client\CleverBot;
 use PeeHaa\AsyncChatterBot\Response\CleverBot as ChatterBotResponse;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Message;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Message;
 
 class Terminator extends BasePlugin
 {
@@ -50,7 +50,7 @@ class Terminator extends BasePlugin
         '(?:Are )you a (?:ro)?bot'                    => 'Step aside you filthy human.',
     ];
 
-    public function __construct(ChatClient $chatClient, CleverBot $chatBotClient)
+    public function __construct(Client $chatClient, CleverBot $chatBotClient)
     {
         $this->chatClient    = $chatClient;
         $this->chatBotClient = $chatBotClient;

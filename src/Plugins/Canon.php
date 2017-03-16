@@ -3,9 +3,9 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\Chars;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\StackChat\Client\Chars;
+use Room11\StackChat\Client\Client;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\InvalidStackExchangeUrlException;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
@@ -22,7 +22,7 @@ class Canon extends BasePlugin
     private const USAGE = /** @lang text */ "Usage: `!!canon [ list | add <title> <url> | remove <title> ]`";
     private const ADMIN_ACTIONS = ['add', 'remove', 'fire'];
 
-    public function __construct(ChatClient $chatClient, KeyValueStore $storage, AdminStorage $admin) {
+    public function __construct(Client $chatClient, KeyValueStore $storage, AdminStorage $admin) {
         $this->chatClient = $chatClient;
         $this->storage = $storage;
         $this->admin = $admin;

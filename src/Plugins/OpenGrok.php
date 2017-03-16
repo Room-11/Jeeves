@@ -411,8 +411,8 @@ namespace Room11\Jeeves\Plugins
 {
     use Amp\Artax\Cookie\CookieJar;
     use Amp\Artax\HttpClient;
-    use Room11\Jeeves\Chat\Client\ChatClient;
-    use Room11\Jeeves\Chat\Message\Command;
+    use Room11\StackChat\Client\Client;
+    use Room11\Jeeves\Chat\Command;
     use Room11\Jeeves\OpenGrokClient\GenericPhpResultProcessor;
     use Room11\Jeeves\OpenGrokClient\HtmlSearcher;
     use Room11\Jeeves\OpenGrokClient\PhpSrcResultProcessor;
@@ -443,7 +443,7 @@ namespace Room11\Jeeves\Plugins
         private $searcher;
 
         public function __construct(
-            ChatClient $chatClient,
+            Client $chatClient,
             HttpClient $httpClient,
             CookieJar $cookieJar
         ) {

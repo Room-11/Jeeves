@@ -4,11 +4,11 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
 use IntervalParser\IntervalParser;
-use Room11\Jeeves\Chat\Client\Chars;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\StackChat\Client\Chars;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
+use Room11\Jeeves\Chat\Command;
+use Room11\StackChat\Room\Room as ChatRoom;
 use function Room11\Jeeves\dateinterval_to_string;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\Admin as AdminStore;
@@ -42,7 +42,7 @@ class Reminder extends BasePlugin
     private $watchers = [];
 
     public function __construct(
-        ChatClient $chatClient,
+        Client $chatClient,
         KeyValueStore $storage,
         AdminStore $adminStorage,
         IntervalParser $intervalParser

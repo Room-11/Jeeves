@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\System;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Event\Event;
+use Room11\StackChat\Event\Event;
 
 interface BuiltInEventHandler
 {

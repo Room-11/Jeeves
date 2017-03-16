@@ -4,10 +4,10 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Artax\HttpClient;
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Entities\ChatUser;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
+use Room11\StackChat\Entities\ChatUser;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
@@ -30,14 +30,14 @@ class Admin implements BuiltInCommand
         . "\n            Syntax: admin remove <user id>"
     ;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $storage)
+    public function __construct(Client $chatClient, HttpClient $httpClient, AdminStorage $storage)
     {
         $this->chatClient = $chatClient;
         $this->storage    = $storage;
         $this->httpClient = $httpClient;
     }
 
-    private function list(CommandMessage $command)
+    private function list(Command $command)
     {
         $admins = yield $this->storage->getAll($command->getRoom());
 
@@ -60,16 +60,16 @@ class Admin implements BuiltInCommand
         return $this->chatClient->postMessage($command, $list);
     }
 
-    private function add(CommandMessage $command, int $userId)
+    private function add(Command $command, int $userId)
     {
         $admins = yield $this->storage->getAll($command->getRoom());
 
         if (in_array($userId, $admins['admins'])) {
-            return $this->chatClient->postReply($command, 'User already on admin list.');
+            return $this->chatClient->postReply($command->getOriginatingMessage(), 'User already on admin list.');
         }
 
         if (in_array($userId, $admins['owners'])) {
-            return $this->chatClient->postReply($command, 'User is a room owner and has implicit admin rights.');
+            return $this->chatClient->postReply($command->getOriginatingMessage(), 'User is a room owner and has implicit admin rights.');
         }
 
         yield $this->storage->add($command->getRoom(), $userId);
@@ -77,16 +77,16 @@ class Admin implements BuiltInCommand
         return $this->chatClient->postMessage($command, 'User added to the admin list.');
     }
 
-    private function remove(CommandMessage $command, int $userId)
+    private function remove(Command $command, int $userId)
     {
         $admins = yield $this->storage->getAll($command->getRoom());
 
         if (in_array($userId, $admins['owners'])) {
-            return $this->chatClient->postReply($command, 'User is a room owner and has implicit admin rights.');
+            return $this->chatClient->postReply($command->getOriginatingMessage(), 'User is a room owner and has implicit admin rights.');
         }
 
         if (!in_array($userId, $admins['admins'])) {
-            return $this->chatClient->postReply($command, 'User not currently on admin list.');
+            return $this->chatClient->postReply($command->getOriginatingMessage(), 'User not currently on admin list.');
         }
 
         yield $this->storage->remove($command->getRoom(), $userId);
@@ -94,12 +94,12 @@ class Admin implements BuiltInCommand
         return $this->chatClient->postMessage($command, 'User removed from the admin list.');
     }
 
-    private function showCommandHelp(CommandMessage $command): Promise
+    private function showCommandHelp(Command $command): Promise
     {
         return $this->chatClient->postMessage($command, self::COMMAND_HELP_TEXT, PostFlags::FIXED_FONT);
     }
 
-    private function execute(CommandMessage $command)
+    private function execute(Command $command)
     {
         if ($command->getParameter(0) === "help") {
             return $this->showCommandHelp($command);
@@ -109,8 +109,8 @@ class Admin implements BuiltInCommand
             return yield from $this->list($command);
         }
 
-        if (!yield $this->storage->isAdmin($command->getRoom(), $command->getUserId())) {
-            return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+        if (!yield $this->storage->isAdmin($command->getRoom(), $command->getOriginatingMessage()->getUserId())) {
+            return $this->chatClient->postReply($command->getOriginatingMessage(), "I'm sorry Dave, I'm afraid I can't do that");
         }
 
         switch ($command->getParameter(0)) {
@@ -124,10 +124,10 @@ class Admin implements BuiltInCommand
     /**
      * Handle a command message
      *
-     * @param CommandMessage $command
+     * @param Command $command
      * @return Promise
      */
-    public function handleCommand(CommandMessage $command): Promise
+    public function handleCommand(Command $command): Promise
     {
         return resolve($this->execute($command));
     }

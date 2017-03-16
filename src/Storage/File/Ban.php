@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\Storage\File;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\StackChat\Room\Identifier as ChatRoomIdentifier;
+use Room11\StackChat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use function Amp\resolve;
 

@@ -6,11 +6,11 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\Chars;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\StackChat\Client\Chars;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Command;
+use Room11\StackChat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\all;
@@ -25,7 +25,7 @@ class RFC extends BasePlugin
 
     private const BASE_URI = 'https://wiki.php.net/rfc';
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
+    public function __construct(Client $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;

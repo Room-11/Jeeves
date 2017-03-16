@@ -4,16 +4,16 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Failure;
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
-use Room11\Jeeves\Chat\Room\AlreadyApprovedException;
-use Room11\Jeeves\Chat\Room\IdentifierFactory;
-use Room11\Jeeves\Chat\Room\InvalidRoomIdentifierException;
-use Room11\Jeeves\Chat\Room\PresenceManager;
-use Room11\Jeeves\Chat\Room\RoomAlreadyExistsException;
-use Room11\Jeeves\Chat\Room\UserAlreadyVotedException;
-use Room11\Jeeves\Chat\Room\UserNotAcceptableException;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
+use Room11\Jeeves\Chat\Command as CommandMessage;
+use Room11\StackChat\Room\AlreadyApprovedException;
+use Room11\StackChat\Room\IdentifierFactory;
+use Room11\StackChat\Room\InvalidRoomIdentifierException;
+use Room11\StackChat\Room\PresenceManager;
+use Room11\StackChat\Room\RoomAlreadyExistsException;
+use Room11\StackChat\Room\UserAlreadyVotedException;
+use Room11\StackChat\Room\UserNotAcceptableException;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\System\BuiltInCommand;
@@ -28,7 +28,7 @@ class RoomPresence implements BuiltInCommand
     private $logger;
 
     public function __construct(
-        ChatClient $chatClient,
+        Client $chatClient,
         PresenceManager $presenceManager,
         IdentifierFactory $identifierFactory,
         Logger $logger

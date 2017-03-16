@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\Storage\File;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use function Amp\resolve;
 
@@ -14,7 +14,7 @@ class Admin implements AdminStorage
     private $chatClient;
     private $dataFileTemplate;
 
-    public function __construct(JsonFileAccessor $accessor, ChatClient $chatClient, string $dataFile)
+    public function __construct(JsonFileAccessor $accessor, Client $chatClient, string $dataFile)
     {
         $this->accessor = $accessor;
         $this->chatClient = $chatClient;

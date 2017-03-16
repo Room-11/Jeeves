@@ -1,10 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Room11\Jeeves\Chat\Message;
+namespace Room11\Jeeves\Chat;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Event\MessageEvent;
+use Room11\StackChat\Entities\ChatMessage;
+use Room11\StackChat\Event\MessageEvent;
 use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
 use function Amp\resolve;
 
@@ -48,9 +49,7 @@ class Factory
     {
         $messageElement = $event->getMessageContent()->documentElement;
 
-        return $messageElement instanceof \DOMElement
-            && strtolower($messageElement->tagName) === 'p'
-            && $messageElement->firstChild instanceof \DOMText
+        return $messageElement->firstChild instanceof \DOMText
             && strpos($messageElement->textContent, self::INVOKER) === 0;
     }
 
@@ -58,6 +57,6 @@ class Factory
     {
         return $this->isCommandMessage($event)
             ? resolve($this->buildCommand($event))
-            : new Success(new Message($event, $event->getRoom()));
+            : new Success(new Message($event));
     }
 }

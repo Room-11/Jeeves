@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "0005ae3f89a6611cdd24aa97600db775",
-    "content-hash": "372a0e15f769c42ddf4cd9cd5ebd2395",
+    "hash": "8f8fa625fc2535d1582de94a072e331c",
+    "content-hash": "4191b56c96cc20901c9b67c79e1d07d7",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -1292,6 +1292,81 @@
             "time": "2016-10-19 13:37:18"
         },
         {
+            "name": "room11/stack-chat",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:DaveRandom/StackChat.git",
+                "reference": "129148abd6657b854ee622d9ec1698ffe8d9a84c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/DaveRandom/StackChat/zipball/129148abd6657b854ee622d9ec1698ffe8d9a84c",
+                "reference": "129148abd6657b854ee622d9ec1698ffe8d9a84c",
+                "shasum": ""
+            },
+            "require": {
+                "amphp/amp": "^1.2",
+                "amphp/artax": "^2",
+                "amphp/file": "0.1.*",
+                "amphp/websocket": "dev-master",
+                "daverandom/exceptional-json": "^1.0",
+                "ext-intl": "*",
+                "ext-mbstring": "*",
+                "lib-libxml": ">=2.7.8",
+                "php": ">=7.1",
+                "php-ds/php-ds": "*",
+                "psr/log": "^1",
+                "room11/dom-utils": "~1.0",
+                "room11/openid": "~1.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^6.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/constants.php"
+                ],
+                "psr-4": {
+                    "Room11\\StackChat\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Room11\\StackChat\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Pieter Hordijk",
+                    "email": "info@pieterhordijk.com",
+                    "homepage": "https://pieterhordijk.com/",
+                    "role": "developer"
+                },
+                {
+                    "name": "Chris Wright",
+                    "email": "cw@daverandom.com",
+                    "homepage": "https://daverandom.com/",
+                    "role": "developer"
+                }
+            ],
+            "description": "Chat client for Stack Exchange",
+            "homepage": "https://github.com/Room-11/StackChat",
+            "keywords": [
+                "chat",
+                "client"
+            ],
+            "support": {
+                "source": "https://github.com/DaveRandom/StackChat/tree/master",
+                "issues": "https://github.com/DaveRandom/StackChat/issues"
+            },
+            "time": "2017-03-15 23:23:54"
+        },
+        {
             "name": "sabre/uri",
             "version": "1.2.1",
             "source": {
@@ -2046,16 +2121,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "6.0.8",
+            "version": "6.0.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "47ee3fa1bca5c50f1d25105201eb20df777bd7b6"
+                "reference": "9bd36d990884d8fb3313232e0002ed4cdf79f428"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/47ee3fa1bca5c50f1d25105201eb20df777bd7b6",
-                "reference": "47ee3fa1bca5c50f1d25105201eb20df777bd7b6",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/9bd36d990884d8fb3313232e0002ed4cdf79f428",
+                "reference": "9bd36d990884d8fb3313232e0002ed4cdf79f428",
                 "shasum": ""
             },
             "require": {
@@ -2066,18 +2141,18 @@
                 "ext-xml": "*",
                 "myclabs/deep-copy": "^1.3",
                 "php": "^7.0",
-                "phpspec/prophecy": "^1.6.2",
+                "phpspec/prophecy": "^1.7",
                 "phpunit/php-code-coverage": "^5.0",
                 "phpunit/php-file-iterator": "^1.4",
                 "phpunit/php-text-template": "^1.2",
                 "phpunit/php-timer": "^1.0.6",
                 "phpunit/phpunit-mock-objects": "^4.0",
-                "sebastian/comparator": "^1.2.4 || ^2.0",
+                "sebastian/comparator": "^2.0",
                 "sebastian/diff": "^1.2",
                 "sebastian/environment": "^2.0",
-                "sebastian/exporter": "^2.0 || ^3.0",
+                "sebastian/exporter": "^3.0",
                 "sebastian/global-state": "^1.1 || ^2.0",
-                "sebastian/object-enumerator": "^2.0 || ^3.0",
+                "sebastian/object-enumerator": "^3.0.2",
                 "sebastian/resource-operations": "^1.0",
                 "sebastian/version": "^2.0"
             },
@@ -2124,7 +2199,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2017-03-02 15:24:03"
+            "time": "2017-03-15 13:04:13"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -2756,7 +2831,8 @@
     "minimum-stability": "stable",
     "stability-flags": {
         "amphp/websocket": 20,
-        "peehaa/async-twitter": 20
+        "peehaa/async-twitter": 20,
+        "room11/stack-chat": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

@@ -4,9 +4,9 @@ namespace Room11\Jeeves\System;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Event\Event;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\StatusManager;
+use Room11\StackChat\Event\Event;
+use Room11\Jeeves\Chat\Command;
+use Room11\StackChat\Room\StatusManager;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;

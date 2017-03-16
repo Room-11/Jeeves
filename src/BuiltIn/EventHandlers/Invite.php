@@ -3,11 +3,12 @@
 namespace Room11\Jeeves\BuiltIn\EventHandlers;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Event\Event;
-use Room11\Jeeves\Chat\Event\EventType;
-use Room11\Jeeves\Chat\Event\Invitation;
-use Room11\Jeeves\Chat\Room\IdentifierFactory as ChatRoomIdentifierFactory;
-use Room11\Jeeves\Chat\Room\PresenceManager;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Event\Event;
+use Room11\StackChat\Event\EventType;
+use Room11\StackChat\Event\Invitation;
+use Room11\StackChat\Room\IdentifierFactory as ChatRoomIdentifierFactory;
+use Room11\StackChat\Room\PresenceManager;
 use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\System\BuiltInEventHandler;
@@ -20,6 +21,7 @@ class Invite implements BuiltInEventHandler
 
     public function __construct(
         ChatRoomIdentifierFactory $identifierFactory,
+        Client $chatClient,
         PresenceManager $presenceManager,
         Logger $logger
     ) {

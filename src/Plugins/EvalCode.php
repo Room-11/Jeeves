@@ -12,10 +12,10 @@ use Amp\Promise;
 use Amp\Promisor;
 use Amp\Success;
 use Ds\Queue;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
+use Room11\StackChat\Entities\PostedMessage;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\resolve;
 
@@ -31,7 +31,7 @@ class EvalCode extends BasePlugin
     private $queue;
     private $haveLoop = false;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
+    public function __construct(Client $chatClient, HttpClient $httpClient) {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
 

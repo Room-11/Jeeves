@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\System;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 
 interface BuiltInCommand
 {

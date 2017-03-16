@@ -3,12 +3,12 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Client\MessageFetchFailureException;
-use Room11\Jeeves\Chat\Event\StarMessage as StarMessageEvent;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Entities\PostedMessage;
+use Room11\StackChat\Client\MessageFetchFailureException;
+use Room11\StackChat\Event\StarMessage as StarMessageEvent;
+use Room11\Jeeves\Chat\Command;
+use Room11\StackChat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
@@ -17,7 +17,7 @@ class RePinner extends BasePlugin
     private $chatClient;
     private $keyValueStore;
 
-    public function __construct(ChatClient $chatClient, KeyValueStore $keyValueStore)
+    public function __construct(Client $chatClient, KeyValueStore $keyValueStore)
     {
         $this->chatClient = $chatClient;
         $this->keyValueStore = $keyValueStore;

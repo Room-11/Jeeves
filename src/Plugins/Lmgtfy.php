@@ -2,9 +2,9 @@
 
 namespace Room11\Jeeves\Plugins;
 
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\MessageResolver;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\MessageResolver;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Lmgtfy extends BasePlugin
@@ -15,7 +15,7 @@ class Lmgtfy extends BasePlugin
     private $chatClient;
     private $messageResolver;
 
-    public function __construct(ChatClient $chatClient, MessageResolver $messageResolver)
+    public function __construct(Client $chatClient, MessageResolver $messageResolver)
     {
         $this->messageResolver = $messageResolver;
         $this->chatClient = $chatClient;
