@@ -52,7 +52,7 @@ class CommandTest extends AbstractCommandTest
 
     // TODO - Test remap after refactor.
 
-    public function testCommandUnMap()
+    public function testCommandUnmap()
     {
         $this->setCommandParameters([[0, 'unmap'], [1, 'test']]);
         $this->setAdmin(true);
@@ -70,10 +70,20 @@ class CommandTest extends AbstractCommandTest
             ->will($this->returnValue(new Success(true)))
         ;
 
-        $this->expectMessage(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_unmap_success'],
-            'test'
-        ));
+        $this->client
+            ->expects($this->once())
+            ->method('postMessage')
+            ->with(
+                $this->identicalTo($this->room),
+                $this->equalTo(sprintf(
+                    $this->builtIn::RESPONSE_MESSAGES['command_unmap_success'],
+                    'test'
+                ))
+            )
+            ->will($this->returnValue(new Success(true)))
+        ;
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
     public function testCommandUnmapOnUnMapped()
