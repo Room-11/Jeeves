@@ -50,6 +50,154 @@ class CommandTest extends AbstractCommandTest
         $this->setReturnValue($this->command, 'getRoom', $this->room);
     }
 
+    // TODO - Test remap after refactor.
+
+    public function testCommandUnMap()
+    {
+        $this->setCommandParameters([[0, 'unmap'], [1, 'test']]);
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'hasParameters', true);
+        $this->setHasRegisteredCommand(false);
+        $this->setIsCommandMappedForRoom(true);
+
+        $this->pluginManager
+            ->expects($this->once())
+            ->method('unmapCommandForRoom')
+            ->with(
+                $this->identicalTo($this->room),
+                $this->identicalTo('test')
+            )
+            ->will($this->returnValue(new Success(true)))
+        ;
+
+        $this->expectMessage(sprintf(
+            $this->builtIn::RESPONSE_MESSAGES['command_unmap_success'],
+            'test'
+        ));
+    }
+
+    public function testCommandUnmapOnUnMapped()
+    {
+        $this->setCommandParameters([[0, 'unmap'], [1, 'test']]);
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'hasParameters', true);
+        $this->setHasRegisteredCommand(false);
+        $this->setIsCommandMappedForRoom(false);
+
+        $this->expectReply(sprintf(
+            $this->builtIn::RESPONSE_MESSAGES['command_not_mapped'], 'test'
+        ));
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testCommandUnmapOnBuiltIn()
+    {
+        $this->setCommandParameters([[0, 'unmap'], [1, 'uptime']]);
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'hasParameters', true);
+        $this->setHasRegisteredCommand(true);
+
+        $this->expectReply(sprintf(
+            $this->builtIn::RESPONSE_MESSAGES['command_built_in'], 'uptime'
+        ));
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testCommandUnmapWithoutParameters()
+    {
+        $this->setCommandParameter('map');
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'hasParameters', false);
+        $this->expectReply($this->builtIn::RESPONSE_MESSAGES['syntax']);
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testCommandUnmapWithoutAdmin()
+    {
+        $this->setCommandParameter('unmap');
+        $this->setAdmin(false);
+        $this->expectReply($this->builtIn::RESPONSE_MESSAGES['user_not_admin']);
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testCommandMap()
+    {
+        $this->setCommandParameters([
+            [0, 'map'], [1, 'chucky'], [2, 'chuck'], [3, 'chuckEndpoint']
+        ]);
+
+        $this->fullMapTest();
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testCommandMapWithoutEndpoint()
+    {
+        $this->setCommandParameters([
+            [0, 'map'], [1, 'chucky'], [2, 'chuck']
+        ]);
+
+        $this->fullMapTest();
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testCommandMapInvalidEndpoint()
+    {
+        $this->setCommandParameters([
+            [0, 'map'], [1, 'chucky'], [2, 'chuck'], [3, 'chucker']
+        ]);
+
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'hasParameters', true);
+        $this->setHasRegisteredCommand(false);
+        $this->setIsCommandMappedForRoom(false);
+        $this->setReturnValue($this->pluginManager, 'isPluginRegistered', true);
+        $this->setReturnValue($this->pluginManager, 'isPluginEnabledForRoom', true);
+
+        $this->setReturnValue($this->pluginManager, 'getPluginCommandEndpoints', [
+            'firstEndpoint' => [],
+            'secondEndpoint' => []
+        ]);
+
+        $this->expectReply(sprintf(
+            $this->builtIn::RESPONSE_MESSAGES['unknown_endpoint'],
+            'chucker', 'chuck'
+        ));
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testCommandMapMultipleEndpoints()
+    {
+        $this->setCommandParameters([
+            [0, 'map'], [1, 'chucky'], [2, 'chuck']
+        ]);
+
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'hasParameters', true);
+        $this->setHasRegisteredCommand(false);
+        $this->setIsCommandMappedForRoom(false);
+        $this->setReturnValue($this->pluginManager, 'isPluginRegistered', true);
+        $this->setReturnValue($this->pluginManager, 'isPluginEnabledForRoom', true);
+
+        $this->setReturnValue($this->pluginManager, 'getPluginCommandEndpoints', [
+            'firstEndpoint' => [],
+            'secondEndpoint' => []
+        ]);
+
+        $this->expectReply(sprintf(
+            $this->builtIn::RESPONSE_MESSAGES['multiple_endpoints'],
+            'chuck', 2
+        ));
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
     public function testCommandMapOnDisabledPlugin()
     {
         $this->setCommandParameter('map');
@@ -336,6 +484,40 @@ class CommandTest extends AbstractCommandTest
     public function testCommandInfo()
     {
         $this->assertInstanceOf(BuiltInCommandInfo::class, $this->builtIn->getCommandInfo()[0]);
+    }
+
+    private function fullMapTest()
+    {
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'hasParameters', true);
+        $this->setHasRegisteredCommand(false);
+        $this->setIsCommandMappedForRoom(false);
+        $this->setReturnValue($this->pluginManager, 'isPluginRegistered', true);
+        $this->setReturnValue($this->pluginManager, 'isPluginEnabledForRoom', true);
+        $plugin = $this->createMock(Chuck::class);
+        $this->setReturnValue($this->pluginManager, 'getPluginByName', $plugin);
+        $this->setReturnValue($plugin, 'getName', 'chuck');
+
+        $this->setReturnValue($this->pluginManager, 'getPluginCommandEndpoints', [
+            'chuckEndpoint' => []
+        ]);
+
+        $this->pluginManager
+            ->expects($this->once())
+            ->method('mapCommandForRoom')
+            ->with(
+                $this->identicalTo($this->room),
+                $this->identicalTo($plugin),
+                $this->identicalTo('chuckEndpoint'),
+                $this->identicalTo('chucky')
+            )
+            ->will($this->returnValue(new Success(true)))
+        ;
+
+        $this->expectMessage(sprintf(
+            $this->builtIn::RESPONSE_MESSAGES['command_map_success'],
+            'chucky', 'chuck', 'chuckEndpoint'
+        ));
     }
 
     private function assertList()
