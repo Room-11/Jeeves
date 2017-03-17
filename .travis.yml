@@ -4,6 +4,7 @@ language: php
 
 php:
   - '7.1'
+  - nightly
 
 before_script:
   - phpenv config-rm xdebug.ini
