@@ -19,7 +19,7 @@ class Admin implements BuiltInCommand
     private $httpClient;
     private $storage;
 
-    private const COMMAND_HELP_TEXT =
+    const COMMAND_HELP_TEXT =
         "Sub-commands (* indicates admin-only):"
         . "\n"
         . "\n help    - Display this message"

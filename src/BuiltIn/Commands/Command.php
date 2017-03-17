@@ -16,7 +16,7 @@ use function Amp\resolve;
 
 class Command implements BuiltInCommand
 {
-    private const RESPONSE_MESSAGES = [
+    const RESPONSE_MESSAGES = [
         'command_already_mapped' => "Command '%s' is already mapped. Use `!!command list` to display the currently "
                                   . "mapped commands.",
         'command_built_in'       => "Command '%s' is built in and cannot be altered",
@@ -38,7 +38,7 @@ class Command implements BuiltInCommand
         'user_not_admin'         => "I'm sorry Dave, I'm afraid I can't do that",
     ];
 
-    private const COMMAND_HELP_TEXT =
+    const COMMAND_HELP_TEXT =
         "Sub-commands (* indicates admin-only):"
         . "\n"
         . "\n help   - display this message"

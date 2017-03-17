@@ -24,7 +24,7 @@ class ChatUser
         $this->lastSeen = new \DateTimeImmutable('@' . ($data['last_seen'] ?? 0));
 
         $emailHash = (string)($data['email_hash'] ?? '');
-        $this->avatarUrl = ('!' === $emailHash[0] ?? '')
+        $this->avatarUrl = ('!' === ($emailHash[0] ?? ''))
             ? substr($emailHash, 1)
             : sprintf(self::GRAVATAR_URL_TEMPLATE, $emailHash);
     }
