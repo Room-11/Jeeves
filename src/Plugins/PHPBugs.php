@@ -1,21 +1,18 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Amp\Promise;
-use function Room11\DOMUtils\domdocument_load_html;
 use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\ChatRoomContainer;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use function Amp\repeat;
+use function Room11\DOMUtils\domdocument_load_html;
 
 class PHPBugs extends BasePlugin
 {
-    private const RECENT_BUGS = "https://bugs.php.net/search.php?search_for=&boolean=0&limit=30&order_by=id&direction=DESC&cmd=display&status=Open&bug_type=All&project=All&php_os=&phpver=&cve_id=&assign=&author_email=&bug_age=0&bug_updated=0";
+    private const RECENT_BUGS = "https://bugs.php.net/search.php?search_for=&boolean=0&limit=30&order_by=id&direction=DESC&cmd=display&status=All&bug_type=All&project=PHP&php_os=&phpver=&cve_id=&assign=&author_email=&bug_age=0&bug_updated=0";
 
     private $chatClient;
     private $httpClient;
@@ -31,7 +28,9 @@ class PHPBugs extends BasePlugin
         $this->rooms = [];
 
         repeat(
-            function () { return $this->checkBugs(); }, 300000
+            function () {
+                return $this->checkBugs();
+            }, 300000
         );
     }
 
@@ -105,7 +104,7 @@ class PHPBugs extends BasePlugin
 
             $bugs[] = [
                 "id" => $id,
-                "name" => $cells->item(8)->textContent,
+                "name" => $cells->item(8)->textContent ?: "*none*",
                 "url" => "https://bugs.php.net/{$id}",
             ];
         }
