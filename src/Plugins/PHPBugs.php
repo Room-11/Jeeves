@@ -13,12 +13,12 @@ use function Room11\DOMUtils\domdocument_load_html;
 class PHPBugs extends BasePlugin
 {
     private const RECENT_BUGS = "https://bugs.php.net/search.php?search_for=&boolean=0&limit=30&order_by=id&direction=DESC&cmd=display&status=All&bug_type=All&project=PHP&php_os=&phpver=&cve_id=&assign=&author_email=&bug_age=0&bug_updated=0";
+    private const DATA_KEY = "plugin.phpbugs.lastId";
 
     private $chatClient;
     private $httpClient;
     private $pluginData;
     private $rooms;
-    private $lastKnownBugId = null;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
@@ -47,13 +47,12 @@ class PHPBugs extends BasePlugin
             return null;
         }
 
-        if ($this->lastKnownBugId === null) {
-            $this->lastKnownBugId = $bugs[0]["id"];
+        $lastId = $this->pluginData->get(self::DATA_KEY);
+        $this->pluginData->set(self::DATA_KEY, $bugs[0]["id"]);
+
+        if ($lastId === null) {
             return null;
         }
-
-        $lastId = $this->lastKnownBugId;
-        $this->lastKnownBugId = $bugs[0]["id"];
 
         foreach ($bugs as $bug) {
             if ($bug["id"] <= $lastId) {
@@ -82,8 +81,13 @@ class PHPBugs extends BasePlugin
             return false;
         }
 
+        return $this->parseBugs($response->getBody());
+    }
+
+    private function parseBugs(string $body)
+    {
         /** @var \DOMElement $table */
-        $table = domdocument_load_html($response->getBody())
+        $table = domdocument_load_html($body)
             ->getElementById("top")
             ->nextSibling;
 
