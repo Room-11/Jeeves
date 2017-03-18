@@ -8,6 +8,8 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use function Amp\cancel;
+use function Amp\immediately;
 use function Amp\repeat;
 use function Room11\DOMUtils\domdocument_load_html;
 
@@ -39,9 +41,11 @@ class PHPBugs extends BasePlugin
             $this->watcher = repeat(function () {
                 return $this->checkBugs();
             }, 300000);
-        }
 
-        parent::enableForRoom($room, $persist);
+            immediately(function () {
+                $this->checkBugs();
+            });
+        }
     }
 
     public function disableForRoom(ChatRoom $room, bool $persist)
@@ -49,11 +53,9 @@ class PHPBugs extends BasePlugin
         unset($this->rooms[$room->getIdentifier()->getIdentString()]);
 
         if (empty($this->rooms) && $this->watcher) {
-            \Amp\cancel($this->watcher);
+            cancel($this->watcher);
             $this->watcher = null;
         }
-
-        parent::disableForRoom($room, $persist);
     }
 
     private function checkBugs()
