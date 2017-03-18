@@ -9,8 +9,8 @@ use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\cancel;
-use function Amp\immediately;
 use function Amp\repeat;
+use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class PHPBugs extends BasePlugin
@@ -42,9 +42,7 @@ class PHPBugs extends BasePlugin
                 return $this->checkBugs();
             }, 300000);
 
-            immediately(function () {
-                $this->checkBugs();
-            });
+            resolve($this->checkBugs());
         }
     }
 
@@ -66,12 +64,13 @@ class PHPBugs extends BasePlugin
             return null;
         }
 
-        $lastId = yield $this->pluginData->get(self::DATA_KEY);
-        yield $this->pluginData->set(self::DATA_KEY, $bugs[0]["id"]);
-
-        if ($lastId === null) {
+        if (!yield $this->pluginData->exists(self::DATA_KEY)) {
+            yield $this->pluginData->set(self::DATA_KEY, $bugs[0]["id"]);
             return null;
         }
+
+        $lastId = yield $this->pluginData->get(self::DATA_KEY);
+        yield $this->pluginData->set(self::DATA_KEY, $bugs[0]["id"]);
 
         foreach ($bugs as $bug) {
             if ($bug["id"] <= $lastId) {
