@@ -8,6 +8,8 @@ use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use function Amp\cancel;
+use function Amp\immediately;
 use function Amp\repeat;
 use function Room11\DOMUtils\domdocument_load_html;
 
@@ -21,23 +23,39 @@ class PHPBugs extends BasePlugin
     private $pluginData;
     private $rooms;
 
+    private $watcher;
+
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
         $this->pluginData = $pluginData;
         $this->rooms = [];
-
-        repeat(
-            function () {
-                return $this->checkBugs();
-            }, 300000
-        );
     }
 
     public function enableForRoom(ChatRoom $room, bool $persist = true)
     {
         $this->rooms[$room->getIdentifier()->getIdentString()] = $room;
+
+        if ($this->watcher === null) {
+            $this->watcher = repeat(function () {
+                return $this->checkBugs();
+            }, 300000);
+
+            immediately(function () {
+                $this->checkBugs();
+            });
+        }
+    }
+
+    public function disableForRoom(ChatRoom $room, bool $persist)
+    {
+        unset($this->rooms[$room->getIdentifier()->getIdentString()]);
+
+        if (empty($this->rooms) && $this->watcher) {
+            cancel($this->watcher);
+            $this->watcher = null;
+        }
     }
 
     private function checkBugs()
@@ -48,8 +66,8 @@ class PHPBugs extends BasePlugin
             return null;
         }
 
-        $lastId = $this->pluginData->get(self::DATA_KEY);
-        $this->pluginData->set(self::DATA_KEY, $bugs[0]["id"]);
+        $lastId = yield $this->pluginData->get(self::DATA_KEY);
+        yield $this->pluginData->set(self::DATA_KEY, $bugs[0]["id"]);
 
         if ($lastId === null) {
             return null;
@@ -109,7 +127,7 @@ class PHPBugs extends BasePlugin
 
             $bugs[] = [
                 "id" => $id,
-                "name" => $cells->item(8)->textContent ?: "*none*",
+                "title" => $cells->item(8)->textContent ?: "*none*",
                 "url" => "https://bugs.php.net/{$id}",
             ];
         }
