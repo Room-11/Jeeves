@@ -21,23 +21,39 @@ class PHPBugs extends BasePlugin
     private $pluginData;
     private $rooms;
 
+    private $watcher;
+
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
         $this->pluginData = $pluginData;
         $this->rooms = [];
-
-        repeat(
-            function () {
-                return $this->checkBugs();
-            }, 300000
-        );
     }
 
     public function enableForRoom(ChatRoom $room, bool $persist = true)
     {
         $this->rooms[$room->getIdentifier()->getIdentString()] = $room;
+
+        if ($this->watcher === null) {
+            $this->watcher = repeat(function () {
+                return $this->checkBugs();
+            }, 300000);
+        }
+
+        parent::enableForRoom($room, $persist);
+    }
+
+    public function disableForRoom(ChatRoom $room, bool $persist)
+    {
+        unset($this->rooms[$room->getIdentifier()->getIdentString()]);
+
+        if (empty($this->rooms) && $this->watcher) {
+            \Amp\cancel($this->watcher);
+            $this->watcher = null;
+        }
+
+        parent::disableForRoom($room, $persist);
     }
 
     private function checkBugs()
