@@ -88,7 +88,7 @@ if (false === $parsedArgs = getopt(JEEVES_SHORT_OPTS, JEEVES_LONG_OPTS)) {
     startup_error_exit("Error parsing command line options");
 }
 
-require __DIR__ . '/../src/bootstrap.php';
+require __DIR__ . '/../bootstrap.php';
 
 if (isset($parsedArgs['help'])) {
     startup_display_help();
