@@ -116,9 +116,17 @@ class PHPBugs extends BasePlugin
         return $bugs;
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function getName(): string
+    {
+        return 'PHPBugs';
+    }
+
     public function getDescription(): string
     {
-        return 'Pushes new PHP.net bugs';
+        return 'Pushes new PHP.net bugs.';
     }
 
     /**
