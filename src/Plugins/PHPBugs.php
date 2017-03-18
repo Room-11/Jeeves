@@ -64,8 +64,8 @@ class PHPBugs extends BasePlugin
             return null;
         }
 
-        $lastId = $this->pluginData->get(self::DATA_KEY);
-        $this->pluginData->set(self::DATA_KEY, $bugs[0]["id"]);
+        $lastId = yield $this->pluginData->get(self::DATA_KEY);
+        yield $this->pluginData->set(self::DATA_KEY, $bugs[0]["id"]);
 
         if ($lastId === null) {
             return null;
