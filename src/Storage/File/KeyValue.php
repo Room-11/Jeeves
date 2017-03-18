@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\Storage\File;
 
 use Amp\Promise;
-use Room11\StackChat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStorage;
+use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\resolve;
 
 class KeyValue implements KeyValueStorage

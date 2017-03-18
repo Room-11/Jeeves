@@ -3,13 +3,13 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use Room11\StackChat\Client\Chars;
-use Room11\StackChat\Client\Client;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\InvalidStackExchangeUrlException;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Chars;
+use Room11\StackChat\Client\Client;
 use function Amp\resolve;
 use function Room11\Jeeves\normalize_stack_exchange_url;
 

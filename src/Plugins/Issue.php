@@ -5,12 +5,12 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
-use Room11\StackChat\Client\Client;
-use Room11\StackChat\Client\MessageResolver;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\External\GithubIssue\Credentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\MessageResolver;
 
 class Issue extends BasePlugin
 {

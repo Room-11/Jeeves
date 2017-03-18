@@ -1,4 +1,4 @@
-<?php  declare(strict_types = 1);
+<?php declare(strict_types = 1);
 
 namespace Room11\Jeeves\Plugins;
 
@@ -7,12 +7,12 @@ use Amp\Success;
 use Room11\GoogleSearcher\Searcher as GoogleSearcher;
 use Room11\GoogleSearcher\SearchFailedException;
 use Room11\GoogleSearcher\SearchResultSet;
+use Room11\Jeeves\Chat\Command;
+use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Chars;
 use Room11\StackChat\Client\Client;
 use Room11\StackChat\Client\MessageFetchFailureException;
 use Room11\StackChat\Client\MessageResolver;
-use Room11\Jeeves\Chat\Command;
-use Room11\Jeeves\System\PluginCommandEndpoint;
 
 class Google extends BasePlugin
 {

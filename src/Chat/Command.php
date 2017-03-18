@@ -2,19 +2,20 @@
 
 namespace Room11\Jeeves\Chat;
 
-use Room11\StackChat\Client\RoomContainer;
 use Room11\StackChat\Entities\ChatMessage;
 use Room11\StackChat\Room\Room;
 
-class Command implements RoomContainer
+class Command extends ChatMessage
 {
     private $commandName;
     private $parameters;
     private $text;
     private $originatingMessage;
 
-    public function __construct(Room $room, string $commandName, array $parameters, ChatMessage $originatingMessage = null)
+    public function __construct(Room $room, string $commandName, array $parameters, ChatMessage $originatingMessage)
     {
+        parent::__construct($originatingMessage->getEvent());
+
         $this->commandName = $commandName;
         $this->parameters = $parameters;
         $this->originatingMessage = $originatingMessage;
@@ -55,21 +56,16 @@ class Command implements RoomContainer
         return !empty($this->parameters) && ($minCount < 0 || count($this->parameters) >= $minCount);
     }
 
-    public function getText(): string
+    public function getCommandText(): string
     {
         if (!isset($this->text)) {
-            $this->text = ltrim(substr($this->originatingMessage->getText(), strlen($this->commandName) + 2) ?: '');
+            $this->text = ltrim(substr($this->originatingMessage->getText(), strlen($this->commandName) + strlen(CommandFactory::INVOKER)) ?: '');
         }
 
         return $this->text;
     }
 
-    public function getRoom(): Room
-    {
-        return $this->getRoom();
-    }
-
-    public function getOriginatingMessage(): ?ChatMessage
+    public function getOriginatingMessage(): ChatMessage
     {
         return $this->originatingMessage;
     }

@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\OpenGrokClient
 {
+
     use Amp\Artax\Cookie\Cookie;
     use Amp\Artax\Cookie\CookieJar;
     use Amp\Artax\HttpClient;
@@ -409,9 +410,9 @@ namespace Room11\Jeeves\OpenGrokClient
 
 namespace Room11\Jeeves\Plugins
 {
+
     use Amp\Artax\Cookie\CookieJar;
     use Amp\Artax\HttpClient;
-    use Room11\StackChat\Client\Client;
     use Room11\Jeeves\Chat\Command;
     use Room11\Jeeves\OpenGrokClient\GenericPhpResultProcessor;
     use Room11\Jeeves\OpenGrokClient\HtmlSearcher;
@@ -422,6 +423,7 @@ namespace Room11\Jeeves\Plugins
     use Room11\Jeeves\OpenGrokClient\SearchResultProcessor;
     use Room11\Jeeves\OpenGrokClient\SearchResultSet;
     use Room11\Jeeves\System\PluginCommandEndpoint;
+    use Room11\StackChat\Client\Client;
 
     class OpenGrok extends BasePlugin
     {

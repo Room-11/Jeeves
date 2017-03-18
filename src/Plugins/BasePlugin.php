@@ -2,8 +2,8 @@
 
 namespace Room11\Jeeves\Plugins;
 
-use Room11\StackChat\Room\Room as ChatRoom;
 use Room11\Jeeves\System\Plugin;
+use Room11\StackChat\Room\Room as ChatRoom;
 
 abstract class BasePlugin implements Plugin
 {

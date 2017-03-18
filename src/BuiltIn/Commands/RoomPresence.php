@@ -4,20 +4,19 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Failure;
 use Amp\Promise;
-use Room11\StackChat\Client\Client;
-use Room11\StackChat\Client\PostFlags;
+use Psr\Log\LoggerInterface as Logger;
+use Room11\Jeeves\Chat\AlreadyApprovedException;
 use Room11\Jeeves\Chat\Command as CommandMessage;
-use Room11\StackChat\Room\AlreadyApprovedException;
-use Room11\StackChat\Room\IdentifierFactory;
-use Room11\StackChat\Room\InvalidRoomIdentifierException;
-use Room11\StackChat\Room\PresenceManager;
-use Room11\StackChat\Room\RoomAlreadyExistsException;
-use Room11\StackChat\Room\UserAlreadyVotedException;
-use Room11\StackChat\Room\UserNotAcceptableException;
-use Room11\Jeeves\Log\Level;
-use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\Chat\PresenceManager;
+use Room11\Jeeves\Chat\RoomAlreadyExistsException;
+use Room11\Jeeves\Chat\UserAlreadyVotedException;
+use Room11\Jeeves\Chat\UserNotAcceptableException;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
+use Room11\StackChat\Room\IdentifierFactory;
+use Room11\StackChat\Room\InvalidRoomIdentifierException;
 use function Amp\resolve;
 
 class RoomPresence implements BuiltInCommand
@@ -71,7 +70,7 @@ class RoomPresence implements BuiltInCommand
         $userId = $command->getUserId();
         $userName = $command->getUserName();
 
-        $this->logger->log(Level::DEBUG, "Invited to {$identifier} by {$userName} (#{$userId})");
+        $this->logger->debug("Invited to {$identifier} by {$userName} (#{$userId})");
 
         try {
             yield $this->presenceManager->addRoom($identifier, $userId);
@@ -79,7 +78,7 @@ class RoomPresence implements BuiltInCommand
         } catch (RoomAlreadyExistsException $e) {
             $message = "I'm already there, I don't need to be invited again";
         } catch (\Throwable $e) {
-            $this->logger->log(Level::ERROR, "Error while adding room {$identifier} invited by {$userName} (#{$userId}): {$e}");
+            $this->logger->error("Error while adding room {$identifier} invited by {$userName} (#{$userId}): {$e}");
             $message = "Something went pretty badly wrong there, I've made a note of it, please report this issue to my maintainers.";
         }
 

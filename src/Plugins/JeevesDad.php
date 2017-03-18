@@ -4,13 +4,13 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\StackChat\Client\Client;
 use Room11\Jeeves\Chat\Command;
-use Room11\StackChat\Message;
-use Room11\StackChat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Entities\ChatMessage;
+use Room11\StackChat\Room\Room as ChatRoom;
 
 class JeevesDad extends BasePlugin
 {
@@ -30,7 +30,7 @@ class JeevesDad extends BasePlugin
         $this->storage = $storage;
     }
 
-    public function handleMessage(Message $message)
+    public function handleMessage(ChatMessage $message)
     {
         if (!yield from $this->isDadGreetEnabled($message->getRoom())) {
             return;

@@ -3,10 +3,10 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use Room11\StackChat\Client\Client;
 use Room11\Jeeves\Chat\Command;
-use function Room11\Jeeves\dateinterval_to_string;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
+use function Room11\Jeeves\dateinterval_to_string;
 
 class Rebecca extends BasePlugin
 {

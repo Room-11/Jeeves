@@ -1,4 +1,5 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
+
 namespace Room11\Jeeves\System;
 
 use Room11\Jeeves\Exception;

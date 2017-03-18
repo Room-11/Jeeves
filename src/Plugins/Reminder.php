@@ -4,19 +4,19 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
 use IntervalParser\IntervalParser;
-use Room11\StackChat\Client\Chars;
-use Room11\StackChat\Client\Client;
-use Room11\StackChat\Client\PostFlags;
 use Room11\Jeeves\Chat\Command;
-use Room11\StackChat\Room\Room as ChatRoom;
-use function Room11\Jeeves\dateinterval_to_string;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\Admin as AdminStore;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Chars;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
+use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\cancel;
 use function Amp\once;
 use function Amp\resolve;
+use function Room11\Jeeves\dateinterval_to_string;
 
 class InvalidReminderTextException extends Exception {}
 class InvalidReminderTimeException extends Exception {}

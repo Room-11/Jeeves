@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Plugins;
 
 use Room11\StackChat\Client\Client;
-use Room11\StackChat\Message;
+use Room11\StackChat\Entities\ChatMessage;
 
 class Stahp extends BasePlugin
 {
@@ -14,7 +14,7 @@ class Stahp extends BasePlugin
         $this->chatClient = $chatClient;
     }
 
-    public function handleMessage(Message $message)
+    public function handleMessage(ChatMessage $message)
     {
         if (preg_match('#\bstahp\b#i', $message->getText(), $match)) {
             yield $this->chatClient->postReply($message, "HAMMERTIME!");

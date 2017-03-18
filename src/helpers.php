@@ -4,9 +4,6 @@ namespace Room11\Jeeves;
 
 use SebastianBergmann\Version as SebastianVersion;
 
-const DNS_NAME_EXPR = '(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)\.)*(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)';
-const ROOM_IDENTIFIER_EXPR = '(' . DNS_NAME_EXPR . ')#([0-9]+)';
-
 function get_current_version(): VersionIdentifier
 {
     $version = (new SebastianVersion(VERSION, APP_BASE))->getVersion();

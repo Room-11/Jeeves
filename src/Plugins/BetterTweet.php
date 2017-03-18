@@ -13,16 +13,16 @@ use PeeHaa\AsyncTwitter\Api\Request\Status\Retweet as RetweetRequest;
 use PeeHaa\AsyncTwitter\Api\Request\Status\Update as UpdateRequest;
 use PeeHaa\AsyncTwitter\Credentials\AccessTokenFactory as TwitterAccessTokenFactory;
 use Room11\DOMUtils\LibXMLFatalErrorException;
-use Room11\StackChat\Client\Client;
-use Room11\StackChat\Client\MessageIDNotFoundException;
-use Room11\StackChat\Client\MessageResolver as ChatMessageResolver;
-use Room11\StackChat\Entities\MainSiteUser;
 use Room11\Jeeves\Chat\Command;
-use Room11\StackChat\Room\Room as ChatRoom;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\MessageIDNotFoundException;
+use Room11\StackChat\Client\MessageResolver as ChatMessageResolver;
+use Room11\StackChat\Entities\MainSiteUser;
+use Room11\StackChat\Room\Room as ChatRoom;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class NotConfiguredException extends Exception {}

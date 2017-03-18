@@ -8,25 +8,21 @@ use DaveRandom\AsyncBitlyClient\Client as BitlyClient;
 use DaveRandom\AsyncMicrosoftTranslate\Credentials as TranslationAPICredentials;
 use PeeHaa\AsyncChatterBot\Credential\CleverBot as CleverBotCredentials;
 use PeeHaa\AsyncTwitter\Credentials\Application as TwitterApplicationCredentials;
-use Room11\Jeeves\External\GithubIssue\Credentials as GithubIssueCredentials;
+use Psr\Log\LoggerInterface as Logger;
 use Room11\Jeeves\BuiltIn\Commands\Admin as AdminBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Alias as AliasBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Ban as BanBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Command as CommandBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Plugin as PluginBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Remove as RemoveBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\RoomPresence;
 use Room11\Jeeves\BuiltIn\Commands\Uptime as UptimeBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Version as VersionBuiltIn;
-use Room11\Jeeves\BuiltIn\Commands\Remove as RemoveBuiltIn;
 use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
-use Room11\StackChat\Room\CredentialManager;
-use Room11\StackChat\Room\Identifier as ChatRoomIdentifier;
-use Room11\StackChat\Room\StatusManager as ChatRoomStatusManager;
-use Room11\StackChat\Room\PresenceManager as ChatRoomPresenceManager;
-use Room11\StackChat\WebSocket\EventDispatcher as WebSocketEventDispatcher;
-use Room11\Jeeves\Log\AerysLogger;
+use Room11\Jeeves\Chat\PresenceManager as ChatRoomPresenceManager;
+use Room11\Jeeves\Chat\RoomStatusManager as ChatRoomStatusManager;
+use Room11\Jeeves\External\GithubIssue\Credentials as GithubIssueCredentials;
 use Room11\Jeeves\Log\Level as LogLevel;
-use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
@@ -48,6 +44,9 @@ use Room11\Jeeves\WebAPI\Server as WebAPIServer;
 use Room11\OpenId\Credentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
+use Room11\StackChat\Auth\CredentialManager;
+use Room11\StackChat\Room\Identifier as ChatRoomIdentifier;
+use Room11\StackChat\WebSocket\EventDispatcher as WebSocketEventDispatcher;
 use Symfony\Component\Yaml\Yaml;
 use function Amp\onError;
 use function Amp\run;
@@ -237,9 +236,9 @@ if ($config['web-api']['enable'] ?? false) {
 
     $host->use($api->getRouter());
 
-    (new Bootstrapper(function() use($host) { return [$host]; }))
-        ->init(new AerysLogger($injector->make(Logger::class)))
-        ->start();
+    \Amp\wait((new Bootstrapper(function() use($host) { return [$host]; }))
+        ->init($injector->make(Logger::class))
+        ->start());
 }
 
 onError(function (\Throwable $e) {

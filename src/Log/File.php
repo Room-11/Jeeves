@@ -52,15 +52,15 @@ class File extends BaseLogger
         $this->haveWriteLoop = false;
     }
 
-    public function log(int $logLevel, string $message, $extraData = null): Promise
+    public function log($logLevel, $message, array $context = null): Promise
     {
         if (!$this->meetsLogLevel($logLevel)) {
             return new Success();
         }
 
         $messages = [$message];
-        if ($extraData !== null && $this->meetsLogLevel(Level::EXTRA_DATA)) {
-            $messages[] = json_encode($extraData);
+        if ($context !== null && $this->meetsLogLevel(Level::CONTEXT)) {
+            $messages[] = json_encode($context);
         }
 
         $this->writeQueue->push([(new \DateTime)->format('Y-m-d H:i:s'), $messages, $deferred = new Deferred]);

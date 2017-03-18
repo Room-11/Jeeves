@@ -4,20 +4,19 @@ namespace Room11\Jeeves\System;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\StackChat\Event\Event;
-use Room11\StackChat\Event\Filter\Builder as EventFilterBuilder;
-use Room11\StackChat\Event\Filter\Filter;
-use Room11\StackChat\Event\GlobalEvent;
-use Room11\StackChat\Event\RoomSourcedEvent;
+use Psr\Log\LoggerInterface as Logger;
 use Room11\Jeeves\Chat\Command;
+use Room11\Jeeves\Chat\EventFilter\Builder as EventFilterBuilder;
+use Room11\Jeeves\Chat\EventFilter\Filter;
+use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\Jeeves\Storage\Plugin as PluginStorage;
+use Room11\StackChat\Entities\ChatMessage;
+use Room11\StackChat\Event\Event;
+use Room11\StackChat\Event\RoomSourcedEvent;
 use Room11\StackChat\Message;
 use Room11\StackChat\Room\ConnectedRoomCollection;
 use Room11\StackChat\Room\Identifier as ChatRoomIdentifier;
 use Room11\StackChat\Room\Room as ChatRoom;
-use Room11\Jeeves\Log\Level;
-use Room11\Jeeves\Log\Logger;
-use Room11\Jeeves\Storage\Ban as BanStorage;
-use Room11\Jeeves\Storage\Plugin as PluginStorage;
 use function Amp\all;
 use function Amp\resolve;
 
@@ -123,44 +122,37 @@ class PluginManager
         return $promises;
     }
 
-    private function invokeHandlerForCommand(Command $command): Promise
+    private function invokeHandlerForCommand(Command $command)
     {
         $roomIdent = $command->getRoom()->getIdentifier()->getIdentString();
         $commandName = strtolower($command->getCommandName());
+        $userId = $command->getUserId();
+        $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
 
-        if (!isset($this->commandMap[$roomIdent][$commandName])) {
-            return new Success();
+        if ($userIsBanned) {
+            $this->logger->debug(
+                "User #{$userId} is banned, ignoring event #{$command->getEvent()->getId()} for plugin command endpoints"
+                . " (command: {$commandName})"
+            );
+
+            return null;
         }
 
-        return resolve(function() use($command, $roomIdent, $commandName) {
-            $userId = $command->getUserId();
-            $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
+        /** @var Plugin $plugin */
+        /** @var PluginCommandEndpoint $endpoint */
+        list($plugin, $endpoint) = $this->commandMap[$roomIdent][$commandName];
 
-            if ($userIsBanned) {
-                $this->logger->log(Level::DEBUG,
-                    "User #{$userId} is banned, ignoring event #{$command->getEvent()->getId()} for plugin command endpoints"
-                    . " (command: {$commandName})"
-                );
+        // just a sanity check, shouldn't ever be false but in case something goes horribly wrong
+        if (!$this->isPluginEnabledForRoom($plugin, $command->getRoom())) {
+            $this->logger->debug(
+                "Command {$commandName} still present for {$roomIdent} but plugin {$plugin->getName()}"
+                . " is disabled! (endpoint: {$endpoint->getName()})"
+            );
 
-                return;
-            }
+            return null;
+        }
 
-            /** @var Plugin $plugin */
-            /** @var PluginCommandEndpoint $endpoint */
-            list($plugin, $endpoint) = $this->commandMap[$roomIdent][$commandName];
-
-            // just a sanity check, shouldn't ever be false but in case something goes horribly wrong
-            if (!$this->isPluginEnabledForRoom($plugin, $command->getRoom())) {
-                $this->logger->log(Level::DEBUG,
-                    "Command {$commandName} still present for {$roomIdent} but plugin {$plugin->getName()}"
-                    . " is disabled! (endpoint: {$endpoint->getName()})"
-                );
-
-                return;
-            }
-
-            yield $this->invokeCallbackAsPromise($endpoint->getCallback(), $command);
-        });
+        return $this->invokeCallbackAsPromise($endpoint->getCallback(), $command);
     }
 
     /**
@@ -200,7 +192,7 @@ class PluginManager
         $pluginName = strtolower($plugin->getName());
 
         try {
-            $this->logger->log(Level::DEBUG, "Registering plugin '{$pluginName}' ({$pluginClassName})");
+            $this->logger->debug("Registering plugin '{$pluginName}' ({$pluginClassName})");
 
             $endpoints = $filters = $roomFilters = $typeFilters = [];
 
@@ -217,7 +209,7 @@ class PluginManager
 
                 $endpoints[strtolower($endpoint->getName())] = $endpoint;
             }
-            $this->logger->log(Level::DEBUG, "Found " . count($endpoints) . " command endpoints for plugin '{$pluginName}'");
+            $this->logger->debug("Found " . count($endpoints) . " command endpoints for plugin '{$pluginName}'");
 
             foreach ($plugin->getEventHandlers() as $filterString => $handler) {
                 $filter = $this->filterBuilder->build($filterString, $handler);
@@ -239,15 +231,14 @@ class PluginManager
                     $typeFilters[$type][$filterKey] = [$pluginName, $filter];
                 }
             }
-            $this->logger->log(
-                Level::DEBUG,
+            $this->logger->debug(
                 "Found " . count($filters) . " unindexable event handlers, "
                 . count($roomFilters) . " room-indexed event handlers and "
                 . count($typeFilters) . " type-indexed event handlers "
                 . "for plugin '{$pluginName}'"
             );
         } catch (\Throwable $e) {
-            $this->logger->log(Level::DEBUG, "Registration of plugin '{$pluginName}' failed", $e);
+            $this->logger->debug("Registration of plugin '{$pluginName}' failed: {$e}");
 
             throw new PluginRegistrationFailedException(
                 "Registration of plugin '{$pluginName}' ({$pluginClassName}) failed", $plugin, $e
@@ -278,7 +269,7 @@ class PluginManager
             }
         }
 
-        $this->logger->log(Level::DEBUG, "Registered plugin '{$pluginName}' successfully");
+        $this->logger->debug("Registered plugin '{$pluginName}' successfully");
     }
 
     /**
@@ -445,7 +436,7 @@ class PluginManager
         $roomId = $room->getIdentifier()->getIdentString();
 
         $yesNo = $persist ? 'yes' : 'no';
-        $this->logger->log(Level::DEBUG, "Disabling plugin '{$pluginName}' for room '{$roomId}' (persist = {$yesNo})");
+        $this->logger->debug("Disabling plugin '{$pluginName}' for room '{$roomId}' (persist = {$yesNo})");
 
         unset($this->enabledPlugins[$roomId][$pluginName]);
 
@@ -459,7 +450,7 @@ class PluginManager
             try {
                 yield $this->invokeCallbackAsPromise([$plugin, 'disableForRoom'], $room, $persist);
             } catch (\Throwable $e) {
-                $this->logger->log(Level::ERROR, "Unhandled exception in " . get_class($plugin) . '#disableForRoom(): ' . $e);
+                $this->logger->debug("Unhandled exception in " . get_class($plugin) . '#disableForRoom(): ' . $e);
             }
 
             if ($persist) {
@@ -483,12 +474,12 @@ class PluginManager
             $roomId = $room->getIdentifier()->getIdentString();
 
             $yesNo = $persist ? 'yes' : 'no';
-            $this->logger->log(Level::DEBUG, "Enabling plugin '{$pluginName}' for room '{$roomId}' (persist = {$yesNo})");
+            $this->logger->debug("Enabling plugin '{$pluginName}' for room '{$roomId}' (persist = {$yesNo})");
 
             try {
                 yield $this->invokeCallbackAsPromise([$plugin, 'enableForRoom'], $room, $persist);
             } catch (\Throwable $e) {
-                $this->logger->log(Level::ERROR, "Unhandled exception in " . get_class($plugin) . '#enableForRoom(): ' . $e);
+                $this->logger->debug("Unhandled exception in " . get_class($plugin) . '#enableForRoom(): ' . $e);
             }
 
             $this->enabledPlugins[$roomId][$pluginName] = true;
@@ -583,22 +574,24 @@ class PluginManager
         return $endpoints;
     }
 
-    public function handleRoomEvent(RoomSourcedEvent $event, Message $message = null): Promise
+    public function handleCommand(Command $command): Promise
     {
-        $promises = $this->invokeHandlersForEvent($event);
+        $roomIdent = $command->getRoom()->getIdentifier()->getIdentString();
+        $commandName = strtolower($command->getCommandName());
 
-        if ($message !== null) {
-            $promises = array_merge($promises, $this->invokeHandlersForMessage($message));
-
-            if ($message instanceof Command) {
-                $promises[] = $this->invokeHandlerForCommand($message);
-            }
+        if (!isset($this->commandMap[$roomIdent][$commandName])) {
+            return new Success();
         }
 
-        return all($promises);
+        return resolve($this->invokeHandlerForCommand($command));
     }
 
-    public function handleGlobalEvent(GlobalEvent $event): Promise
+    public function handleMessage(ChatMessage $message): Promise
+    {
+        return all($this->invokeHandlersForMessage($message));
+    }
+
+    public function handleEvent(Event $event): Promise
     {
         return all($this->invokeHandlersForEvent($event));
     }

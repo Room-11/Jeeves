@@ -6,9 +6,9 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request;
 use Amp\Artax\Response;
-use Room11\StackChat\Client\Client;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
 
 class Haskell extends BasePlugin
 {

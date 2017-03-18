@@ -4,9 +4,9 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\StackChat\Client\Client;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
 
 class Regex extends BasePlugin
 {

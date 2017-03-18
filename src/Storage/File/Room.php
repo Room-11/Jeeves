@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\Storage\File;
 
 use Amp\Promise;
-use Room11\StackChat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Storage\Room as RoomStorage;
+use Room11\StackChat\Room\Identifier as ChatRoomIdentifier;
 use function Amp\resolve;
 
 class Room implements RoomStorage

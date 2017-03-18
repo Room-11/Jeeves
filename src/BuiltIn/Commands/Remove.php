@@ -3,12 +3,12 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
-use Room11\StackChat\Client\Client;
-use Room11\StackChat\Client\PostedMessageTracker;
 use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostedMessageTracker;
 use function Amp\resolve;
 
 class Remove implements BuiltInCommand
@@ -51,7 +51,7 @@ class Remove implements BuiltInCommand
         for ($i = 0; $i < $count && null !== $message = $this->tracker->popMessage($room); $i++) {
             $messages[] = $message->getId();
 
-            $commandMessage = $message->getOriginatingCommand();
+            $commandMessage = $message->getParentMessage();
             if ($commandMessage !== null) {
                 $messages[] = $commandMessage->getId();
             }

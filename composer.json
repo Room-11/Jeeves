@@ -42,6 +42,7 @@
         "php-ds/php-ds": "*",
         "peehaa/async-twitter": "dev-master",
         "peehaa/async-chatter-bot": "^0.2",
+        "psr/log": "^1",
         "ekinhbayar/interval-parser": "^0.1",
         "rdlowrey/auryn": "^1.1",
         "room11/stack-chat": "dev-master",

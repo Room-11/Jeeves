@@ -6,7 +6,7 @@ use Amp\Success;
 use PeeHaa\AsyncChatterBot\Client\CleverBot;
 use PeeHaa\AsyncChatterBot\Response\CleverBot as ChatterBotResponse;
 use Room11\StackChat\Client\Client;
-use Room11\StackChat\Message;
+use Room11\StackChat\Entities\ChatMessage;
 
 class Terminator extends BasePlugin
 {
@@ -58,13 +58,13 @@ class Terminator extends BasePlugin
 
     // we don't want to respond to replies.
     // When somebody replies to a message (:messageid) the chat api will send *two* messages instead of 1 like it's sane
-    private function isMatch(Message $message): bool
+    private function isMatch(ChatMessage $message): bool
     {
         return $message->isConversation()
             && !$message->isReply();
     }
 
-    private function isSpecialCased(Message $message): bool
+    private function isSpecialCased(ChatMessage $message): bool
     {
         foreach ($this->patterns as $pattern => $response) {
             if (preg_match('/' . $pattern . '/iu', $this->normalizeText($message->getText())) === 1) {
@@ -75,7 +75,7 @@ class Terminator extends BasePlugin
         return false;
     }
 
-    private function getResponse(Message $message): string
+    private function getResponse(ChatMessage $message): string
     {
         foreach ($this->patterns as $pattern => $response) {
             if (preg_match('/' . $pattern . '/iu', $this->normalizeText($message->getText())) === 1) {
@@ -100,7 +100,7 @@ class Terminator extends BasePlugin
         return $response;
     }
 
-    private function buildCleverBotResponse(Message $message)
+    private function buildCleverBotResponse(ChatMessage $message)
     {
         $botPingableName = preg_replace('#\s+#', '', $message->getRoom()->getSession()->getUser()->getName());
         $messageText = preg_replace('#\b@' . preg_quote($botPingableName, '#') . '\b#iu', '', trim($message->getText()));
@@ -111,7 +111,7 @@ class Terminator extends BasePlugin
         return $response->getText();
     }
 
-    public function handleMessage(Message $message)
+    public function handleMessage(ChatMessage $message)
     {
         if (!$this->isMatch($message)) {
             return new Success();

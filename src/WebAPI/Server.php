@@ -6,10 +6,10 @@ use Aerys\Request as AerysRequest;
 use Aerys\Response as AerysResponse;
 use Aerys\Router as AerysRouter;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
+use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\StackChat\Room\ConnectedRoomCollection as ChatRoomCollection;
 use Room11\StackChat\Room\Room as ChatRoom;
-use Room11\Jeeves\Storage\Ban as BanStorage;
-use const Room11\Jeeves\DNS_NAME_EXPR;
+use const Room11\StackChat\DNS_NAME_EXPR;
 use function Aerys\router;
 
 class Server

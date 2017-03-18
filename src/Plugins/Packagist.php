@@ -4,9 +4,9 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\StackChat\Client\Client;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Packagist extends BasePlugin

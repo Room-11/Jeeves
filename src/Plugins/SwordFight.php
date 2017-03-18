@@ -5,7 +5,7 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Amp\Success;
 use Room11\StackChat\Client\Client;
-use Room11\StackChat\Message;
+use Room11\StackChat\Entities\ChatMessage;
 
 class SwordFight extends BasePlugin
 {
@@ -70,7 +70,7 @@ class SwordFight extends BasePlugin
         $this->chatClient = $chatClient;
     }
 
-    private function isMatch(Message $message): bool
+    private function isMatch(ChatMessage $message): bool
     {
         if (!$message->isConversation()) {
             return false;
@@ -101,7 +101,7 @@ class SwordFight extends BasePlugin
         return trim(preg_replace('/\s+/', ' ', $text));
     }
 
-    private function getResponse(Message $message): string
+    private function getResponse(ChatMessage $message): string
     {
         $bestMatchPercentage = 0;
         $bestMatchResponse   = null;
@@ -122,7 +122,7 @@ class SwordFight extends BasePlugin
         return (string)$bestMatchResponse;
     }
 
-    public function handleMessage(Message $message): Promise
+    public function handleMessage(ChatMessage $message): Promise
     {
         return $this->isMatch($message)
             ? $this->chatClient->postReply($message, $this->getResponse($message))

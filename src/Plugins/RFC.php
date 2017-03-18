@@ -1,4 +1,5 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
+
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
@@ -6,13 +7,13 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
+use Room11\Jeeves\Chat\Command;
+use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
+use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Chars;
 use Room11\StackChat\Client\Client;
 use Room11\StackChat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Command;
 use Room11\StackChat\Room\Room as ChatRoom;
-use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
-use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\all;
 use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
