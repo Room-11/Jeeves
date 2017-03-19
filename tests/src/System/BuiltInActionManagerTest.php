@@ -6,14 +6,12 @@ use Amp\Success;
 use Psr\Log\LoggerInterface;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Chat\RoomStatusManager;
-use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\StackChat\Event\MessageEvent;
 use function Amp\wait;
-
 
 class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
 {
