@@ -101,6 +101,20 @@ class WebSocketEventDispatcher implements EventDispatcher
         }
     }
 
+    private function processNonCommandMessage(ChatMessage $message)
+    {
+        $logId = "#{$message->getId()} (event #{$message->getEvent()->getId()})";
+
+        try {
+            $this->logger->debug("Processing non-command message {$logId} for plugins");
+            yield $this->pluginManager->handleMessage($message);
+
+            $this->logger->debug("Non-command message {$logId} processed for plugins");
+        } catch (\Throwable $e) {
+            $this->logger->error("Something went wrong while processing non-command message {$logId}: {$e}");
+        }
+    }
+
     public function processWebSocketEvent(Event $event): Promise
     {
         return resolve(
@@ -122,8 +136,12 @@ class WebSocketEventDispatcher implements EventDispatcher
 
     public function processMessageEvent(ChatMessage $message): Promise
     {
+        if ($message->getUserId() === $message->getRoom()->getSession()->getUser()->getId()) {
+            return new Success;
+        }
+
         return $this->commandFactory->isCommandMessage($message)
             ? resolve($this->processCommandMessage($message))
-            : new Success;
+            : resolve($this->processNonCommandMessage($message));
     }
 }
