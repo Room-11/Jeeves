@@ -9,7 +9,7 @@ use Room11\GoogleSearcher\SearchFailedException;
 use Room11\GoogleSearcher\SearchResultSet;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Chars;
+use Room11\Jeeves\Utf8Chars;
 use Room11\StackChat\Client\Client;
 use Room11\StackChat\Client\MessageFetchFailureException;
 use Room11\StackChat\Client\MessageResolver;
@@ -46,7 +46,7 @@ class Google extends BasePlugin
             return $string;
         }
 
-        return trim(mb_substr($string, 0, $length - 1, self::ENCODING)) . Chars::ELLIPSIS;
+        return trim(mb_substr($string, 0, $length - 1, self::ENCODING)) . Utf8Chars::ELLIPSIS;
     }
 
     private function formatDescription(string $description): string
@@ -56,7 +56,7 @@ class Google extends BasePlugin
 
         $description = preg_replace($removeLineBreaksExpr, ' ', $description);
         $description = preg_replace($stripLeadingSeparatorExpr, '', $description);
-        $description = str_replace('...', Chars::ELLIPSIS, $description);
+        $description = str_replace('...', Utf8Chars::ELLIPSIS, $description);
 
         return $description;
     }
@@ -76,7 +76,7 @@ class Google extends BasePlugin
 
             $message .= sprintf(
                 "\n%s %s - %s (%s)",
-                Chars::BULLET,
+                Utf8Chars::BULLET,
                 $this->ellipsize($result->getTitle(), 50),
                 $this->ellipsize($this->formatDescription($result->getDescription()), 100),
                 $result->getUrl()

@@ -6,7 +6,7 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Chars;
+use Room11\Jeeves\Utf8Chars;
 use Room11\StackChat\Client\Client;
 use Room11\StackChat\Entities\PostedMessage;
 
@@ -36,7 +36,7 @@ class Imdb extends BasePlugin
 
         $message = yield $this->chatClient->postMessage(
             $command,
-            sprintf("_Looking for '%s' for you%s_", $search, Chars::ELLIPSIS)
+            sprintf("_Looking for '%s' for you%s_", $search, Utf8Chars::ELLIPSIS)
         );
 
         $params = $this->buildTitleSearchParams($search);
@@ -147,7 +147,7 @@ class Imdb extends BasePlugin
 
             $outputLines[] = sprintf(
                 '%s %s (%d) [ %s ]%s',
-                Chars::BULLET,
+                Utf8Chars::BULLET,
                 $searchResult->Title,
                 $searchResult->Year,
                 $this->getImdbUrlById($searchResult->imdbID),

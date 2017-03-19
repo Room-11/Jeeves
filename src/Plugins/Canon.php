@@ -8,7 +8,7 @@ use Room11\Jeeves\InvalidStackExchangeUrlException;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Chars;
+use Room11\Jeeves\Utf8Chars;
 use Room11\StackChat\Client\Client;
 use function Amp\resolve;
 use function Room11\Jeeves\normalize_stack_exchange_url;
@@ -43,9 +43,9 @@ class Canon extends BasePlugin
         foreach ($canonicals as $title => $link) {
             $message .= sprintf(
                 "\n%s %s %s %s",
-                Chars::BULLET,
+                Utf8Chars::BULLET,
                 $title,
-                Chars::RIGHTWARDS_ARROW,
+                Utf8Chars::RIGHTWARDS_ARROW,
                 $link["stackoverflow"]
             );
         }

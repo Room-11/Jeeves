@@ -10,7 +10,7 @@ use Amp\Success;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Chars;
+use Room11\Jeeves\Utf8Chars;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Entities\PostedMessage;
 use Room11\StackChat\Room\AclDataAccessor;
@@ -27,6 +27,7 @@ class RFC extends BasePlugin
     private $pluginData;
 
     private const BASE_URI = 'https://wiki.php.net/rfc';
+    private const INDENT = Utf8Chars::ZWNJ . Utf8Chars::EM_SPACE;
 
     public function __construct(
         ChatClient $chatClient,
@@ -198,7 +199,7 @@ class RFC extends BasePlugin
         $message = implode("\n", array_map(function ($message) {
             return sprintf(
                 '%s %s - %s (%s)',
-                Chars::BULLET,
+                Utf8Chars::BULLET,
                 $message['name'],
                 $message['breakdown'],
                 $message['href']
@@ -247,7 +248,7 @@ class RFC extends BasePlugin
 
                 return sprintf(
                     '%s %s: %s',
-                    Chars::ZWNJ . Chars::EM_SPACE . Chars::WHITE_BULLET,
+                    self::INDENT . Utf8Chars::WHITE_BULLET,
                     $option,
                     $voters
                 );
@@ -255,7 +256,7 @@ class RFC extends BasePlugin
 
             return sprintf(
                 "%s %s - %s (%s)\n%s",
-                Chars::BULLET,
+                Utf8Chars::BULLET,
                 $message['name'],
                 $message['breakdown'],
                 $message['href'],
