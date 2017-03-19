@@ -4,17 +4,20 @@ namespace Room11\Jeeves\Plugins;
 
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostFlags;
+use Room11\StackChat\Client\TextFormatter;
 use Room11\StackChat\Room\Room as ChatRoom;
 
 class Say extends BasePlugin
 {
     private $chatClient;
+    private $textFormatter;
 
-    public function __construct(Client $chatClient)
+    public function __construct(ChatClient $chatClient, TextFormatter $textFormatter)
     {
         $this->chatClient = $chatClient;
+        $this->textFormatter = $textFormatter;
     }
 
     public function say(Command $command)
@@ -46,7 +49,7 @@ class Say extends BasePlugin
             return $this->chatClient->postReply($command, 'Only if you say it first');
         }
 
-        $string = $this->chatClient->stripPingsFromText($string);
+        $string = $this->textFormatter->stripPingsFromText($string);
 
         if (false === $result = @\vsprintf($string, $args)) {
             return $this->chatClient->postReply($command, 'printf() failed, check your format string and arguments');
@@ -76,8 +79,8 @@ class Say extends BasePlugin
         }
 
         foreach ($matches as $i => $match) {
-            if (($match[5][0] !== '' && ((int)$match[5][0]) > Client::TRUNCATION_LIMIT)
-                || ($match[6][0] !== '' && ((int)substr($match[6][0], 1)) > Client::TRUNCATION_LIMIT)) {
+            if (($match[5][0] !== '' && ((int)$match[5][0]) > TextFormatter::TRUNCATION_LIMIT)
+                || ($match[6][0] !== '' && ((int)substr($match[6][0], 1)) > TextFormatter::TRUNCATION_LIMIT)) {
                 throw new \InvalidArgumentException;
             }
 
@@ -95,7 +98,7 @@ class Say extends BasePlugin
             }
 
             if ($args[$argIndex][0] === '@') {
-                $args[$argIndex] = $this->chatClient->stripPingsFromText($args[$argIndex]);
+                $args[$argIndex] = $this->textFormatter->stripPingsFromText($args[$argIndex]);
             } else if (null !== $pingable = yield $this->chatClient->getPingableName($room, $args[$argIndex])) {
                 $args[$argIndex] = '@' . $pingable;
             }

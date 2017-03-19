@@ -41,6 +41,8 @@ use Room11\StackChat\Client\ChatClient;
 use Room11\StackChat\Client\Client as ChatClientInterface;
 use Room11\StackChat\Client\MessageResolver;
 use Room11\StackChat\Client\PostedMessageTracker;
+use Room11\StackChat\Client\PostTextFormatter;
+use Room11\StackChat\Client\TextFormatter;
 use Room11\StackChat\EndpointURLResolver;
 use Room11\StackChat\Room\AclDataAccessor;
 use Room11\StackChat\Room\ChatRoomAclDataAccessor;
@@ -61,6 +63,7 @@ $injector->alias(CookieJar::class, ArrayCookieJar::class);
 $injector->alias(TwitterClient::class, ArtaxTwitterClient::class);
 $injector->alias(EventDispatcher::class, WebSocketEventDispatcher::class);
 $injector->alias(AclDataAccessor::class, ChatRoomAclDataAccessor::class);
+$injector->alias(TextFormatter::class, PostTextFormatter::class);
 
 $injector->define(FileAdminStorage::class, [":dataFile" => DATA_BASE_DIR . "/admins.%s.json"]);
 $injector->define(FileBanStorage::class, [":dataFile" => DATA_BASE_DIR . "/bans.%s.json"]);
