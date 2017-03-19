@@ -53,6 +53,10 @@ class PHPBugs extends BasePlugin
         if (empty($this->rooms) && $this->watcher) {
             cancel($this->watcher);
             $this->watcher = null;
+
+            try {
+                yield $this->pluginData->unset(self::DATA_KEY);
+            } catch (\LogicException $e) { /* don't care */ }
         }
     }
 
