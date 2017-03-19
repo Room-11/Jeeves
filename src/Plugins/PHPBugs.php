@@ -83,9 +83,9 @@ class PHPBugs extends BasePlugin
 
             foreach ($this->rooms as $room) {
                 yield $this->chatClient->postMessage($room, \sprintf(
-                    "[tag:bug] #%d: %s – %s",
-                    $bug["id"],
+                    "[tag:php] [tag:bug] %s – [#%d](%s)",
                     $bug["title"],
+                    $bug["id"],
                     $bug["url"]
                 ));
             }
