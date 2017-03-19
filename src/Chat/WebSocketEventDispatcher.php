@@ -61,7 +61,7 @@ class WebSocketEventDispatcher implements EventDispatcher
             yield $this->builtInActionManager->handleEvent($event);
             $this->logger->debug("Event #{$eventId} processed for built in event handlers");
         } catch (\Throwable $e) {
-            $this->logger->error("Something went wrong while processing event #{$eventId}", $e);
+            $this->logger->error("Something went wrong while processing event #{$eventId}: {$e}");
         }
     }
 
