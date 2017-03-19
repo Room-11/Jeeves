@@ -7,8 +7,9 @@ use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostedMessageTracker;
+use Room11\StackChat\Room\AclDataAccessor;
 use function Amp\resolve;
 
 class Remove implements BuiltInCommand
@@ -16,12 +17,18 @@ class Remove implements BuiltInCommand
     private const BIN_ROOM_ID = 48058;
 
     private $chatClient;
+    private $aclDataAccessor;
     private $admin;
     private $tracker;
 
-    public function __construct(Client $chatClient, AdminStorage $admin, PostedMessageTracker $tracker)
-    {
+    public function __construct(
+        ChatClient $chatClient,
+        AclDataAccessor $aclDataAccessor,
+        AdminStorage $admin,
+        PostedMessageTracker $tracker
+    ) {
         $this->chatClient = $chatClient;
+        $this->aclDataAccessor = $aclDataAccessor;
         $this->admin = $admin;
         $this->tracker = $tracker;
     }
@@ -32,7 +39,7 @@ class Remove implements BuiltInCommand
             return $this->chatClient->postReply($command, "Sorry, you're not cool enough to do that :(");
         }
 
-        if (!yield $this->chatClient->isBotUserRoomOwner($command->getRoom())) {
+        if (!yield $this->aclDataAccessor->isAuthenticatedUserRoomOwner($command->getRoom())) {
             return $this->chatClient->postReply($command, "Sorry, I'm not a room owner so I can't do that :(");
         }
 

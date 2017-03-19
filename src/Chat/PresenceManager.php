@@ -17,6 +17,7 @@ use Room11\StackChat\Client\PostFlags;
 use Room11\StackChat\Endpoint;
 use Room11\StackChat\EndpointURLResolver;
 use Room11\StackChat\Entities\ChatUser;
+use Room11\StackChat\Room\AclDataAccessor;
 use Room11\StackChat\Room\ConnectedRoomCollection;
 use Room11\StackChat\Room\Connector;
 use Room11\StackChat\Room\Identifier;
@@ -37,6 +38,7 @@ class PresenceManager
     private $storage;
     private $statusManager;
     private $chatClient;
+    private $aclDataAccessor;
     private $httpClient;
     private $urlResolver;
     private $identifierFactory;
@@ -52,6 +54,7 @@ class PresenceManager
         RoomStorage $storage,
         RoomStatusManager $statusManager,
         ChatClient $chatClient,
+        AclDataAccessor $aclDataAccessor,
         HttpClient $httpClient,
         EndpointURLResolver $urlResolver,
         IdentifierFactory $identifierFactory,
@@ -63,6 +66,7 @@ class PresenceManager
         $this->storage = $storage;
         $this->statusManager = $statusManager;
         $this->chatClient = $chatClient;
+        $this->aclDataAccessor = $aclDataAccessor;
         $this->httpClient = $httpClient;
         $this->urlResolver = $urlResolver;
         $this->identifierFactory = $identifierFactory;
@@ -288,7 +292,7 @@ class PresenceManager
             );
         }
 
-        if (!yield $this->chatClient->isRoomOwner($identifier, $userID)) {
+        if (!yield $this->aclDataAccessor->isRoomOwner($identifier, $userID)) {
             throw new UserNotAcceptableException(
                 "User #{$userID} is not a room owner of {$identifier->getIdentString()}"
             );
@@ -319,7 +323,7 @@ class PresenceManager
     {
         $room = $this->connectedRooms->get($identifier);
 
-        if (!yield $this->chatClient->isRoomOwner($identifier, $userID)) {
+        if (!yield $this->aclDataAccessor->isRoomOwner($identifier, $userID)) {
             throw new UserNotAcceptableException(
                 "User #{$userID} is not a room owner of {$identifier->getIdentString()}"
             );
@@ -391,7 +395,7 @@ class PresenceManager
         }
 
         $leaveMessage = "To tell me to leave the room, room owners can invoke the `!!leave` command.";
-        if (count(yield $this->chatClient->getRoomOwners($room)) > 1) {
+        if (count(yield $this->aclDataAccessor->getRoomOwners($room)) > 1) {
             $leaveMessage .= " If two room owners do this within an hour, I will leave the room.";
         }
 
@@ -422,14 +426,14 @@ class PresenceManager
     public function getRequiredApproveVoteCount(Identifier $identifier): Promise
     {
         return resolve(function() use($identifier) {
-            return min((int)ceil(count(yield $this->chatClient->getRoomOwners($identifier)) / 2), 3);
+            return min((int)ceil(count(yield $this->aclDataAccessor->getRoomOwners($identifier)) / 2), 3);
         });
     }
 
     public function getRequiredLeaveVoteCount(Identifier $identifier): Promise
     {
         return resolve(function() use($identifier) {
-            return min(count(yield $this->chatClient->getRoomOwners($identifier)), 2);
+            return min(count(yield $this->aclDataAccessor->getRoomOwners($identifier)), 2);
         });
     }
 

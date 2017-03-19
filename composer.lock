@@ -1297,12 +1297,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/StackChat.git",
-                "reference": "9ff34c17523f086048a9234f3e02a04a27e05585"
+                "reference": "6239228541d5d7cb363531d5037947daf2065b07"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/StackChat/zipball/9ff34c17523f086048a9234f3e02a04a27e05585",
-                "reference": "9ff34c17523f086048a9234f3e02a04a27e05585",
+                "url": "https://api.github.com/repos/Room-11/StackChat/zipball/6239228541d5d7cb363531d5037947daf2065b07",
+                "reference": "6239228541d5d7cb363531d5037947daf2065b07",
                 "shasum": ""
             },
             "require": {
@@ -1364,7 +1364,7 @@
                 "source": "https://github.com/Room-11/StackChat/tree/master",
                 "issues": "https://github.com/Room-11/StackChat/issues"
             },
-            "time": "2017-03-19 15:28:48"
+            "time": "2017-03-19 21:07:53"
         },
         {
             "name": "sabre/uri",
@@ -2121,16 +2121,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "6.0.9",
+            "version": "6.0.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "9bd36d990884d8fb3313232e0002ed4cdf79f428"
+                "reference": "8a536f409ebae632b92b7e7288e068248fe365ed"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/9bd36d990884d8fb3313232e0002ed4cdf79f428",
-                "reference": "9bd36d990884d8fb3313232e0002ed4cdf79f428",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/8a536f409ebae632b92b7e7288e068248fe365ed",
+                "reference": "8a536f409ebae632b92b7e7288e068248fe365ed",
                 "shasum": ""
             },
             "require": {
@@ -2199,7 +2199,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2017-03-15 13:04:13"
+            "time": "2017-03-19 16:54:28"
         },
         {
             "name": "phpunit/phpunit-mock-objects",

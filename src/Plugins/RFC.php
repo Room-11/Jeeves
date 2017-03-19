@@ -11,8 +11,9 @@ use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Chars;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Entities\PostedMessage;
+use Room11\StackChat\Room\AclDataAccessor;
 use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\all;
 use function Amp\resolve;
@@ -21,14 +22,20 @@ use function Room11\DOMUtils\domdocument_load_html;
 class RFC extends BasePlugin
 {
     private $chatClient;
+    private $aclDataAccessor;
     private $httpClient;
     private $pluginData;
 
     private const BASE_URI = 'https://wiki.php.net/rfc';
 
-    public function __construct(Client $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
-    {
+    public function __construct(
+        ChatClient $chatClient,
+        AclDataAccessor $aclDataAccessor,
+        HttpClient $httpClient,
+        KeyValueStore $pluginData
+    ) {
         $this->chatClient = $chatClient;
+        $this->aclDataAccessor = $aclDataAccessor;
         $this->httpClient = $httpClient;
         $this->pluginData = $pluginData;
     }
@@ -86,7 +93,7 @@ class RFC extends BasePlugin
         if (empty($rfcsInVoting)) {
             yield $this->chatClient->postMessage($command, "There are no RFCs in voting. Sorry, but we can't have nice things.");
 
-            if (yield $this->chatClient->isBotUserRoomOwner($room)) {
+            if (yield $this->aclDataAccessor->isAuthenticatedUserRoomOwner($room)) {
                 return all([
                     $this->clearLastPinId($room),
                     $this->unpinPreviousMessage($room, $pinInfoPromise),
@@ -105,7 +112,7 @@ class RFC extends BasePlugin
             )
         );
 
-        if (yield $this->chatClient->isBotUserRoomOwner($room)) {
+        if (yield $this->aclDataAccessor->isAuthenticatedUserRoomOwner($room)) {
             return all([
                 $this->unpinPreviousMessage($room, $pinInfoPromise),
                 $this->pinCurrentMessage($room, $postedMessage),

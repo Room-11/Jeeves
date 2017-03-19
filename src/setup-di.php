@@ -42,6 +42,8 @@ use Room11\StackChat\Client\Client as ChatClientInterface;
 use Room11\StackChat\Client\MessageResolver;
 use Room11\StackChat\Client\PostedMessageTracker;
 use Room11\StackChat\EndpointURLResolver;
+use Room11\StackChat\Room\AclDataAccessor;
+use Room11\StackChat\Room\ChatRoomAclDataAccessor;
 use Room11\StackChat\Room\ConnectedRoomCollection;
 use Room11\StackChat\Room\IdentifierFactory as ChatRoomIdentifierFactory;
 use Room11\StackChat\Room\PostPermissionManager;
@@ -58,6 +60,7 @@ $injector->alias(OpenIdAuthenticator::class, StackExchangeAuthenticator::class);
 $injector->alias(CookieJar::class, ArrayCookieJar::class);
 $injector->alias(TwitterClient::class, ArtaxTwitterClient::class);
 $injector->alias(EventDispatcher::class, WebSocketEventDispatcher::class);
+$injector->alias(AclDataAccessor::class, ChatRoomAclDataAccessor::class);
 
 $injector->define(FileAdminStorage::class, [":dataFile" => DATA_BASE_DIR . "/admins.%s.json"]);
 $injector->define(FileBanStorage::class, [":dataFile" => DATA_BASE_DIR . "/bans.%s.json"]);
@@ -66,6 +69,7 @@ $injector->define(FilePluginStorage::class, [":dataFile" => DATA_BASE_DIR . "/pl
 $injector->define(FileKeyValueStorageFactory::class, [":dataFileTemplate" => DATA_BASE_DIR . "/keyvalue.%s.json"]);
 $injector->define(FileRoomStorage::class, [":dataFile" => DATA_BASE_DIR . "/rooms.json"]);
 
+$injector->share(AclDataAccessor::class);
 $injector->share(ActionFactory::class);
 $injector->share(AdminStorage::class);
 $injector->share(BanStorage::class);

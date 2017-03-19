@@ -4,7 +4,8 @@ namespace Room11\Jeeves\Storage\File;
 
 use Amp\Promise;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Room\AclDataAccessor;
 use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\resolve;
 
@@ -12,19 +13,25 @@ class Admin implements AdminStorage
 {
     private $accessor;
     private $chatClient;
+    private $aclDataAccessor;
     private $dataFileTemplate;
 
-    public function __construct(JsonFileAccessor $accessor, Client $chatClient, string $dataFile)
-    {
+    public function __construct(
+        JsonFileAccessor $accessor,
+        ChatClient $chatClient,
+        AclDataAccessor $aclDataAccessor,
+        string $dataFile
+    ) {
         $this->accessor = $accessor;
         $this->chatClient = $chatClient;
+        $this->aclDataAccessor = $aclDataAccessor;
         $this->dataFileTemplate = $dataFile;
     }
 
     public function getAll(ChatRoom $room): Promise
     {
         return resolve(function() use($room) {
-            $owners = array_keys(yield $this->chatClient->getRoomOwners($room));
+            $owners = array_keys(yield $this->aclDataAccessor->getRoomOwners($room));
 
             $admins = yield $this->accessor->writeCallback(function($data) use($owners) {
                 return array_values(array_diff($data, $owners));
