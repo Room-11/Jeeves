@@ -4,20 +4,31 @@ namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 
 use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Ban;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\ChatClient;
+use Room11\StackChat\Room\Room;
 
 class BanTest extends AbstractCommandTest
 {
+    /** @var AdminStorage|\PHPUnit_Framework_MockObject_MockObject */
     private $adminStorage;
+
+    /** @var BanStorage|\PHPUnit_Framework_MockObject_MockObject */
     private $banStorage;
+
+    /** @var Ban|\PHPUnit_Framework_MockObject_MockObject */
     private $builtIn;
+
+    /** @var ChatClient|\PHPUnit_Framework_MockObject_MockObject */
     private $client;
+
+    /** @var Command|\PHPUnit_Framework_MockObject_MockObject */
     private $command;
+
+    /** @var Room|\PHPUnit_Framework_MockObject_MockObject */
     private $room;
 
     public function setUp()
@@ -127,7 +138,7 @@ class BanTest extends AbstractCommandTest
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
-    public function testCommandWithouAdmin()
+    public function testCommandWithoutAdmin()
     {
         $this->setReturnValue($this->command, 'hasParameters', true);
         $this->setAdmin(new Success(false));

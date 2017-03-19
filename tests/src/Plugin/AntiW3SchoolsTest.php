@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\Tests\Chat\Plugin;
 
 use Amp\Success;
-use Room11\Jeeves\Chat\Message\Message;
 use Room11\Jeeves\Plugins\AntiW3Schools;
+use Room11\StackChat\Entities\ChatMessage;
 
 class AntiW3SchoolsTest extends AbstractPluginTest
 {
@@ -31,7 +31,7 @@ class AntiW3SchoolsTest extends AbstractPluginTest
         /** @var AntiW3Schools $plugin */
         $plugin = $this->plugin;
 
-        $message = $this->getMockBuilder(Message::class)
+        $message = $this->getMockBuilder(ChatMessage::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -50,7 +50,7 @@ class AntiW3SchoolsTest extends AbstractPluginTest
         $plugin = $this->plugin;
         $client = $this->client;
 
-        $message = $this->getMockBuilder(Message::class)
+        $message = $this->getMockBuilder(ChatMessage::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -77,7 +77,7 @@ class AntiW3SchoolsTest extends AbstractPluginTest
         $plugin = $this->plugin;
         $client = $this->client;
 
-        $message = $this->getMockBuilder(Message::class)
+        $message = $this->getMockBuilder(ChatMessage::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -106,7 +106,7 @@ class AntiW3SchoolsTest extends AbstractPluginTest
         $plugin = $this->plugin;
         $client = $this->client;
 
-        $message = $this->getMockBuilder(Message::class)
+        $message = $this->getMockBuilder(ChatMessage::class)
             ->disableOriginalConstructor()
             ->getMock();
 

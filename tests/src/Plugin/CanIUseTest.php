@@ -2,7 +2,7 @@
 
 namespace Room11\Jeeves\Tests\Chat\Plugin;
 
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Plugins\CanIUse;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 

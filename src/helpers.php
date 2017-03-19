@@ -49,9 +49,13 @@ function dateinterval_to_string(\DateInterval $interval, string $precision = 's'
         }
     }
 
+    if (empty($parts)) {
+        return '0 seconds';
+    }
+
     $last = array_pop($parts);
 
-    return $parts ?
+    return !empty($parts) ?
         implode(', ', $parts) . ' and ' . $last
         : $last;
 }

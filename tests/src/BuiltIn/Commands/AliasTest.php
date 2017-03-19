@@ -4,24 +4,39 @@ namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 
 use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Alias;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room;
+use Room11\Jeeves\Chat\Command;
+use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
-use Room11\Jeeves\Storage\Admin as AdminStorage;
-use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Room\Room;
 
 class AliasTest extends AbstractCommandTest
 {
+    /** @var CommandAliasStorage|\PHPUnit_Framework_MockObject_MockObject */
     private $aliasStorage;
+
+    /** @var AdminStorage|\PHPUnit_Framework_MockObject_MockObject */
     private $adminStorage;
-    private $builtInCommandManager;
-    private $PluginManager;
+
+    /** @var Alias|\PHPUnit_Framework_MockObject_MockObject */
     private $builtIn;
+
+    /** @var BuiltInActionManager|\PHPUnit_Framework_MockObject_MockObject */
+    private $builtInCommandManager;
+
+    /** @var ChatClient|\PHPUnit_Framework_MockObject_MockObject */
     private $client;
+
+    /** @var Command|\PHPUnit_Framework_MockObject_MockObject */
     private $command;
+
+    /** @var PluginManager|\PHPUnit_Framework_MockObject_MockObject */
+    private $pluginManager;
+
+    /** @var Room|\PHPUnit_Framework_MockObject_MockObject */
     private $room;
 
     public function setUp()
@@ -86,7 +101,7 @@ class AliasTest extends AbstractCommandTest
     {
         $this->setAdmin(true);
         $this->setReturnValue($this->command, 'getCommandName', 'alias');
-        $this->setCommandParameterAsMarkdown(new Success('uptime test'));
+        $this->setMessageText(new Success('!!alias uptime test'));
         $this->setHasRegisteredCommand(false);
         $this->setIsCommandMappedForRoom(false);
         $this->setAliasStorageExists('uptime', new Success(false));
@@ -111,7 +126,7 @@ class AliasTest extends AbstractCommandTest
     {
         $this->setAdmin(true);
         $this->setReturnValue($this->command, 'getCommandName', 'alias');
-        $this->setCommandParameterAsMarkdown(new Success('uptime test'));
+        $this->setMessageText(new Success('!!alias uptime test'));
         $this->setHasRegisteredCommand(false);
         $this->setIsCommandMappedForRoom(false);
         $this->setAliasStorageExists('uptime', new Success(true));
@@ -124,7 +139,7 @@ class AliasTest extends AbstractCommandTest
     {
         $this->setAdmin(true);
         $this->setReturnValue($this->command, 'getCommandName', 'alias');
-        $this->setCommandParameterAsMarkdown(new Success('uptime test'));
+        $this->setMessageText(new Success('!!alias uptime test'));
         $this->setHasRegisteredCommand(false);
         $this->setIsCommandMappedForRoom(true);
         $this->expectReply(
@@ -138,7 +153,7 @@ class AliasTest extends AbstractCommandTest
     {
         $this->setAdmin(true);
         $this->setReturnValue($this->command, 'getCommandName', 'alias');
-        $this->setCommandParameterAsMarkdown(new Success('uptime test'));
+        $this->setMessageText(new Success('!!alias uptime test'));
         $this->setHasRegisteredCommand(true);
         $this->expectReply("Command 'uptime' is built in and cannot be altered");
 
@@ -196,11 +211,11 @@ class AliasTest extends AbstractCommandTest
         ;
     }
 
-    private function setCommandParameterAsMarkdown($value)
+    private function setMessageText($value)
     {
         $this->client
-            ->method('getCommandParametersAsMarkdown')
-            ->with($this->identicalTo($this->command))
+            ->method('getMessageText')
+            ->with($this->identicalTo($this->command->getRoom()), $this->identicalTo($this->command->getId()))
             ->will($this->returnValue($value))
         ;
     }

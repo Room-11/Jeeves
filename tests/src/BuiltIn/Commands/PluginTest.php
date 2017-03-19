@@ -4,13 +4,13 @@ namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 
 use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Plugin;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
-use Room11\Jeeves\Chat\Room\Room;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\Plugins\Issue;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
+use Room11\StackChat\Client\ChatClient;
+use Room11\StackChat\Room\Room;
 
 class PluginTest extends AbstractCommandTest
 {
@@ -28,11 +28,22 @@ class PluginTest extends AbstractCommandTest
         . "\n             Syntax: plugin status <name>"
     ;
 
+    /** @var AdminStorage|\PHPUnit_Framework_MockObject_MockObject */
     private $adminStorage;
+
+    /** @var Plugin|\PHPUnit_Framework_MockObject_MockObject */
     private $builtIn;
+
+    /** @var ChatClient|\PHPUnit_Framework_MockObject_MockObject */
     private $client;
+
+    /** @var CommandMessage|\PHPUnit_Framework_MockObject_MockObject */
     private $command;
+
+    /** @var PluginManager|\PHPUnit_Framework_MockObject_MockObject */
     private $pluginManager;
+
+    /** @var Room|\PHPUnit_Framework_MockObject_MockObject */
     private $room;
 
     public function setUp()
@@ -126,7 +137,7 @@ class PluginTest extends AbstractCommandTest
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
-    public function testPluginDisableWithouParameter()
+    public function testPluginDisableWithoutParameter()
     {
         $this->setCommandParameters([[0, 'disable'], [1, null]]);
         $this->setAdmin(true);

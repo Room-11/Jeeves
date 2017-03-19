@@ -2,25 +2,34 @@
 
 namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 
-use Amp\Success;
 use Amp\Artax\HttpClient;
+use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Admin;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostedMessageTracker;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Entities\ChatUser;
-use Room11\Jeeves\Chat\Room\Room;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Entities\ChatUser;
+use Room11\StackChat\Room\Room;
 
 class AdminTest extends AbstractCommandTest
 {
+    /** @var AdminStorage|\PHPUnit_Framework_MockObject_MockObject */
     private $admin;
+
+    /** @var Admin|\PHPUnit_Framework_MockObject_MockObject */
     private $builtIn;
+
+    /** @var ChatClient|\PHPUnit_Framework_MockObject_MockObject */
     private $client;
+
+    /** @var Command|\PHPUnit_Framework_MockObject_MockObject */
     private $command;
+
+    /** @var HttpClient|\PHPUnit_Framework_MockObject_MockObject */
     private $httpClient;
+
+    /** @var Room|\PHPUnit_Framework_MockObject_MockObject */
     private $room;
 
     public function setUp()
@@ -167,7 +176,7 @@ class AdminTest extends AbstractCommandTest
     public function testCommandHelp()
     {
         $this->setCommandParameter(0, 'help');
-        $this->expectMessage($this->builtIn::COMMAND_HELP_TEXT);
+        $this->expectMessage(Admin::COMMAND_HELP_TEXT);
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }

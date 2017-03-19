@@ -2,13 +2,9 @@
  
 namespace Room11\Jeeves\Tests\BuiltIn\Commands;
  
-use Amp\Success;
-use Room11\Jeeves\Chat\Room\Room;
-use Room11\Jeeves\Chat\Message\Command;
- 
 abstract class AbstractCommandTest extends \PHPUnit\Framework\TestCase
 {
-    protected function setReturnValue($mock, string $method, $value, int $expectedCalls = null)
+    protected function setReturnValue(\PHPUnit_Framework_MockObject_MockObject $mock, string $method, $value, int $expectedCalls = null)
     {
         $mock
             ->expects(

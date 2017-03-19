@@ -4,21 +4,33 @@ namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 
 use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Remove;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostedMessageTracker;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\ChatClient;
+use Room11\StackChat\Client\PostedMessageTracker;
+use Room11\StackChat\Entities\PostedMessage;
+use Room11\StackChat\Room\Room;
 
 class RemoveTest extends AbstractCommandTest
 {
+    /** @var AdminStorage|\PHPUnit_Framework_MockObject_MockObject */
     private $admin;
+
+    /** @var Remove|\PHPUnit_Framework_MockObject_MockObject */
     private $builtIn;
+
+    /** @var ChatClient|\PHPUnit_Framework_MockObject_MockObject */
     private $client;
+
+    /** @var Command|\PHPUnit_Framework_MockObject_MockObject */
     private $command;
+
+    /** @var PostedMessageTracker|\PHPUnit_Framework_MockObject_MockObject */
     private $tracker;
+
+    /** @var Room|\PHPUnit_Framework_MockObject_MockObject */
+    private $room;
 
     public function setUp()
     {
@@ -63,7 +75,7 @@ class RemoveTest extends AbstractCommandTest
         ;
 
         $message->method('getId')->will($this->returnValue(112));
-        $message->method('getOriginatingCommand')->will($this->returnValue($command));
+        $message->method('getParentMessage')->will($this->returnValue($command));
         $command->method('getId')->will($this->returnValue(111));
 
         $this->client

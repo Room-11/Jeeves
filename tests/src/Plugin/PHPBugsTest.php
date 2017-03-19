@@ -5,21 +5,21 @@ namespace Room11\Jeeves\Tests\Chat\Plugin;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
 use Room11\Jeeves\Plugins\PHPBugs;
 use Room11\Jeeves\Storage\KeyValue;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Amp\resolve;
 use function Amp\wait;
 
 class PHPBugsTest extends AbstractPluginTest
 {
-    /** @var ChatClient */
+    /** @var ChatClient|\PHPUnit_Framework_MockObject_MockObject */
     private $chatClient;
 
-    /** @var HttpClient */
+    /** @var HttpClient|\PHPUnit_Framework_MockObject_MockObject */
     private $httpClient;
 
-    /** @var KeyValue */
+    /** @var KeyValue|\PHPUnit_Framework_MockObject_MockObject */
     private $pluginData;
 
     protected function setUp()
