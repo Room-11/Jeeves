@@ -36,7 +36,7 @@ use Room11\OpenId\Authenticator as OpenIdAuthenticator;
 use Room11\OpenId\StackExchangeAuthenticator;
 use Room11\StackChat\Auth\Authenticator as ChatRoomConnector;
 use Room11\StackChat\Auth\CredentialManager as ChatRoomCredentialManager;
-use Room11\StackChat\Client\Actions\ActionFactory;
+use Room11\StackChat\Client\Actions\Factory as ActionFactory;
 use Room11\StackChat\Client\ChatClient;
 use Room11\StackChat\Client\Client as ChatClientInterface;
 use Room11\StackChat\Client\MessageResolver;
