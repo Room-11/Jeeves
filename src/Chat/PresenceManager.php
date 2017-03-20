@@ -156,7 +156,7 @@ class PresenceManager
         yield $this->leaveRoom($room);
     }
 
-    private function scheduleActionsForUnapprovedRoom(Room $room, int $inviteTimestamp)
+    private function scheduleActionsForUnapprovedRoom(Room $room, int $inviteTimestamp): void
     {
         $now = time();
 
@@ -243,7 +243,7 @@ class PresenceManager
         yield $this->connectRoom($room);
 
         if (!$isApproved) {
-            yield from $this->scheduleActionsForUnapprovedRoom($room, $inviteTimestamp);
+            $this->scheduleActionsForUnapprovedRoom($room, $inviteTimestamp);
         }
     }
 
@@ -339,7 +339,7 @@ class PresenceManager
         $inviteTimestamp = time();
 
         yield $this->storage->addRoom($room, $inviteTimestamp);
-        yield from $this->scheduleActionsForUnapprovedRoom($room, $inviteTimestamp);
+        $this->scheduleActionsForUnapprovedRoom($room, $inviteTimestamp);
 
         $isApproved = false;
         $currentVotes = 0;
