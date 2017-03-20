@@ -20,7 +20,7 @@ class Questionify extends BasePlugin
 
     public function questionify(CommandMessage $command)
     {
-        $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $command->getText());
+        $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $command->getCommandText());
 
         if (preg_match('/\?\s*$/', $text)) {
             return $this->chatClient->postReply($command, 'That\'s already a question');

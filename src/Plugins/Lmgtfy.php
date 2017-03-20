@@ -23,7 +23,7 @@ class Lmgtfy extends BasePlugin
 
     public function lmgtfy(Command $command)
     {
-        $text = $command->getText();
+        $text = $command->getCommandText();
 
         if ((bool) preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~', $text)) {
             $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $text);

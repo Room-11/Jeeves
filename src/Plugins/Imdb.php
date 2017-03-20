@@ -32,7 +32,7 @@ class Imdb extends BasePlugin
             );
         }
 
-        $search = $command->getText();
+        $search = $command->getCommandText();
 
         $message = yield $this->chatClient->postMessage(
             $command,

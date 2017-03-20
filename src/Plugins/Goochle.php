@@ -195,7 +195,7 @@ class Goochle extends BasePlugin
 
     public function trenslete(CommandMessage $command)
     {
-        $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $command->getText());
+        $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $command->getCommandText());
         return $this->chatClient->postReply($command, $this->ruinPrepositions($text));
     }
 

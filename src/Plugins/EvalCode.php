@@ -142,7 +142,7 @@ class EvalCode extends BasePlugin
             return new Success();
         }
 
-        $code = $this->normalizeCode($command->getText());
+        $code = $this->normalizeCode($command->getCommandText());
 
         $body = (new FormBody)
             ->addField("title", "")
