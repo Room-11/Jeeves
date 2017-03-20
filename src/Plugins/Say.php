@@ -115,8 +115,8 @@ class Say extends BasePlugin
     public function getCommandEndpoints(): array
     {
         return [
-            new PluginCommandEndpoint('say', [$this, 'say']),
-            new PluginCommandEndpoint('sayf', [$this, 'sayf'], 'Same as say with printf-style formatting, separate format string and args with / slashes')
+            new PluginCommandEndpoint('say', [$this, 'say'], 'say'),
+            new PluginCommandEndpoint('sayf', [$this, 'sayf'], 'sayf', 'Same as say with printf-style formatting, separate format string and args with / slashes')
         ];
     }
 }
