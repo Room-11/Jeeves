@@ -3,336 +3,88 @@
 namespace Room11\Jeeves\Tests\Chat;
 
 use Amp\Success;
-use Room11\Jeeves\Chat\Event\MessageEvent;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\BuiltIn\Commands\Uptime;
+use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
+use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\Jeeves\Chat\Event\Invitation;
+use Room11\Jeeves\Chat\Event\EventType;
 use Room11\Jeeves\Chat\Room\StatusManager;
-use Room11\Jeeves\Log\Level;
 use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
-use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
-use function Amp\wait;
-
+use Room11\Jeeves\System\BuiltInEventHandler;
 
 class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
 {
-    public function testRegisterLogs()
+    private $banStorage;
+    private $roomStatusManager;
+    private $logger;
+    private $builtInActionManager;
+
+    public function Setup()
     {
-        $info1 = $this->getMockBuilder(BuiltInCommandInfo::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $this->banStorage = $this->createMock(BanStorage::class);
+        $this->roomStatusManager = $this->createMock(StatusManager::class);
+        $this->logger = $this->createMock(Logger::class);
 
-        $info2 = $this->getMockBuilder(BuiltInCommandInfo::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $command = $this->getMockBuilder(BuiltInCommand::class)
-            ->getMock();
-
-        $info1
-            ->method('getCommand')
-            ->will($this->returnValue('foo'));
-
-        $info2
-            ->method('getCommand')
-            ->will($this->returnValue('bar'));
-
-        $command
-            ->expects($this->once())
-            ->method('getCommandInfo')
-            ->will($this->returnValue([$info1, $info2]));
-
-        $logger = $this->getMockBuilder(Logger::class)
-            ->getMock();
-
-        $logger
-            ->expects($this->exactly(2))
-            ->method('log')
-            ->withConsecutive(
-                [Level::DEBUG, 'Registered command name \'foo\' with built in command ' . get_class($command)],
-                [Level::DEBUG, 'Registered command name \'bar\' with built in command ' . get_class($command)]
-            )
-        ;
-
-
-        $builtInCommandManager = new BuiltInActionManager(
-            $this->getMockBuilder(BanStorage::class)
-                ->getMock(),
-            $this->getMockBuilder(StatusManager::class)
-                ->disableOriginalConstructor()
-                ->getMock(),
-            $logger
+        $this->builtInActionManager = new BuiltInActionManager(
+            $this->banStorage,
+            $this->roomStatusManager,
+            $this->logger
         );
-
-        $this->assertSame($builtInCommandManager, $builtInCommandManager->registerCommand($command));
     }
 
-    public function testHasRegisteredCommand()
+    public function testRegisterCommand()
     {
-        $builtInCommandManager = new BuiltInActionManager(
-            $this->getMockBuilder(BanStorage::class)
-                ->getMock(),
-            $this->getMockBuilder(StatusManager::class)
-                ->disableOriginalConstructor()
-                ->getMock(),
-            $this->getMockBuilder(Logger::class)
-                ->getMock()
+        $this->builtInActionManager->registerCommand(
+            new Uptime($this->createMock(ChatClient::class))
         );
 
-        $info = $this->getMockBuilder(BuiltInCommandInfo::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $this->assertTrue($this->builtInActionManager->hasRegisteredCommand('uptime'));
 
-        $command = $this->getMockBuilder(BuiltInCommand::class)
-            ->getMock();
-
-        $info
-            ->method('getCommand')
-            ->will($this->returnValue('foo'));
-
-        $command
-            ->expects($this->once())
-            ->method('getCommandInfo')
-            ->will($this->returnValue([$info]));
-
-        $builtInCommandManager->registerCommand($command);
-
-        $this->assertSame(true, $builtInCommandManager->hasRegisteredCommand('foo'));
-        $this->assertSame(false, $builtInCommandManager->hasRegisteredCommand('bar'));
-    }
-
-    public function testGetRegisteredCommands()
-    {
-        $builtInCommandManager = new BuiltInActionManager(
-            $this->getMockBuilder(BanStorage::class)
-                ->getMock(),
-            $this->getMockBuilder(StatusManager::class)
-                ->disableOriginalConstructor()
-                ->getMock(),
-            $this->getMockBuilder(Logger::class)
-                ->getMock()
+        $this->assertInstanceOf(
+            BuiltInCommandInfo::class,
+            $this->builtInActionManager->getRegisteredCommandInfo()['uptime']
         );
-
-        $info = $this->getMockBuilder(BuiltInCommandInfo::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $command = $this->getMockBuilder(BuiltInCommand::class)
-            ->getMock();
-
-        $info
-            ->method('getCommand')
-            ->will($this->returnValue('foo'));
-
-        $command
-            ->expects($this->once())
-            ->method('getCommandInfo')
-            ->will($this->returnValue([$info]));
-
-        $builtInCommandManager->registerCommand($command);
-
-        $this->assertSame(['foo' => $info], $builtInCommandManager->getRegisteredCommandInfo());
     }
 
-    public function testHandleCommandDoesntMatch()
+    public function testHandleEventUnknownEventHandler()
     {
-        $builtInCommandManager = new BuiltInActionManager(
-            $this->getMockBuilder(BanStorage::class)
-                ->getMock(),
-            $this->getMockBuilder(StatusManager::class)
-                ->disableOriginalConstructor()
-                ->getMock(),
-            $this->getMockBuilder(Logger::class)
-                ->getMock()
-        );
-
-        $command = $this->getMockBuilder(Command::class)
-            ->disableOriginalConstructor()
-            ->getMock()
+        $event = $this->createMock(Invitation::class);
+        $event
+            ->method('getTypeId')
+            ->will($this->returnValue(123456))
         ;
 
-        $command
-            ->expects($this->once())
-            ->method('getCommandName')
-            ->will($this->returnValue('foo'))
-        ;
-
-        $this->assertNull(wait($builtInCommandManager->handleCommand($command)));
+        $result = \Amp\wait($this->builtInActionManager->handleEvent($event));
+        $this->assertNull($result);
     }
 
-    public function testHandleCommandWhenBanned()
+    public function testRegisterEventHandlerWithHadleEvent()
     {
-        $info = $this->getMockBuilder(BuiltInCommandInfo::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $handler = $this->createMock(Invite::class);
+        $event = $this->createMock(Invitation::class);
 
-        $command = $this->getMockBuilder(BuiltInCommand::class)
-            ->getMock();
-
-        $info
-            ->method('getCommand')
-            ->will($this->returnValue('foo'));
-
-        $command
-            ->expects($this->once())
-            ->method('getCommandInfo')
-            ->will($this->returnValue([$info]));
-
-        $logger = $this->getMockBuilder(Logger::class)
-            ->getMock();
-
-        $logger
-            ->expects($this->exactly(2))
-            ->method('log')
-            ->withConsecutive(
-                [Level::DEBUG, 'Registered command name \'foo\' with built in command ' . get_class($command)],
-                [Level::DEBUG, 'User #14 is banned, ignoring event #721 for built in commands']
-            )
+        $handler
+            ->method('getEventTypes')
+            ->will($this->returnValue([EventType::INVITATION]))
         ;
 
-        $banStorage = $this->getMockBuilder(BanStorage::class)
-            ->getMock();
-
-        $roomStorage = $this->getMockBuilder(StatusManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $banStorage
-            ->expects($this->once())
-            ->method('isBanned')
-            ->willReturn(new Success(true))
-        ;
-
-        $builtInCommandManager = new BuiltInActionManager($banStorage, $roomStorage, $logger);
-
-        $builtInCommandManager->registerCommand($command);
-
-        $event = $this->getMockBuilder(MessageEvent::class)
-            ->disableOriginalConstructor()
-            ->getMock()
-        ;
+        $this->builtInActionManager->registerEventHandler($handler);
 
         $event
+            ->method('getTypeId')
+            ->will($this->returnValue($event::TYPE_ID))
+        ;
+
+        $handler
             ->expects($this->once())
-            ->method('getId')
-            ->willReturn(721)
+            ->method('handleEvent')
+            ->with($this->identicalTo($event))
+            ->will($this->returnValue(new Success()))
         ;
 
-        $userCommand = $this->getMockBuilder(Command::class)
-            ->disableOriginalConstructor()
-            ->getMock()
-        ;
-
-        $userCommand
-            ->expects($this->once())
-            ->method('getCommandName')
-            ->will($this->returnValue('foo'))
-        ;
-
-        $userCommand
-            ->expects($this->once())
-            ->method('getEvent')
-            ->willReturn($event)
-        ;
-
-        $userCommand
-            ->expects($this->once())
-            ->method('getUserId')
-            ->willReturn(14)
-        ;
-
-        $this->assertNull(wait($builtInCommandManager->handleCommand($userCommand)));
-    }
-
-    public function testHandleCommandWhenMatches()
-    {
-        $event = $this->getMockBuilder(MessageEvent::class)
-            ->disableOriginalConstructor()
-            ->getMock()
-        ;
-
-        $event
-            ->expects($this->once())
-            ->method('getId')
-            ->willReturn(721)
-        ;
-
-        $userCommand = $this->getMockBuilder(Command::class)
-            ->disableOriginalConstructor()
-            ->getMock()
-        ;
-
-        $userCommand
-            ->expects($this->once())
-            ->method('getCommandName')
-            ->will($this->returnValue('foo'))
-        ;
-
-        $userCommand
-            ->expects($this->once())
-            ->method('getEvent')
-            ->willReturn($event)
-        ;
-
-        $userCommand
-            ->expects($this->once())
-            ->method('getUserId')
-            ->willReturn(14)
-        ;
-
-        $info = $this->getMockBuilder(BuiltInCommandInfo::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $registeredCommand = $this->getMockBuilder(BuiltInCommand::class)
-            ->getMock();
-
-        $info
-            ->method('getCommand')
-            ->will($this->returnValue('foo'));
-
-        $registeredCommand
-            ->expects($this->once())
-            ->method('getCommandInfo')
-            ->will($this->returnValue([$info]));
-
-        $registeredCommand
-            ->expects($this->once())
-            ->method('handleCommand')
-            ->with($this->isInstanceOf($userCommand))
-            ->willReturn(new Success())
-        ;
-
-        $logger = $this->getMockBuilder(Logger::class)
-            ->getMock();
-
-        $logger
-            ->expects($this->exactly(2))
-            ->method('log')
-            ->withConsecutive(
-                [Level::DEBUG, 'Registered command name \'foo\' with built in command ' . get_class($registeredCommand)],
-                [Level::DEBUG, 'Passing event #721 to built in command handler ' . get_class($registeredCommand)]
-            )
-        ;
-
-        $banStorage = $this->getMockBuilder(BanStorage::class)
-            ->getMock();
-
-        $roomStorage = $this->getMockBuilder(StatusManager::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $banStorage
-            ->expects($this->once())
-            ->method('isBanned')
-            ->willReturn(new Success(false))
-        ;
-
-        $builtInCommandManager = new BuiltInActionManager($banStorage, $roomStorage, $logger);
-
-        $builtInCommandManager->registerCommand($registeredCommand);
-
-        $this->assertNull(wait($builtInCommandManager->handleCommand($userCommand)));
+        \Amp\wait($this->builtInActionManager->handleEvent($event));
     }
 }
