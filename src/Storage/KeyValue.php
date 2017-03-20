@@ -36,7 +36,6 @@ interface KeyValue
      *
      * @param ChatRoom|null $room
      * @return Promise<mixed>
-     * @throws \LogicException when the specified key does not exist
      */
     function getAll(ChatRoom $room = null): Promise;
 
@@ -45,7 +44,6 @@ interface KeyValue
      *
      * @param ChatRoom|null $room
      * @return Promise<mixed>
-     * @throws \LogicException when the specified key does not exist
      */
     function getKeys(ChatRoom $room = null): Promise;
 
@@ -55,7 +53,6 @@ interface KeyValue
      * @param string $key
      * @param ChatRoom|null $room
      * @return Promise<mixed>
-     * @throws \LogicException when the specified key does not exist
      */
     function get(string $key, ChatRoom $room = null): Promise;
 
@@ -74,7 +71,6 @@ interface KeyValue
      *
      * @param string $key
      * @param ChatRoom|null $room
-     * @throws \LogicException when the specified key does not exist
      * @return Promise<void>
      */
     function unset(string $key, ChatRoom $room = null): Promise;
