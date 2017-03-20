@@ -2,6 +2,7 @@
 
 namespace Room11\Jeeves\System;
 
+use Amp\Promise;
 use Room11\StackChat\Room\Room as ChatRoom;
 
 interface Plugin
@@ -56,7 +57,17 @@ interface Plugin
      */
     function getMessageHandler() /* : ?callable */;
 
-    function enableForRoom(ChatRoom $room, bool $persist) /* : void */;
+    /**
+     * @param ChatRoom $room
+     * @param bool $persist
+     * @return Promise|\Generator|null
+     */
+    function enableForRoom(ChatRoom $room, bool $persist);
 
-    function disableForRoom(ChatRoom $room, bool $persist) /* : void */;
+    /**
+     * @param ChatRoom $room
+     * @param bool $persist
+     * @return Promise|\Generator|null
+     */
+    function disableForRoom(ChatRoom $room, bool $persist);
 }

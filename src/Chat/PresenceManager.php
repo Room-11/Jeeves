@@ -102,7 +102,11 @@ class PresenceManager
         $queue->push([$callable, $args, $deferred = new Deferred]);
 
         if (!$this->actionQueues[$ident]['running']) {
-            resolve($this->executeActionsFromQueue($room));
+            resolve($this->executeActionsFromQueue($room))->when(function(?\Throwable $error) {
+                if ($error !== null) {
+                    $this->logger->error("Unhandled exception while executing PresenceManager actions: {$error}");
+                }
+            });
         }
 
         return $deferred->promise();

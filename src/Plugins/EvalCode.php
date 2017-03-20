@@ -160,7 +160,11 @@ class EvalCode extends BasePlugin
 
         $this->queue->push([$request, $command, $deferred]);
         if (!$this->haveLoop) {
-            resolve($this->executeActionsFromQueue());
+            resolve($this->executeActionsFromQueue())->when(function(?\Throwable $error) use($deferred) {
+                if ($error) {
+                    $deferred->fail($error);
+                }
+            });
         }
 
         return $deferred->promise();

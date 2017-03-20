@@ -192,7 +192,7 @@ class Reminder extends BasePlugin
         }
 
         $this->watchers[] = once(function() use ($command, $value) {
-            resolve($this->unsetReminderAndPostMessage($value[self::STRUCT_KEY_ID], $command, $value[self::STRUCT_KEY_TEXT]));
+            return $this->unsetReminderAndPostMessage($value[self::STRUCT_KEY_ID], $command, $value[self::STRUCT_KEY_TEXT]);
         }, $seconds * 1000);
 
         return $this->chatClient->postMessage($command, "Reminder {$value[self::STRUCT_KEY_ID]} is set.");
@@ -255,7 +255,7 @@ class Reminder extends BasePlugin
             $reply = "@{$pingableName} I guess I'm late: {$value[self::STRUCT_KEY_TEXT]}";
 
             $this->watchers[] = once(function () use ($key, $room, $reply) {
-                resolve($this->unsetReminderAndPostMessage($key, $room, $reply));
+                return $this->unsetReminderAndPostMessage($key, $room, $reply);
             }, 1000);
         }
     }
@@ -285,7 +285,7 @@ class Reminder extends BasePlugin
                 $reply = $target . " " . $text;
 
                 $this->watchers[] = once(function () use ($key, $room, $reply) {
-                    resolve($this->unsetReminderAndPostMessage($key, $room, $reply));
+                    return $this->unsetReminderAndPostMessage($key, $room, $reply);
                 }, $seconds * 1000);
             }
         }

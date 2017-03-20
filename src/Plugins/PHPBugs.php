@@ -37,26 +37,32 @@ class PHPBugs extends BasePlugin
     {
         $this->rooms[$room->getIdentString()] = $room;
 
-        if ($this->watcher === null) {
-            $this->watcher = repeat(function () {
-                return $this->checkBugs();
-            }, 300000);
-
-            resolve($this->checkBugs());
+        if ($this->watcher !== null) {
+            return null;
         }
+
+        $this->watcher = repeat(function () {
+            return $this->checkBugs();
+        }, 300000);
+
+        return resolve($this->checkBugs());
     }
 
     public function disableForRoom(ChatRoom $room, bool $persist)
     {
         unset($this->rooms[$room->getIdentString()]);
 
-        if (empty($this->rooms) && $this->watcher) {
-            cancel($this->watcher);
-            $this->watcher = null;
+        if (!empty($this->rooms) || !$this->watcher) {
+            return null;
+        }
 
-            try {
-                yield $this->pluginData->unset(self::DATA_KEY);
-            } catch (\LogicException $e) { /* don't care */ }
+        cancel($this->watcher);
+        $this->watcher = null;
+
+        try {
+            return $this->pluginData->unset(self::DATA_KEY);
+        } catch (\LogicException $e) {
+            return null; /* don't care */
         }
     }
 
