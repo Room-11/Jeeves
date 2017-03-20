@@ -1,15 +1,16 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
+
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\Jeeves\Chat\Client\PostFlags;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
 use function Amp\all;
 
 class ReferenceNotFoundException extends Exception {}
@@ -23,7 +24,7 @@ class Changelog extends BasePlugin
     private $httpClient;
     private $pluginData;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
+    public function __construct(Client $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;

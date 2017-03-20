@@ -3,16 +3,16 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\Client;
 
 class Version implements BuiltInCommand
 {
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient)
+    public function __construct(Client $chatClient)
     {
         $this->chatClient = $chatClient;
     }

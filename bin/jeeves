@@ -61,7 +61,7 @@ function startup_set_log_level_string(string $level)
 function startup_enable_debug_mode()
 {
     // Log everything
-    startup_set_log_level_string('ALL | DEBUG');
+    startup_set_log_level_string('ALL | DEBUG | CONTEXT');
 
     // Report all PHP errors
     error_reporting(~0);
@@ -88,7 +88,7 @@ if (false === $parsedArgs = getopt(JEEVES_SHORT_OPTS, JEEVES_LONG_OPTS)) {
     startup_error_exit("Error parsing command line options");
 }
 
-require __DIR__ . '/../src/bootstrap.php';
+require __DIR__ . '/../bootstrap.php';
 
 if (isset($parsedArgs['help'])) {
     startup_display_help();

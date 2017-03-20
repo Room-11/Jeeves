@@ -1,4 +1,5 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
+
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
@@ -6,13 +7,14 @@ use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\Chars;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\Jeeves\Utf8Chars;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Entities\PostedMessage;
+use Room11\StackChat\Room\AclDataAccessor;
+use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\all;
 use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
@@ -20,14 +22,21 @@ use function Room11\DOMUtils\domdocument_load_html;
 class RFC extends BasePlugin
 {
     private $chatClient;
+    private $aclDataAccessor;
     private $httpClient;
     private $pluginData;
 
     private const BASE_URI = 'https://wiki.php.net/rfc';
+    private const INDENT = Utf8Chars::ZWNJ . Utf8Chars::EM_SPACE;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
-    {
+    public function __construct(
+        ChatClient $chatClient,
+        AclDataAccessor $aclDataAccessor,
+        HttpClient $httpClient,
+        KeyValueStore $pluginData
+    ) {
         $this->chatClient = $chatClient;
+        $this->aclDataAccessor = $aclDataAccessor;
         $this->httpClient = $httpClient;
         $this->pluginData = $pluginData;
     }
@@ -85,7 +94,7 @@ class RFC extends BasePlugin
         if (empty($rfcsInVoting)) {
             yield $this->chatClient->postMessage($command, "There are no RFCs in voting. Sorry, but we can't have nice things.");
 
-            if (yield $this->chatClient->isBotUserRoomOwner($room)) {
+            if (yield $this->aclDataAccessor->isAuthenticatedUserRoomOwner($room)) {
                 return all([
                     $this->clearLastPinId($room),
                     $this->unpinPreviousMessage($room, $pinInfoPromise),
@@ -104,7 +113,7 @@ class RFC extends BasePlugin
             )
         );
 
-        if (yield $this->chatClient->isBotUserRoomOwner($room)) {
+        if (yield $this->aclDataAccessor->isAuthenticatedUserRoomOwner($room)) {
             return all([
                 $this->unpinPreviousMessage($room, $pinInfoPromise),
                 $this->pinCurrentMessage($room, $postedMessage),
@@ -190,7 +199,7 @@ class RFC extends BasePlugin
         $message = implode("\n", array_map(function ($message) {
             return sprintf(
                 '%s %s - %s (%s)',
-                Chars::BULLET,
+                Utf8Chars::BULLET,
                 $message['name'],
                 $message['breakdown'],
                 $message['href']
@@ -239,7 +248,7 @@ class RFC extends BasePlugin
 
                 return sprintf(
                     '%s %s: %s',
-                    Chars::ZWNJ . Chars::EM_SPACE . Chars::WHITE_BULLET,
+                    self::INDENT . Utf8Chars::WHITE_BULLET,
                     $option,
                     $voters
                 );
@@ -247,7 +256,7 @@ class RFC extends BasePlugin
 
             return sprintf(
                 "%s %s - %s (%s)\n%s",
-                Chars::BULLET,
+                Utf8Chars::BULLET,
                 $message['name'],
                 $message['breakdown'],
                 $message['href'],

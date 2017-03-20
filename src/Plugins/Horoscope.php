@@ -4,9 +4,9 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Horoscope extends BasePlugin
@@ -30,7 +30,7 @@ class Horoscope extends BasePlugin
     private $chatClient;
     private $httpClient;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
+    public function __construct(Client $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;

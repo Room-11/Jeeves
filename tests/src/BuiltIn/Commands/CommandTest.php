@@ -4,25 +4,40 @@ namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 
 use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Command;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
-use Room11\Jeeves\Chat\Room\Room;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\Plugins\Chuck;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
+use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
-use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Room\Room;
 
 class CommandTest extends AbstractCommandTest
 {
+    /** @var CommandAliasStorage|\PHPUnit_Framework_MockObject_MockObject */
     private $aliasStorage;
+
+    /** @var AdminStorage|\PHPUnit_Framework_MockObject_MockObject */
     private $adminStorage;
+
+    /** @var Command|\PHPUnit_Framework_MockObject_MockObject */
     private $builtIn;
+
+    /** @var BuiltInActionManager|\PHPUnit_Framework_MockObject_MockObject */
     private $builtInCommandManager;
+
+    /** @var ChatClient|\PHPUnit_Framework_MockObject_MockObject */
     private $client;
+
+    /** @var CommandMessage|\PHPUnit_Framework_MockObject_MockObject */
     private $command;
+
+    /** @var PluginManager|\PHPUnit_Framework_MockObject_MockObject */
     private $pluginManager;
+
+    /** @var Room|\PHPUnit_Framework_MockObject_MockObject */
     private $room;
 
     public function setUp()
@@ -76,7 +91,7 @@ class CommandTest extends AbstractCommandTest
             ->with(
                 $this->identicalTo($this->room),
                 $this->equalTo(sprintf(
-                    $this->builtIn::RESPONSE_MESSAGES['command_unmap_success'],
+                    Command::RESPONSE_MESSAGES['command_unmap_success'],
                     'test'
                 ))
             )
@@ -95,7 +110,7 @@ class CommandTest extends AbstractCommandTest
         $this->setIsCommandMappedForRoom(false);
 
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_not_mapped'], 'test'
+            Command::RESPONSE_MESSAGES['command_not_mapped'], 'test'
         ));
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
@@ -109,7 +124,7 @@ class CommandTest extends AbstractCommandTest
         $this->setHasRegisteredCommand(true);
 
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_built_in'], 'uptime'
+            Command::RESPONSE_MESSAGES['command_built_in'], 'uptime'
         ));
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
@@ -120,7 +135,7 @@ class CommandTest extends AbstractCommandTest
         $this->setCommandParameter('map');
         $this->setAdmin(true);
         $this->setReturnValue($this->command, 'hasParameters', false);
-        $this->expectReply($this->builtIn::RESPONSE_MESSAGES['syntax']);
+        $this->expectReply(Command::RESPONSE_MESSAGES['syntax']);
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
@@ -129,7 +144,7 @@ class CommandTest extends AbstractCommandTest
     {
         $this->setCommandParameter('unmap');
         $this->setAdmin(false);
-        $this->expectReply($this->builtIn::RESPONSE_MESSAGES['user_not_admin']);
+        $this->expectReply(Command::RESPONSE_MESSAGES['user_not_admin']);
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
@@ -175,7 +190,7 @@ class CommandTest extends AbstractCommandTest
         ]);
 
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['unknown_endpoint'],
+            Command::RESPONSE_MESSAGES['unknown_endpoint'],
             'chucker', 'chuck'
         ));
 
@@ -201,7 +216,7 @@ class CommandTest extends AbstractCommandTest
         ]);
 
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['multiple_endpoints'],
+            Command::RESPONSE_MESSAGES['multiple_endpoints'],
             'chuck', 2
         ));
 
@@ -223,7 +238,7 @@ class CommandTest extends AbstractCommandTest
         $this->setReturnValue($this->pluginManager, 'getPluginByName', $plugin);
 
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['plugin_not_enabled'], 'Chuck'
+            Command::RESPONSE_MESSAGES['plugin_not_enabled'], 'Chuck'
         ));
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
@@ -241,7 +256,7 @@ class CommandTest extends AbstractCommandTest
         $this->setIsCommandMappedForRoom(false);
         $this->setReturnValue($this->pluginManager, 'isPluginRegistered', false);
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['unknown_plugin'], 'githubb'
+            Command::RESPONSE_MESSAGES['unknown_plugin'], 'githubb'
         ));
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
@@ -256,7 +271,7 @@ class CommandTest extends AbstractCommandTest
         $this->setHasRegisteredCommand(false);
         $this->setIsCommandMappedForRoom(true);
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_already_mapped'], 'test'
+            Command::RESPONSE_MESSAGES['command_already_mapped'], 'test'
         ));
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
@@ -269,7 +284,7 @@ class CommandTest extends AbstractCommandTest
         $this->setReturnValue($this->command, 'hasParameters', true);
         $this->setHasRegisteredCommand(true);
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_built_in'], 'uptime'
+            Command::RESPONSE_MESSAGES['command_built_in'], 'uptime'
         ));
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
@@ -280,7 +295,7 @@ class CommandTest extends AbstractCommandTest
         $this->setCommandParameter('map');
         $this->setAdmin(true);
         $this->setReturnValue($this->command, 'hasParameters', false);
-        $this->expectReply($this->builtIn::RESPONSE_MESSAGES['syntax']);
+        $this->expectReply(Command::RESPONSE_MESSAGES['syntax']);
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
@@ -289,7 +304,7 @@ class CommandTest extends AbstractCommandTest
     {
         $this->setCommandParameter('map');
         $this->setAdmin(false);
-        $this->expectReply($this->builtIn::RESPONSE_MESSAGES['user_not_admin']);
+        $this->expectReply(Command::RESPONSE_MESSAGES['user_not_admin']);
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
@@ -330,7 +345,7 @@ class CommandTest extends AbstractCommandTest
         ;
 
         $this->expectMessage(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_map_success'],
+            Command::RESPONSE_MESSAGES['command_map_success'],
             'vamp', 'lmgtfy', 'lmgtfy_endpoint'
         ));
 
@@ -367,7 +382,7 @@ class CommandTest extends AbstractCommandTest
         ;
 
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['plugin_not_enabled'],
+            Command::RESPONSE_MESSAGES['plugin_not_enabled'],
             'lmgtfy'
         ));
 
@@ -385,7 +400,7 @@ class CommandTest extends AbstractCommandTest
         $this->setHasRegisteredCommand(false);
         $this->setIsCommandMappedForRoom(false);
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_not_mapped'],
+            Command::RESPONSE_MESSAGES['command_not_mapped'],
             'test'
         ));
 
@@ -406,7 +421,7 @@ class CommandTest extends AbstractCommandTest
         ]);
 
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_built_in'],
+            Command::RESPONSE_MESSAGES['command_built_in'],
             'command'
         ));
 
@@ -424,7 +439,7 @@ class CommandTest extends AbstractCommandTest
         $this->setHasRegisteredCommand(false);
         $this->setIsCommandMappedForRoom(true);
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_already_mapped'],
+            Command::RESPONSE_MESSAGES['command_already_mapped'],
             'testing'
         ));
 
@@ -441,7 +456,7 @@ class CommandTest extends AbstractCommandTest
         $this->setReturnValue($this->command, 'hasParameters', true);
         $this->setHasRegisteredCommand(true);
         $this->expectReply(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_built_in'],
+            Command::RESPONSE_MESSAGES['command_built_in'],
             'uptime'
         ));
 
@@ -453,16 +468,16 @@ class CommandTest extends AbstractCommandTest
         $this->setCommandParameter('clone');
         $this->setAdmin(true);
         $this->setReturnValue($this->command, 'hasParameters', false);
-        $this->expectReply($this->builtIn::RESPONSE_MESSAGES['syntax']);
+        $this->expectReply(Command::RESPONSE_MESSAGES['syntax']);
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
 
-    public function testCommandCloneWithouAdmin()
+    public function testCommandCloneWithoutAdmin()
     {
         $this->setCommandParameter('clone');
         $this->setAdmin(false);
-        $this->expectReply($this->builtIn::RESPONSE_MESSAGES['user_not_admin']);
+        $this->expectReply(Command::RESPONSE_MESSAGES['user_not_admin']);
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
@@ -478,7 +493,7 @@ class CommandTest extends AbstractCommandTest
     public function testCommandHelp()
     {
         $this->setCommandParameter('help');
-        $this->expectMessage($this->builtIn::COMMAND_HELP_TEXT);
+        $this->expectMessage(Command::COMMAND_HELP_TEXT);
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
@@ -525,7 +540,7 @@ class CommandTest extends AbstractCommandTest
         ;
 
         $this->expectMessage(sprintf(
-            $this->builtIn::RESPONSE_MESSAGES['command_map_success'],
+            Command::RESPONSE_MESSAGES['command_map_success'],
             'chucky', 'chuck', 'chuckEndpoint'
         ));
     }

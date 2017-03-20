@@ -4,10 +4,10 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\cancel;
 use function Amp\repeat;
 use function Amp\resolve;
@@ -35,28 +35,34 @@ class PHPBugs extends BasePlugin
 
     public function enableForRoom(ChatRoom $room, bool $persist = true)
     {
-        $this->rooms[$room->getIdentifier()->getIdentString()] = $room;
+        $this->rooms[$room->getIdentString()] = $room;
 
-        if ($this->watcher === null) {
-            $this->watcher = repeat(function () {
-                return $this->checkBugs();
-            }, 300000);
-
-            resolve($this->checkBugs());
+        if ($this->watcher !== null) {
+            return null;
         }
+
+        $this->watcher = repeat(function () {
+            return $this->checkBugs();
+        }, 300000);
+
+        return resolve($this->checkBugs());
     }
 
     public function disableForRoom(ChatRoom $room, bool $persist)
     {
-        unset($this->rooms[$room->getIdentifier()->getIdentString()]);
+        unset($this->rooms[$room->getIdentString()]);
 
-        if (empty($this->rooms) && $this->watcher) {
-            cancel($this->watcher);
-            $this->watcher = null;
+        if (!empty($this->rooms) || !$this->watcher) {
+            return null;
+        }
 
-            try {
-                yield $this->pluginData->unset(self::DATA_KEY);
-            } catch (\LogicException $e) { /* don't care */ }
+        cancel($this->watcher);
+        $this->watcher = null;
+
+        try {
+            return $this->pluginData->unset(self::DATA_KEY);
+        } catch (\LogicException $e) {
+            return null; /* don't care */
         }
     }
 

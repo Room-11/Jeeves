@@ -5,12 +5,12 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\MessageResolver;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\External\GithubIssue\Credentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\MessageResolver;
 
 class Issue extends BasePlugin
 {
@@ -25,7 +25,7 @@ class Issue extends BasePlugin
     private $admin;
 
     public function __construct(
-        ChatClient $chatClient,
+        Client $chatClient,
         MessageResolver $messageResolver,
         HttpClient $httpClient,
         Credentials $credentials,
@@ -50,7 +50,7 @@ class Issue extends BasePlugin
             );
         }
 
-        $content = explode('-', $command->getText(), 2);
+        $content = explode('-', $command->getCommandText(), 2);
 
         if (empty($content[0]) || count($content) > 2) {
             return $this->chatClient->postReply($command, self::USAGE);

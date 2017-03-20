@@ -4,11 +4,11 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Chat\Client\Chars;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\Jeeves\Utf8Chars;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Entities\PostedMessage;
 
 class Imdb extends BasePlugin
 {
@@ -17,7 +17,7 @@ class Imdb extends BasePlugin
     private $chatClient;
     private $httpClient;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
+    public function __construct(Client $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
@@ -32,11 +32,11 @@ class Imdb extends BasePlugin
             );
         }
 
-        $search = $command->getText();
+        $search = $command->getCommandText();
 
         $message = yield $this->chatClient->postMessage(
             $command,
-            sprintf("_Looking for '%s' for you%s_", $search, Chars::ELLIPSIS)
+            sprintf("_Looking for '%s' for you%s_", $search, Utf8Chars::ELLIPSIS)
         );
 
         $params = $this->buildTitleSearchParams($search);
@@ -147,7 +147,7 @@ class Imdb extends BasePlugin
 
             $outputLines[] = sprintf(
                 '%s %s (%d) [ %s ]%s',
-                Chars::BULLET,
+                Utf8Chars::BULLET,
                 $searchResult->Title,
                 $searchResult->Year,
                 $this->getImdbUrlById($searchResult->imdbID),

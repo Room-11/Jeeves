@@ -4,9 +4,9 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
 
 class Regex extends BasePlugin
 {
@@ -21,7 +21,7 @@ class Regex extends BasePlugin
 
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient) {
+    public function __construct(Client $chatClient) {
         $this->chatClient = $chatClient;
     }
 

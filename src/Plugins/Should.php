@@ -3,10 +3,10 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
 
 class Should extends BasePlugin
 {
@@ -32,7 +32,7 @@ class Should extends BasePlugin
 
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient)
+    public function __construct(Client $chatClient)
     {
         $this->chatClient = $chatClient;
     }

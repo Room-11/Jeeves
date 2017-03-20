@@ -3,15 +3,15 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
 use function Amp\resolve;
 
 class Command implements BuiltInCommand
@@ -320,7 +320,7 @@ class Command implements BuiltInCommand
     public function __construct(
         PluginManager $pluginManager,
         BuiltInActionManager $builtInCommandManager,
-        ChatClient $chatClient,
+        Client $chatClient,
         AdminStorage $adminStorage,
         CommandAliasStorage $aliasStorage
     ) {

@@ -12,11 +12,11 @@ use Amp\Promise;
 use Amp\Promisor;
 use Amp\Success;
 use Ds\Queue;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Entities\PostedMessage;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
+use Room11\StackChat\Entities\PostedMessage;
 use function Amp\resolve;
 
 class EvalCode extends BasePlugin
@@ -31,7 +31,7 @@ class EvalCode extends BasePlugin
     private $queue;
     private $haveLoop = false;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
+    public function __construct(Client $chatClient, HttpClient $httpClient) {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
 
@@ -142,7 +142,7 @@ class EvalCode extends BasePlugin
             return new Success();
         }
 
-        $code = $this->normalizeCode($command->getText());
+        $code = $this->normalizeCode($command->getCommandText());
 
         $body = (new FormBody)
             ->addField("title", "")
@@ -160,7 +160,11 @@ class EvalCode extends BasePlugin
 
         $this->queue->push([$request, $command, $deferred]);
         if (!$this->haveLoop) {
-            resolve($this->executeActionsFromQueue());
+            resolve($this->executeActionsFromQueue())->when(function(?\Throwable $error) use($deferred) {
+                if ($error) {
+                    $deferred->fail($error);
+                }
+            });
         }
 
         return $deferred->promise();

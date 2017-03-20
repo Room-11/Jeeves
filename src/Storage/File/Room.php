@@ -3,8 +3,8 @@
 namespace Room11\Jeeves\Storage\File;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Room\Identifier as ChatRoomIdentifier;
 use Room11\Jeeves\Storage\Room as RoomStorage;
+use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\resolve;
 
 class Room implements RoomStorage
@@ -41,14 +41,14 @@ class Room implements RoomStorage
         }, $this->dataFileTemplate);
     }
 
-    public function containsRoom(ChatRoomIdentifier $identifier): Promise
+    public function containsRoom(ChatRoom $identifier): Promise
     {
         return resolve(function() use($identifier) {
             return array_key_exists($identifier->getIdentString(), yield $this->accessor->read($this->dataFileTemplate));
         });
     }
 
-    public function addRoom(ChatRoomIdentifier $identifier, int $inviteTimestamp): Promise
+    public function addRoom(ChatRoom $identifier, int $inviteTimestamp): Promise
     {
         return $this->accessor->writeCallback(function($data) use($identifier, $inviteTimestamp) {
             $data[$identifier->getIdentString()] = [
@@ -62,7 +62,7 @@ class Room implements RoomStorage
         }, $this->dataFileTemplate);
     }
 
-    public function removeRoom(ChatRoomIdentifier $identifier): Promise
+    public function removeRoom(ChatRoom $identifier): Promise
     {
         return $this->accessor->writeCallback(function($data) use($identifier) {
             unset($data[$identifier->getIdentString()]);
@@ -77,7 +77,7 @@ class Room implements RoomStorage
         });
     }
 
-    public function getInviteTimestamp(ChatRoomIdentifier $identifier): Promise
+    public function getInviteTimestamp(ChatRoom $identifier): Promise
     {
         return resolve(function() use($identifier) {
             $data = yield $this->accessor->read($this->dataFileTemplate);
@@ -85,7 +85,7 @@ class Room implements RoomStorage
         });
     }
 
-    public function addApproveVote(ChatRoomIdentifier $identifier, int $userId): Promise
+    public function addApproveVote(ChatRoom $identifier, int $userId): Promise
     {
         return $this->accessor->writeCallback(function($data) use($identifier, $userId) {
             $data[$identifier->getIdentString()]['approve_votes'][(string)$userId] = time();
@@ -93,7 +93,7 @@ class Room implements RoomStorage
         }, $this->dataFileTemplate);
     }
 
-    public function containsApproveVote(ChatRoomIdentifier $identifier, int $userId): Promise
+    public function containsApproveVote(ChatRoom $identifier, int $userId): Promise
     {
         return resolve(function() use($identifier, $userId) {
             $data = yield $this->accessor->read($this->dataFileTemplate);
@@ -101,7 +101,7 @@ class Room implements RoomStorage
         });
     }
 
-    public function getApproveVotes(ChatRoomIdentifier $identifier): Promise
+    public function getApproveVotes(ChatRoom $identifier): Promise
     {
         return resolve(function() use($identifier) {
             $data = yield $this->accessor->read($this->dataFileTemplate);
@@ -109,7 +109,7 @@ class Room implements RoomStorage
         });
     }
 
-    public function containsLeaveVote(ChatRoomIdentifier $identifier, int $userId): Promise
+    public function containsLeaveVote(ChatRoom $identifier, int $userId): Promise
     {
         return resolve(function() use($identifier, $userId) {
             $ident = $identifier->getIdentString();
@@ -121,12 +121,12 @@ class Room implements RoomStorage
         });
     }
 
-    public function addLeaveVote(ChatRoomIdentifier $identifier, int $userId): Promise
+    public function addLeaveVote(ChatRoom $identifier, int $userId): Promise
     {
         return $this->reconcileLeaveVotes($identifier->getIdentString(), $userId);
     }
 
-    public function getLeaveVotes(ChatRoomIdentifier $identifier): Promise
+    public function getLeaveVotes(ChatRoom $identifier): Promise
     {
         return resolve(function() use($identifier) {
             $ident = $identifier->getIdentString();
@@ -138,7 +138,7 @@ class Room implements RoomStorage
         });
     }
 
-    public function setApproved(ChatRoomIdentifier $identifier, bool $approved): Promise
+    public function setApproved(ChatRoom $identifier, bool $approved): Promise
     {
         return $this->accessor->writeCallback(function($data) use($identifier, $approved) {
             $data[$identifier->getIdentString()]['is_approved'] = $approved;
@@ -146,7 +146,7 @@ class Room implements RoomStorage
         }, $this->dataFileTemplate);
     }
 
-    public function isApproved(ChatRoomIdentifier $identifier): Promise
+    public function isApproved(ChatRoom $identifier): Promise
     {
         return resolve(function() use($identifier) {
             $data = yield $this->accessor->read($this->dataFileTemplate);

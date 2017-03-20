@@ -2,10 +2,10 @@
 
 namespace Room11\Jeeves\Plugins;
 
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\MessageResolver;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\MessageResolver;
 
 class Goochle extends BasePlugin
 {
@@ -186,7 +186,7 @@ class Goochle extends BasePlugin
     private $messageResolver;
     private $prepositionRegex;
 
-    public function __construct(ChatClient $chatClient, MessageResolver $messageResolver)
+    public function __construct(Client $chatClient, MessageResolver $messageResolver)
     {
         $this->chatClient = $chatClient;
         $this->prepositionRegex = $this->createPrepositionRegex();
@@ -195,7 +195,7 @@ class Goochle extends BasePlugin
 
     public function trenslete(CommandMessage $command)
     {
-        $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $command->getText());
+        $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $command->getCommandText());
         return $this->chatClient->postReply($command, $this->ruinPrepositions($text));
     }
 

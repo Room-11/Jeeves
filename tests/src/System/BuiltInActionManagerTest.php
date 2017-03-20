@@ -3,17 +3,15 @@
 namespace Room11\Jeeves\Tests\Chat;
 
 use Amp\Success;
-use Room11\Jeeves\Chat\Event\MessageEvent;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\StatusManager;
-use Room11\Jeeves\Log\Level;
-use Room11\Jeeves\Log\Logger;
+use Psr\Log\LoggerInterface;
+use Room11\Jeeves\Chat\Command;
+use Room11\Jeeves\Chat\RoomStatusManager;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Event\MessageEvent;
 use function Amp\wait;
-
 
 class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
 {
@@ -43,15 +41,15 @@ class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
             ->method('getCommandInfo')
             ->will($this->returnValue([$info1, $info2]));
 
-        $logger = $this->getMockBuilder(Logger::class)
+        $logger = $this->getMockBuilder(LoggerInterface::class)
             ->getMock();
 
         $logger
             ->expects($this->exactly(2))
-            ->method('log')
+            ->method('debug')
             ->withConsecutive(
-                [Level::DEBUG, 'Registered command name \'foo\' with built in command ' . get_class($command)],
-                [Level::DEBUG, 'Registered command name \'bar\' with built in command ' . get_class($command)]
+                ['Registered command name \'foo\' with built in command ' . get_class($command)],
+                ['Registered command name \'bar\' with built in command ' . get_class($command)]
             )
         ;
 
@@ -59,7 +57,7 @@ class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
         $builtInCommandManager = new BuiltInActionManager(
             $this->getMockBuilder(BanStorage::class)
                 ->getMock(),
-            $this->getMockBuilder(StatusManager::class)
+            $this->getMockBuilder(RoomStatusManager::class)
                 ->disableOriginalConstructor()
                 ->getMock(),
             $logger
@@ -73,10 +71,10 @@ class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
         $builtInCommandManager = new BuiltInActionManager(
             $this->getMockBuilder(BanStorage::class)
                 ->getMock(),
-            $this->getMockBuilder(StatusManager::class)
+            $this->getMockBuilder(RoomStatusManager::class)
                 ->disableOriginalConstructor()
                 ->getMock(),
-            $this->getMockBuilder(Logger::class)
+            $this->getMockBuilder(LoggerInterface::class)
                 ->getMock()
         );
 
@@ -107,10 +105,10 @@ class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
         $builtInCommandManager = new BuiltInActionManager(
             $this->getMockBuilder(BanStorage::class)
                 ->getMock(),
-            $this->getMockBuilder(StatusManager::class)
+            $this->getMockBuilder(RoomStatusManager::class)
                 ->disableOriginalConstructor()
                 ->getMock(),
-            $this->getMockBuilder(Logger::class)
+            $this->getMockBuilder(LoggerInterface::class)
                 ->getMock()
         );
 
@@ -140,10 +138,10 @@ class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
         $builtInCommandManager = new BuiltInActionManager(
             $this->getMockBuilder(BanStorage::class)
                 ->getMock(),
-            $this->getMockBuilder(StatusManager::class)
+            $this->getMockBuilder(RoomStatusManager::class)
                 ->disableOriginalConstructor()
                 ->getMock(),
-            $this->getMockBuilder(Logger::class)
+            $this->getMockBuilder(LoggerInterface::class)
                 ->getMock()
         );
 
@@ -179,22 +177,22 @@ class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
             ->method('getCommandInfo')
             ->will($this->returnValue([$info]));
 
-        $logger = $this->getMockBuilder(Logger::class)
+        $logger = $this->getMockBuilder(LoggerInterface::class)
             ->getMock();
 
         $logger
             ->expects($this->exactly(2))
-            ->method('log')
+            ->method('debug')
             ->withConsecutive(
-                [Level::DEBUG, 'Registered command name \'foo\' with built in command ' . get_class($command)],
-                [Level::DEBUG, 'User #14 is banned, ignoring event #721 for built in commands']
+                ['Registered command name \'foo\' with built in command ' . get_class($command)],
+                ['User #14 is banned, ignoring event #721 for built in commands']
             )
         ;
 
         $banStorage = $this->getMockBuilder(BanStorage::class)
             ->getMock();
 
-        $roomStorage = $this->getMockBuilder(StatusManager::class)
+        $roomStorage = $this->getMockBuilder(RoomStatusManager::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -304,22 +302,22 @@ class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
             ->willReturn(new Success())
         ;
 
-        $logger = $this->getMockBuilder(Logger::class)
+        $logger = $this->getMockBuilder(LoggerInterface::class)
             ->getMock();
 
         $logger
             ->expects($this->exactly(2))
-            ->method('log')
+            ->method('debug')
             ->withConsecutive(
-                [Level::DEBUG, 'Registered command name \'foo\' with built in command ' . get_class($registeredCommand)],
-                [Level::DEBUG, 'Passing event #721 to built in command handler ' . get_class($registeredCommand)]
+                ['Registered command name \'foo\' with built in command ' . get_class($registeredCommand)],
+                ['Passing event #721 to built in command handler ' . get_class($registeredCommand)]
             )
         ;
 
         $banStorage = $this->getMockBuilder(BanStorage::class)
             ->getMock();
 
-        $roomStorage = $this->getMockBuilder(StatusManager::class)
+        $roomStorage = $this->getMockBuilder(RoomStatusManager::class)
             ->disableOriginalConstructor()
             ->getMock();
 

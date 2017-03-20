@@ -1,26 +1,27 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
+
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Event\NewMessage;
-use Room11\Jeeves\Chat\Message\Message;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Entities\ChatMessage;
+use Room11\StackChat\Event\NewMessage;
 
 class CodeFormat extends BasePlugin
 {
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient) {
+    public function __construct(Client $chatClient) {
         $this->chatClient = $chatClient;
     }
 
-    private function validMessage(Message $message): bool {
-        return get_class($message) === Message::class
+    private function validMessage(ChatMessage $message): bool {
+        return get_class($message) === ChatMessage::class
             && $message->getEvent() instanceof NewMessage;
     }
 
-    public function handleMessage(Message $message): Promise {
+    public function handleMessage(ChatMessage $message): Promise {
         if (!$this->validMessage($message)) {
             return new Success();
         }

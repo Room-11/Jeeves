@@ -4,22 +4,21 @@ namespace Room11\Jeeves\Tests\BuiltIn\Commands;
 
 use Amp\Success;
 use Room11\Jeeves\BuiltIn\Commands\Version;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\ChatClient;
 use function Room11\Jeeves\get_current_version;
-
-require __DIR__ . '/../../../../version.php';
-
-define('Room11\\Jeeves\\APP_BASE', realpath(__DIR__ . '/../../../../'));
-define('Room11\\Jeeves\\GITHUB_PROJECT_URL', 'https://github.com/Room-11/Jeeves');
 
 class VersionTest extends AbstractCommandTest
 {
+    /** @var Version|\PHPUnit_Framework_MockObject_MockObject */
     private $builtIn;
+
+    /** @var ChatClient|\PHPUnit_Framework_MockObject_MockObject */
     private $client;
+
+    /** @var Command|\PHPUnit_Framework_MockObject_MockObject */
     private $command;
-    private $room;
 
     public function setUp()
     {

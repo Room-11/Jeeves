@@ -6,9 +6,9 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
 
 class Wikipedia extends BasePlugin
 {
@@ -17,7 +17,7 @@ class Wikipedia extends BasePlugin
     private $chatClient;
     private $httpClient;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
+    public function __construct(Client $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;

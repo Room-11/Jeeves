@@ -3,59 +3,55 @@
 namespace Room11\Jeeves\Tests\BuiltIn\EventHandlers;
 
 use Amp\Success;
+use Psr\Log\LoggerInterface;
 use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
-use Room11\Jeeves\Chat\Event\Invitation;
-use Room11\Jeeves\Chat\Event\EventType;
-use Room11\Jeeves\Chat\Room\Identifier;
-use Room11\Jeeves\Chat\Room\IdentifierFactory;
-use Room11\Jeeves\Chat\Room\PresenceManager;
-use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\Chat\PresenceManager;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Event\EventType;
+use Room11\StackChat\Event\Invitation;
+use Room11\StackChat\Room\Room;
 
 class InviteTest extends \PHPUnit\Framework\TestCase
 {
+    /** @var Invite|\PHPUnit_Framework_MockObject_MockObject */
     private $event;
-    private $identifierFactory;
+
+    /** @var PresenceManager|\PHPUnit_Framework_MockObject_MockObject */
     private $presenceManager;
+
+    /** @var ChatClient|\PHPUnit_Framework_MockObject_MockObject */
+    private $client;
 
     public function setUp()
     {
         parent::setUp();
 
-        $this->identifierFactory = $this->createMock(IdentifierFactory::class);
         $this->presenceManager = $this->createMock(PresenceManager::class);
+        $this->client = $this->createMock(ChatClient::class);
 
         $this->event = new Invite(
-            $this->identifierFactory,
+            $this->client,
             $this->presenceManager,
-            $this->createMock(Logger::class)
+            $this->createMock(LoggerInterface::class)
         );
     }
 
     public function testEventHandling()
     {
         $event = $this->createMock(Invitation::class);
-        $identifier = $this->createMock(Identifier::class);
 
         $event->method('getUserId')->will($this->returnValue(123));
         $event->method('getUserName')->will($this->returnValue('Jeeves'));
         $event->method('getRoomId')->will($this->returnValue(11));
         $event->method('getHost')->will($this->returnValue('someHost'));
 
-        $this->identifierFactory
-            ->expects($this->once())
-            ->method('create')
-            ->with(
-                $this->identicalTo(11),
-                $this->identicalTo('someHost')
-            )
-            ->will($this->returnValue($identifier))
-        ;
-
         $this->presenceManager
             ->expects($this->once())
             ->method('addRoom')
             ->with(
-                $this->identicalTo($identifier),
+                $this->callback(function($room) {
+                    return (new Room(11, 'someHost'))->equals($room);
+                }),
                 $this->identicalTo(123)
             )
             ->will($this->returnValue(new Success()))
@@ -67,7 +63,7 @@ class InviteTest extends \PHPUnit\Framework\TestCase
     public function testGetEventTypes()
     {
         $this->assertEquals(
-            [EventType::INVITATION], 
+            [EventType::INVITATION],
             $this->event->getEventTypes()
         );
     }

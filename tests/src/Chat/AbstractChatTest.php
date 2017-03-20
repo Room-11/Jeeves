@@ -2,12 +2,12 @@
 
 namespace Room11\Jeeves\Tests\Chat;
 
-use Room11\Jeeves\Chat\Client\ChatClient;
+use Room11\StackChat\Client\Client;
 
 abstract class AbstractChatTest extends \PHPUnit\Framework\TestCase
 {
     /**
-     * @var ChatClient|\PHPUnit_Framework_MockObject_MockObject
+     * @var Client|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $client;
 
@@ -18,7 +18,7 @@ abstract class AbstractChatTest extends \PHPUnit\Framework\TestCase
     {
         parent::setUp();
 
-        $this->client = $this->getMockBuilder(ChatClient::class)
+        $this->client = $this->getMockBuilder(Client::class)
             ->disableOriginalConstructor()
             ->getMock();
     }

@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "0005ae3f89a6611cdd24aa97600db775",
-    "content-hash": "372a0e15f769c42ddf4cd9cd5ebd2395",
+    "hash": "3899188da9dc15ca4f82bb3687f500de",
+    "content-hash": "a80a06abe783678d0c9c5cab37328dad",
     "packages": [
         {
             "name": "amphp/aerys",
@@ -1292,6 +1292,81 @@
             "time": "2016-10-19 13:37:18"
         },
         {
+            "name": "room11/stack-chat",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Room-11/StackChat.git",
+                "reference": "8037eb6d51d91dfb667b7c827c76a0296cc1c612"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Room-11/StackChat/zipball/8037eb6d51d91dfb667b7c827c76a0296cc1c612",
+                "reference": "8037eb6d51d91dfb667b7c827c76a0296cc1c612",
+                "shasum": ""
+            },
+            "require": {
+                "amphp/amp": "^1.2",
+                "amphp/artax": "^2",
+                "amphp/file": "0.1.*",
+                "amphp/websocket": "dev-master",
+                "daverandom/exceptional-json": "^1.0",
+                "ext-intl": "*",
+                "ext-mbstring": "*",
+                "lib-libxml": ">=2.7.8",
+                "php": ">=7.1",
+                "php-ds/php-ds": "*",
+                "psr/log": "^1",
+                "room11/dom-utils": "~1.0",
+                "room11/openid": "~1.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^6.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/constants.php"
+                ],
+                "psr-4": {
+                    "Room11\\StackChat\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Room11\\StackChat\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Pieter Hordijk",
+                    "email": "info@pieterhordijk.com",
+                    "homepage": "https://pieterhordijk.com/",
+                    "role": "developer"
+                },
+                {
+                    "name": "Chris Wright",
+                    "email": "cw@daverandom.com",
+                    "homepage": "https://daverandom.com/",
+                    "role": "developer"
+                }
+            ],
+            "description": "Chat client for Stack Exchange",
+            "homepage": "https://github.com/Room-11/StackChat",
+            "keywords": [
+                "chat",
+                "client"
+            ],
+            "support": {
+                "source": "https://github.com/Room-11/StackChat/tree/master",
+                "issues": "https://github.com/Room-11/StackChat/issues"
+            },
+            "time": "2017-03-20 22:56:39"
+        },
+        {
             "name": "sabre/uri",
             "version": "1.2.1",
             "source": {
@@ -1387,16 +1462,16 @@
         },
         {
             "name": "seld/cli-prompt",
-            "version": "1.0.2",
+            "version": "1.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Seldaek/cli-prompt.git",
-                "reference": "8cbe10923cae5bcd7c5a713f6703fc4727c8c1b4"
+                "reference": "a19a7376a4689d4d94cab66ab4f3c816019ba8dd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/cli-prompt/zipball/8cbe10923cae5bcd7c5a713f6703fc4727c8c1b4",
-                "reference": "8cbe10923cae5bcd7c5a713f6703fc4727c8c1b4",
+                "url": "https://api.github.com/repos/Seldaek/cli-prompt/zipball/a19a7376a4689d4d94cab66ab4f3c816019ba8dd",
+                "reference": "a19a7376a4689d4d94cab66ab4f3c816019ba8dd",
                 "shasum": ""
             },
             "require": {
@@ -1431,7 +1506,7 @@
                 "input",
                 "prompt"
             ],
-            "time": "2016-04-18 09:31:41"
+            "time": "2017-03-18 11:32:45"
         },
         {
             "name": "symfony/yaml",
@@ -2046,16 +2121,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "6.0.8",
+            "version": "6.0.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "47ee3fa1bca5c50f1d25105201eb20df777bd7b6"
+                "reference": "8a536f409ebae632b92b7e7288e068248fe365ed"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/47ee3fa1bca5c50f1d25105201eb20df777bd7b6",
-                "reference": "47ee3fa1bca5c50f1d25105201eb20df777bd7b6",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/8a536f409ebae632b92b7e7288e068248fe365ed",
+                "reference": "8a536f409ebae632b92b7e7288e068248fe365ed",
                 "shasum": ""
             },
             "require": {
@@ -2066,18 +2141,18 @@
                 "ext-xml": "*",
                 "myclabs/deep-copy": "^1.3",
                 "php": "^7.0",
-                "phpspec/prophecy": "^1.6.2",
+                "phpspec/prophecy": "^1.7",
                 "phpunit/php-code-coverage": "^5.0",
                 "phpunit/php-file-iterator": "^1.4",
                 "phpunit/php-text-template": "^1.2",
                 "phpunit/php-timer": "^1.0.6",
                 "phpunit/phpunit-mock-objects": "^4.0",
-                "sebastian/comparator": "^1.2.4 || ^2.0",
+                "sebastian/comparator": "^2.0",
                 "sebastian/diff": "^1.2",
                 "sebastian/environment": "^2.0",
-                "sebastian/exporter": "^2.0 || ^3.0",
+                "sebastian/exporter": "^3.0",
                 "sebastian/global-state": "^1.1 || ^2.0",
-                "sebastian/object-enumerator": "^2.0 || ^3.0",
+                "sebastian/object-enumerator": "^3.0.2",
                 "sebastian/resource-operations": "^1.0",
                 "sebastian/version": "^2.0"
             },
@@ -2124,7 +2199,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2017-03-02 15:24:03"
+            "time": "2017-03-19 16:54:28"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -2563,16 +2638,16 @@
         },
         {
             "name": "sebastian/object-reflector",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/object-reflector.git",
-                "reference": "2201553542d60d25db9c5b2c54330df776648008"
+                "reference": "afd5797e7af7c9f529879ad5e8e8abe126c89dab"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/object-reflector/zipball/2201553542d60d25db9c5b2c54330df776648008",
-                "reference": "2201553542d60d25db9c5b2c54330df776648008",
+                "url": "https://api.github.com/repos/sebastianbergmann/object-reflector/zipball/afd5797e7af7c9f529879ad5e8e8abe126c89dab",
+                "reference": "afd5797e7af7c9f529879ad5e8e8abe126c89dab",
                 "shasum": ""
             },
             "require": {
@@ -2584,7 +2659,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.0-dev"
+                    "dev-master": "1.1-dev"
                 }
             },
             "autoload": {
@@ -2604,7 +2679,7 @@
             ],
             "description": "Allows reflection of object attributes, including inherited and non-public ones",
             "homepage": "https://github.com/sebastianbergmann/object-reflector/",
-            "time": "2017-03-12 15:10:22"
+            "time": "2017-03-16 14:05:21"
         },
         {
             "name": "sebastian/recursion-context",
@@ -2756,7 +2831,8 @@
     "minimum-stability": "stable",
     "stability-flags": {
         "amphp/websocket": 20,
-        "peehaa/async-twitter": 20
+        "peehaa/async-twitter": 20,
+        "room11/stack-chat": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

@@ -4,12 +4,11 @@ namespace Room11\Jeeves\System;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Event\Event;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\StatusManager;
-use Room11\Jeeves\Log\Level;
-use Room11\Jeeves\Log\Logger;
+use Psr\Log\LoggerInterface as Logger;
+use Room11\Jeeves\Chat\Command;
+use Room11\Jeeves\Chat\RoomStatusManager;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\StackChat\Event\Event;
 use function Amp\all;
 use function Amp\resolve;
 
@@ -34,7 +33,7 @@ class BuiltInActionManager
      */
     private $eventHandlers = [];
 
-    public function __construct(BanStorage $banStorage, StatusManager $roomStatusManager, Logger $logger)
+    public function __construct(BanStorage $banStorage, RoomStatusManager $roomStatusManager, Logger $logger)
     {
         $this->banStorage = $banStorage;
         $this->roomStatusManager = $roomStatusManager;
@@ -51,7 +50,7 @@ class BuiltInActionManager
             $this->commands[$commandName] = $command;
             $this->commandInfo[$commandName] = $commandInfo;
 
-            $this->logger->log(Level::DEBUG, "Registered command name '{$commandName}' with built in command {$className}");
+            $this->logger->debug("Registered command name '{$commandName}' with built in command {$className}");
         }
 
         ksort($this->commandInfo);
@@ -64,7 +63,7 @@ class BuiltInActionManager
         $className = get_class($handler);
 
         foreach ($handler->getEventTypes() as $eventType) {
-            $this->logger->log(Level::DEBUG, "Registering event type {$eventType} with built in handler {$className}");
+            $this->logger->debug("Registering event type {$eventType} with built in handler {$className}");
             $this->eventHandlers[$eventType][] = $handler;
         }
 
@@ -106,7 +105,7 @@ class BuiltInActionManager
 
             $room = $command->getRoom();
 
-            if ($this->commandInfo[$commandName]->requiresApprovedRoom() && !yield $this->roomStatusManager->isApproved($room->getIdentifier())) {
+            if ($this->commandInfo[$commandName]->requiresApprovedRoom() && !yield $this->roomStatusManager->isApproved($room)) {
                 return;
             }
 
@@ -118,14 +117,14 @@ class BuiltInActionManager
                 $userIsBanned = yield $this->banStorage->isBanned($room, $userId);
 
                 if ($userIsBanned) {
-                    $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
+                    $this->logger->debug("User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
                     return;
                 }
 
-                $this->logger->log(Level::DEBUG, "Passing event #{$eventId} to built in command handler " . get_class($this->commands[$commandName]));
+                $this->logger->debug("Passing event #{$eventId} to built in command handler " . get_class($this->commands[$commandName]));
                 yield $this->commands[$commandName]->handleCommand($command);
             } catch (\Throwable $e) {
-                $this->logger->log(Level::ERROR, "Something went wrong while handling #{$eventId} for built-in commands: {$e}");
+                $this->logger->error("Something went wrong while handling #{$eventId} for built-in commands: {$e}");
             }
         });
     }

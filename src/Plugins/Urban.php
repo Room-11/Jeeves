@@ -5,17 +5,17 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
 
 class Urban extends BasePlugin
 {
     private $chatClient;
     private $httpClient;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
+    public function __construct(Client $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;

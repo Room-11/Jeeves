@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Storage;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\StackChat\Room\Room as ChatRoom;
 
 interface CommandAlias
 {

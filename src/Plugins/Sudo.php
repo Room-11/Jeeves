@@ -2,15 +2,15 @@
 
 namespace Room11\Jeeves\Plugins;
 
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
 
 class Sudo extends BasePlugin
 {
     private $chatClient;
 
-    public function __construct(ChatClient $chatClient)
+    public function __construct(Client $chatClient)
     {
         $this->chatClient = $chatClient;
     }

@@ -4,49 +4,49 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Failure;
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
-use Room11\Jeeves\Chat\Room\AlreadyApprovedException;
-use Room11\Jeeves\Chat\Room\IdentifierFactory;
-use Room11\Jeeves\Chat\Room\InvalidRoomIdentifierException;
-use Room11\Jeeves\Chat\Room\PresenceManager;
-use Room11\Jeeves\Chat\Room\RoomAlreadyExistsException;
-use Room11\Jeeves\Chat\Room\UserAlreadyVotedException;
-use Room11\Jeeves\Chat\Room\UserNotAcceptableException;
-use Room11\Jeeves\Log\Level;
-use Room11\Jeeves\Log\Logger;
+use Psr\Log\LoggerInterface as Logger;
+use Room11\Jeeves\Chat\AlreadyApprovedException;
+use Room11\Jeeves\Chat\Command as CommandMessage;
+use Room11\Jeeves\Chat\PresenceManager;
+use Room11\Jeeves\Chat\RoomAlreadyExistsException;
+use Room11\Jeeves\Chat\RoomStatusManager;
+use Room11\Jeeves\Chat\UserAlreadyVotedException;
+use Room11\Jeeves\Chat\UserNotAcceptableException;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
+use Room11\StackChat\Room\InvalidRoomIdentifierException;
+use Room11\StackChat\Room\Room;
 use function Amp\resolve;
 
 class RoomPresence implements BuiltInCommand
 {
     private $chatClient;
     private $presenceManager;
-    private $identifierFactory;
+    private $statusManager;
     private $logger;
 
     public function __construct(
-        ChatClient $chatClient,
+        Client $chatClient,
         PresenceManager $presenceManager,
-        IdentifierFactory $identifierFactory,
+        RoomStatusManager $statusManager,
         Logger $logger
     ) {
         $this->chatClient = $chatClient;
         $this->presenceManager = $presenceManager;
-        $this->identifierFactory = $identifierFactory;
+        $this->statusManager = $statusManager;
         $this->logger = $logger;
     }
 
     private function getRoomIdentifierFromArg(string $arg, string $sourceHost)
     {
         if (preg_match('#^[0-9]+$#', $arg)) {
-            return $this->identifierFactory->create((int)$arg, $sourceHost);
+            return new Room((int)$arg, $sourceHost);
         }
 
         if (preg_match('#^https?://' . preg_quote($sourceHost, '#') .'/rooms/([0-9]+)#i', $arg, $match)) {
-            return $this->identifierFactory->create((int)$match[1], $sourceHost);
+            return new Room((int)$match[1], $sourceHost);
         }
 
         throw new InvalidRoomIdentifierException('Cannot determine room identifier from argument');
@@ -59,19 +59,19 @@ class RoomPresence implements BuiltInCommand
         }
 
         try {
-            $identifier = $this->getRoomIdentifierFromArg($command->getParameter(0), $command->getRoom()->getIdentifier()->getHost());
+            $identifier = $this->getRoomIdentifierFromArg($command->getParameter(0), $command->getRoom()->getHost());
         } catch (InvalidRoomIdentifierException $e) {
             return $this->chatClient->postReply($command, "Sorry, I can't work out where you are asking me to go");
         }
 
-        if ($identifier->equals($command->getRoom()->getIdentifier())) {
+        if ($identifier->equals($command->getRoom())) {
             return $this->chatClient->postReply($command, "Ummm... that's this room?");
         }
 
         $userId = $command->getUserId();
         $userName = $command->getUserName();
 
-        $this->logger->log(Level::DEBUG, "Invited to {$identifier} by {$userName} (#{$userId})");
+        $this->logger->debug("Invited to {$identifier} by {$userName} (#{$userId})");
 
         try {
             yield $this->presenceManager->addRoom($identifier, $userId);
@@ -79,7 +79,7 @@ class RoomPresence implements BuiltInCommand
         } catch (RoomAlreadyExistsException $e) {
             $message = "I'm already there, I don't need to be invited again";
         } catch (\Throwable $e) {
-            $this->logger->log(Level::ERROR, "Error while adding room {$identifier} invited by {$userName} (#{$userId}): {$e}");
+            $this->logger->error("Error while adding room {$identifier} invited by {$userName} (#{$userId}): {$e}");
             $message = "Something went pretty badly wrong there, I've made a note of it, please report this issue to my maintainers.";
         }
 
@@ -88,13 +88,13 @@ class RoomPresence implements BuiltInCommand
 
     private function approve(CommandMessage $command)
     {
-        if ($command->getRoom()->isPermanent()) {
+        $identifier = $command->getRoom();
+
+        if ($this->statusManager->isPermanent($identifier)) {
             return $this->chatClient->postReply($command, "This room is my home! I don't need your approval to be here!");
         }
 
         try {
-            $identifier = $command->getRoom()->getIdentifier();
-
             $requiredVotes = yield $this->presenceManager->getRequiredApproveVoteCount($identifier);
             list($isApproved, $currentVotes) = yield $this->presenceManager->addApproveVote($identifier, $command->getUserId());
 
@@ -115,13 +115,13 @@ class RoomPresence implements BuiltInCommand
 
     private function leave(CommandMessage $command)
     {
-        if ($command->getRoom()->isPermanent()) {
+        $identifier = $command->getRoom();
+
+        if ($this->statusManager->isPermanent($identifier)) {
             return $this->chatClient->postReply($command, "This room is my home! I don't need your approval to be here!");
         }
 
         try {
-            $identifier = $command->getRoom()->getIdentifier();
-
             yield $this->presenceManager->getRequiredLeaveVoteCount($identifier);
             list($hasLeft) = yield $this->presenceManager->addLeaveVote($identifier, $command->getUserId());
 

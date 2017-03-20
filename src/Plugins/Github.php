@@ -1,15 +1,16 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
+
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\ChatRoomContainer;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\RoomContainer;
+use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\repeat;
 
 class Github extends BasePlugin
@@ -19,7 +20,7 @@ class Github extends BasePlugin
     private $pluginData;
     private $lastKnownStatus = null;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
+    public function __construct(Client $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
@@ -86,7 +87,7 @@ class Github extends BasePlugin
     }
 
     /**
-     * @param ChatRoom|ChatRoomContainer $target
+     * @param ChatRoom|RoomContainer $target
      * @param $response
      * @return Promise
      */

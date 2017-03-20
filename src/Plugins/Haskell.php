@@ -6,9 +6,9 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request;
 use Amp\Artax\Response;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client;
 
 class Haskell extends BasePlugin
 {
@@ -17,7 +17,7 @@ class Haskell extends BasePlugin
     private $chatClient;
     private $httpClient;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
+    public function __construct(Client $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;

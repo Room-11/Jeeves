@@ -3,11 +3,11 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
 use const Room11\Jeeves\PROCESS_START_TIME;
 use function Room11\Jeeves\dateinterval_to_string;
 
@@ -17,7 +17,7 @@ class Uptime implements BuiltInCommand
 
     private $startTime;
 
-    public function __construct(ChatClient $chatClient)
+    public function __construct(Client $chatClient)
     {
         $this->chatClient = $chatClient;
 

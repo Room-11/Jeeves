@@ -4,9 +4,6 @@ namespace Room11\Jeeves;
 
 use SebastianBergmann\Version as SebastianVersion;
 
-const DNS_NAME_EXPR = '(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)\.)*(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)';
-const ROOM_IDENTIFIER_EXPR = '(' . DNS_NAME_EXPR . ')#([0-9]+)';
-
 function get_current_version(): VersionIdentifier
 {
     $version = (new SebastianVersion(VERSION, APP_BASE))->getVersion();
@@ -52,9 +49,13 @@ function dateinterval_to_string(\DateInterval $interval, string $precision = 's'
         }
     }
 
+    if (empty($parts)) {
+        return '0 seconds';
+    }
+
     $last = array_pop($parts);
 
-    return $parts ?
+    return !empty($parts) ?
         implode(', ', $parts) . ' and ' . $last
         : $last;
 }
@@ -83,4 +84,9 @@ function normalize_stack_exchange_url(string $url): string
     }
 
     throw new InvalidStackExchangeUrlException('Unrecognised Stack Exchange URL format');
+}
+
+function text_contains_ping(string $text, string $userName): bool
+{
+    return (bool)\preg_match('#@' . \preg_quote($userName, '#') . '(?:[\s,.\'?!;:<>\#@~{}"%^&*-]|$)#iu', $text);
 }

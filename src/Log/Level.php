@@ -2,15 +2,20 @@
 
 namespace Room11\Jeeves\Log;
 
-class Level
+abstract class Level
 {
-    const ERROR         = 0x01;
-    const UNKNOWN_EVENT = 0x02;
-    const EVENT         = 0x04;
-    const DEBUG         = 0x08;
-    const EXTRA_DATA    = 0x10;
-    const AERYS         = 0x20;
+    const EMERGENCY = 0x00000001;
+    const ALERT     = 0x00000002;
+    const CRITICAL  = 0x00000004;
+    const ERROR     = 0x00000008;
+    const WARNING   = 0x00000010;
+    const NOTICE    = 0x00000020;
+    const INFO      = 0x00000040;
+    const DEBUG     = 0x40000000;
+    const CONTEXT   = 0x80000000;
 
-    const ALL           = 0xffffffff & ~self::DEBUG;
+    const ALL           = ~0 & ~(self::DEBUG | self::CONTEXT);
     const NONE          = 0;
+
+    private function __construct() {}
 }

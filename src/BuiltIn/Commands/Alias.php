@@ -3,14 +3,15 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
+use Room11\Jeeves\Chat\CommandFactory;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
+use Room11\StackChat\Client\Client;
 use function Amp\resolve;
 
 class Alias implements BuiltInCommand
@@ -22,7 +23,7 @@ class Alias implements BuiltInCommand
     private $pluginManager;
 
     public function __construct(
-        ChatClient $chatClient,
+        Client $chatClient,
         CommandAliasStorage $aliasStorage,
         AdminStorage $adminStorage,
         BuiltInActionManager $builtInCommandManager,
@@ -39,7 +40,8 @@ class Alias implements BuiltInCommand
     {
         $room = $command->getRoom();
 
-        $markdown = yield $this->chatClient->getCommandParametersAsMarkdown($command);
+        $text = yield $this->chatClient->getMessageText($command->getRoom(), $command->getId());
+        $markdown = trim(substr($text, strlen($command->getCommandName()) + strlen(CommandFactory::INVOKER)));
         list($aliasCommand, $mapping) = preg_split('/\s+/', $markdown, 2, PREG_SPLIT_NO_EMPTY);
 
         $aliasCommand = strtolower($aliasCommand);

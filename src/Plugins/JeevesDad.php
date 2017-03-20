@@ -4,13 +4,14 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Message\Message;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Auth\SessionTracker;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Entities\ChatMessage;
+use Room11\StackChat\Room\Room as ChatRoom;
 
 class JeevesDad extends BasePlugin
 {
@@ -21,16 +22,23 @@ class JeevesDad extends BasePlugin
     private $httpClient;
     private $storage;
     private $admin;
+    private $sessions;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $admin, KeyValueStore $storage)
-    {
+    public function __construct(
+        Client $chatClient,
+        HttpClient $httpClient,
+        AdminStorage $admin,
+        KeyValueStore $storage,
+        SessionTracker $sessions
+    ) {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
         $this->admin = $admin;
         $this->storage = $storage;
+        $this->sessions = $sessions;
     }
 
-    public function handleMessage(Message $message)
+    public function handleMessage(ChatMessage $message)
     {
         if (!yield from $this->isDadGreetEnabled($message->getRoom())) {
             return;
@@ -45,8 +53,9 @@ class JeevesDad extends BasePlugin
         }
 
         $fullName = strtoupper(substr($match[1], 0, 1)) . substr($match[1], 1);
+        $botUserName = $this->sessions->getSessionForRoom($message->getRoom())->getUser()->getName();
 
-        $reply = sprintf('Hello %s. I am %s.', $fullName, $message->getRoom()->getSession()->getUser()->getName());
+        $reply = sprintf('Hello %s. I am %s.', $fullName, $botUserName);
 
         if (preg_match('#^(\S+)\s+\S#', $fullName, $match)) {
             $reply .= sprintf(' Do you mind if I just call you %s?', $match[1]);

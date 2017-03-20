@@ -4,19 +4,19 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
 use IntervalParser\IntervalParser;
-use Room11\Jeeves\Chat\Client\Chars;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use function Room11\Jeeves\dateinterval_to_string;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\Admin as AdminStore;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\Jeeves\Utf8Chars;
+use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\PostFlags;
+use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\cancel;
 use function Amp\once;
 use function Amp\resolve;
+use function Room11\Jeeves\dateinterval_to_string;
 
 class InvalidReminderTextException extends Exception {}
 class InvalidReminderTimeException extends Exception {}
@@ -42,7 +42,7 @@ class Reminder extends BasePlugin
     private $watchers = [];
 
     public function __construct(
-        ChatClient $chatClient,
+        Client $chatClient,
         KeyValueStore $storage,
         AdminStore $adminStorage,
         IntervalParser $intervalParser
@@ -192,7 +192,7 @@ class Reminder extends BasePlugin
         }
 
         $this->watchers[] = once(function() use ($command, $value) {
-            resolve($this->unsetReminderAndPostMessage($value[self::STRUCT_KEY_ID], $command, $value[self::STRUCT_KEY_TEXT]));
+            return $this->unsetReminderAndPostMessage($value[self::STRUCT_KEY_ID], $command, $value[self::STRUCT_KEY_TEXT]);
         }, $seconds * 1000);
 
         return $this->chatClient->postMessage($command, "Reminder {$value[self::STRUCT_KEY_ID]} is set.");
@@ -219,11 +219,11 @@ class Reminder extends BasePlugin
 
             $message .= sprintf(
                 "\n%s %s %s %s %s %s - %s - %s ",
-                Chars::BULLET,
+                Utf8Chars::BULLET,
                 $value[self::STRUCT_KEY_TEXT],
-                Chars::RIGHTWARDS_ARROW,
+                Utf8Chars::RIGHTWARDS_ARROW,
                 "Id: :" . $key,
-                Chars::RIGHTWARDS_ARROW,
+                Utf8Chars::RIGHTWARDS_ARROW,
                 date('l, dS F Y H:i (e)', $value[self::STRUCT_KEY_TIMESTAMP]),
                 'Set by ' . $value[self::STRUCT_KEY_USER_NAME],
                 'Time left: ' . dateinterval_to_string(new \DateInterval("PT{$seconds}S"))
@@ -255,7 +255,7 @@ class Reminder extends BasePlugin
             $reply = "@{$pingableName} I guess I'm late: {$value[self::STRUCT_KEY_TEXT]}";
 
             $this->watchers[] = once(function () use ($key, $room, $reply) {
-                resolve($this->unsetReminderAndPostMessage($key, $room, $reply));
+                return $this->unsetReminderAndPostMessage($key, $room, $reply);
             }, 1000);
         }
     }
@@ -285,7 +285,7 @@ class Reminder extends BasePlugin
                 $reply = $target . " " . $text;
 
                 $this->watchers[] = once(function () use ($key, $room, $reply) {
-                    resolve($this->unsetReminderAndPostMessage($key, $room, $reply));
+                    return $this->unsetReminderAndPostMessage($key, $room, $reply);
                 }, $seconds * 1000);
             }
         }
@@ -294,13 +294,13 @@ class Reminder extends BasePlugin
     private function getExamples(Command $command): Promise
     {
         $examples = "Examples: \n"
-            . Chars::BULLET . " !!reminder foo at 18:00 \n"
-            . Chars::BULLET . " With timezone: (ie. UTC-3) !!reminder foo at 18:00-3:00 \n"
-            . Chars::BULLET . " !!reminder bar in 2 hours \n"
-            . Chars::BULLET . " !!reminder unset 32901146 \n"
-            . Chars::BULLET . " !!reminder list or just !!reminders \n"
-            . Chars::BULLET . " !!in 2 days 42 hours 42 minutes 42 seconds 42! \n"
-            . Chars::BULLET . " !!at 22:00 Grab a beer!";
+            . Utf8Chars::BULLET . " !!reminder foo at 18:00 \n"
+            . Utf8Chars::BULLET . " With timezone: (ie. UTC-3) !!reminder foo at 18:00-3:00 \n"
+            . Utf8Chars::BULLET . " !!reminder bar in 2 hours \n"
+            . Utf8Chars::BULLET . " !!reminder unset 32901146 \n"
+            . Utf8Chars::BULLET . " !!reminder list or just !!reminders \n"
+            . Utf8Chars::BULLET . " !!in 2 days 42 hours 42 minutes 42 seconds 42! \n"
+            . Utf8Chars::BULLET . " !!at 22:00 Grab a beer!";
 
         return $this->chatClient->postMessage($command, $examples);
     }
