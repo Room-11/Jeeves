@@ -53,6 +53,7 @@ $injector->share(Room11\StackChat\Client\Actions\Factory::class);
 $injector->share(Room11\StackChat\Room\ConnectedRoomCollection::class);
 $injector->share(Room11\StackChat\Room\AclDataAccessor::class);
 $injector->share(Room11\StackChat\Room\IdentifierFactory::class);
+$injector->share(Room11\StackChat\WebSocket\EndpointCollection::class);
 $injector->share(Room11\StackChat\WebSocket\HandlerFactory::class);
 
 return $injector;

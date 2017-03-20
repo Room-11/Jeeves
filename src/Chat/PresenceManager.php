@@ -2,9 +2,6 @@
 
 namespace Room11\Jeeves\Chat;
 
-use Amp\Artax\FormBody;
-use Amp\Artax\HttpClient;
-use Amp\Artax\Request as HttpRequest;
 use Amp\Deferred;
 use Amp\Pause;
 use Amp\Promise;
@@ -40,7 +37,6 @@ class PresenceManager
     private $statusManager;
     private $chatClient;
     private $aclDataAccessor;
-    private $httpClient;
     private $urlResolver;
     private $identifierFactory;
     private $connector;
@@ -57,7 +53,6 @@ class PresenceManager
         RoomStatusManager $statusManager,
         ChatClient $chatClient,
         AclDataAccessor $aclDataAccessor,
-        HttpClient $httpClient,
         EndpointURLResolver $urlResolver,
         IdentifierFactory $identifierFactory,
         Connector $connector,
@@ -70,7 +65,6 @@ class PresenceManager
         $this->statusManager = $statusManager;
         $this->chatClient = $chatClient;
         $this->aclDataAccessor = $aclDataAccessor;
-        $this->httpClient = $httpClient;
         $this->urlResolver = $urlResolver;
         $this->identifierFactory = $identifierFactory;
         $this->connector = $connector;
@@ -222,7 +216,6 @@ class PresenceManager
     private function connectRoom(Identifier $identifier)
     {
         $room = yield $this->connector->connect($identifier, $this->statusManager->isPermanent($identifier));
-        $this->connectedRooms->add($room);
 
         yield $this->pluginManager->enableAllPluginsForRoom($identifier);
 
@@ -273,19 +266,10 @@ class PresenceManager
         $this->storage->setApproved($room->getIdentifier(), false);
         $this->removeScheduledActionsForUnapprovedRoom($room->getIdentifier());
 
-        $body = (new FormBody)
-            ->addField('fkey', $this->sessions->getSessionForRoom($room->getIdentifier())->getFKey())
-            ->addField('quiet', 'true');
-
-        $request = (new HttpRequest)
-            ->setMethod('POST')
-            ->setUri($this->urlResolver->getEndpointURL($room, Endpoint::CHATROOM_LEAVE))
-            ->setBody($body);
-
-        $this->storage->removeRoom($room->getIdentifier());
-        $room->getWebsocketHandler()->getEndpoint()->close();
-
-        return $this->httpClient->request($request);
+        return all([
+            $this->chatClient->leaveRoom($room),
+            $this->storage->removeRoom($room->getIdentifier())
+        ]);
     }
 
     private function checkAndAddApproveVote(Identifier $identifier, int $userID)
