@@ -7,6 +7,7 @@ $injector->alias(Amp\Artax\Cookie\CookieJar::class, Amp\Artax\Cookie\ArrayCookie
 $injector->alias(PeeHaa\AsyncTwitter\Http\Client::class, PeeHaa\AsyncTwitter\Http\Artax::class);
 $injector->alias(Room11\OpenId\Authenticator::class, Room11\OpenId\StackExchangeAuthenticator::class);
 $injector->alias(Room11\StackChat\Client\Client::class, Room11\StackChat\Client\ChatClient::class);
+$injector->alias(Room11\StackChat\Auth\SessionTracker::class, Room11\StackChat\Auth\ActiveSessionTracker::class);
 $injector->alias(Room11\StackChat\Client\TextFormatter::class, Room11\StackChat\Client\PostTextFormatter::class);
 $injector->alias(Room11\StackChat\Room\AclDataAccessor::class, Room11\StackChat\Room\ChatRoomAclDataAccessor::class);
 $injector->alias(Room11\StackChat\Room\PostPermissionManager::class, Room11\Jeeves\Chat\RoomStatusManager::class);
@@ -40,8 +41,10 @@ $injector->share(Room11\Jeeves\System\PluginManager::class);
 $injector->share(Room11\Jeeves\WebAPI\Server::class);
 $injector->share(Room11\OpenId\Authenticator::class);
 $injector->share(Room11\StackChat\EndpointURLResolver::class);
+$injector->share(Room11\StackChat\Auth\ActiveSessionTracker::class);
 $injector->share(Room11\StackChat\Auth\Authenticator::class);
 $injector->share(Room11\StackChat\Auth\CredentialManager::class);
+$injector->share(Room11\StackChat\Auth\SessionTracker::class);
 $injector->share(Room11\StackChat\Client\Client::class);
 $injector->share(Room11\StackChat\Client\MessageResolver::class);
 $injector->share(Room11\StackChat\Client\PostedMessageTracker::class);

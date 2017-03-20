@@ -7,6 +7,7 @@ use Aerys\Response as AerysResponse;
 use Aerys\Router as AerysRouter;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\StackChat\Auth\SessionTracker;
 use Room11\StackChat\Room\ConnectedRoomCollection as ChatRoomCollection;
 use Room11\StackChat\Room\Room as ChatRoom;
 use const Room11\StackChat\DNS_NAME_EXPR;
@@ -20,6 +21,7 @@ class Server
 
     private $chatRooms;
     private $banStorage;
+    private $sessions;
 
     private function buildRouter()
     {
@@ -84,12 +86,13 @@ class Server
         $response->end(json_encode(['error' => $message]));
     }
 
-    public function __construct(ChatRoomCollection $chatRooms, BanStorage $banStorage)
+    public function __construct(ChatRoomCollection $chatRooms, SessionTracker $sessions, BanStorage $banStorage)
     {
         $this->buildRouter();
 
         $this->chatRooms = $chatRooms;
         $this->banStorage = $banStorage;
+        $this->sessions = $sessions;
     }
 
     public function getRouter(): AerysRouter
@@ -199,6 +202,8 @@ class Server
             return;
         }
 
+        $session = $this->sessions->getSessionForRoom($room->getIdentifier());
+
         $response->setHeader('Content-Type', 'application/json');
         $response->end(json_encode([
             'identifier' => [
@@ -206,8 +211,8 @@ class Server
                 'room_id' => $room->getIdentifier()->getId(),
             ],
             'session' => [
-                'main_site_url' => $room->getSession()->getMainSiteUrl(),
-                'user_id' => $room->getSession()->getUser()->getId(),
+                'main_site_url' => $session->getMainSiteUrl(),
+                'user_id' => $session->getUser()->getId(),
             ],
         ]));
     }

@@ -1297,12 +1297,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/StackChat.git",
-                "reference": "49b520c58eea0cc8e30596f8591c7f6d7b3270ec"
+                "reference": "7117e572a9c123e7e6aebee9b08d50c92cdc50e4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/StackChat/zipball/49b520c58eea0cc8e30596f8591c7f6d7b3270ec",
-                "reference": "49b520c58eea0cc8e30596f8591c7f6d7b3270ec",
+                "url": "https://api.github.com/repos/Room-11/StackChat/zipball/7117e572a9c123e7e6aebee9b08d50c92cdc50e4",
+                "reference": "7117e572a9c123e7e6aebee9b08d50c92cdc50e4",
                 "shasum": ""
             },
             "require": {
@@ -1364,7 +1364,7 @@
                 "source": "https://github.com/Room-11/StackChat/tree/master",
                 "issues": "https://github.com/Room-11/StackChat/issues"
             },
-            "time": "2017-03-19 22:46:08"
+            "time": "2017-03-19 23:50:48"
         },
         {
             "name": "sabre/uri",

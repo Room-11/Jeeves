@@ -8,6 +8,7 @@ use Ds\Deque;
 use Psr\Log\LoggerInterface as Logger;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
+use Room11\StackChat\Auth\SessionTracker;
 use Room11\StackChat\Entities\ChatMessage;
 use Room11\StackChat\Event\Event;
 use Room11\StackChat\Event\GlobalEvent;
@@ -22,6 +23,7 @@ class WebSocketEventDispatcher implements EventDispatcher
     private $pluginManager;
     private $builtInActionManager;
     private $commandFactory;
+    private $sessions;
     private $logger;
     private $devMode;
 
@@ -31,12 +33,14 @@ class WebSocketEventDispatcher implements EventDispatcher
         PluginManager $pluginManager,
         BuiltInActionManager $builtInActionManager,
         CommandFactory $commandFactory,
+        SessionTracker $sessions,
         Logger $logger,
         bool $devMode
     ) {
         $this->pluginManager = $pluginManager;
         $this->builtInActionManager = $builtInActionManager;
         $this->commandFactory = $commandFactory;
+        $this->sessions = $sessions;
         $this->logger = $logger;
         $this->devMode = $devMode;
 
@@ -136,7 +140,9 @@ class WebSocketEventDispatcher implements EventDispatcher
 
     public function processMessageEvent(ChatMessage $message): Promise
     {
-        if ($message->getUserId() === $message->getRoom()->getSession()->getUser()->getId()) {
+        $session = $this->sessions->getSessionForRoom($message->getRoom()->getIdentifier());
+
+        if ($message->getUserId() === $session->getUser()->getId()) {
             return new Success;
         }
 

@@ -12,6 +12,7 @@ use Ds\Queue;
 use Psr\Log\LoggerInterface as Logger;
 use Room11\Jeeves\Storage\Room as RoomStorage;
 use Room11\Jeeves\System\PluginManager;
+use Room11\StackChat\Auth\SessionTracker;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostFlags;
 use Room11\StackChat\Endpoint;
@@ -43,6 +44,7 @@ class PresenceManager
     private $urlResolver;
     private $identifierFactory;
     private $connector;
+    private $sessions;
     private $connectedRooms;
     private $pluginManager;
     private $logger;
@@ -59,6 +61,7 @@ class PresenceManager
         EndpointURLResolver $urlResolver,
         IdentifierFactory $identifierFactory,
         Connector $connector,
+        SessionTracker $sessions,
         ConnectedRoomCollection $connectedRooms,
         PluginManager $pluginManager,
         Logger $logger
@@ -71,6 +74,7 @@ class PresenceManager
         $this->urlResolver = $urlResolver;
         $this->identifierFactory = $identifierFactory;
         $this->connector = $connector;
+        $this->sessions = $sessions;
         $this->connectedRooms = $connectedRooms;
         $this->pluginManager = $pluginManager;
         $this->logger = $logger;
@@ -270,7 +274,7 @@ class PresenceManager
         $this->removeScheduledActionsForUnapprovedRoom($room->getIdentifier());
 
         $body = (new FormBody)
-            ->addField('fkey', $room->getSession()->getFKey())
+            ->addField('fkey', $this->sessions->getSessionForRoom($room->getIdentifier())->getFKey())
             ->addField('quiet', 'true');
 
         $request = (new HttpRequest)
@@ -375,7 +379,7 @@ class PresenceManager
         catch (UserNotAcceptableException $e) { /* this can happen but we don't care */ }
 
         /** @var ChatUser $invitingUser */
-        $botUser = $room->getSession()->getUser();
+        $botUser = $this->sessions->getSessionForRoom($room->getIdentifier())->getUser();
         $invitingUser = (yield $this->chatClient->getChatUsers($room, $invitingUserID))[0];
         $invitingUserProfileURL = $this->urlResolver->getEndpointURL($room, Endpoint::CHAT_USER, $invitingUser->getId());
 

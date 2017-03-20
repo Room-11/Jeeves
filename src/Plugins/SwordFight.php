@@ -4,6 +4,7 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
 use Amp\Success;
+use Room11\StackChat\Auth\SessionTracker;
 use Room11\StackChat\Client\Client;
 use Room11\StackChat\Entities\ChatMessage;
 
@@ -12,6 +13,7 @@ class SwordFight extends BasePlugin
     private const MINIMUM_MATCH_PERCENTAGE = 60;
 
     private $chatClient;
+    private $sessions;
 
     // We only match on insults for now because comparing text is actually pretty hard and I'm lazy
     private $matches = [
@@ -65,19 +67,23 @@ class SwordFight extends BasePlugin
         'I\'ll hound you night and day!' => 'Then be a good dog. Sit! Stay!',
     ];
 
-    public function __construct(Client $chatClient)
+    public function __construct(Client $chatClient, SessionTracker $sessions)
     {
         $this->chatClient = $chatClient;
+        $this->sessions = $sessions;
     }
 
     private function isMatch(ChatMessage $message): bool
     {
-        if (!$message->isConversation()) {
+        $botUserName = $this->sessions->getSessionForRoom($message->getRoom()->getIdentifier())->getUser()->getName();
+        $messageText = $message->getText();
+
+        if (!($message->isReply() || \Room11\Jeeves\text_contains_ping($messageText, $botUserName))) {
             return false;
         }
 
         foreach ($this->matches as $insult => $response) {
-            if ($this->getMatchingPercentage($insult, $message->getText()) >= self::MINIMUM_MATCH_PERCENTAGE) {
+            if ($this->getMatchingPercentage($insult, $messageText) >= self::MINIMUM_MATCH_PERCENTAGE) {
                 return true;
             }
         }

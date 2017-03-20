@@ -85,3 +85,8 @@ function normalize_stack_exchange_url(string $url): string
 
     throw new InvalidStackExchangeUrlException('Unrecognised Stack Exchange URL format');
 }
+
+function text_contains_ping(string $text, string $userName): bool
+{
+    return (bool)\preg_match('#@' . \preg_quote($userName, '#') . '(?:[\s,.\'?!;:<>\#@~{}"%^&*-]|$)#iu', $text);
+}
