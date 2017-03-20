@@ -75,7 +75,7 @@ class SwordFight extends BasePlugin
 
     private function isMatch(ChatMessage $message): bool
     {
-        $botUserName = $this->sessions->getSessionForRoom($message->getRoom()->getIdentifier())->getUser()->getName();
+        $botUserName = $this->sessions->getSessionForRoom($message->getRoom())->getUser()->getName();
         $messageText = $message->getText();
 
         if (!($message->isReply() || \Room11\Jeeves\text_contains_ping($messageText, $botUserName))) {

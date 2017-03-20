@@ -4,7 +4,6 @@ namespace Room11\Jeeves\Chat;
 
 use Amp\Promise;
 use Amp\Success;
-use Ds\Deque;
 use Psr\Log\LoggerInterface as Logger;
 use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\PluginManager;
@@ -12,39 +11,39 @@ use Room11\StackChat\Auth\SessionTracker;
 use Room11\StackChat\Entities\ChatMessage;
 use Room11\StackChat\Event\Event;
 use Room11\StackChat\Event\GlobalEvent;
-use Room11\StackChat\Room\Identifier;
+use Room11\StackChat\Room\Room;
 use Room11\StackChat\WebSocket\EventDispatcher;
 use function Amp\resolve;
 
 class WebSocketEventDispatcher implements EventDispatcher
 {
-    private const BUFFER_SIZE = 20;
-
     private $pluginManager;
     private $builtInActionManager;
     private $commandFactory;
     private $sessions;
+    private $presenceManager;
     private $logger;
-    private $devMode;
-
     private $recentGlobalEventBuffer;
+    private $devMode;
 
     public function __construct(
         PluginManager $pluginManager,
         BuiltInActionManager $builtInActionManager,
         CommandFactory $commandFactory,
         SessionTracker $sessions,
+        PresenceManager $presenceManager,
         Logger $logger,
+        FixedSizeEventBuffer $recentGlobalEventBuffer,
         bool $devMode
     ) {
         $this->pluginManager = $pluginManager;
         $this->builtInActionManager = $builtInActionManager;
         $this->commandFactory = $commandFactory;
         $this->sessions = $sessions;
+        $this->presenceManager = $presenceManager;
         $this->logger = $logger;
+        $this->recentGlobalEventBuffer = $recentGlobalEventBuffer;
         $this->devMode = $devMode;
-
-        $this->recentGlobalEventBuffer = new Deque;
     }
 
     private function processGlobalEvent(GlobalEvent $event)
@@ -56,10 +55,7 @@ class WebSocketEventDispatcher implements EventDispatcher
                 return;
             }
 
-            $this->recentGlobalEventBuffer[] = $eventId;
-            if ($this->recentGlobalEventBuffer->count() > self::BUFFER_SIZE) {
-                $this->recentGlobalEventBuffer->shift();
-            }
+            $this->recentGlobalEventBuffer->push($eventId);
 
             $this->logger->debug("Processing global event #{$eventId} for built in event handlers", ['event' => $event]);
             yield $this->builtInActionManager->handleEvent($event);
@@ -119,7 +115,13 @@ class WebSocketEventDispatcher implements EventDispatcher
         }
     }
 
-    public function processWebSocketEvent(Event $event): Promise
+    private function processDisconnect(Room $room)
+    {
+        yield $this->pluginManager->disableAllPluginsForRoom($room);
+        return $this->presenceManager->processDisconnect($room);
+    }
+
+    public function onWebSocketEvent(Event $event): Promise
     {
         return resolve(
             $event instanceof GlobalEvent
@@ -128,19 +130,19 @@ class WebSocketEventDispatcher implements EventDispatcher
         );
     }
 
-    public function processConnect(Identifier $identifier): Promise
+    public function onConnect(Room $room): Promise
     {
-        return new Success;
+        return $this->pluginManager->enableAllPluginsForRoom($room);
     }
 
-    public function processDisconnect(Identifier $identifier): Promise
+    public function onDisconnect(Room $room): Promise
     {
-        return new Success;
+        return resolve($this->processDisconnect($room));
     }
 
-    public function processMessageEvent(ChatMessage $message): Promise
+    public function onMessageEvent(ChatMessage $message): Promise
     {
-        $session = $this->sessions->getSessionForRoom($message->getRoom()->getIdentifier());
+        $session = $this->sessions->getSessionForRoom($message->getRoom());
 
         if ($message->getUserId() === $session->getUser()->getId()) {
             return new Success;

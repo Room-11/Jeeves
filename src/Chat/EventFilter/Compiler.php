@@ -86,7 +86,7 @@ class Compiler
                     return false;
                 }
 
-                $id = $event->getRoom()->getIdentifier();
+                $id = $event->getRoom();
 
                 return $id->getId() === $roomId && $id->getHost() === $host;
             }];
@@ -116,7 +116,7 @@ class Compiler
                 return false;
             }
 
-            $id = $event->getRoom()->getIdentifier();
+            $id = $event->getRoom();
             $idStr = $id->getHost() . '#' . $id->getId();
 
             return isset($roomIds[$idStr]);
@@ -194,7 +194,7 @@ class Compiler
         $predicates = $types = $rooms = [];
 
         $conditions = $this->getValidatedConditions($conditions);
-        
+
         if (isset($conditions[self::FIELD_TYPE])) {
             list($types, $predicate) = $this->processType($conditions[self::FIELD_TYPE]);
             $predicates[] = $predicate;

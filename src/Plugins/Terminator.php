@@ -11,6 +11,9 @@ use Room11\StackChat\Entities\ChatMessage;
 
 class Terminator extends BasePlugin
 {
+    // todo: remove this when no longer experimental
+    private const ALLOWED_ROOMS = [11, 100286];
+
     private $chatClient;
     private $chatBotClient;
     private $sessions;
@@ -60,7 +63,7 @@ class Terminator extends BasePlugin
 
     private function getBotUserNameForMessage(ChatMessage $message)
     {
-        return $this->sessions->getSessionForRoom($message->getRoom()->getIdentifier())->getUser()->getName();
+        return $this->sessions->getSessionForRoom($message->getRoom())->getUser()->getName();
     }
 
     // we don't want to respond to replies.
@@ -128,7 +131,7 @@ class Terminator extends BasePlugin
             return $this->chatClient->postReply($message, $this->getResponse($message));
         }
 
-        if ($message->getRoom()->getIdentifier()->getId() !== 11 && $message->getRoom()->getIdentifier()->getId() !== 100286) {
+        if (!in_array($message->getRoom()->getId(), self::ALLOWED_ROOMS)) {
             return new Success();
         }
 

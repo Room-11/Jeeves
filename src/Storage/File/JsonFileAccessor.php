@@ -5,7 +5,6 @@ namespace Room11\Jeeves\Storage\File;
 use Amp\Deferred;
 use Amp\Mutex\QueuedExclusiveMutex;
 use Amp\Promise;
-use Room11\StackChat\Room\Identifier as ChatRoomIdentifier;
 use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\File\exists;
 use function Amp\File\get;
@@ -29,15 +28,11 @@ class JsonFileAccessor
      */
     private $lockMutexes = [];
 
-    private function getDataFileName($room, $template): string
+    private function getDataFileName(?ChatRoom $room, $template): string
     {
-        if ($room instanceof ChatRoom) {
-            $ident = $room->getIdentifier()->getIdentString();
-        } else if ($room instanceof ChatRoomIdentifier) {
-            $ident = $room->getIdentString();
-        } else {
-            $ident = 'global';
-        }
+        $ident = $room !== null
+            ? $room->getIdentString()
+            : 'global';
 
         return sprintf($template, $ident);
     }
@@ -95,10 +90,10 @@ class JsonFileAccessor
 
     /**
      * @param string $filePathTemplate
-     * @param ChatRoom|ChatRoomIdentifier|null $room
+     * @param ChatRoom|null $room
      * @return Promise
      */
-    public function read(string $filePathTemplate, $room = null): Promise
+    public function read(string $filePathTemplate, ChatRoom $room = null): Promise
     {
         $filePath = $this->getDataFileName($room, $filePathTemplate);
 
@@ -114,10 +109,10 @@ class JsonFileAccessor
     /**
      * @param array $data
      * @param string $filePathTemplate
-     * @param ChatRoom|ChatRoomIdentifier|null $room
+     * @param ChatRoom|null $room
      * @return Promise
      */
-    public function write(array $data, string $filePathTemplate, $room = null): Promise
+    public function write(array $data, string $filePathTemplate, ChatRoom $room = null): Promise
     {
         $filePath = $this->getDataFileName($room, $filePathTemplate);
 
@@ -126,13 +121,14 @@ class JsonFileAccessor
         }));
     }
 
+
     /**
      * @param callable $callback
      * @param string $filePathTemplate
-     * @param ChatRoom|ChatRoomIdentifier|null $room
+     * @param ChatRoom|null $room
      * @return Promise
      */
-    public function writeCallback(callable $callback, string $filePathTemplate, $room = null): Promise
+    public function writeCallback(callable $callback, string $filePathTemplate, ChatRoom $room = null): Promise
     {
         $filePath = $this->getDataFileName($room, $filePathTemplate);
 

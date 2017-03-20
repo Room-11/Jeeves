@@ -5,8 +5,8 @@ namespace Room11\Jeeves\Chat;
 use Amp\Promise;
 use Amp\Success;
 use Room11\Jeeves\Storage\Room as RoomStorage;
-use Room11\StackChat\Room\Identifier;
 use Room11\StackChat\Room\PostPermissionManager;
+use Room11\StackChat\Room\Room;
 
 class RoomStatusManager implements PostPermissionManager
 {
@@ -15,7 +15,7 @@ class RoomStatusManager implements PostPermissionManager
 
     /**
      * @param RoomStorage $roomStorage
-     * @param Identifier[] $permanentRooms
+     * @param Room[] $permanentRooms
      */
     public function __construct(RoomStorage $roomStorage, array $permanentRooms)
     {
@@ -26,12 +26,12 @@ class RoomStatusManager implements PostPermissionManager
         }
     }
 
-    public function isPermanent(Identifier $identifier): bool
+    public function isPermanent(Room $identifier): bool
     {
         return !empty($this->permanentRooms[$identifier->getIdentString()]);
     }
 
-    public function isApproved(Identifier $identifier): Promise
+    public function isApproved(Room $identifier): Promise
     {
         return empty($this->permanentRooms[$identifier->getIdentString()])
             ? $this->roomStorage->isApproved($identifier)
@@ -39,7 +39,7 @@ class RoomStatusManager implements PostPermissionManager
     }
 
 
-    public function isPostAllowed(Identifier $identifier): Promise
+    public function isPostAllowed(Room $identifier): Promise
     {
         return $this->isApproved($identifier);
     }

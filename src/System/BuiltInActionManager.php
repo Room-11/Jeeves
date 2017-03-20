@@ -105,7 +105,7 @@ class BuiltInActionManager
 
             $room = $command->getRoom();
 
-            if ($this->commandInfo[$commandName]->requiresApprovedRoom() && !yield $this->roomStatusManager->isApproved($room->getIdentifier())) {
+            if ($this->commandInfo[$commandName]->requiresApprovedRoom() && !yield $this->roomStatusManager->isApproved($room)) {
                 return;
             }
 

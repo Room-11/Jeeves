@@ -8,7 +8,6 @@ use Amp\Promise;
 use Ds\Queue;
 use Psr\Log\LoggerInterface as Logger;
 use Room11\Jeeves\Storage\Room as RoomStorage;
-use Room11\Jeeves\System\PluginManager;
 use Room11\StackChat\Auth\SessionTracker;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostFlags;
@@ -16,10 +15,7 @@ use Room11\StackChat\Endpoint;
 use Room11\StackChat\EndpointURLResolver;
 use Room11\StackChat\Entities\ChatUser;
 use Room11\StackChat\Room\AclDataAccessor;
-use Room11\StackChat\Room\ConnectedRoomCollection;
 use Room11\StackChat\Room\Connector;
-use Room11\StackChat\Room\Identifier;
-use Room11\StackChat\Room\IdentifierFactory;
 use Room11\StackChat\Room\Room;
 use function Amp\all;
 use function Amp\cancel;
@@ -38,11 +34,9 @@ class PresenceManager
     private $chatClient;
     private $aclDataAccessor;
     private $urlResolver;
-    private $identifierFactory;
+    private $eventDispatcherFactory;
     private $connector;
     private $sessions;
-    private $connectedRooms;
-    private $pluginManager;
     private $logger;
 
     private $actionQueues = [];
@@ -54,11 +48,9 @@ class PresenceManager
         ChatClient $chatClient,
         AclDataAccessor $aclDataAccessor,
         EndpointURLResolver $urlResolver,
-        IdentifierFactory $identifierFactory,
+        WebSocketEventDispatcherFactory $eventDispatcherFactory,
         Connector $connector,
         SessionTracker $sessions,
-        ConnectedRoomCollection $connectedRooms,
-        PluginManager $pluginManager,
         Logger $logger
     ) {
         $this->storage = $storage;
@@ -66,17 +58,15 @@ class PresenceManager
         $this->chatClient = $chatClient;
         $this->aclDataAccessor = $aclDataAccessor;
         $this->urlResolver = $urlResolver;
-        $this->identifierFactory = $identifierFactory;
+        $this->eventDispatcherFactory = $eventDispatcherFactory;
         $this->connector = $connector;
         $this->sessions = $sessions;
-        $this->connectedRooms = $connectedRooms;
-        $this->pluginManager = $pluginManager;
         $this->logger = $logger;
     }
 
-    private function executeActionsFromQueue(Identifier $identifier)
+    private function executeActionsFromQueue(Room $room)
     {
-        $ident = $identifier->getIdentString();
+        $ident = $room->getIdentString();
 
         /** @var Queue $queue */
         $queue = $this->actionQueues[$ident]['queue'];
@@ -89,7 +79,7 @@ class PresenceManager
             list($callable, $args, $deferred) = $queue->pop();
 
             try {
-                $deferred->succeed(yield from $callable($identifier, ...$args));
+                $deferred->succeed(yield from $callable($room, ...$args));
             } catch (\Throwable $e) {
                 $deferred->fail($e);
             }
@@ -98,9 +88,9 @@ class PresenceManager
         $this->actionQueues[$ident]['running'] = false;
     }
 
-    private function enqueueAction(callable $callable, Identifier $identifier, ...$args): Promise
+    private function enqueueAction(callable $callable, Room $room, ...$args): Promise
     {
-        $ident = $identifier->getIdentString();
+        $ident = $room->getIdentString();
 
         if (!isset($this->actionQueues[$ident])) {
             $queue = new Queue;
@@ -112,75 +102,72 @@ class PresenceManager
         $queue->push([$callable, $args, $deferred = new Deferred]);
 
         if (!$this->actionQueues[$ident]['running']) {
-            resolve($this->executeActionsFromQueue($identifier));
+            resolve($this->executeActionsFromQueue($room));
         }
 
         return $deferred->promise();
     }
 
-    private function unapprovedRoomFirstReminder(Identifier $identifier)
+    private function unapprovedRoomFirstReminder(Room $room)
     {
-        if (yield $this->storage->isApproved($identifier)) {
+        if (yield $this->storage->isApproved($room)) {
             return;
         }
 
-        $requiredApprovals = yield from $this->getRequiredApproveVoteCount($identifier);
-        $currentApprovals = count(yield $this->storage->getApproveVotes($identifier));
+        $requiredApprovals = yield from $this->getRequiredApproveVoteCount($room);
+        $currentApprovals = count(yield $this->storage->getApproveVotes($room));
 
         $message = "Hi! This is just a friendly reminder that I will leave the room in 12 hours if I have not been"
                  . " approved by {$requiredApprovals} room owners. So far I have {$currentApprovals} votes.";
-        $room = $this->connectedRooms->get($identifier);
 
         yield $this->chatClient->postMessage($room, $message, PostFlags::FORCE);
     }
 
-    private function unapprovedRoomSecondReminder(Identifier $identifier)
+    private function unapprovedRoomSecondReminder(Room $room)
     {
-        if (yield $this->storage->isApproved($identifier)) {
+        if (yield $this->storage->isApproved($room)) {
             return;
         }
 
-        $requiredApprovals = yield from $this->getRequiredApproveVoteCount($identifier);
-        $currentApprovals = count(yield $this->storage->getApproveVotes($identifier));
+        $requiredApprovals = yield from $this->getRequiredApproveVoteCount($room);
+        $currentApprovals = count(yield $this->storage->getApproveVotes($room));
 
         $message = "Hi! This is just a friendly reminder that I will leave the room in 1 hour if I have not been"
                  . " approved by {$requiredApprovals} room owners. So far I have {$currentApprovals} votes.";
-        $room = $this->connectedRooms->get($identifier);
 
         yield $this->chatClient->postMessage($room, $message, PostFlags::FORCE);
     }
 
-    private function unapprovedRoomLeave(Identifier $identifier)
+    private function unapprovedRoomLeave(Room $room)
     {
-        if (yield $this->storage->isApproved($identifier)) {
+        if (yield $this->storage->isApproved($room)) {
             return;
         }
 
-        $requiredApprovals = yield from $this->getRequiredApproveVoteCount($identifier);
+        $requiredApprovals = yield from $this->getRequiredApproveVoteCount($room);
 
         $message = "I have not been approved by {$requiredApprovals} room owners, so I am leaving the room. Bye!";
-        $room = $this->connectedRooms->get($identifier);
 
         yield $this->chatClient->postMessage($room, $message, PostFlags::FORCE);
         yield $this->leaveRoom($room);
     }
 
-    private function scheduleActionsForUnapprovedRoom(Identifier $identifier, int $inviteTimestamp)
+    private function scheduleActionsForUnapprovedRoom(Room $room, int $inviteTimestamp)
     {
         $now = time();
 
         $leaveDelay = ($now - ($inviteTimestamp + self::UNAPPROVED_LEAVE_DELAY_SECS)) * 1000;
 
         if ($leaveDelay < 0) {
-            $this->enqueueAction([$this, 'unapprovedRoomLeave'], $identifier);
+            $this->enqueueAction([$this, 'unapprovedRoomLeave'], $room);
             return;
         }
 
-        $ident = $identifier->getIdentString();
+        $ident = $room->getIdentString();
 
-        $this->timerWatchers[$ident]['leave'] = once(function() use($identifier) {
-            unset($this->timerWatchers[$identifier->getIdentString()]['leave']);
-            $this->enqueueAction([$this, 'unapprovedRoomLeave'], $identifier);
+        $this->timerWatchers[$ident]['leave'] = once(function() use($room) {
+            unset($this->timerWatchers[$room->getIdentString()]['leave']);
+            $this->enqueueAction([$this, 'unapprovedRoomLeave'], $room);
         }, $leaveDelay);
 
         $remind2Delay = ($now - ($inviteTimestamp + self::UNAPPROVED_REMINDER_2_DELAY_SECS)) * 1000;
@@ -188,9 +175,9 @@ class PresenceManager
             return;
         }
 
-        $this->timerWatchers[$ident]['remind2'] = once(function() use($identifier) {
-            unset($this->timerWatchers[$identifier->getIdentString()]['remind2']);
-            $this->enqueueAction([$this, 'unapprovedRoomSecondReminder'], $identifier);
+        $this->timerWatchers[$ident]['remind2'] = once(function() use($room) {
+            unset($this->timerWatchers[$room->getIdentString()]['remind2']);
+            $this->enqueueAction([$this, 'unapprovedRoomSecondReminder'], $room);
         }, $remind2Delay);
 
         $remind1Delay = ($now - ($inviteTimestamp + self::UNAPPROVED_REMINDER_1_DELAY_SECS)) * 1000;
@@ -198,135 +185,134 @@ class PresenceManager
             return;
         }
 
-        $this->timerWatchers[$ident]['remind1'] = once(function() use($identifier) {
-            unset($this->timerWatchers[$identifier->getIdentString()]['remind1']);
-            $this->enqueueAction([$this, 'unapprovedRoomFirstReminder'], $identifier);
+        $this->timerWatchers[$ident]['remind1'] = once(function() use($room) {
+            unset($this->timerWatchers[$room->getIdentString()]['remind1']);
+            $this->enqueueAction([$this, 'unapprovedRoomFirstReminder'], $room);
         }, $remind1Delay);
     }
 
-    private function removeScheduledActionsForUnapprovedRoom(Identifier $identifier)
+    private function removeScheduledActionsForUnapprovedRoom(Room $room)
     {
-        foreach ($this->timerWatchers[$identifier->getIdentString()] ?? [] as $watcherId) {
+        foreach ($this->timerWatchers[$room->getIdentString()] ?? [] as $watcherId) {
             cancel($watcherId);
         }
 
-        unset($this->timerWatchers[$identifier->getIdentString()]);
+        unset($this->timerWatchers[$room->getIdentString()]);
     }
 
-    private function connectRoom(Identifier $identifier)
+    private function connectRoom(Room $room)
     {
-        $room = yield $this->connector->connect($identifier, $this->statusManager->isPermanent($identifier));
-
-        yield $this->pluginManager->enableAllPluginsForRoom($identifier);
-
-        return $room;
+        $eventDispatcher = $this->eventDispatcherFactory->create($this);
+        return $this->connector->connect($room, $eventDispatcher, $this->statusManager->isPermanent($room));
     }
 
-    private function reconnectRoom(Identifier $identifier)
+    private function reconnectRoom(Room $room)
     {
         $attempt = 1;
 
         do {
             try {
-                $this->logger->debug("Reconnect to {$identifier}: attempt {$attempt}");
-                yield from $this->connectRoom($identifier);
-                return;
+                $this->logger->debug("Reconnect to {$room}: attempt {$attempt}");
+                return $this->connectRoom($room);
             } catch (\Exception $e) { // *not* Throwable on purpose! If we get one of those we should probably just bail.
                 $retryIn = min($attempt * 5, 60);
                 $this->logger->debug(
-                    "Connection to {$identifier} failed! Retrying in {$retryIn} seconds."
+                    "Connection to {$room} failed! Retrying in {$retryIn} seconds."
                     . " The error was: " . trim($e->getMessage())
                 );
                 yield new Pause($retryIn * 1000);
             }
         } while ($attempt++ < self::MAX_RECONNECT_ATTEMPTS);
+
+        return null;
     }
 
-    private function restoreTransientRoom(Identifier $identifier)
+    private function restoreTransientRoom(Room $room)
     {
-        $isApproved = yield $this->storage->isApproved($identifier);
-        $inviteTimestamp = yield $this->storage->getInviteTimestamp($identifier);
+        $isApproved = yield $this->storage->isApproved($room);
+        $inviteTimestamp = yield $this->storage->getInviteTimestamp($room);
 
         if (!$isApproved && time() > $inviteTimestamp + self::UNAPPROVED_LEAVE_DELAY_SECS) {
-            $this->storage->removeRoom($identifier);
+            $this->storage->removeRoom($room);
             return;
         }
 
-        yield from $this->connectRoom($identifier);
+        yield $this->connectRoom($room);
 
         if (!$isApproved) {
-            yield from $this->scheduleActionsForUnapprovedRoom($identifier, $inviteTimestamp);
+            yield from $this->scheduleActionsForUnapprovedRoom($room, $inviteTimestamp);
         }
     }
 
     private function leaveRoom(Room $room): Promise
     {
-        assert(!$room->isPermanent(), new InvalidRoomException('Cannot leave a permanent room'));
+        assert(
+            !$this->statusManager->isPermanent($room),
+            new InvalidRoomException('Cannot leave a permanent room')
+        );
 
-        $this->storage->setApproved($room->getIdentifier(), false);
-        $this->removeScheduledActionsForUnapprovedRoom($room->getIdentifier());
+        $this->storage->setApproved($room, false);
+        $this->removeScheduledActionsForUnapprovedRoom($room);
 
         return all([
             $this->chatClient->leaveRoom($room),
-            $this->storage->removeRoom($room->getIdentifier())
+            $this->storage->removeRoom($room)
         ]);
     }
 
-    private function checkAndAddApproveVote(Identifier $identifier, int $userID)
+    private function checkAndAddApproveVote(Room $room, int $userID)
     {
-        if (yield $this->storage->isApproved($identifier)) {
+        if (yield $this->storage->isApproved($room)) {
             throw new AlreadyApprovedException(
-                "Room {$identifier->getIdentString()} already approved"
+                "Room {$room->getIdentString()} already approved"
             );
         }
 
-        if (!yield $this->aclDataAccessor->isRoomOwner($identifier, $userID)) {
+        if (!yield $this->aclDataAccessor->isRoomOwner($room, $userID)) {
             throw new UserNotAcceptableException(
-                "User #{$userID} is not a room owner of {$identifier->getIdentString()}"
+                "User #{$userID} is not a room owner of {$room->getIdentString()}"
             );
         }
 
-        if (yield $this->storage->containsApproveVote($identifier, $userID)) {
+        if (yield $this->storage->containsApproveVote($room, $userID)) {
             throw new UserAlreadyVotedException(
-                "User #{$userID} has already cast an approve vote for {$identifier->getIdentString()}"
+                "User #{$userID} has already cast an approve vote for {$room->getIdentString()}"
             );
         }
 
-        yield $this->storage->addApproveVote($identifier, $userID);
+        yield $this->storage->addApproveVote($room, $userID);
 
-        $requiredVotes = yield $this->getRequiredApproveVoteCount($identifier);
-        $currentVotes = count(yield $this->storage->getApproveVotes($identifier));
+        $requiredVotes = yield $this->getRequiredApproveVoteCount($room);
+        $currentVotes = count(yield $this->storage->getApproveVotes($room));
 
         if ($currentVotes < $requiredVotes) {
             return [false, $currentVotes];
         }
 
-        $this->removeScheduledActionsForUnapprovedRoom($identifier);
-        yield $this->storage->setApproved($identifier, true);
+        $this->removeScheduledActionsForUnapprovedRoom($room);
+        yield $this->storage->setApproved($room, true);
 
         return [true, $currentVotes];
     }
 
-    private function checkAndAddLeaveVote(Identifier $identifier, int $userID)
+    private function checkAndAddLeaveVote(Room $room, int $userID)
     {
-        $room = $this->connectedRooms->get($identifier);
-
-        if (!yield $this->aclDataAccessor->isRoomOwner($identifier, $userID)) {
+        if (!yield $this->aclDataAccessor->isRoomOwner($room, $userID)) {
             throw new UserNotAcceptableException(
-                "User #{$userID} is not a room owner of {$identifier->getIdentString()}"
+                "User #{$userID} is not a room owner of {$room->getIdentString()}"
             );
         }
 
-        if (yield $this->storage->containsLeaveVote($identifier, $userID)) {
+        if (yield $this->storage->containsLeaveVote($room, $userID)) {
             throw new UserAlreadyVotedException(
-                "User #{$userID} has already cast a leave vote for {$identifier->getIdentString()}"
+                "User #{$userID} has already cast a leave vote for {$room->getIdentString()}"
             );
         }
 
-        yield $this->storage->addLeaveVote($identifier, $userID);
+        yield $this->storage->addLeaveVote($room, $userID);
 
-        $requiredVotes = yield $this->getRequiredLeaveVoteCount($identifier);
-        $currentVotes = count(yield $this->storage->getLeaveVotes($identifier));
+        $requiredVotes = yield $this->getRequiredLeaveVoteCount($room);
+        $currentVotes = count(yield $this->storage->getLeaveVotes($room));
 
         if ($currentVotes < $requiredVotes) {
             return [false, $currentVotes];
@@ -338,32 +324,32 @@ class PresenceManager
         return [true, $currentVotes];
     }
 
-    private function checkAndAddRoom(Identifier $identifier, int $invitingUserID)
+    private function checkAndAddRoom(Room $room, int $invitingUserID)
     {
-        if ($this->statusManager->isPermanent($identifier) || yield $this->storage->containsRoom($identifier)) {
-            throw new RoomAlreadyExistsException("Already present in {$identifier->getIdentString()}");
+        if ($this->statusManager->isPermanent($room) || yield $this->storage->containsRoom($room)) {
+            throw new RoomAlreadyExistsException("Already present in {$room->getIdentString()}");
         }
 
         /** @var Room $room */
-        $room = yield from $this->connectRoom($identifier);
+        $room = yield $this->connectRoom($room);
 
         $inviteTimestamp = time();
 
-        yield $this->storage->addRoom($identifier, $inviteTimestamp);
-        yield from $this->scheduleActionsForUnapprovedRoom($identifier, $inviteTimestamp);
+        yield $this->storage->addRoom($room, $inviteTimestamp);
+        yield from $this->scheduleActionsForUnapprovedRoom($room, $inviteTimestamp);
 
         $isApproved = false;
         $currentVotes = 0;
-        $requiredVotes = yield $this->getRequiredApproveVoteCount($identifier);
+        $requiredVotes = yield $this->getRequiredApproveVoteCount($room);
 
         try {
-            list($isApproved, $currentVotes) = yield from $this->checkAndAddApproveVote($identifier, $invitingUserID);
+            list($isApproved, $currentVotes) = yield from $this->checkAndAddApproveVote($room, $invitingUserID);
         }
         catch (AlreadyApprovedException $e) { /* this should never happen but just in case */ }
         catch (UserNotAcceptableException $e) { /* this can happen but we don't care */ }
 
         /** @var ChatUser $invitingUser */
-        $botUser = $this->sessions->getSessionForRoom($room->getIdentifier())->getUser();
+        $botUser = $this->sessions->getSessionForRoom($room)->getUser();
         $invitingUser = (yield $this->chatClient->getChatUsers($room, $invitingUserID))[0];
         $invitingUserProfileURL = $this->urlResolver->getEndpointURL($room, Endpoint::CHAT_USER, $invitingUser->getId());
 
@@ -394,76 +380,66 @@ class PresenceManager
         }
     }
 
-    private function processDisconnectAndReconnectIfNecessary(Identifier $identifier)
+    private function processDisconnectAndReconnectIfNecessary(Room $room)
     {
-        yield $this->pluginManager->disableAllPluginsForRoom($identifier);
-
-        assert(
-            $this->connectedRooms->contains($identifier),
-            new \LogicException("Got disconnect from unknown room {$identifier}")
-        );
-
-        $room = $this->connectedRooms->get($identifier);
-        $this->connectedRooms->remove($identifier);
-
-        if ($room->isPermanent() || yield $this->storage->containsRoom($identifier)) {
-            yield from $this->reconnectRoom($identifier);
+        if ($this->statusManager->isPermanent($room) || yield $this->storage->containsRoom($room)) {
+            yield from $this->reconnectRoom($room);
         }
     }
 
-    public function getRequiredApproveVoteCount(Identifier $identifier): Promise
+    public function getRequiredApproveVoteCount(Room $room): Promise
     {
-        return resolve(function() use($identifier) {
-            return min((int)ceil(count(yield $this->aclDataAccessor->getRoomOwners($identifier)) / 2), 3);
+        return resolve(function() use($room) {
+            return min((int)ceil(count(yield $this->aclDataAccessor->getRoomOwners($room)) / 2), 3);
         });
     }
 
-    public function getRequiredLeaveVoteCount(Identifier $identifier): Promise
+    public function getRequiredLeaveVoteCount(Room $room): Promise
     {
-        return resolve(function() use($identifier) {
-            return min(count(yield $this->aclDataAccessor->getRoomOwners($identifier)), 2);
+        return resolve(function() use($room) {
+            return min(count(yield $this->aclDataAccessor->getRoomOwners($room)), 2);
         });
     }
 
-    public function addRoom(Identifier $identifier, int $invitingUserID): Promise
+    public function addRoom(Room $room, int $invitingUserID): Promise
     {
-        return $this->enqueueAction([$this, 'checkAndAddRoom'], $identifier, $invitingUserID);
+        return $this->enqueueAction([$this, 'checkAndAddRoom'], $room, $invitingUserID);
     }
 
-    public function restoreRooms(array $permanentRoomIdentifiers): Promise
+    public function restoreRooms(array $permanentRoomRooms): Promise
     {
-        return resolve(function() use($permanentRoomIdentifiers) {
-            /** @var Identifier $identifier */
+        return resolve(function() use($permanentRoomRooms) {
+            /** @var Room $room */
             $promises = [];
 
-            foreach ($permanentRoomIdentifiers as $identifier) {
-                $promises[] = resolve($this->connectRoom($identifier));
+            foreach ($permanentRoomRooms as $room) {
+                $promises[] = $this->connectRoom($room);
             }
 
-            $transientRoomIdentifiers = array_map(function($ident) {
-                return $this->identifierFactory->createFromIdentString($ident);
+            $transientRoomRooms = array_map(function($ident) {
+                return Room::createFromIdentString($ident);
             }, yield $this->storage->getAllRooms());
 
-            foreach ($transientRoomIdentifiers as $identifier) {
-                $promises[] = resolve($this->restoreTransientRoom($identifier));
+            foreach ($transientRoomRooms as $room) {
+                $promises[] = resolve($this->restoreTransientRoom($room));
             }
 
             yield all($promises);
         });
     }
 
-    public function addApproveVote(Identifier $identifier, int $userID): Promise
+    public function addApproveVote(Room $room, int $userID): Promise
     {
-        return $this->enqueueAction([$this, 'checkAndAddApproveVote'], $identifier, $userID);
+        return $this->enqueueAction([$this, 'checkAndAddApproveVote'], $room, $userID);
     }
 
-    public function addLeaveVote(Identifier $identifier, int $userID): Promise
+    public function addLeaveVote(Room $room, int $userID): Promise
     {
-        return $this->enqueueAction([$this, 'checkAndAddLeaveVote'], $identifier, $userID);
+        return $this->enqueueAction([$this, 'checkAndAddLeaveVote'], $room, $userID);
     }
 
-    public function processDisconnect(Identifier $identifier): Promise
+    public function processDisconnect(Room $room): Promise
     {
-        return $this->enqueueAction([$this, 'processDisconnectAndReconnectIfNecessary'], $identifier);
+        return $this->enqueueAction([$this, 'processDisconnectAndReconnectIfNecessary'], $room);
     }
 }

@@ -12,6 +12,7 @@ use Room11\StackChat\Room\ConnectedRoomCollection as ChatRoomCollection;
 use Room11\StackChat\Room\Room as ChatRoom;
 use const Room11\StackChat\DNS_NAME_EXPR;
 use function Aerys\router;
+use Room11\StackChat\Room\Room;
 
 class Server
 {
@@ -40,14 +41,15 @@ class Server
      */
     private function getRoomFromRoute(AerysResponse $response, array $route)
     {
-        $identifier = strtolower($route['site']) . '#' . $route['roomid'];
+        $room = new Room((int)$route['roomid'], strtolower($route['site']));
 
-        if (!$this->chatRooms->contains($identifier)) {
-            $this->respondWithError($response, 404, 'Invalid room identifier');
-            return null;
+        if ($this->chatRooms->contains($room)) {
+            return $room;
         }
 
-        return $this->chatRooms->get($identifier);
+        $this->respondWithError($response, 404, 'Invalid room identifier');
+
+        return null;
     }
 
     private function getJsonRequestBody(AerysRequest $request, AerysResponse $response)
@@ -183,8 +185,8 @@ class Server
         /** @var ChatRoom $room */
         foreach ($this->chatRooms as $room) {
             $result[] = [
-                'host' => $room->getIdentifier()->getHost(),
-                'room_id' => $room->getIdentifier()->getId(),
+                'host' => $room->getHost(),
+                'room_id' => $room->getId(),
             ];
         }
 
@@ -202,13 +204,13 @@ class Server
             return;
         }
 
-        $session = $this->sessions->getSessionForRoom($room->getIdentifier());
+        $session = $this->sessions->getSessionForRoom($room);
 
         $response->setHeader('Content-Type', 'application/json');
         $response->end(json_encode([
             'identifier' => [
-                'host' => $room->getIdentifier()->getHost(),
-                'room_id' => $room->getIdentifier()->getId(),
+                'host' => $room->getHost(),
+                'room_id' => $room->getId(),
             ],
             'session' => [
                 'main_site_url' => $session->getMainSiteUrl(),

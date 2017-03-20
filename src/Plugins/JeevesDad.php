@@ -53,7 +53,7 @@ class JeevesDad extends BasePlugin
         }
 
         $fullName = strtoupper(substr($match[1], 0, 1)) . substr($match[1], 1);
-        $botUserName = $this->sessions->getSessionForRoom($message->getRoom()->getIdentifier())->getUser()->getName();
+        $botUserName = $this->sessions->getSessionForRoom($message->getRoom())->getUser()->getName();
 
         $reply = sprintf('Hello %s. I am %s.', $fullName, $botUserName);
 

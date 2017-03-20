@@ -192,8 +192,10 @@ class BetterTweet extends BasePlugin
 
     private function getClientForRoom(ChatRoom $room)
     {
-        if (isset($this->clients[$room->getIdentifier()->getIdentString()])) {
-            return $this->clients[$room->getIdentifier()->getIdentString()];
+        $ident = $room->getIdentString();
+
+        if (isset($this->clients[$ident])) {
+            return $this->clients[$ident];
         }
 
         $keys = ['oauth.access_token', 'oauth.access_token_secret'];
@@ -208,9 +210,9 @@ class BetterTweet extends BasePlugin
         }
 
         $accessToken = $this->accessTokenFactory->create($config['oauth.access_token'], $config['oauth.access_token_secret']);
-        $this->clients[$room->getIdentifier()->getIdentString()] = $this->apiClientFactory->create($accessToken);
+        $this->clients[$ident] = $this->apiClientFactory->create($accessToken);
 
-        return $this->clients[$room->getIdentifier()->getIdentString()];
+        return $this->clients[$ident];
     }
 
     private function buildRetweetRequest(\DOMDocument $dom): RetweetRequest

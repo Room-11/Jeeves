@@ -35,7 +35,7 @@ class PHPBugs extends BasePlugin
 
     public function enableForRoom(ChatRoom $room, bool $persist = true)
     {
-        $this->rooms[$room->getIdentifier()->getIdentString()] = $room;
+        $this->rooms[$room->getIdentString()] = $room;
 
         if ($this->watcher === null) {
             $this->watcher = repeat(function () {
@@ -48,7 +48,7 @@ class PHPBugs extends BasePlugin
 
     public function disableForRoom(ChatRoom $room, bool $persist)
     {
-        unset($this->rooms[$room->getIdentifier()->getIdentString()]);
+        unset($this->rooms[$room->getIdentString()]);
 
         if (empty($this->rooms) && $this->watcher) {
             cancel($this->watcher);

@@ -21,6 +21,7 @@ use Room11\Jeeves\BuiltIn\Commands\Version as VersionBuiltIn;
 use Room11\Jeeves\BuiltIn\EventHandlers\Invite;
 use Room11\Jeeves\Chat\PresenceManager as ChatRoomPresenceManager;
 use Room11\Jeeves\Chat\RoomStatusManager as ChatRoomStatusManager;
+use Room11\Jeeves\Chat\WebSocketEventDispatcherFactory;
 use Room11\Jeeves\External\GithubIssue\Credentials as GithubIssueCredentials;
 use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
@@ -45,8 +46,7 @@ use Room11\OpenId\Credentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
 use Room11\StackChat\Auth\CredentialManager;
-use Room11\StackChat\Room\Identifier as ChatRoomIdentifier;
-use Room11\StackChat\WebSocket\EventDispatcher as WebSocketEventDispatcher;
+use Room11\StackChat\Room\Room;
 use Symfony\Component\Yaml\Yaml;
 use function Amp\onError;
 use function Amp\run;
@@ -102,13 +102,13 @@ $injector->define(GithubIssueCredentials::class, [
     ':token'    => $config['github']['token'] ?? ''
 ]);
 
-$injector->define(WebSocketEventDispatcher::class, [
+$injector->define(WebSocketEventDispatcherFactory::class, [
    ':devMode' => $config['dev-mode']['enable'] ?? false,
 ]);
 
 $permanentRooms = array_map(function($room) {
-    return new ChatRoomIdentifier(
-        $room['id'],
+    return new Room(
+        (int)$room['id'],
         $room['hostname'] ?? 'chat.stackoverflow.com'
     );
 }, $config['rooms']);
