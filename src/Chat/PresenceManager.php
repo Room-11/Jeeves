@@ -206,8 +206,7 @@ class PresenceManager
 
     private function connectRoom(Room $room)
     {
-        $eventDispatcher = $this->eventDispatcherFactory->create($this);
-        return $this->connector->connect($room, $eventDispatcher, $this->statusManager->isPermanent($room));
+        return $this->connector->connect($room, $this->eventDispatcherFactory->create($this));
     }
 
     private function reconnectRoom(Room $room)
@@ -335,7 +334,7 @@ class PresenceManager
         }
 
         /** @var Room $room */
-        $room = yield $this->connectRoom($room);
+        yield $this->connectRoom($room);
 
         $inviteTimestamp = time();
 
