@@ -19,12 +19,6 @@
     "autoload-dev": {
         "psr-4": {"Room11\\Jeeves\\Tests\\": "tests/src/"}
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "git@github.com:DaveRandom/StackChat.git"
-        }
-    ],
     "require": {
         "php": ">=7.1",
         "lib-libxml": ">=2.7.8",

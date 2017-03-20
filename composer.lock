@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "8c2f088e87a6d134f8291827e781021c",
-    "content-hash": "65a633694dcc5b17dbe7c7552bd74131",
+    "hash": "3899188da9dc15ca4f82bb3687f500de",
+    "content-hash": "a80a06abe783678d0c9c5cab37328dad",
     "packages": [
         {
             "name": "amphp/aerys",
