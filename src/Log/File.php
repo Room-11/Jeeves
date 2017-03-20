@@ -66,9 +66,9 @@ class File extends BaseLogger
         $this->writeQueue->push([(new \DateTime)->format('Y-m-d H:i:s'), $messages, $deferred = new Deferred]);
 
         if (!$this->haveWriteLoop) {
-            resolve($this->writeMessagesFromQueue())->when(function(?\Throwable $error) {
+            resolve($this->writeMessagesFromQueue())->when(function(?\Throwable $error) use($deferred) {
                 if ($error) {
-                    fwrite(\STDERR, "Unhandled exception while writing to file: {$error}");
+                    $deferred->fail($error);
                 }
             });
         }
