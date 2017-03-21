@@ -137,7 +137,7 @@ class PHPBugs extends BasePlugin
             $bugs[] = [
                 "id" => $id,
                 "title" => $cells->item(8)->textContent ?: "*none*",
-                "url" => "https://bugs.php.net/{$id}",
+                "url" => "https://bugs.php.net/bug.php?id={$id}",
             ];
         }
 
