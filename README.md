@@ -4,7 +4,7 @@ Jeeves
 Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for async magic sauce.
 
 [![Build Status](https://travis-ci.org/Room-11/Jeeves.svg?branch=master)](https://travis-ci.org/Room-11/Jeeves)
-[![@PeeHaa's FAULT](https://img.shields.io/badge/@PeeHaa's-FAULT-red.svg)](https://github.com/PeeHaa)
+[![@Nessworthy's FAULT](https://img.shields.io/badge/@Nessworthy's-FAULT-red.svg)](https://github.com/PeeHaa)
 
 ## Requirements
 

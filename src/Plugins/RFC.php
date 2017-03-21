@@ -256,7 +256,7 @@ class RFC extends BasePlugin
                     )
                 );
 
-                if (empty($voters) {
+                if (empty($voters)) {
                     return sprintf(
                         '%s %s has no votes yet.',
                         self::INDENT . Utf8Chars::WHITE_BULLET,
