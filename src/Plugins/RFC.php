@@ -170,7 +170,7 @@ class RFC extends BasePlugin
         }
 
         $uri = self::BASE_URI . '/' . urlencode($rfc);
-        
+
         /** @var HttpResponse $response */
         $request = (new HttpRequest)
             ->setMethod('GET')
