@@ -170,9 +170,14 @@ class RFC extends BasePlugin
         }
 
         $uri = self::BASE_URI . '/' . urlencode($rfc);
-
+        
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($uri);
+        $request = (new HttpRequest)
+            ->setMethod('GET')
+            ->setUri($uri)
+            ->setHeader('Connection', 'close');
+
+        $response = yield $this->httpClient->request($request);
 
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage($command, "Nope, we can't have nice things.");
@@ -220,7 +225,12 @@ class RFC extends BasePlugin
         $uri = self::BASE_URI . '/' . urlencode($rfc);
 
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($uri);
+        $request = (new HttpRequest)
+            ->setMethod('GET')
+            ->setUri($uri)
+            ->setHeader('Connection', 'close');
+
+        $response = yield $this->httpClient->request($request);
 
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postMessage($command, "Nope, we can't have nice things.");
