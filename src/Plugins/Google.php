@@ -10,7 +10,7 @@ use Room11\GoogleSearcher\SearchResultSet;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\Jeeves\Utf8Chars;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\MessageFetchFailureException;
 use Room11\StackChat\Client\MessageResolver;
 
@@ -23,7 +23,7 @@ class Google extends BasePlugin
     private $searcher;
     private $messageResolver;
 
-    public function __construct(Client $chatClient, GoogleSearcher $httpClient, MessageResolver $messageResolver)
+    public function __construct(ChatClient $chatClient, GoogleSearcher $httpClient, MessageResolver $messageResolver)
     {
         $this->chatClient  = $chatClient;
         $this->searcher  = $httpClient;

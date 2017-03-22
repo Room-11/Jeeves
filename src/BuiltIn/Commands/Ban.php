@@ -9,7 +9,7 @@ use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Amp\resolve;
 
 class Ban implements BuiltInCommand
@@ -18,7 +18,7 @@ class Ban implements BuiltInCommand
     private $adminStorage;
     private $banStorage;
 
-    public function __construct(Client $chatClient, AdminStorage $adminStorage, BanStorage $banStorage)
+    public function __construct(ChatClient $chatClient, AdminStorage $adminStorage, BanStorage $banStorage)
     {
         $this->chatClient   = $chatClient;
         $this->adminStorage = $adminStorage;

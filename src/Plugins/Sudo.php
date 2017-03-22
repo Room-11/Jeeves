@@ -4,13 +4,13 @@ namespace Room11\Jeeves\Plugins;
 
 use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Sudo extends BasePlugin
 {
     private $chatClient;
 
-    public function __construct(Client $chatClient)
+    public function __construct(ChatClient $chatClient)
     {
         $this->chatClient = $chatClient;
     }

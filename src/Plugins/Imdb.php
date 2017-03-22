@@ -7,7 +7,7 @@ use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\Jeeves\Utf8Chars;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Entities\PostedMessage;
 
 class Imdb extends BasePlugin
@@ -17,7 +17,7 @@ class Imdb extends BasePlugin
     private $chatClient;
     private $httpClient;
 
-    public function __construct(Client $chatClient, HttpClient $httpClient)
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;

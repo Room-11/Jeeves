@@ -8,7 +8,7 @@ use DaveRandom\AsyncMicrosoftTranslate\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Room\Room as ChatRoom;
 
 class Translate extends BasePlugin
@@ -23,7 +23,7 @@ class Translate extends BasePlugin
     private static $supportedLanguages = null;
 
     public function __construct(
-        Client $chatClient,
+        ChatClient $chatClient,
         TranslationAPIClient $apiConsumer,
         KeyValueStore $storage,
         /* todo: replace with room-specific settings */

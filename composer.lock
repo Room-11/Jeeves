@@ -1297,12 +1297,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/StackChat.git",
-                "reference": "8037eb6d51d91dfb667b7c827c76a0296cc1c612"
+                "reference": "41f282fe214005d8c80a084b458491e40aa4af35"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/StackChat/zipball/8037eb6d51d91dfb667b7c827c76a0296cc1c612",
-                "reference": "8037eb6d51d91dfb667b7c827c76a0296cc1c612",
+                "url": "https://api.github.com/repos/Room-11/StackChat/zipball/41f282fe214005d8c80a084b458491e40aa4af35",
+                "reference": "41f282fe214005d8c80a084b458491e40aa4af35",
                 "shasum": ""
             },
             "require": {
@@ -1332,11 +1332,7 @@
                     "Room11\\StackChat\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Room11\\StackChat\\Tests\\": "tests/"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -1360,11 +1356,7 @@
                 "chat",
                 "client"
             ],
-            "support": {
-                "source": "https://github.com/Room-11/StackChat/tree/master",
-                "issues": "https://github.com/Room-11/StackChat/issues"
-            },
-            "time": "2017-03-20 22:56:39"
+            "time": "2017-03-21 11:22:38"
         },
         {
             "name": "sabre/uri",

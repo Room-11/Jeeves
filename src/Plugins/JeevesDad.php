@@ -9,7 +9,7 @@ use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Auth\SessionTracker;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Entities\ChatMessage;
 use Room11\StackChat\Room\Room as ChatRoom;
 
@@ -25,7 +25,7 @@ class JeevesDad extends BasePlugin
     private $sessions;
 
     public function __construct(
-        Client $chatClient,
+        ChatClient $chatClient,
         HttpClient $httpClient,
         AdminStorage $admin,
         KeyValueStore $storage,

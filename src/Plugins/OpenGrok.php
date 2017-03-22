@@ -423,7 +423,7 @@ namespace Room11\Jeeves\Plugins
     use Room11\Jeeves\OpenGrokClient\SearchResultProcessor;
     use Room11\Jeeves\OpenGrokClient\SearchResultSet;
     use Room11\Jeeves\System\PluginCommandEndpoint;
-    use Room11\StackChat\Client\Client;
+    use Room11\StackChat\Client\Client as ChatClient;
 
     class OpenGrok extends BasePlugin
     {
@@ -445,7 +445,7 @@ namespace Room11\Jeeves\Plugins
         private $searcher;
 
         public function __construct(
-            Client $chatClient,
+            ChatClient $chatClient,
             HttpClient $httpClient,
             CookieJar $cookieJar
         ) {

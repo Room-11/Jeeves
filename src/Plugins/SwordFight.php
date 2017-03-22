@@ -5,7 +5,7 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Amp\Success;
 use Room11\StackChat\Auth\SessionTracker;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Entities\ChatMessage;
 
 class SwordFight extends BasePlugin
@@ -67,7 +67,7 @@ class SwordFight extends BasePlugin
         'I\'ll hound you night and day!' => 'Then be a good dog. Sit! Stay!',
     ];
 
-    public function __construct(Client $chatClient, SessionTracker $sessions)
+    public function __construct(ChatClient $chatClient, SessionTracker $sessions)
     {
         $this->chatClient = $chatClient;
         $this->sessions = $sessions;

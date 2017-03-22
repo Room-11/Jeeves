@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Plugins;
 
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\MessageResolver;
 
 class Lmgtfy extends BasePlugin
@@ -15,7 +15,7 @@ class Lmgtfy extends BasePlugin
     private $chatClient;
     private $messageResolver;
 
-    public function __construct(Client $chatClient, MessageResolver $messageResolver)
+    public function __construct(ChatClient $chatClient, MessageResolver $messageResolver)
     {
         $this->messageResolver = $messageResolver;
         $this->chatClient = $chatClient;
@@ -28,7 +28,7 @@ class Lmgtfy extends BasePlugin
         if ((bool) preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~', $text)) {
             $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $text);
         }
-        
+
         return $this->chatClient->postReply(
             $command, $this->getResponse($text)
         );
@@ -47,7 +47,7 @@ class Lmgtfy extends BasePlugin
         return self::URL . '?q=' . urlencode($this->removePings($text));
     }
 
-    private function removePings(string $text): string 
+    private function removePings(string $text): string
     {
         return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
     }

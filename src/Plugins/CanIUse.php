@@ -5,7 +5,7 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class CanIUse extends BasePlugin
 {
@@ -13,7 +13,7 @@ class CanIUse extends BasePlugin
 
     private $chatClient;
 
-    public function __construct(Client $chatClient)
+    public function __construct(ChatClient $chatClient)
     {
         $this->chatClient = $chatClient;
     }

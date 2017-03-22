@@ -8,7 +8,7 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\RoomContainer;
 use Room11\StackChat\Room\Room as ChatRoom;
 use function Amp\repeat;
@@ -20,7 +20,7 @@ class Github extends BasePlugin
     private $pluginData;
     private $lastKnownStatus = null;
 
-    public function __construct(Client $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
@@ -98,11 +98,11 @@ class Github extends BasePlugin
         }
 
         $messageTemplate = '%s *as of %s*';
-        
+
         if ($response->status === 'good') {
             $messageTemplate = '[%s *as of %s*](https://www.youtube.com/watch?v=aJFyWBLeM7Q)';
         }
-        
+
         return $this->chatClient->postMessage(
             $target,
             sprintf(

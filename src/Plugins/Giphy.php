@@ -7,7 +7,7 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Success;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Giphy extends BasePlugin
 {
@@ -34,7 +34,7 @@ class Giphy extends BasePlugin
     private $rating;
 
     public function __construct(
-        Client $chatClient,
+        ChatClient $chatClient,
         HttpClient $httpClient,
         $apiKey = self::PUBLIC_BETA_API_KEY,
         $rating = self::RATING_PG13

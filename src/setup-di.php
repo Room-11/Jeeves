@@ -10,6 +10,7 @@ $injector->alias(Room11\StackChat\Client\Client::class, Room11\StackChat\Client\
 $injector->alias(Room11\StackChat\Auth\SessionTracker::class, Room11\StackChat\Auth\ActiveSessionTracker::class);
 $injector->alias(Room11\StackChat\Client\TextFormatter::class, Room11\StackChat\Client\PostTextFormatter::class);
 $injector->alias(Room11\StackChat\Room\AclDataAccessor::class, Room11\StackChat\Room\ChatRoomAclDataAccessor::class);
+$injector->alias(Room11\StackChat\Room\ConnectedRoomTracker::class, Room11\StackChat\Room\ConnectedRoomCollection::class);
 $injector->alias(Room11\StackChat\Room\PostPermissionManager::class, Room11\Jeeves\Chat\RoomStatusManager::class);
 $injector->alias(Room11\StackChat\WebSocket\EventDispatcher::class, Room11\Jeeves\Chat\WebSocketEventDispatcher::class);
 
@@ -51,6 +52,7 @@ $injector->share(Room11\StackChat\Client\MessageResolver::class);
 $injector->share(Room11\StackChat\Client\PostedMessageTracker::class);
 $injector->share(Room11\StackChat\Client\TextFormatter::class);
 $injector->share(Room11\StackChat\Client\Actions\Factory::class);
+$injector->share(Room11\StackChat\Room\ConnectedRoomTracker::class);
 $injector->share(Room11\StackChat\Room\ConnectedRoomCollection::class);
 $injector->share(Room11\StackChat\Room\AclDataAccessor::class);
 $injector->share(Room11\StackChat\WebSocket\EndpointCollection::class);

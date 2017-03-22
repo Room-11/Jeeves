@@ -9,7 +9,7 @@ use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Amp\resolve;
 
 class HttpRequester extends BasePlugin
@@ -26,7 +26,7 @@ class HttpRequester extends BasePlugin
 
     private $httpClient;
 
-    public function __construct(Client $chatClient, HttpClient $httpClient)
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;

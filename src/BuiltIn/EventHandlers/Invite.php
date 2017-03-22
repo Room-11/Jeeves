@@ -5,12 +5,12 @@ namespace Room11\Jeeves\BuiltIn\EventHandlers;
 use Amp\Promise;
 use Psr\Log\LoggerInterface as Logger;
 use Room11\Jeeves\Chat\PresenceManager;
-use Room11\StackChat\Room\Room;
 use Room11\Jeeves\System\BuiltInEventHandler;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Event\Event;
 use Room11\StackChat\Event\EventType;
 use Room11\StackChat\Event\Invitation;
+use Room11\StackChat\Room\Room;
 
 class Invite implements BuiltInEventHandler
 {
@@ -18,7 +18,7 @@ class Invite implements BuiltInEventHandler
     private $logger;
 
     public function __construct(
-        Client $chatClient,
+        ChatClient $chatClient,
         PresenceManager $presenceManager,
         Logger $logger
     ) {

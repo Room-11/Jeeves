@@ -6,7 +6,7 @@ use Amp\Success;
 use PeeHaa\AsyncChatterBot\Client\CleverBot;
 use PeeHaa\AsyncChatterBot\Response\CleverBot as ChatterBotResponse;
 use Room11\StackChat\Auth\SessionTracker;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Entities\ChatMessage;
 
 class Terminator extends BasePlugin
@@ -54,9 +54,9 @@ class Terminator extends BasePlugin
         '(?:Are )you a (?:ro)?bot'                    => 'Step aside you filthy human.',
     ];
 
-    public function __construct(Client $chatClient, CleverBot $chatBotClient, SessionTracker $sessions)
+    public function __construct(ChatClient $chatClient, CleverBot $chatBotClient, SessionTracker $sessions)
     {
-        $this->chatClient    = $chatClient;
+        $this->chatClient = $chatClient;
         $this->chatBotClient = $chatBotClient;
         $this->sessions = $sessions;
     }

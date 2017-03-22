@@ -5,7 +5,7 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Room11\Jeeves\dateinterval_to_string;
 
 class Rebecca extends BasePlugin
@@ -15,7 +15,7 @@ class Rebecca extends BasePlugin
 
     private $chatClient;
 
-    public function __construct(Client $chatClient) {
+    public function __construct(ChatClient $chatClient) {
         $this->chatClient = $chatClient;
     }
 

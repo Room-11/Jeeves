@@ -8,7 +8,7 @@ use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostFlags;
 use function Amp\resolve;
 
@@ -32,7 +32,7 @@ class Plugin implements BuiltInCommand
         . "\n             Syntax: plugin status <name>"
     ;
 
-    public function __construct(PluginManager $pluginManager, Client $chatClient, AdminStorage $adminStorage)
+    public function __construct(PluginManager $pluginManager, ChatClient $chatClient, AdminStorage $adminStorage)
     {
         $this->pluginManager = $pluginManager;
         $this->chatClient = $chatClient;

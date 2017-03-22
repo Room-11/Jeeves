@@ -11,7 +11,7 @@ use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Amp\resolve;
 
 class Alias implements BuiltInCommand
@@ -23,7 +23,7 @@ class Alias implements BuiltInCommand
     private $pluginManager;
 
     public function __construct(
-        Client $chatClient,
+        ChatClient $chatClient,
         CommandAliasStorage $aliasStorage,
         AdminStorage $adminStorage,
         BuiltInActionManager $builtInCommandManager,

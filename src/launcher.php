@@ -2,8 +2,8 @@
 
 namespace Room11\Jeeves;
 
-use Aerys\Bootstrapper;
-use Aerys\Host;
+use Aerys\Bootstrapper as AerysBootstrapper;
+use Aerys\Host as AerysHost;
 use DaveRandom\AsyncBitlyClient\Client as BitlyClient;
 use DaveRandom\AsyncMicrosoftTranslate\Credentials as TranslationAPICredentials;
 use PeeHaa\AsyncChatterBot\Credential\CleverBot as CleverBotCredentials;
@@ -42,7 +42,7 @@ use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\Plugin;
 use Room11\Jeeves\System\PluginManager;
 use Room11\Jeeves\WebAPI\Server as WebAPIServer;
-use Room11\OpenId\Credentials;
+use Room11\OpenId\Credentials as OpenIdCredentials;
 use Room11\OpenId\EmailAddress as OpenIdEmailAddress;
 use Room11\OpenId\Password as OpenIdPassword;
 use Room11\StackChat\Auth\CredentialManager;
@@ -144,7 +144,7 @@ $injector->delegate(CredentialManager::class, function () use ($config) {
             );
         }
 
-        $details = new Credentials(
+        $details = new OpenIdCredentials(
             new OpenIdEmailAddress($details['username']),
             new OpenIdPassword($details['password'])
         );
@@ -196,7 +196,7 @@ foreach ($config['plugins'] ?? [] as $pluginClass) {
 $injector->make(ChatRoomPresenceManager::class)->restoreRooms($permanentRooms);
 
 if ($config['web-api']['enable'] ?? false) {
-    $host = new Host;
+    $host = new AerysHost;
 
     $sslEnabled = false;
 
@@ -236,7 +236,7 @@ if ($config['web-api']['enable'] ?? false) {
 
     $host->use($api->getRouter());
 
-    \Amp\wait((new Bootstrapper(function() use($host) { return [$host]; }))
+    \Amp\wait((new AerysBootstrapper(function() use($host) { return [$host]; }))
         ->init($injector->make(Logger::class))
         ->start());
 }

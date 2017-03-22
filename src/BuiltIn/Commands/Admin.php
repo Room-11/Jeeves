@@ -8,7 +8,7 @@ use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostFlags;
 use Room11\StackChat\Entities\ChatUser;
 use function Amp\resolve;
@@ -30,7 +30,7 @@ class Admin implements BuiltInCommand
         . "\n            Syntax: admin remove <user id>"
     ;
 
-    public function __construct(Client $chatClient, HttpClient $httpClient, AdminStorage $storage)
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $storage)
     {
         $this->chatClient = $chatClient;
         $this->storage    = $storage;
@@ -47,9 +47,11 @@ class Admin implements BuiltInCommand
 
         $userIds = array_merge($admins['owners'], $admins['admins']);
 
-        $users = /** @noinspection PhpStrictTypeCheckingInspection */
-            yield $this->chatClient->getChatUsers($command->getRoom(), ...$userIds);
-        usort($users, function (ChatUser $a, ChatUser $b) { return strcasecmp($a->getName(), $b->getName()); });
+        $users = yield $this->chatClient->getChatUsers($command->getRoom(), ...$userIds);
+
+        usort($users, function (ChatUser $a, ChatUser $b) {
+            return strcasecmp($a->getName(), $b->getName());
+        });
 
         $list = implode(', ', array_map(function(ChatUser $user) use($admins) {
             return in_array($user->getId(), $admins['owners'])

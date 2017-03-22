@@ -18,7 +18,7 @@ use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\MessageIDNotFoundException;
 use Room11\StackChat\Client\MessageResolver as ChatMessageResolver;
 use Room11\StackChat\Entities\MainSiteUser;
@@ -46,7 +46,7 @@ class BetterTweet extends BasePlugin
     private $clients = [];
 
     public function __construct(
-        Client $chatClient,
+        ChatClient $chatClient,
         HttpClient $httpClient,
         AdminStorage $admin,
         KeyValueStore $keyValueStore,

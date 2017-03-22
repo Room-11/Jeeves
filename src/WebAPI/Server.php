@@ -8,11 +8,11 @@ use Aerys\Router as AerysRouter;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\StackChat\Auth\SessionTracker;
-use Room11\StackChat\Room\ConnectedRoomCollection as ChatRoomCollection;
+use Room11\StackChat\Room\ConnectedRoomTracker;
+use Room11\StackChat\Room\Room;
 use Room11\StackChat\Room\Room as ChatRoom;
 use const Room11\StackChat\DNS_NAME_EXPR;
 use function Aerys\router;
-use Room11\StackChat\Room\Room;
 
 class Server
 {
@@ -88,7 +88,7 @@ class Server
         $response->end(json_encode(['error' => $message]));
     }
 
-    public function __construct(ChatRoomCollection $chatRooms, SessionTracker $sessions, BanStorage $banStorage)
+    public function __construct(ConnectedRoomTracker $chatRooms, SessionTracker $sessions, BanStorage $banStorage)
     {
         $this->buildRouter();
 

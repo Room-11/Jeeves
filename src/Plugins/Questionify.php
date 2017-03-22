@@ -4,7 +4,7 @@ namespace Room11\Jeeves\Plugins;
 
 use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\MessageResolver;
 
 class Questionify extends BasePlugin
@@ -12,7 +12,7 @@ class Questionify extends BasePlugin
     private $chatClient;
     private $messageResolver;
 
-    public function __construct(Client $chatClient, MessageResolver $messageResolver)
+    public function __construct(ChatClient $chatClient, MessageResolver $messageResolver)
     {
         $this->chatClient = $chatClient;
         $this->messageResolver = $messageResolver;

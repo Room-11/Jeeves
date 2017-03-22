@@ -6,7 +6,7 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Wotd extends BasePlugin
@@ -16,7 +16,7 @@ class Wotd extends BasePlugin
     private $chatClient;
     private $httpClient;
 
-    public function __construct(Client $chatClient, HttpClient $httpClient)
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;

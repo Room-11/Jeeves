@@ -10,7 +10,7 @@ use Room11\Jeeves\System\BuiltInActionManager;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostFlags;
 use function Amp\resolve;
 
@@ -320,7 +320,7 @@ class Command implements BuiltInCommand
     public function __construct(
         PluginManager $pluginManager,
         BuiltInActionManager $builtInCommandManager,
-        Client $chatClient,
+        ChatClient $chatClient,
         AdminStorage $adminStorage,
         CommandAliasStorage $aliasStorage
     ) {

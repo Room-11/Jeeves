@@ -6,13 +6,13 @@ use Amp\Promise;
 use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Version implements BuiltInCommand
 {
     private $chatClient;
 
-    public function __construct(Client $chatClient)
+    public function __construct(ChatClient $chatClient)
     {
         $this->chatClient = $chatClient;
     }

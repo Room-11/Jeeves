@@ -5,7 +5,7 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Promise;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Scrabble extends BasePlugin
 {
@@ -25,7 +25,7 @@ class Scrabble extends BasePlugin
 
     private $chatClient;
 
-    public function __construct(Client $chatClient)
+    public function __construct(ChatClient $chatClient)
     {
         $this->chatClient = $chatClient;
     }
@@ -42,7 +42,7 @@ class Scrabble extends BasePlugin
         }
 
         return $this->chatClient->postReply(
-            $command, 
+            $command,
             $this->formatScores(
                $this->calculateScores(
                     $this->getScorableWords(
@@ -52,13 +52,13 @@ class Scrabble extends BasePlugin
             )
         );
     }
-    
+
     private function getScorableWords(array $words): array
     {
         $chars = preg_quote(implode(static::SCORES['en']), '~');
         $words = preg_replace("~[^$chars]~i", '', $words);
         // @todo remove any non-dictionary words
-        
+
         return array_filter($words, 'strlen');
     }
 

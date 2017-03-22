@@ -14,7 +14,7 @@ use Room11\Jeeves\Chat\UserAlreadyVotedException;
 use Room11\Jeeves\Chat\UserNotAcceptableException;
 use Room11\Jeeves\System\BuiltInCommand;
 use Room11\Jeeves\System\BuiltInCommandInfo;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostFlags;
 use Room11\StackChat\Room\InvalidRoomIdentifierException;
 use Room11\StackChat\Room\Room;
@@ -28,7 +28,7 @@ class RoomPresence implements BuiltInCommand
     private $logger;
 
     public function __construct(
-        Client $chatClient,
+        ChatClient $chatClient,
         PresenceManager $presenceManager,
         RoomStatusManager $statusManager,
         Logger $logger

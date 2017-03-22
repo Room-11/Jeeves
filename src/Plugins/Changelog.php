@@ -9,7 +9,7 @@ use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostFlags;
 use function Amp\all;
 
@@ -24,7 +24,7 @@ class Changelog extends BasePlugin
     private $httpClient;
     private $pluginData;
 
-    public function __construct(Client $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;

@@ -8,7 +8,7 @@ use Room11\GoogleSearcher\Searcher as GoogleSearcher;
 use Room11\GoogleSearcher\SearchResultSet;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\StackChat\Client\Client;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Xkcd extends BasePlugin
 {
@@ -18,7 +18,7 @@ class Xkcd extends BasePlugin
     private $httpClient;
     private $searcher;
 
-    public function __construct(Client $chatClient, HttpClient $httpClient, GoogleSearcher $searcher)
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, GoogleSearcher $searcher)
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
