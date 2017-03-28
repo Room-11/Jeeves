@@ -30,7 +30,7 @@ class TweetIDNotFoundException extends Exception {}
 class TweetLengthLimitExceededException extends Exception {}
 class TextProcessingFailedException extends Exception {}
 
-class BetterTweet extends BasePlugin
+class Tweet extends BasePlugin
 {
     private $chatClient;
     private $admin;
