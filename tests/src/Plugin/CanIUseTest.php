@@ -51,7 +51,7 @@ class CanIUseTest extends AbstractPluginTest
             ->method('postReply')
             ->with(
                 $this->identicalTo($command),
-                $this->equalTo('[Can I Use Search: `flexbox css3`](http://caniuse.com/flexbox+css3)')
+                $this->equalTo('[Can I Use Search: `flexbox css3`](http://caniuse.com/flexbox%20css3)')
             );
 
         $plugin->getLink($command);
