@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "9780baff02c49b3e52cb28baf4982f85",
+    "hash": "e3502d1ad26122bde63e6e02e1cae162",
     "content-hash": "ee941ee9d68894fc16aa7821df4c08e7",
     "packages": [
         {
@@ -1297,12 +1297,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Room-11/StackChat.git",
-                "reference": "41f282fe214005d8c80a084b458491e40aa4af35"
+                "reference": "f9180d27a8d4e0d60cd80ce40a1219bb5fd5557b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Room-11/StackChat/zipball/41f282fe214005d8c80a084b458491e40aa4af35",
-                "reference": "41f282fe214005d8c80a084b458491e40aa4af35",
+                "url": "https://api.github.com/repos/Room-11/StackChat/zipball/f9180d27a8d4e0d60cd80ce40a1219bb5fd5557b",
+                "reference": "f9180d27a8d4e0d60cd80ce40a1219bb5fd5557b",
                 "shasum": ""
             },
             "require": {
@@ -1356,7 +1356,7 @@
                 "chat",
                 "client"
             ],
-            "time": "2017-03-21 11:22:38"
+            "time": "2017-03-29 14:02:17"
         },
         {
             "name": "sabre/uri",
@@ -2113,16 +2113,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "6.0.10",
+            "version": "6.0.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "8a536f409ebae632b92b7e7288e068248fe365ed"
+                "reference": "de3690a9f4109e3ef0f36e0ba1227e986818275b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/8a536f409ebae632b92b7e7288e068248fe365ed",
-                "reference": "8a536f409ebae632b92b7e7288e068248fe365ed",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/de3690a9f4109e3ef0f36e0ba1227e986818275b",
+                "reference": "de3690a9f4109e3ef0f36e0ba1227e986818275b",
                 "shasum": ""
             },
             "require": {
@@ -2191,7 +2191,7 @@
                 "testing",
                 "xunit"
             ],
-            "time": "2017-03-19 16:54:28"
+            "time": "2017-03-29 12:34:07"
         },
         {
             "name": "phpunit/phpunit-mock-objects",
@@ -2630,16 +2630,16 @@
         },
         {
             "name": "sebastian/object-reflector",
-            "version": "1.1.0",
+            "version": "1.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/object-reflector.git",
-                "reference": "afd5797e7af7c9f529879ad5e8e8abe126c89dab"
+                "reference": "773f97c67f28de00d397be301821b06708fca0be"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/object-reflector/zipball/afd5797e7af7c9f529879ad5e8e8abe126c89dab",
-                "reference": "afd5797e7af7c9f529879ad5e8e8abe126c89dab",
+                "url": "https://api.github.com/repos/sebastianbergmann/object-reflector/zipball/773f97c67f28de00d397be301821b06708fca0be",
+                "reference": "773f97c67f28de00d397be301821b06708fca0be",
                 "shasum": ""
             },
             "require": {
@@ -2671,7 +2671,7 @@
             ],
             "description": "Allows reflection of object attributes, including inherited and non-public ones",
             "homepage": "https://github.com/sebastianbergmann/object-reflector/",
-            "time": "2017-03-16 14:05:21"
+            "time": "2017-03-29 09:07:27"
         },
         {
             "name": "sebastian/recursion-context",
