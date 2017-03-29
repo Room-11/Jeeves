@@ -36,7 +36,7 @@ class CanIUseTest extends AbstractPluginTest
     {
         /** @var CanIUse $plugin */
         $plugin = $this->plugin;
-        $client = clone $this->client;
+        $client = $this->client;
 
         $command = $this->getMockBuilder(Command::class)
             ->disableOriginalConstructor()
