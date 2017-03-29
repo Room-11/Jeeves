@@ -36,7 +36,7 @@ class CanIUseTest extends AbstractPluginTest
     {
         /** @var CanIUse $plugin */
         $plugin = $this->plugin;
-        $client = clone $this->client;
+        $client = $this->client;
 
         $command = $this->getMockBuilder(Command::class)
             ->disableOriginalConstructor()
@@ -51,7 +51,7 @@ class CanIUseTest extends AbstractPluginTest
             ->method('postReply')
             ->with(
                 $this->identicalTo($command),
-                $this->equalTo('[Can I Use Search: `flexbox css3`](http://caniuse.com/flexbox+css3)')
+                $this->equalTo('[Can I Use Search: `flexbox css3`](http://caniuse.com/flexbox%20css3)')
             );
 
         $plugin->getLink($command);

@@ -88,6 +88,6 @@ class CanIUse extends BasePlugin
      */
     private function generateSearchUri(string $searchFor): string
     {
-        return self::DOMAIN . '/' . urlencode($searchFor);
+        return self::DOMAIN . '/' . rawurlencode($searchFor);
     }
 }
