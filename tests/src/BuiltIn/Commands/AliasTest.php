@@ -92,7 +92,7 @@ class AliasTest extends AbstractCommandTest
         $this->setReturnValue($this->command, 'getCommandName', 'unalias');
         $this->setCommandParameter('test');
         $this->setAliasStorageExists('test', new Success(false));
-        $this->expectMessage("Alias '!!test' is not currently mapped");
+        $this->expectReply("Alias '!!test' is not currently mapped");
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }
@@ -108,7 +108,7 @@ class AliasTest extends AbstractCommandTest
 
         $this->aliasStorage
             ->expects($this->once())
-            ->method('add')
+            ->method('set')
             ->with(
                 $this->identicalTo($this->room),
                 $this->identicalTo('uptime'),
@@ -143,7 +143,7 @@ class AliasTest extends AbstractCommandTest
         $this->setHasRegisteredCommand(false);
         $this->setIsCommandMappedForRoom(true);
         $this->expectReply(
-            "Command 'uptime' is already mapped. Use `!!command list` to display the currently mapped commands."
+            "Command '!!uptime' is already mapped. Use `!!command list` to display the currently mapped commands."
         );
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
@@ -155,7 +155,41 @@ class AliasTest extends AbstractCommandTest
         $this->setReturnValue($this->command, 'getCommandName', 'alias');
         $this->setMessageText(new Success('!!alias uptime test'));
         $this->setHasRegisteredCommand(true);
-        $this->expectReply("Command 'uptime' is built in and cannot be altered");
+        $this->expectReply("Command '!!uptime' is built in and cannot be altered");
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testRealiasCommandOnExisting()
+    {
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'getCommandName', 'realias');
+        $this->setMessageText(new Success('!!realias test something'));
+        $this->setAliasStorageExists('test', new Success(true));
+
+        $this->aliasStorage
+            ->expects($this->once())
+            ->method('set')
+            ->with(
+                $this->identicalTo($this->room),
+                $this->identicalTo('test'),
+                $this->identicalTo('something')
+            )
+            ->will($this->returnValue(new Success))
+        ;
+
+        $this->expectMessage("Command '!!test' aliased to '!!something'");
+
+        \Amp\wait($this->builtIn->handleCommand($this->command));
+    }
+
+    public function testRealiasCommandOnNotExisting()
+    {
+        $this->setAdmin(true);
+        $this->setReturnValue($this->command, 'getCommandName', 'realias');
+        $this->setMessageText(new Success('!!realias test something'));
+        $this->setAliasStorageExists('test', new Success(false));
+        $this->expectReply("Alias '!!test' is not currently mapped");
 
         \Amp\wait($this->builtIn->handleCommand($this->command));
     }

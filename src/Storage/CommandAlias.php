@@ -9,7 +9,7 @@ interface CommandAlias
 {
     function getAll(ChatRoom $room): Promise;
 
-    function add(ChatRoom $room, string $command, string $mapping): Promise;
+    function set(ChatRoom $room, string $command, string $mapping): Promise;
 
     function remove(ChatRoom $room, string $command): Promise;
 

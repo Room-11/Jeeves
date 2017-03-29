@@ -37,7 +37,7 @@ class CommandAlias implements CommandAliasStorage
         });
     }
 
-    public function add(ChatRoom $room, string $command, string $mapping): Promise
+    public function set(ChatRoom $room, string $command, string $mapping): Promise
     {
         return $this->accessor->writeCallback(function($data) use($command, $mapping) {
             $data[$command] = $mapping;
