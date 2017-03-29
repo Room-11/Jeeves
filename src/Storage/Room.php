@@ -33,8 +33,8 @@ interface Room
 
     function setApproved(ChatRoomIdentifier $identifier, bool $approved): Promise;
 
-
     function isApproved(ChatRoomIdentifier $identifier): Promise;
+
 
     /**
      * Check if Jeeves is muted in a given room.
