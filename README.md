@@ -9,7 +9,7 @@ Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for
 
 The last person who broke the build was:
 
-[![@Nessworthy's FAULT](https://img.shields.io/badge/@Nessworthy's-FAULT-red.svg)](https://github.com/Room-11/Jeeves/commit/a2b8688188e58374e265a39b44d4e497dc2b4ad8#diff-7f476f2b696b2045a26f467d3040ed64L259)
+[![@DaveRandom's FAULT](https://img.shields.io/badge/@DaveRandom-c827bf5-red.svg)](https://github.com/Room-11/Jeeves/commit/c827bf5ebb68aa538c08fa9fba879ef4a08810b4)
 
 ## Requirements
 
