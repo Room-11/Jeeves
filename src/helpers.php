@@ -4,6 +4,8 @@ namespace Room11\Jeeves;
 
 use SebastianBergmann\Version as SebastianVersion;
 
+const PING_MATCH_EXPR = '((?<=^|\s)@(%s)(?=[\s,.\'"?!;:<>\#@~{}%%^&*-]|$))iu';
+
 function get_current_version(): VersionIdentifier
 {
     $version = (new SebastianVersion(VERSION, APP_BASE))->getVersion();
@@ -88,5 +90,16 @@ function normalize_stack_exchange_url(string $url): string
 
 function text_contains_ping(string $text, string $userName): bool
 {
-    return (bool)\preg_match('#@' . \preg_quote($userName, '#') . '(?:[\s,.\'?!;:<>\#@~{}"%^&*-]|$)#iu', $text);
+    $userName = \preg_quote(\preg_replace('#\s+#', '', $userName));
+    $expr = \sprintf(PING_MATCH_EXPR, $userName);
+
+    return (bool)\preg_match($expr, $text);
+}
+
+function text_strip_pings(string $text, string $userName, string $replacement = ''): string
+{
+    $userName = \preg_quote(\preg_replace('#\s+#', '', $userName));
+    $expr = \sprintf(PING_MATCH_EXPR, $userName);
+
+    return \preg_replace($expr, $replacement, $text);
 }

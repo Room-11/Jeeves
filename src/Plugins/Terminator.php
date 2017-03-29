@@ -12,7 +12,7 @@ use Room11\StackChat\Entities\ChatMessage;
 class Terminator extends BasePlugin
 {
     // todo: remove this when no longer experimental
-    private const ALLOWED_ROOMS = [11, 100286];
+    private const ALLOWED_ROOMS = [11, 100286, 110670];
 
     private $chatClient;
     private $chatBotClient;
@@ -112,8 +112,7 @@ class Terminator extends BasePlugin
 
     private function buildCleverBotResponse(ChatMessage $message)
     {
-        $botPingableName = preg_replace('#\s+#', '', $this->getBotUserNameForMessage($message));
-        $messageText = preg_replace('#\b@' . preg_quote($botPingableName, '#') . '\b#iu', '', trim($message->getText()));
+        $messageText = \Room11\Jeeves\text_strip_pings($message->getText(), $this->getBotUserNameForMessage($message));
 
         /** @var ChatterBotResponse $response */
         $response = yield $this->chatBotClient->request($messageText);
