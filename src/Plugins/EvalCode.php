@@ -74,7 +74,7 @@ class EvalCode extends BasePlugin
 
             $messages = [];
 
-            for ($i = 1; isset($parsedResult['output'][$i]) && $i < 4; $i++) {
+            for ($i = 0; isset($parsedResult['output'][$i]) && $i < 4; $i++) {
                 $messages[$i] = $this->generateMessageFromOutput($parsedResult['output'][$i], $url);
             }
 
