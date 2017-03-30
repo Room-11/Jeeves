@@ -83,8 +83,8 @@ class EvalCode extends BasePlugin
             foreach ($messages as $i => $text) {
                 if (!isset($postedMessages[$i])) {
                     $postedMessages[$i] = [yield $this->chatClient->postMessage($room, $text, self::POST_FLAGS), $text];
-                } else {
-                    yield $this->chatClient->editMessage($postedMessages[$i], $text, PostFlags::SINGLE_LINE);
+                } else if ($text !== $postedMessages[$i][1]) {
+                    yield $this->chatClient->editMessage($postedMessages[$i][0], $text, PostFlags::SINGLE_LINE);
                 }
             }
 
