@@ -6,6 +6,7 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Artax\Uri;
 use Amp\Deferred;
 use Amp\Pause;
 use Amp\Promise;
@@ -22,23 +23,27 @@ use function Amp\resolve;
 class EvalCode extends BasePlugin
 {
     // limit the number of requests while polling for results
-    private const REQUEST_LIMIT = 20;
+    private const POLL_REQUEST_LIMIT = 20;
+    private const POLL_INTERVAL_MS = 3500;
+    private const BASE_URL = 'https://3v4l.org';
+    private const POST_FLAGS = PostFlags::SINGLE_LINE;
 
     private $chatClient;
-
     private $httpClient;
 
     private $queue;
     private $haveLoop = false;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient)
+    {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
 
         $this->queue = new Queue;
     }
 
-    private function normalizeCode($code) {
+    private function normalizeCode($code)
+    {
         if (strpos($code, '<?php') === false && strpos($code, '<?=') === false) {
             $code = "<?php {$code}";
         }
@@ -46,59 +51,55 @@ class EvalCode extends BasePlugin
         return $code . ';';
     }
 
-    private function pollUntilDone(string $snippetId, PostedMessage $message): \Generator {
-        $requests = 0;
-        $parsedResult = [];
-
-        yield new Pause(3500);
-
+    private function pollUntilDone(string $url, PostedMessage $firstMessage, string $firstMessageText)
+    {
         $request = (new HttpRequest)
-            ->setUri("https://3v4l.org" . $snippetId)
+            ->setUri($url)
             ->setHeader("Accept", "application/json")
         ;
 
-        while ($requests++ <= self::REQUEST_LIMIT) {
+        $postedMessages = [[$firstMessage, $firstMessageText]];
+        $room = $firstMessage->getRoom();
+        $pauseDuration = self::POLL_INTERVAL_MS;
+        $requests = 0;
+
+        do {
+            if ($pauseDuration > 0) {
+                yield new Pause($pauseDuration);
+            }
+
             /** @var HttpResponse $result */
             $result = yield $this->httpClient->request($request);
-            $parsedResult = json_decode($result->getBody(), true);
+            $parsedResult = json_try_decode($result->getBody(), true);
 
-            $editStart = microtime(true);
+            $messages = [];
 
-            yield $this->chatClient->editMessage(
-                $message,
-                $this->getMessageText(
-                    $parsedResult["output"][0]["versions"],
-                    htmlspecialchars_decode($parsedResult["output"][0]["output"]),
-                    $snippetId
-                ),
-                PostFlags::SINGLE_LINE
-            );
-
-            if ($parsedResult["script"]["state"] !== "busy") {
-                break;
+            for ($i = 1; isset($parsedResult['output'][$i]) && $i < 4; $i++) {
+                $messages[$i] = $this->generateMessageFromOutput($parsedResult['output'][$i], $url);
             }
 
-            $editDuration = (int)floor((microtime(true) - $editStart) * 1000);
-            if ($editDuration < 3500) {
-                yield new Pause(3500 - $editDuration);
-            }
-        }
+            $actionStart = microtime(true);
 
-        for ($i = 1; isset($parsedResult["output"][$i]) && $i < 4; $i++) {
-            yield $this->chatClient->postMessage(
-                $message,
-                $this->getMessageText(
-                    $parsedResult["output"][$i]["versions"],
-                    htmlspecialchars_decode($parsedResult["output"][$i]["output"]),
-                    $snippetId
-                ),
-                PostFlags::SINGLE_LINE
-            );
-        }
+            foreach ($messages as $i => $text) {
+                if (!isset($postedMessages[$i])) {
+                    $postedMessages[$i] = [yield $this->chatClient->postMessage($room, $text, self::POST_FLAGS), $text];
+                } else {
+                    yield $this->chatClient->editMessage($postedMessages[$i], $text, PostFlags::SINGLE_LINE);
+                }
+            }
+
+            $pauseDuration = self::POLL_INTERVAL_MS - (int)floor((microtime(true) - $actionStart) * 1000);
+        } while (++$requests < self::POLL_REQUEST_LIMIT && $parsedResult['script']['state'] === 'busy');
     }
 
-    private function getMessageText(string $title, string $output, string $url): string {
-        return sprintf('[ [%s](%s) ] %s', $title, 'https://3v4l.org' . $url, $output);
+    private function getMessageText(string $title, string $output, string $url): string
+    {
+        return trim(sprintf('[ [%s](%s) ] %s', $title, $url, $output));
+    }
+
+    private function generateMessageFromOutput(array $output, string $url): string
+    {
+        return $this->getMessageText($output["versions"], htmlspecialchars_decode($output["output"]), $url);
     }
 
     private function doEval(HttpRequest $request, Command $command): \Generator
@@ -106,13 +107,36 @@ class EvalCode extends BasePlugin
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request($request);
 
-        $location = $response->getPreviousResponse()->getHeader("Location")[0];
-        $text = $this->getMessageText('Waiting for results', '', $location);
+        $requestUri = $request->getUri();
+
+        if ($response->getStatus() !== 200) {
+            return $this->chatClient->postReply($command, "Got HTTP response code {$response->getStatus()} from `{$requestUri}` :-(");
+        }
+
+        $previousResponse = $response->getPreviousResponse();
+
+        if ($previousResponse === null) {
+            return $this->chatClient->postReply($command, "I wasn't redirected by `{$requestUri}` like I expected :-(");
+        }
+
+        try {
+            $location = $previousResponse->getHeader("Location");
+        } catch (\DomainException $e) {
+            $location = [];
+        }
+
+        if (!isset($location[0])) {
+            return $this->chatClient->postReply($command, "I didn't get a redirect location from `{$requestUri}` :-(");
+        }
+
+        $targetUri = (string)(new Uri($requestUri))->resolve($location[0]);
+
+        $text = $this->getMessageText('Waiting for results', '', $targetUri);
 
         /** @var PostedMessage $chatMessage */
         $chatMessage = yield $this->chatClient->postMessage($command, $text, PostFlags::SINGLE_LINE);
 
-        yield from $this->pollUntilDone($location, $chatMessage);
+        yield from $this->pollUntilDone($targetUri, $chatMessage, $text);
     }
 
     private function executeActionsFromQueue()
@@ -126,8 +150,7 @@ class EvalCode extends BasePlugin
             list($request, $command, $promisor) = $this->queue->pop();
 
             try {
-                yield from $this->doEval($request, $command);
-                $promisor->succeed();
+                $promisor->succeed(yield from $this->doEval($request, $command));
             } catch (\Throwable $e) {
                 $promisor->fail($e);
             }
@@ -150,7 +173,7 @@ class EvalCode extends BasePlugin
         ;
 
         $request = (new HttpRequest)
-            ->setUri("https://3v4l.org/new")
+            ->setUri(self::BASE_URL . "/new")
             ->setMethod("POST")
             ->setHeader("Accept", "application/json")
             ->setBody($body)
