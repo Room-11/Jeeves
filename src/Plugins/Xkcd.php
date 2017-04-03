@@ -37,7 +37,7 @@ class Xkcd extends BasePlugin
         $results = yield $this->searcher->search($searchTerm);
 
         foreach ($results->getResults() as $result) {
-            if (preg_match('~^https?://(?:m\.)xkcd\.com/(\d+)/?~', $result->getUrl(), $matches)) {
+            if (preg_match('~^https?://(?:m\.)?xkcd\.com/(\d+)/?~', $result->getUrl(), $matches)) {
                 return $this->chatClient->postMessage($command, 'https://xkcd.com/' . $matches[1]);
             }
         }
