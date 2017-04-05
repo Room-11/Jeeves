@@ -3,11 +3,14 @@
 namespace Room11\Jeeves\Plugins;
 
 use Room11\Jeeves\Chat\Command;
+use Room11\Jeeves\Exception;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostFlags;
 use Room11\StackChat\Client\TextFormatter;
 use Room11\StackChat\Room\Room as ChatRoom;
+
+class InvalidMessageFormatException extends Exception {}
 
 class Say extends BasePlugin
 {
@@ -26,6 +29,37 @@ class Say extends BasePlugin
     }
 
     public function sayf(Command $command)
+    {
+        try {
+            return $this->chatClient->postMessage(
+                $command,
+                yield from $this->getFormattedMessageResponse($command),
+                PostFlags::ALLOW_PINGS
+            );
+        } catch (InvalidMessageFormatException $e) {
+            return $this->chatClient->postReply($command, $e->getMessage());
+        }
+    }
+
+    public function reply(Command $command)
+    {
+        return $this->chatClient->postReply($command, implode(' ', $command->getParameters()));
+    }
+
+    public function replyf(Command $command)
+    {
+        try {
+            return $this->chatClient->postReply(
+                $command,
+                yield from $this->getFormattedMessageResponse($command),
+                PostFlags::ALLOW_PINGS
+            );
+        } catch (InvalidMessageFormatException $e) {
+            return $this->chatClient->postReply($command, $e->getMessage());
+        }
+    }
+
+    private function getFormattedMessageResponse(Command $command)
     {
         $current = '';
         $components = [];
@@ -46,16 +80,16 @@ class Say extends BasePlugin
         try {
             list($string, $args) = yield from $this->preProcessFormatSpecifiers($command->getRoom(), $components);
         } catch (\InvalidArgumentException $e) {
-            return $this->chatClient->postReply($command, 'Only if you say it first');
+            throw new InvalidMessageFormatException('Only if you say it first');
         }
 
         $string = $this->textFormatter->stripPingsFromText($string);
 
         if (false === $result = @\vsprintf($string, $args)) {
-            return $this->chatClient->postReply($command, 'printf() failed, check your format string and arguments');
+            throw new InvalidMessageFormatException('printf() failed, check your format string and arguments');
         }
 
-        return $this->chatClient->postMessage($command, $result, PostFlags::ALLOW_PINGS);
+        return $result;
     }
 
     private function preProcessFormatSpecifiers(ChatRoom $room, array $components)
@@ -116,7 +150,9 @@ class Say extends BasePlugin
     {
         return [
             new PluginCommandEndpoint('say', [$this, 'say'], 'say'),
-            new PluginCommandEndpoint('sayf', [$this, 'sayf'], 'sayf', 'Same as say with printf-style formatting, separate format string and args with / slashes')
+            new PluginCommandEndpoint('sayf', [$this, 'sayf'], 'sayf', 'Same as say with printf-style formatting, separate format string and args with / slashes'),
+            new PluginCommandEndpoint('reply', [$this, 'reply'], 'reply', 'Same as say except it replies to the invoking message'),
+            new PluginCommandEndpoint('replyf', [$this, 'replyf'], 'replyf', 'Same as sayf except it replies to the invoking message'),
         ];
     }
 }
