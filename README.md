@@ -4,12 +4,7 @@ Jeeves
 Chat bot for StackOverflow. Uses [amphp](https://github.com/amphp) libraries for async magic sauce.
 
 [![Build Status](https://travis-ci.org/Room-11/Jeeves.svg?branch=master)](https://travis-ci.org/Room-11/Jeeves)
-
-## [Badge of shame](https://www.youtube.com/watch?v=SrDSqODtEFM)
-
-The last person who broke the build was:
-
-[![@DaveRandom's FAULT](https://img.shields.io/badge/@DaveRandom-c827bf5-red.svg)](https://github.com/Room-11/Jeeves/commit/c827bf5ebb68aa538c08fa9fba879ef4a08810b4)
+![Badge Of Shame](https://blame.daverandom.com/Room-11/Jeeves)
 
 ## Requirements
 
