@@ -3,7 +3,8 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
-use Amp\Artax\Response;
+use Amp\Artax\Request as HttpRequest;
+use Amp\Artax\Response as HttpResponse;
 use PeeHaa\AsyncTwitter\Api\Client\Client as TwitterClient;
 use PeeHaa\AsyncTwitter\Api\Client\ClientFactory as TwitterClientFactory;
 use PeeHaa\AsyncTwitter\Api\Client\Exception\RequestFailed as TwitterRequestFailedException;
@@ -128,8 +129,14 @@ class Tweet extends BasePlugin
                 $target = 'https:' . $target;
             }
 
-            /** @var Response $response */
-            $response = yield $this->httpClient->request($target);
+            /** @var HttpResponse $response */
+            $request = (new HttpRequest)
+                ->setMethod('GET')
+                ->setUri($target)
+                ->setHeader('Connection', 'close');
+
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($request);
             $tmpFilePath = \Room11\Jeeves\DATA_BASE_DIR . '/' . uniqid('twitter-media-', true);
             yield \Amp\File\put($tmpFilePath, $response->getBody());
 
