@@ -62,9 +62,18 @@ class AntiW3Schools extends BasePlugin
      */
     public function handleMessage(ChatMessage $message): Promise
     {
-        return $this->containsTerribleUri($message->getText())
+        return $this->isSuitable($message) && $this->containsTerribleUri($message->getText())
             ? $this->chatClient->postReply($message, $this->createReply($message))
             : new Success();
+    }
+
+    /**
+     * Check whether a message is initially suitable for a response from this plugin.
+     * @param Message $message
+     * @return bool
+     */
+    private function isSuitable(Message $message) {
+        return $message->getType() === Message::TYPE_NEW;
     }
 
     /**
