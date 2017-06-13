@@ -31,7 +31,16 @@ class Reminder extends BasePlugin
     private const STRUCT_KEY_USER_NAME = 'username';
 
     private const USAGE = /** @lang text */  "Usage: `!!reminder [ examples | list | <text> [ at <time> | in <delay> ] | unset <id> ]` Try `!!reminder examples`" ;
-    private const REMINDER_REGEX = '/(.*)\s+(?:in|at)\s+(.*)/ui';
+    private const EXAMPLES = "Examples: \n"
+    . Utf8Chars::BULLET . " !!reminder foo at 18:00 \n"
+    . Utf8Chars::BULLET . " With timezone: (ie. UTC-3) !!reminder foo at 18:00-3:00 \n"
+    . Utf8Chars::BULLET . " !!reminder bar in 2 hours \n"
+    . Utf8Chars::BULLET . " !!reminder unset 32901146 \n"
+    . Utf8Chars::BULLET . " !!reminder list or just !!reminders \n"
+    . Utf8Chars::BULLET . " !!in 2 days 42 hours 42 minutes 42 seconds 42! \n"
+    . Utf8Chars::BULLET . " !!at 22:00 Grab a beer!";
+
+    private const REMINDER_REGEX = '/(.*)\s?(?:in|at)\s+(.*)/ui';
     private const TIME_FORMAT_REGEX = /** @lang regexp */ '/(?<time>(?:\d|[01]\d|2[0-3]):[0-5]\d)[+-]?(?&time)?/ui';
 
     private $chatClient;
@@ -92,16 +101,16 @@ class Reminder extends BasePlugin
                 $expression = IntervalParser::$intervalSeparatorDefinitions . IntervalParser::$intervalWithTrailingData;
 
                 if (preg_match($expression, $parameters, $matches)){
-                    $time = $matches['interval'] ?? false;
-                    $text = $matches['trailing'] ?? false;
+                    $time = $matches['interval'] ?? '';
+                    $text = $matches['trailing'] ?? '';
                 }
                 break;
 
             case 'at':
-                $time = $command->getParameter(0) ?? false; // 24hrs
+                $time = $command->getParameter(0) ?? ''; // 24hrs
 
-                if($time && preg_match(self::TIME_FORMAT_REGEX, $time)){ // maybe @TODO support !!at monday next week remind?
-                    $text = implode(" ", array_diff($command->getParameters(), array($time)));
+                if ($time && preg_match(self::TIME_FORMAT_REGEX, $time)){
+                    $text = implode(" ", array_diff($command->getParameters(), [$time]));
                 }
 
                 break;
@@ -109,14 +118,12 @@ class Reminder extends BasePlugin
             default:
                 $parameters = implode(" ", $command->getParameters());
 
-                if(!preg_match(self::REMINDER_REGEX, $parameters, $matches)){
-                    return $this->chatClient->postMessage($command, self::USAGE);
+                if (preg_match(self::REMINDER_REGEX, $parameters, $matches)){
+                    $time = $matches[2] ?? '';
+                    $text = $matches[1] ?? '';
                 }
 
-                $time = $matches[2] ?? '';
-                $text = $matches[1] ?? false;
-
-                if ($time !== '') {
+                if ($time) {
                     $time = $this->intervalParser->normalizeTimeInterval($time);
                 }
 
@@ -177,7 +184,7 @@ class Reminder extends BasePlugin
             return $this->chatClient->postMessage($command, self::USAGE);
         }
 
-        $value[self::STRUCT_KEY_ID] = (string)$command->getId();
+        $value[self::STRUCT_KEY_ID] = (string) $command->getId();
         $value[self::STRUCT_KEY_USER_ID] = $command->getUserId();
         $value[self::STRUCT_KEY_USER_NAME] = $command->getUserName();
 
@@ -188,7 +195,7 @@ class Reminder extends BasePlugin
         }
 
         if (!yield $this->storage->set($value[self::STRUCT_KEY_ID], $value, $command->getRoom())){
-            return $this->chatClient->postMessage($command, "Dunno what happened but I couldn't set the reminder.");
+            return $this->chatClient->postMessage($command, 'Dunno what happened but I couldn\'t set the reminder.');
         }
 
         $this->watchers[] = once(function() use ($command, $value) {
@@ -204,7 +211,7 @@ class Reminder extends BasePlugin
 
         $reminders = yield $this->storage->getAll($command->getRoom());
         if (!$reminders) {
-            return $this->chatClient->postMessage($command, "There aren't any scheduled reminders.");
+            return $this->chatClient->postMessage($command, 'There aren\'t any scheduled reminders.');
         }
 
         $timeouts = [];
@@ -293,16 +300,7 @@ class Reminder extends BasePlugin
 
     private function getExamples(Command $command): Promise
     {
-        $examples = "Examples: \n"
-            . Utf8Chars::BULLET . " !!reminder foo at 18:00 \n"
-            . Utf8Chars::BULLET . " With timezone: (ie. UTC-3) !!reminder foo at 18:00-3:00 \n"
-            . Utf8Chars::BULLET . " !!reminder bar in 2 hours \n"
-            . Utf8Chars::BULLET . " !!reminder unset 32901146 \n"
-            . Utf8Chars::BULLET . " !!reminder list or just !!reminders \n"
-            . Utf8Chars::BULLET . " !!in 2 days 42 hours 42 minutes 42 seconds 42! \n"
-            . Utf8Chars::BULLET . " !!at 22:00 Grab a beer!";
-
-        return $this->chatClient->postMessage($command, $examples);
+        return $this->chatClient->postMessage($command, self::EXAMPLES);
     }
 
     /**
@@ -368,7 +366,7 @@ class Reminder extends BasePlugin
 
     public function disableForRoom(ChatRoom $room, bool $persist = false)
     {
-        if(!$this->watchers) return;
+        if (!$this->watchers) return;
 
         foreach ($this->watchers as $key => $id){
             cancel($id);
@@ -377,7 +375,7 @@ class Reminder extends BasePlugin
 
     public function getName(): string
     {
-        return 'Reminders';
+        return 'Reminder';
     }
 
     public function getDescription(): string
