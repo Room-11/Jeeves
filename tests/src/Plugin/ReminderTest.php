@@ -230,10 +230,6 @@ class ReminderTest extends AbstractPluginTest
             ->expects($this->once())
             ->method('hasParameters')
             ->will($this->returnValue(true));
-        /*$command
-            ->expects($this->once())
-            ->method("getParameters")
-            ->will($this->returnValue(['16:00']));*/
         $command
             ->expects($this->once())
             ->method("getParameter")
