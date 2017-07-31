@@ -30,12 +30,18 @@ class CommandFactory
         $commandText = $message->getHTML()->textContent;
 
         list($commandName, $parameterString) = $this->splitCommandText($commandText, self::INVOKER);
+        $originalCommandName = strtolower($commandName);
 
         while (null !== $alias = yield $this->aliasMap->get($message->getRoom(), $commandName)) {
             $replaceExpr = '#(?<=^' . preg_quote(self::INVOKER, '#') . ')' . preg_quote($commandName, '#') . '#u';
             $commandText = preg_replace($replaceExpr, $alias, $commandText);
 
             list($commandName, $parameterString) = $this->splitCommandText($commandText, self::INVOKER);
+
+            // Prevent circular aliases
+            if (strtolower($commandName) === $originalCommandName) {
+                break;
+            }
         }
 
         $parameters = preg_split('#\s+#', $parameterString, -1, PREG_SPLIT_NO_EMPTY);
