@@ -796,16 +796,16 @@ class Convert extends BasePlugin
 
         try {
 
-	        $parsed_params = $this->parseParams($params_arr);
+            $parsed_params = $this->parseParams($params_arr);
 
-	    } catch (\InvalidParametersException $e) {
+        } catch (\InvalidParametersException $e) {
 
             return $this->chatClient->postReply(
                 $command,
                 "I'm really not sure what you want me to do..."
             );
 
-	    }
+        }
 
         if ($parsed_params['amount'] === 0) {
 
@@ -818,8 +818,8 @@ class Convert extends BasePlugin
 
         try {
 
-        	$from_unit_arr = $this->getUnitType($parsed_params['from_unit']);
-        	$to_unit_arr = $this->getUnitType($parsed_params['to_unit']);
+            $from_unit_arr = $this->getUnitType($parsed_params['from_unit']);
+            $to_unit_arr = $this->getUnitType($parsed_params['to_unit']);
 
         } catch (\InvalidParametersException $e) {
 
@@ -853,22 +853,22 @@ class Convert extends BasePlugin
 
                 try {
 
-	                $converted_currency = $this->currencyConvert(
-	                    $from_unit_arr[1],
-	                    $to_unit_arr[1],
-	                    $parsed_params['amount']
-	                );
+                    $converted_currency = $this->currencyConvert(
+                        $from_unit_arr[1],
+                        $to_unit_arr[1],
+                        $parsed_params['amount']
+                    );
 
-	            } catch (\RequestFailedException $e) {
+                } catch (\RequestFailedException $e) {
 
-	            	$message = "I don't know what's going on but I can't find that information.";
+                    $message = "I don't know what's going on but I can't find that information.";
 
                     return $this->chatClient->postReply(
-					    $command, 
-					    $message
-					);
+                        $command, 
+                        $message
+                    );
 
-	            }
+                }
                 
                 $converted_to_amount = number_format($converted_currency, 2, '.', ',');
 
@@ -909,11 +909,11 @@ class Convert extends BasePlugin
         $sprintf_format = '%s%s = %s%s';
 
         $message = sprintf(
-        	$sprintf_format,
-        	$parsed_params['amount'],
-        	$from_unit_arr[1],
-        	$converted_to_amount,
-        	$to_unit_arr[1]
+            $sprintf_format,
+            $parsed_params['amount'],
+            $from_unit_arr[1],
+            $converted_to_amount,
+            $to_unit_arr[1]
         );
 
         return $this->chatClient->postReply(
