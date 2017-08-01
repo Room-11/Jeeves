@@ -9,6 +9,10 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Client as ChatClient;
 use function Room11\DOMUtils\domdocument_load_xml;
 
+class RequestFailedException extends \Exception {}
+
+class InvalidParametersException extends \Exception {}
+
 class Convert extends BasePlugin
 {
 
@@ -21,21 +25,27 @@ class Convert extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
-    private function get_array_key(string $needle, array $haystack): string
+    private function getArrayKey(string $needle, array $haystack): string
     {
         foreach ($haystack as $key => $item) {
+
             if (in_array($needle, $item)) {
+
                 return $key;
+
             }
+
         }
-        //Throw Exception
-        return false;
+        
+        return '';
     }
 
     private function getRate(string $currency, \DOMXPath $xpath): integer
     {
         if ($currency === 'EUR') {
+
             return 1;
+
         }
 
         return $xpath->evaluate("string(.//*[@currency='" . $currency . "']/@rate)");
@@ -575,32 +585,43 @@ class Convert extends BasePlugin
 
         $unit = strtolower($unit);
 
-        if ( ( $key = $this->get_array_key($unit, $currencies) ) !== false ) {
+        if ( !empty( $key = $this->getArrayKey($unit, $currencies) ) ) {
+
             return ["currency", $key];
+
         }
 
-        if ( ( $key = $this->get_array_key($unit, $weights) ) !== false ) {
+        if ( !empty( $key = $this->getArrayKey($unit, $weights) ) ) {
+
             return ["weight", $key];
+
         }
 
-        if ( ( $key = $this->get_array_key($unit, $areas) ) !== false ) {
+        if ( !empty( $key = $this->getArrayKey($unit, $areas) ) ) {
+
             return ["area", $key];
+
         }
 
-        if ( ( $key = $this->get_array_key($unit, $speeds) ) !== false ) {
+        if ( !empty( $key = $this->getArrayKey($unit, $speeds) ) ) {
+
             return ["speed", $key];
+
         }
 
-        if ( ( $key = $this->get_array_key($unit, $distances) ) !== false ) {
+        if ( !empty( $key = $this->getArrayKey($unit, $distances) ) ) {
+
             return ["distance", $key];
+
         }
 
-        if ( ( $key = $this->get_array_key($unit, $temperatures) ) !== false ) {
+        if ( !empty( $key = $this->getArrayKey($unit, $temperatures) ) ) {
+
             return ["temperature", $key];
+
         }
 
-        //Throw exception
-        return false;
+        throw new \InvalidParametersException("Unit type does not match any registered unit types.");
     }
 
     private function distanceConvert(string $from, string $to, float $amount): float
@@ -617,6 +638,7 @@ class Convert extends BasePlugin
             "yd" => 0.9144,
             "nautical mile" => 1852
         ];
+
         return round(($amount * $distanceinmeters[$from]) / ($distanceinmeters[$to]), 4);
     }
     
@@ -629,6 +651,7 @@ class Convert extends BasePlugin
             "knot" => 1.852,
             "ma" => 1224
         ];
+
         return round(($amount * $speedinkmph[$from]) / ($speedinkmph[$to]), 4);
     }
 
@@ -651,6 +674,7 @@ class Convert extends BasePlugin
             "acre" => 4046.8564300508,
             "nautical mile²" => 3434290.0120544
         ];
+
         return round(($amount * $weightinsqmt[$from]) / ($weightinsqmt[$to]), 4);
     }
 
@@ -687,13 +711,15 @@ class Convert extends BasePlugin
         return round($conversion, 1);
     }
 
-    private function currencyConvert(string $from, string $to, float $amount): float
+    private function currencyConvert(string $from, string $to, float $amount)
     {    
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request('http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
+        $response = $this->httpClient->request('http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
 
         if ($response->getStatus() !== 200) {
-            return false;
+
+            throw new \RequestFailedException('Error code ' . $response->getStatus() . 'when requesting xml page.');
+
         }
 
         $dom = domdocument_load_xml($response->getBody());
@@ -729,7 +755,7 @@ class Convert extends BasePlugin
         return round(($amount * $weightsingrams[$from]) / ($weightsingrams[$to]), 4);
     }
 
-    private function parse_params(array $params_arr): array
+    private function parseParams(array $params_arr): array
     {
         if (is_numeric($params_arr[0])) {
     
@@ -750,7 +776,7 @@ class Convert extends BasePlugin
 
         if ( ( $to_position = array_search('to', $params_arr) ) === false) {
 
-            return false;
+            throw new \InvalidParametersException("The from unit type and to unit type do not match.");
 
         }
     
@@ -768,142 +794,132 @@ class Convert extends BasePlugin
     {
         $params_arr = $command->getParameters();
 
-        $parsed_params = $this->parse_params($params_arr);
+        try {
 
-        if ($parsed_params === false) {
+	        $parsed_params = $this->parseParams($params_arr);
+
+	    } catch (\InvalidParametersException $e) {
+
             return $this->chatClient->postReply(
                 $command,
                 "I'm really not sure what you want me to do..."
             );
 
-        }
+	    }
 
         if ($parsed_params['amount'] === 0) {
+
             return $this->chatClient->postReply(
                 $command,
                 "Yeah let me just divide this by 0 and..."
             );
+
         }
 
-        $from_unit_arr = $this->getUnitType($parsed_params['from_unit']);
-        $to_unit_arr = $this->getUnitType($parsed_params['to_unit']);
+        try {
 
-        if ($from_unit_arr === false || $to_unit_arr === false) {
+        	$from_unit_arr = $this->getUnitType($parsed_params['from_unit']);
+        	$to_unit_arr = $this->getUnitType($parsed_params['to_unit']);
+
+        } catch (\InvalidParametersException $e) {
+
             return $this->chatClient->postReply(
                 $command,
                 "They didn't teach me that one yet."
             );
+
         }
 
         if ( ( $from_type = $from_unit_arr[0] ) !== ( $to_type = $to_unit_arr[0] ) ) {
+
             return $this->chatClient->postReply(
                 $command, 
                 "What?? They never taught me how to convert " . $from_type . " to " . $to_type . "."
             );
+
         }
 
         switch($from_type) {
             case 'temperature':
-                return $this->chatClient->postReply(
-                    $command, 
-                    $parsed_params['amount'] 
-                    . $from_unit_arr[1] 
-                    . ' = ' 
-                    . $this->tempConvert(
-                        $from_unit_arr[1], 
-                        $to_unit_arr[1], 
-                        $parsed_params['amount']
-                    ) 
-                    . $to_unit_arr[1]
+                $converted_to_amount = $this->tempConvert(
+                    $from_unit_arr[1], 
+                    $to_unit_arr[1], 
+                    $parsed_params['amount']
                 );
                 break;
 
             case 'currency':
-                $converted_currency = $this->currencyConvert(
+                $parsed_params['amount'] = number_format($parsed_params['amount'], 2, '.', ',');
+
+                try {
+
+	                $converted_currency = $this->currencyConvert(
+	                    $from_unit_arr[1],
+	                    $to_unit_arr[1],
+	                    $parsed_params['amount']
+	                );
+
+	            } catch (\RequestFailedException $e) {
+
+	            	$message = "I don't know what's going on but I can't find that information.";
+
+                    return $this->chatClient->postReply(
+					    $command, 
+					    $message
+					);
+
+	            }
+                
+                $converted_to_amount = number_format($converted_currency, 2, '.', ',');
+
+                break;
+
+            case 'weight':
+                $converted_to_amount = $this->weightConvert(
                     $from_unit_arr[1],
                     $to_unit_arr[1],
                     $parsed_params['amount']
                 );
-            
-                if ($converted_currency === false) {
-
-                    return $this->chatClient->postReply(
-                        $command, 
-                        "I don't know what's going on but I can't find that information."
-                    );
-
-                } else {
-
-                    return $this->chatClient->postReply(
-                        $command, 
-                        number_format($parsed_params['amount'], 2, '.', ',') 
-                        . $from_unit_arr[1] 
-                        . ' = ' 
-                        . number_format($converted_currency, 2, '.', ',') 
-                        . $to_unit_arr[1]
-                    );
-                
-                }
-                break;
-
-            case 'weight':
-                return $this->chatClient->postReply(
-                    $command,
-                    $parsed_params['amount'] 
-                    . $from_unit_arr[1] 
-                    . ' = ' 
-                    . $this->weightConvert(
-                        $from_unit_arr[1],
-                        $to_unit_arr[1],
-                        $parsed_params['amount']
-                    ) 
-                    . $to_unit_arr[1]
-                );
                 break;
 
             case 'area':
-                return $this->chatClient->postReply(
-                    $command,
-                    $parsed_params['amount'] 
-                    . $from_unit_arr[1] 
-                    . ' = ' 
-                    . $this->areaConvert(
-                        $from_unit_arr[1],
-                        $to_unit_arr[1], 
-                        $parsed_params['amount']
-                    ) 
-                    . $to_unit_arr[1]
+                $converted_to_amount = $this->areaConvert(
+                    $from_unit_arr[1],
+                    $to_unit_arr[1], 
+                    $parsed_params['amount']
                 );
                 break;
 
             case 'speed':
-                return $this->chatClient->postReply(
-                    $command, 
-                    $parsed_params['amount'] 
-                    . $from_unit_arr[1] 
-                    . ' = ' 
-                    . $this->speedConvert(
-                        $from_unit_arr[1], 
-                        $to_unit_arr[1], 
-                        $parsed_params['amount']
-                    ) 
-                    . $to_unit_arr[1]
+                $converted_to_amount = $this->speedConvert(
+                    $from_unit_arr[1], 
+                    $to_unit_arr[1], 
+                    $parsed_params['amount']
                 );
                 break;
 
             case 'distance':
-                return $this->chatClient->postReply(
-                    $command, 
-                    $parsed_params['amount'] 
-                    . $from_unit_arr[1] 
-                    . ' = ' 
-                    . $this->distanceConvert(
-                        $from_unit_arr[1], 
-                        $to_unit_arr[1], 
-                        $parsed_params['amount']) 
-                    . $to_unit_arr[1]
+                $converted_to_amount = $this->distanceConvert(
+                    $from_unit_arr[1], 
+                    $to_unit_arr[1], 
+                    $parsed_params['amount']
                 );
         }
+
+        $sprintf_format = '%s%s = %s%s';
+
+        $message = sprintf(
+        	$sprintf_format,
+        	$parsed_params['amount'],
+        	$from_unit_arr[1],
+        	$converted_to_amount,
+        	$to_unit_arr[1]
+        );
+
+        return $this->chatClient->postReply(
+            $command, 
+            $message
+        );
     }
 
     public function getDescription(): string
