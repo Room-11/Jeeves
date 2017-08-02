@@ -621,12 +621,12 @@ class Convert extends BasePlugin
 
         }
 
-        throw new \InvalidParametersException("Unit type does not match any registered unit types.");
+        throw new InvalidParametersException("Unit type does not match any registered unit types.");
     }
 
     private function distanceConvert(string $from, string $to, float $amount): float
     {
-        $distanceinmeters = [
+        $distanceAsMeters = [
             "km" => 1000,
             "m" => 1,
             "dm" => 0.1,
@@ -639,12 +639,12 @@ class Convert extends BasePlugin
             "nautical mile" => 1852
         ];
 
-        return round(($amount * $distanceinmeters[$from]) / ($distanceinmeters[$to]), 4);
+        return round(($amount * $distanceAsMeters[$from]) / ($distanceAsMeters[$to]), 4);
     }
     
     private function speedConvert(string $from, string $to, float $amount): float
     {
-        $speedinkmph = [
+        $speedAsKmph = [
             "kmph" => 1,
             "mps" => 3.6,
             "mph" => 1.609344,
@@ -652,12 +652,12 @@ class Convert extends BasePlugin
             "ma" => 1224
         ];
 
-        return round(($amount * $speedinkmph[$from]) / ($speedinkmph[$to]), 4);
+        return round(($amount * $speedAsKmph[$from]) / ($speedAsKmph[$to]), 4);
     }
 
     private function areaConvert(string $from, string $to, float $amount): float
     {
-        $weightinsqmt = [
+        $areaAsSqmt = [
             "km²" => 1000000,
             "m²" => 1,
             "dm²" => 0.01,
@@ -675,40 +675,36 @@ class Convert extends BasePlugin
             "nautical mile²" => 3434290.0120544
         ];
 
-        return round(($amount * $weightinsqmt[$from]) / ($weightinsqmt[$to]), 4);
+        return round(($amount * $areaAsSqmt[$from]) / ($areaAsSqmt[$to]), 4);
     }
 
     private function tempConvert(string $from, string $to, float $amount): float
     {
-        $conversion = 0;
-
-        if($from === "°F" && $to === "°C"){
-
-            $conversion = ((9/5) * $amount) + (32);
-        
-        } else if ($from === "°F" && $to === "K"){
-        
-            $conversion = ((($amount - 32) * 5) / 9) + 273.15;
-        
-        } else if ($from === "°C" && $to === "°F") {
-
-            $conversion = ($amount - 32) * (5/9);
-
-        } else if ($from === "°C" && $to === "K") {
-
-            $conversion = ($amount + 273.15);
-
-        } else if ($from === "K" && $to === "°C") {
-
-            $conversion = ($amount - 273.15);
-
-        } else if ($from === "K" && $to === "°F") {
-
-            $conversion = (($temp - 273.15) * 1.8) + 32;
-
+        switch ($from) {
+            case "°F":
+                $temperatureAsKelvin = ((($amount - 32) * 5) / 9) + 273.15;
+                break;
+            case "°C":
+                $temperatureAsKelvin = ($amount + 273.15);
+                break;
+            case "K":
+                $temperatureAsKelvin = $amount;
+                break;
         }
 
-        return round($conversion, 1);
+        switch ($to) {
+            case "°F":
+                $convertedTemperature = (((9/5) * ($temperatureAsKelvin - 273.15)) + 32);
+                break;
+            case "°C":
+                $convertedTemperature = ($temperatureAsKelvin - 273.15);
+                break;
+            case "K":
+                $convertedTemperature = $temperatureAsKelvin;
+                break;
+        }
+
+        return round($convertedTemperature, 2);
     }
 
     private function currencyConvert(string $from, string $to, float $amount)
@@ -718,7 +714,7 @@ class Convert extends BasePlugin
 
         if ($response->getStatus() !== 200) {
 
-            throw new \RequestFailedException('Error code ' . $response->getStatus() . 'when requesting xml page.');
+            throw new RequestFailedException('Error code ' . $response->getStatus() . 'when requesting xml page.');
 
         }
 
@@ -726,17 +722,17 @@ class Convert extends BasePlugin
 
         $xpath = new \DOMXPath($dom);
 
-        $from_rate = $this->getRate($from, $xpath);
+        $fromRate = $this->getRate($from, $xpath);
 
-        $to_rate = $this->getRate($to, $xpath);
+        $toRate = $this->getRate($to, $xpath);
 
-        return (($amount / $from_rate) * ($to_rate));
+        return (($amount / $fromRate) * ($toRate));
 
     }
 
     private function weightConvert(string $from, string $to, float $amount): float
     {
-        $weightsingrams = [
+        $weightAsGrams = [
             "t" => 1000000,
             "kg" => 1000,
             "hg" => 100,
@@ -752,21 +748,21 @@ class Convert extends BasePlugin
             "st" => 6350.2934
         ];
     
-        return round(($amount * $weightsingrams[$from]) / ($weightsingrams[$to]), 4);
+        return round(($amount * $weightAsGrams[$from]) / ($weightAsGrams[$to]), 4);
     }
 
-    private function parseParams(array $params_arr): array
+    private function parseParams(array $paramsArr): array
     {
-        if (is_numeric($params_arr[0])) {
+        if (is_numeric($paramsArr[0])) {
     
-            $amount = (int) $params_arr[0];
-            array_shift($params_arr);
+            $amount = (int) $paramsArr[0];
+            array_shift($paramsArr);
     
-        } else if (is_numeric($params_arr[0][0])) {
+        } else if (is_numeric($paramsArr[0][0])) {
     
-            $first_param_arr = preg_split('/(?=[^0-9\.\,])/', $params_arr[0], 2);
-            $amount = (int) $first_param_arr[0];
-            $params_arr[0] = $first_param_arr[1];
+            $firstParamArr = preg_split('/(?=[^0-9\.\,])/', $paramsArr[0], 2);
+            $amount = (int) $firstParamArr[0];
+            $paramsArr[0] = $firstParamArr[1];
     
         } else {
 
@@ -774,29 +770,29 @@ class Convert extends BasePlugin
 
         }
 
-        if ( ( $to_position = array_search('to', $params_arr) ) === false) {
+        if ( ( $toPosition = array_search('to', $paramsArr) ) === false) {
 
-            throw new \InvalidParametersException("The from unit type and to unit type do not match.");
+            throw new InvalidParametersException("The from unit type and to unit type do not match.");
 
         }
     
-        $from_unit = implode(" ", array_slice($params_arr, 0, $to_position));
-        $to_unit = implode(" ", array_slice($params_arr, $to_position + 1));
+        $fromUnit = implode(" ", array_slice($paramsArr, 0, $toPosition));
+        $toUnit = implode(" ", array_slice($paramsArr, $toPosition + 1));
 
         return [
             "amount" => $amount,
-            "from_unit" => $from_unit,
-            "to_unit" => $to_unit
+            "from_unit" => $fromUnit,
+            "to_unit" => $toUnit
         ];
     }
 
     public function convert(Command $command): Promise
     {
-        $params_arr = $command->getParameters();
+        $paramsArr = $command->getParameters();
 
         try {
 
-            $parsed_params = $this->parseParams($params_arr);
+            $parsedParams = $this->parseParams($paramsArr);
 
         } catch (\InvalidParametersException $e) {
 
@@ -807,7 +803,7 @@ class Convert extends BasePlugin
 
         }
 
-        if ($parsed_params['amount'] === 0) {
+        if ($parsedParams['amount'] === 0) {
 
             return $this->chatClient->postReply(
                 $command,
@@ -818,8 +814,8 @@ class Convert extends BasePlugin
 
         try {
 
-            $from_unit_arr = $this->getUnitType($parsed_params['from_unit']);
-            $to_unit_arr = $this->getUnitType($parsed_params['to_unit']);
+            $fromUnitArr = $this->getUnitType($parsedParams['from_unit']);
+            $toUnitArr = $this->getUnitType($parsedParams['to_unit']);
 
         } catch (\InvalidParametersException $e) {
 
@@ -830,33 +826,33 @@ class Convert extends BasePlugin
 
         }
 
-        if ( ( $from_type = $from_unit_arr[0] ) !== ( $to_type = $to_unit_arr[0] ) ) {
+        if ( ( $fromType = $fromUnitArr[0] ) !== ( $toType = $toUnitArr[0] ) ) {
 
             return $this->chatClient->postReply(
                 $command, 
-                "What?? They never taught me how to convert " . $from_type . " to " . $to_type . "."
+                "What?? They never taught me how to convert " . $fromType . " to " . $toType . "."
             );
 
         }
 
-        switch($from_type) {
+        switch($fromType) {
             case 'temperature':
-                $converted_to_amount = $this->tempConvert(
-                    $from_unit_arr[1], 
-                    $to_unit_arr[1], 
-                    $parsed_params['amount']
+                $convertedToAmount = $this->tempConvert(
+                    $fromUnitArr[1], 
+                    $toUnitArr[1], 
+                    $parsedParams['amount']
                 );
                 break;
 
             case 'currency':
-                $parsed_params['amount'] = number_format($parsed_params['amount'], 2, '.', ',');
+                $parsedParams['amount'] = number_format($parsedParams['amount'], 2, '.', ',');
 
                 try {
 
-                    $converted_currency = $this->currencyConvert(
-                        $from_unit_arr[1],
-                        $to_unit_arr[1],
-                        $parsed_params['amount']
+                    $convertedCurrency = $this->currencyConvert(
+                        $fromUnitArr[1],
+                        $toUnitArr[1],
+                        $parsedParams['amount']
                     );
 
                 } catch (\RequestFailedException $e) {
@@ -870,50 +866,50 @@ class Convert extends BasePlugin
 
                 }
                 
-                $converted_to_amount = number_format($converted_currency, 2, '.', ',');
+                $convertedToAmount = number_format($convertedCurrency, 2, '.', ',');
 
                 break;
 
             case 'weight':
-                $converted_to_amount = $this->weightConvert(
-                    $from_unit_arr[1],
-                    $to_unit_arr[1],
-                    $parsed_params['amount']
+                $convertedToAmount = $this->weightConvert(
+                    $fromUnitArr[1],
+                    $toUnitArr[1],
+                    $parsedParams['amount']
                 );
                 break;
 
             case 'area':
-                $converted_to_amount = $this->areaConvert(
-                    $from_unit_arr[1],
-                    $to_unit_arr[1], 
-                    $parsed_params['amount']
+                $convertedToAmount = $this->areaConvert(
+                    $fromUnitArr[1],
+                    $toUnitArr[1], 
+                    $parsedParams['amount']
                 );
                 break;
 
             case 'speed':
-                $converted_to_amount = $this->speedConvert(
-                    $from_unit_arr[1], 
-                    $to_unit_arr[1], 
-                    $parsed_params['amount']
+                $convertedToAmount = $this->speedConvert(
+                    $fromUnitArr[1], 
+                    $toUnitArr[1], 
+                    $parsedParams['amount']
                 );
                 break;
 
             case 'distance':
-                $converted_to_amount = $this->distanceConvert(
-                    $from_unit_arr[1], 
-                    $to_unit_arr[1], 
-                    $parsed_params['amount']
+                $convertedToAmount = $this->distanceConvert(
+                    $fromUnitArr[1], 
+                    $toUnitArr[1], 
+                    $parsedParams['amount']
                 );
         }
 
-        $sprintf_format = '%s%s = %s%s';
+        $sprintfFormat = '%s%s = %s%s';
 
         $message = sprintf(
-            $sprintf_format,
-            $parsed_params['amount'],
-            $from_unit_arr[1],
-            $converted_to_amount,
-            $to_unit_arr[1]
+            $fromUnitArr,
+            $parsedParams['amount'],
+            $fromUnitArr[1],
+            $convertedToAmount,
+            $toUnitArr[1]
         );
 
         return $this->chatClient->postReply(
