@@ -25,7 +25,7 @@ class Say extends BasePlugin
 
     public function say(Command $command)
     {
-        return $this->chatClient->postMessage($command, implode(' ', $command->getParameters()));
+        return $this->chatClient->postMessage($command, $this->getMessageResponse($command));
     }
 
     public function sayf(Command $command)
@@ -43,7 +43,7 @@ class Say extends BasePlugin
 
     public function reply(Command $command)
     {
-        return $this->chatClient->postReply($command, implode(' ', $command->getParameters()));
+        return $this->chatClient->postReply($command, $this->getMessageResponse($command));
     }
 
     public function replyf(Command $command)
@@ -57,6 +57,11 @@ class Say extends BasePlugin
         } catch (InvalidMessageFormatException $e) {
             return $this->chatClient->postReply($command, $e->getMessage());
         }
+    }
+
+    private function getMessageResponse(Command $command): string
+    {
+        return $this->textFormatter->interpolateEscapeSequences(implode(' ', $command->getParameters()));
     }
 
     private function getFormattedMessageResponse(Command $command)
@@ -84,6 +89,7 @@ class Say extends BasePlugin
         }
 
         $string = $this->textFormatter->stripPingsFromText($string);
+        $string = $this->textFormatter->interpolateEscapeSequences($string);
 
         if (false === $result = @\vsprintf($string, $args)) {
             throw new InvalidMessageFormatException('printf() failed, check your format string and arguments');
