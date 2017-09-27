@@ -26,7 +26,7 @@ class Wotd extends BasePlugin
     {
         $dom = domdocument_load_html($response->getBody());
 
-        $xpath = new DOMXPath($dom);
+        $xpath = new \DOMXPath($dom);
         $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' definition-box ')]");
 
         if ($nodes->length === 0) {
