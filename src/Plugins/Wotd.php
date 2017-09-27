@@ -26,14 +26,17 @@ class Wotd extends BasePlugin
     {
         $dom = domdocument_load_html($response->getBody());
 
-        if ($dom->getElementsByTagName('description')->length === 0) {
+        if ($dom->getElementsByTagName('definition-box')->length === 0) {
             return 'I dun goofed';
         }
 
-        preg_match('/([^:]+)/', $dom->getElementsByTagName('description')->item(2)->textContent, $before);
-        preg_match('/\:(.*)/', $dom->getElementsByTagName('description')->item(2)->textContent, $after);
+        $xpath = new DOMXPath($dom);
+        $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' definition-box ')]");
 
-        return '**['.$before[0].'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $before[0]).')**' . $after[0];
+        $word       = $nodes->item(0)->getElementsByTagName('strong')->item(0)->textContent;
+        $definition = $nodes->item(0)->getElementsByTagName('li')->item(0)->textContent;
+
+        return '**['.$word.'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $word).')**' . $definition;
     }
 
     public function fetch(Command $command)
