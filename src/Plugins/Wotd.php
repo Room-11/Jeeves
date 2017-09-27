@@ -36,7 +36,7 @@ class Wotd extends BasePlugin
         $word       = $nodes->item(0)->getElementsByTagName('strong')->item(0)->textContent;
         $definition = $nodes->item(0)->getElementsByTagName('li')->item(0)->textContent;
 
-        return '**['.$word.'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $word).')**' . $definition;
+        return '**['.$word.'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $word).')** ' . $definition;
     }
 
     public function fetch(Command $command)
