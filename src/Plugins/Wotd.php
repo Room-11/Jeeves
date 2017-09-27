@@ -26,13 +26,13 @@ class Wotd extends BasePlugin
     {
         $dom = domdocument_load_html($response->getBody());
 
-        if ($dom->getElementsByTagName('definition-box')->length === 0) {
-            return 'I dun goofed';
-        }
-
         $xpath = new DOMXPath($dom);
         $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' definition-box ')]");
 
+        if ($nodes->length === 0) {
+            return 'I dun goofed';
+        }
+        
         $word       = $nodes->item(0)->getElementsByTagName('strong')->item(0)->textContent;
         $definition = $nodes->item(0)->getElementsByTagName('li')->item(0)->textContent;
 
