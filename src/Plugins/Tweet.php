@@ -14,6 +14,7 @@ use PeeHaa\AsyncTwitter\Api\Request\Status\Retweet as RetweetRequest;
 use PeeHaa\AsyncTwitter\Api\Request\Status\Update as UpdateRequest;
 use PeeHaa\AsyncTwitter\Credentials\AccessTokenFactory as TwitterAccessTokenFactory;
 use Room11\DOMUtils\LibXMLFatalErrorException;
+use function Room11\DOMUtils\xpath_html_class;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -34,7 +35,7 @@ class TextProcessingFailedException extends Exception {}
 class Tweet extends BasePlugin
 {
     private const MAX_TWEET_LENGTH = 280;
-    
+
     private $chatClient;
     private $admin;
     private $keyValueStore;
@@ -77,18 +78,16 @@ class Tweet extends BasePlugin
         return domdocument_load_html($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
     }
 
-    private function isRetweet(\DOMDocument $dom): bool
+    private function isRetweet(\DOMXPath $xpath): bool
     {
-        return (bool)(new \DOMXPath($dom))
-            ->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' ob-tweet ')]")
-            ->length;
+        return $xpath->query("//*[" . xpath_html_class('ob-tweet') . "]")->length > 0;
     }
 
-    private function getTweetIdFromMessage(\DOMDocument $dom): int
+    private function getTweetIdFromMessage(\DOMXPath $xpath): int
     {
-        /** @var \DOMElement $node */
-        foreach ($dom->getElementsByTagName('a') as $node) {
-            if (!preg_match('~https?://twitter\.com/[^/]+/status/(\d+)~', $node->getAttribute('href'), $matches)) {
+        /** @var \DOMElement $element */
+        foreach ($xpath->document->getElementsByTagName('a') as $element) {
+            if (!preg_match('~https?://twitter.com/[^/]+/status/(\d+)~', $element->getAttribute('href'), $matches)) {
                 continue;
             }
 
@@ -98,13 +97,13 @@ class Tweet extends BasePlugin
         throw new TweetIDNotFoundException("ID not found");
     }
 
-    private function replaceImages(\DOMDocument $dom)
+    private function replaceImages(\DOMXPath $xpath)
     {
         $files = [];
 
-        foreach ($dom->getElementsByTagName('img') as $node) {
-            /** @var \DOMElement $node */
-            $target = $node->getAttribute('src');
+        /** @var \DOMElement $element */
+        foreach ($xpath->document->getElementsByTagName('img') as $element) {
+            $target = $element->getAttribute('src');
 
             if (substr($target, 0, 2) === '//') {
                 $target = 'https:' . $target;
@@ -121,7 +120,7 @@ class Tweet extends BasePlugin
             $tmpFilePath = \Room11\Jeeves\DATA_BASE_DIR . '/' . uniqid('twitter-media-', true);
             yield \Amp\File\put($tmpFilePath, $response->getBody());
 
-            $node->parentNode->parentNode->removeChild($node->parentNode);
+            $element->parentNode->parentNode->removeChild($element->parentNode);
 
             $files[] = $tmpFilePath;
         }
@@ -129,19 +128,19 @@ class Tweet extends BasePlugin
         return $files;
     }
 
-    private function replaceHrefs(\DOMDocument $dom)
+    private function replaceAnchors(\DOMXPath $xpath)
     {
-        foreach ($dom->getElementsByTagName('a') as $node) {
-            /** @var \DOMElement $node */
+        /** @var \DOMElement $element */
+        foreach ($xpath->document->getElementsByTagName('a') as $element) {
             $linkText = "";
 
-            if ($node->getAttribute('href') !== $node->textContent) {
-                $linkText = " (" . $node->textContent . ")";
+            if ($element->getAttribute('href') !== $element->textContent) {
+                $linkText = " (" . $element->textContent . ")";
             }
 
-            $formattedNode = $dom->createTextNode($node->getAttribute('href') . $linkText);
+            $formattedNode = $xpath->document->createTextNode($element->getAttribute('href') . $linkText);
 
-            $node->parentNode->replaceChild($formattedNode, $node);
+            $element->parentNode->replaceChild($formattedNode, $element);
         }
     }
 
@@ -203,17 +202,17 @@ class Tweet extends BasePlugin
         return $this->clients[$ident];
     }
 
-    private function buildRetweetRequest(\DOMDocument $dom): RetweetRequest
+    private function buildRetweetRequest(\DOMXPath $xpath): RetweetRequest
     {
-        return new RetweetRequest($this->getTweetIdFromMessage($dom));
+        return new RetweetRequest($this->getTweetIdFromMessage($xpath));
     }
 
-    private function buildUpdateRequest(ChatRoom $room, \DOMDocument $dom)
+    private function buildUpdateRequest(ChatRoom $room, \DOMXPath $xpath)
     {
-        $files = yield from $this->replaceImages($dom);
-        $this->replaceHrefs($dom);
+        $files = yield from $this->replaceImages($xpath);
+        $this->replaceAnchors($xpath);
 
-        $text = trim(yield from $this->replacePings($room, $dom->textContent));
+        $text = trim(yield from $this->replacePings($room, $xpath->document->textContent));
         $text = $this->fixBrokenImgurUrls($text);
         $text = \Normalizer::normalize(trim($text), \Normalizer::FORM_C);
 
@@ -252,11 +251,11 @@ class Tweet extends BasePlugin
         return $ids;
     }
 
-    private function buildTwitterRequest(ChatRoom $room, \DOMDocument $dom)
+    private function buildTwitterRequest(ChatRoom $room, \DOMXPath $xpath)
     {
-        return $this->isRetweet($dom)
-            ? $this->buildRetweetRequest($dom)
-            : yield from $this->buildUpdateRequest($room, $dom);
+        return $this->isRetweet($xpath)
+            ? $this->buildRetweetRequest($xpath)
+            : yield from $this->buildUpdateRequest($room, $xpath);
     }
 
     public function tweet(Command $command)
@@ -271,9 +270,10 @@ class Tweet extends BasePlugin
             /** @var TwitterClient $client */
             $client = yield from $this->getClientForRoom($room); // do this first to make sure it's worth going further
 
-            $message = yield from $this->getRawMessage($room, $command->getParameter(0));
+            $doc = yield from $this->getRawMessage($room, $command->getParameter(0));
+            $xpath = new \DOMXPath($doc);
 
-            $request = yield from $this->buildTwitterRequest($room, $message);
+            $request = yield from $this->buildTwitterRequest($room, $xpath);
 
             $result = yield $client->request($request);
 
