@@ -109,7 +109,6 @@ class Tweet extends BasePlugin
                 $target = 'https:' . $target;
             }
 
-            /** @var HttpResponse $response */
             $request = (new HttpRequest)
                 ->setMethod('GET')
                 ->setUri($target)
@@ -153,7 +152,6 @@ class Tweet extends BasePlugin
         }
 
         $pingableIDs = yield $this->chatClient->getPingableUserIDs($room, ...$matches[1]);
-        /** @var int $ids because PHP storm is dumb */
         $ids = array_values($pingableIDs);
         $users = yield $this->chatClient->getMainSiteUsers($room, ...$ids);
 
