@@ -74,7 +74,7 @@ class Weather extends BasePlugin {
 
     private function getFormattedWeather(\stdClass $data): string {
         return sprintf(
-            "*%s*. **Current Temperature:** %s. **Maximum Temperature:** %s C, **Minimum Temperature:** %s C. **Humidity:** %d%%",
+            "*%s*. **Current Temperature:** %s °C. **Maximum Temperature:** %s °C, **Minimum Temperature:** %s °C. **Humidity:** %d%%",
             ucwords($data->weather[0]->description),
             $data->main->temp - 273.15,
             $data->main->temp_max - 273.15,
