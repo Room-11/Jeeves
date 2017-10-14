@@ -64,6 +64,7 @@ class Weather extends BasePlugin {
 
         /** @var \stdClass $data */
         $data = @json_decode($response->getBody());
+        $this->chatClient->postMessage($command, json_encode($data, JSON_PRETTY_PRINT));
 
         return $this->chatClient->editMessage(
             $message,
@@ -73,8 +74,9 @@ class Weather extends BasePlugin {
 
     private function getFormattedWeather(\stdClass $data): string {
         return sprintf(
-            "*%s*. **Maximum Temperature:** %d C, **Minimum Temperature:** %d C. **Humidity:** %d%%",
+            "*%s*. **Current Temperature:** %s. **Maximum Temperature:** %s C, **Minimum Temperature:** %s C. **Humidity:** %d%%",
             ucwords($data->weather[0]->description),
+            $data->main->temp - 273.15,
             $data->main->temp_max - 273.15,
             $data->main->temp_min - 273.15,
             $data->main->humidity
