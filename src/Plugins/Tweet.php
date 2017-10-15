@@ -33,6 +33,8 @@ class TextProcessingFailedException extends Exception {}
 
 class Tweet extends BasePlugin
 {
+    private const MAX_TWEET_LENGTH = 280
+    
     private $chatClient;
     private $admin;
     private $keyValueStore;
@@ -219,7 +221,7 @@ class Tweet extends BasePlugin
             throw new TextProcessingFailedException;
         }
 
-        if (mb_strlen($text, "UTF-8") > 140) {
+        if (mb_strlen($text, 'UTF-8') > self::MAX_TWEET_LENGTH) {
             throw new TweetLengthLimitExceededException;
         }
 
