@@ -33,7 +33,7 @@ class TextProcessingFailedException extends Exception {}
 
 class Tweet extends BasePlugin
 {
-    private const MAX_TWEET_LENGTH = 280
+    private const MAX_TWEET_LENGTH = 280;
     
     private $chatClient;
     private $admin;
