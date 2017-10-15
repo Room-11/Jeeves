@@ -96,27 +96,6 @@ class Tweet extends BasePlugin
         throw new TweetIDNotFoundException("ID not found");
     }
 
-    private function replaceEmphasizeTags(\DOMDocument $dom)
-    {
-        $xpath = new \DOMXPath($dom);
-
-        foreach ($xpath->query("//i|//b") as $node) {
-            $formattedNode = $dom->createTextNode("*" . $node->textContent . "*");
-
-            $node->parentNode->replaceChild($formattedNode, $node);
-        }
-    }
-
-    private function replaceStrikeTags(\DOMDocument $dom)
-    {
-        foreach ($dom->getElementsByTagName('strike') as $node) {
-            /** @noinspection HtmlDeprecatedTag */
-            $formattedNode = $dom->createTextNode("<strike>" . $node->textContent . "</strike>");
-
-            $node->parentNode->replaceChild($formattedNode, $node);
-        }
-    }
-
     private function replaceImages(\DOMDocument $dom)
     {
         $files = [];
@@ -229,8 +208,6 @@ class Tweet extends BasePlugin
 
     private function buildUpdateRequest(ChatRoom $room, \DOMDocument $dom)
     {
-        $this->replaceEmphasizeTags($dom);
-        $this->replaceStrikeTags($dom);
         $files = yield from $this->replaceImages($dom);
         $this->replaceHrefs($dom);
 
