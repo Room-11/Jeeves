@@ -86,7 +86,7 @@ class Tweet extends BasePlugin
     {
         /** @var \DOMElement $node */
         foreach ($dom->getElementsByTagName('a') as $node) {
-            if (!preg_match('~https?://twitter.com/[^/]+/status/(\d+)~', $node->getAttribute('href'), $matches)) {
+            if (!preg_match('~https?://twitter\.com/[^/]+/status/(\d+)~', $node->getAttribute('href'), $matches)) {
                 continue;
             }
 
@@ -173,7 +173,7 @@ class Tweet extends BasePlugin
 
     private function fixBrokenImgurUrls(string $text)
     {
-        return preg_replace('~((?!https?:)//i(?:.stack)?.imgur.com/)~', 'https:\1', $text);
+        return preg_replace('~((?!https?:)//i(?:\.stack)?\.imgur\.com/)~', 'https:\1', $text);
     }
 
     private function getClientForRoom(ChatRoom $room)
