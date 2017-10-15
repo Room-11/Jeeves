@@ -18,6 +18,9 @@ class Google extends BasePlugin
 {
     private const MAX_RESULTS = 3;
     private const ENCODING = 'UTF-8';
+    private const DEFAULT_PARAMS = [
+        '-site:w3schools.com'
+    ];
 
     private $chatClient;
     private $searcher;
@@ -91,8 +94,9 @@ class Google extends BasePlugin
         if (!$command->hasParameters()) {
             return new Success();
         }
-
-        $text = implode(' ', $command->getParameters());
+        
+        $parameters = array_merge($command->getParameters(), self::DEFAULT_PARAMS);
+        $text = implode(' ', $parameters);
 
         try {
             $searchTerm = yield $this->messageResolver->resolveMessageText($command->getRoom(), $text);
