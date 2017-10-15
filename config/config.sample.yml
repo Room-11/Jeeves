@@ -14,9 +14,6 @@ rooms:
   -
     hostname: chat.stackoverflow.com
     id: 100286
-  -
-    hostname: chat.stackoverflow.com
-    id: 156726
 
 logging:
   level: ALL | DEBUG
