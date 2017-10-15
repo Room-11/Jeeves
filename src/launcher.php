@@ -48,6 +48,8 @@ use Room11\OpenId\Password as OpenIdPassword;
 use Room11\StackChat\Auth\CredentialManager;
 use Room11\StackChat\Room\Room;
 use Symfony\Component\Yaml\Yaml;
+use Room11\Jeeves\Plugins\Weather as WeatherPlugin;
+use Room11\Jeeves\Plugins\Manga as MangaPlugin;
 use function Amp\onError;
 use function Amp\run;
 
@@ -100,6 +102,15 @@ $injector->define(GithubIssueCredentials::class, [
     ':username' => $config['github']['username'] ?? '',
     ':password' => $config['github']['password'] ?? '',
     ':token'    => $config['github']['token'] ?? ''
+]);
+
+$injector->define(WeatherPlugin::class, [
+    ':apiKey' => $config['openweathermap']['api-key']
+]);
+
+$injector->define(MangaPlugin::class, [
+    ':apiKey' => $config['mashape-manga-scraper']['api-key'],
+    ':siteId' => $config['mashape-manga-scraper']['site-id']
 ]);
 
 $injector->define(WebSocketEventDispatcherFactory::class, [
