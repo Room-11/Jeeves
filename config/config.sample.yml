@@ -61,6 +61,7 @@ plugins:
   - Room11\Jeeves\Plugins\Tweet
   - Room11\Jeeves\Plugins\Urban
   - Room11\Jeeves\Plugins\Weather
+  - Room11\Jeeves\Plugins\Manga
   - Room11\Jeeves\Plugins\Wikipedia
   - Room11\Jeeves\Plugins\Wotd
   - Room11\Jeeves\Plugins\Xkcd
@@ -80,6 +81,10 @@ ms-translate:
 
 openweathermap:
   api-key: ApiKey
+
+mashape-manga-scraper:
+  api-key: MashApeApiKey
+  site-id: mangafox.me
 
 web-api:
   enable: true
