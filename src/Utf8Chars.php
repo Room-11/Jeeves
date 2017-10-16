@@ -14,6 +14,7 @@ final class Utf8Chars
 {
     public const ELLIPSIS = StackChatUtf8Chars::ELLIPSIS;
     public const ZWNJ = StackChatUtf8Chars::ZWNJ;
+    public const ZWS = "\xE2\x80\x8B";
 
     public const BULLET   = "\xE2\x80\xA2";
     public const RIGHTWARDS_ARROW = "\xE2\x86\x92";
