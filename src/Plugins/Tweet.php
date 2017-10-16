@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Pause;
 use PeeHaa\AsyncTwitter\Api\Client\Client as TwitterClient;
 use PeeHaa\AsyncTwitter\Api\Client\ClientFactory as TwitterClientFactory;
 use PeeHaa\AsyncTwitter\Api\Client\Exception\RequestFailed as TwitterRequestFailedException;
@@ -14,23 +15,28 @@ use PeeHaa\AsyncTwitter\Api\Request\Status\Retweet as RetweetRequest;
 use PeeHaa\AsyncTwitter\Api\Request\Status\Update as UpdateRequest;
 use PeeHaa\AsyncTwitter\Credentials\AccessTokenFactory as TwitterAccessTokenFactory;
 use Room11\DOMUtils\LibXMLFatalErrorException;
-use function Room11\DOMUtils\xpath_html_class;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\Jeeves\Utf8Chars;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\MessageIDNotFoundException;
 use Room11\StackChat\Client\MessageResolver as ChatMessageResolver;
 use Room11\StackChat\Entities\MainSiteUser;
 use Room11\StackChat\Room\Room as ChatRoom;
+use function Amp\all;
+use function Amp\first;
+use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
+use function Room11\DOMUtils\xpath_html_class;
 
 class NotConfiguredException extends Exception {}
 class TweetIDNotFoundException extends Exception {}
 class TweetLengthLimitExceededException extends Exception {}
 class TextProcessingFailedException extends Exception {}
+class MediaProcessingFailedException extends Exception {}
 
 class Tweet extends BasePlugin
 {
@@ -74,6 +80,7 @@ class Tweet extends BasePlugin
         $messageInfo = yield $this->chatClient->getMessageHTML($room, $messageID);
 
         $messageBody = html_entity_decode($messageInfo, ENT_QUOTES);
+        $messageBody = str_replace(Utf8Chars::ZWNJ . Utf8Chars::ZWS, '', $messageBody);
 
         return domdocument_load_html($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
     }
@@ -87,7 +94,7 @@ class Tweet extends BasePlugin
     {
         /** @var \DOMElement $element */
         foreach ($xpath->document->getElementsByTagName('a') as $element) {
-            if (!preg_match('~https?://twitter.com/[^/]+/status/(\d+)~', $element->getAttribute('href'), $matches)) {
+            if (!preg_match('~https?://twitter\.com/[^/]+/status/(\d+)~', $element->getAttribute('href'), $matches)) {
                 continue;
             }
 
@@ -95,6 +102,37 @@ class Tweet extends BasePlugin
         }
 
         throw new TweetIDNotFoundException("ID not found");
+    }
+
+    private function removeNode(\DOMNode $node)
+    {
+        $node->parentNode->removeChild($node);
+    }
+
+    private function replaceNode(\DOMNode $old, $new)
+    {
+        if (!$new instanceof \DOMNode) {
+            $new = $old->ownerDocument->createTextNode((string)$new);
+        }
+
+        $old->parentNode->replaceChild($new, $old);
+
+        return $new;
+    }
+
+    private function downloadMediaForUpload(string $url)
+    {
+        $request = (new HttpRequest)
+            ->setMethod('GET')
+            ->setUri($url)
+            ->setHeader('Connection', 'close');
+
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request($request);
+        $tmpFilePath = \Room11\Jeeves\DATA_BASE_DIR . '/' . uniqid('twitter-media-', true);
+        yield \Amp\File\put($tmpFilePath, $response->getBody());
+
+        return $tmpFilePath;
     }
 
     private function replaceImages(\DOMXPath $xpath)
@@ -109,38 +147,144 @@ class Tweet extends BasePlugin
                 $target = 'https:' . $target;
             }
 
-            $request = (new HttpRequest)
-                ->setMethod('GET')
-                ->setUri($target)
-                ->setHeader('Connection', 'close');
+            $files[] = yield from $this->downloadMediaForUpload($target);
 
-            /** @var HttpResponse $response */
-            $response = yield $this->httpClient->request($request);
-            $tmpFilePath = \Room11\Jeeves\DATA_BASE_DIR . '/' . uniqid('twitter-media-', true);
-            yield \Amp\File\put($tmpFilePath, $response->getBody());
-
-            $element->parentNode->parentNode->removeChild($element->parentNode);
-
-            $files[] = $tmpFilePath;
+            $this->removeNode($element->parentNode);
         }
 
         return $files;
     }
 
+    private function anchorTextIsUrl(\DOMElement $element): bool
+    {
+
+        if ($element->textContent === $element->getAttribute('href')) {
+            return true;
+        }
+
+        return mb_substr($element->textContent, -1, 1, 'UTF-8') === Utf8Chars::ELLIPSIS
+            && strpos($element->getAttribute('href'), mb_substr($element->textContent, 0, -1, 'UTF-8')) > 0;
+    }
+
+    /**
+     * @param string $url
+     * @return bool|callable
+     */
+    private function urlIsUploadableMedia(string $url)
+    {
+        static $types = [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'video/mp4',
+        ];
+
+        $request = (new HttpRequest)
+            ->setMethod('HEAD')
+            ->setUri($url)
+            ->setHeader('Connection', 'close');
+
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request($request);
+
+        return $response->hasHeader('Content-Type') && in_array($response->getHeader('Content-Type')[0], $types);
+    }
+
+    private function addExtraAnchors(\DOMText $textNode)
+    {
+        if (preg_match_all('#(?<=^|\s)https?://\S+#', $textNode->data, $matches, PREG_OFFSET_CAPTURE) === 0) {
+            return;
+        }
+
+        $doc = $textNode->ownerDocument;
+        $parts = [];
+        $ptr = 0;
+
+        foreach ($matches[0] as [$match, $pos]) {
+            $anchor = $doc->createElement('a', $match);
+            $anchor->setAttribute('href', $match);
+
+            $text = substr($textNode->data, $ptr, $pos - $ptr);
+
+            $parts[] = $doc->createTextNode($text);
+            $parts[] = $anchor;
+
+            $ptr = $pos + strlen($match);
+        }
+
+        $parts[] = $doc->createTextNode(substr($textNode->data, $ptr));
+
+        $parent = $textNode->parentNode;
+        $next = $textNode->nextSibling;
+        $this->replaceNode($textNode, array_shift($parts));
+
+        foreach ($parts as $part) {
+            $parent->insertBefore($part, $next);
+        }
+    }
+
     private function replaceAnchors(\DOMXPath $xpath)
     {
+        // Bare links don't come through as anchors, so we add them
         /** @var \DOMElement $element */
-        foreach ($xpath->document->getElementsByTagName('a') as $element) {
-            $linkText = "";
+        /** @var \DOMText $textNode */
 
-            if ($element->getAttribute('href') !== $element->textContent) {
-                $linkText = " (" . $element->textContent . ")";
+        foreach ($xpath->query('//text()[not(ancestor::a)]') as $textNode) {
+            $this->addExtraAnchors($textNode);
+        }
+
+        // First pass - replace [tag] with #tag
+        foreach ($xpath->query("//a[span[" . xpath_html_class('ob-post-tag') . "]]") as $element) {
+            $parts = preg_split('/[^a-z0-9]+/i', $element->textContent, -1, PREG_SPLIT_NO_EMPTY);
+            $tag = count($parts) > 1 ? implode('', array_map('ucfirst', $parts)) : $parts[0];
+
+            $this->replaceNode($element, "#{$tag}");
+        }
+
+        $elements = [];
+        $headPromises = [];
+
+        // Second pass - normalize hrefs and check if link targets are uploadable media
+        foreach ($xpath->query('//a') as $element) {
+            $href = $element->getAttribute('href');
+
+            if (substr($href, 0, 2) === '//') {
+                $href = 'https:' . $href;
+                $element->setAttribute('href', $href);
             }
 
-            $formattedNode = $xpath->document->createTextNode($element->getAttribute('href') . $linkText);
+            if (!isset($headPromises[$href])) {
+                $headPromises[$href] = resolve($this->urlIsUploadableMedia($href));
+            }
 
-            $element->parentNode->replaceChild($formattedNode, $element);
+            $elements[] = $element;
         }
+
+        $uploadableMedia = yield first([all($headPromises), new Pause(5000)]);
+
+        if (!is_array($uploadableMedia)) {
+            throw new MediaProcessingFailedException;
+        }
+
+        $files = [];
+
+        foreach ($elements as $element) {
+            // If the link is uploadable media, convert the message to the link text, otherwise use link text and url
+            if ($uploadableMedia[$element->getAttribute('href')]) {
+                $files[] = resolve($this->downloadMediaForUpload($element->getAttribute('href')));
+                $text = $this->anchorTextIsUrl($element)
+                    ? '' :
+                    $element->textContent;
+            } else {
+                $text = $this->anchorTextIsUrl($element)
+                    ? $element->getAttribute('href')
+                    : $element->textContent . ' ' . $element->getAttribute('href');
+            }
+
+            $this->replaceNode($element, $text);
+        }
+
+        return yield all($files);
     }
 
     private function replacePings(ChatRoom $room, string $text)
@@ -168,11 +312,6 @@ class Tweet extends BasePlugin
 
             return $handle !== null ? '@' . $handle : $match[1];
         }, $text);
-    }
-
-    private function fixBrokenImgurUrls(string $text)
-    {
-        return preg_replace('~((?!https?:)//i(?:\.stack)?\.imgur\.com/)~', 'https:\1', $text);
     }
 
     private function getClientForRoom(ChatRoom $room)
@@ -208,14 +347,18 @@ class Tweet extends BasePlugin
     private function buildUpdateRequest(ChatRoom $room, \DOMXPath $xpath)
     {
         $files = yield from $this->replaceImages($xpath);
-        $this->replaceAnchors($xpath);
+        $files = array_merge($files, yield from $this->replaceAnchors($xpath));
 
         $text = trim(yield from $this->replacePings($room, $xpath->document->textContent));
-        $text = $this->fixBrokenImgurUrls($text);
         $text = \Normalizer::normalize(trim($text), \Normalizer::FORM_C);
 
         if ($text === false) {
             throw new TextProcessingFailedException;
+        }
+
+        // Strip dot-only messages (anti-onebox hack)
+        if ($text === '.') {
+            $text = '';
         }
 
         if (mb_strlen($text, 'UTF-8') > self::MAX_TWEET_LENGTH) {
@@ -288,6 +431,8 @@ class Tweet extends BasePlugin
             return $this->chatClient->postReply($command, "That looks like a retweet but I can't find the tweet ID :-S");
         } catch (TextProcessingFailedException $e) {
             return $this->chatClient->postReply($command, "Processing the message text failed :-S");
+        } catch (MediaProcessingFailedException $e) {
+            return $this->chatClient->postReply($command, "Processing the message links and media failed :-S");
         } catch (TweetLengthLimitExceededException $e) {
             return $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
         } catch (TwitterRequestFailedException $e) {
