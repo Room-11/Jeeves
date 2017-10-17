@@ -33,20 +33,22 @@ class Github extends BasePlugin
         $this->pluginData = $pluginData;
     }
 
-    public function enableForRoom(ChatRoom $room, bool $persist = true)
+    public function enableForRoom(ChatRoom $room, bool $persist = true): void
     {
-        $this->enabledRooms[$room->getId()] = $room;
+        resolve(function() use ($room) {
+            $this->enabledRooms[$room->getId()] = $room;
 
-        if ($this->pollingWatcherId) {
-            return;
-        }
+            if ($this->pollingWatcherId) {
+                return;
+            }
 
-        $this->pollingWatcherId = repeat(function () {
-            yield $this->checkStatusChange();
-        }, 150000);
+            $this->pollingWatcherId = repeat(function () {
+                yield $this->checkStatusChange();
+            }, 150000);
+        });
     }
 
-    public function disableForRoom(ChatRoom $room, bool $persist = true)
+    public function disableForRoom(ChatRoom $room, bool $persist = true): void
     {
         unset($this->enabledRooms[$room->getId()]);
 
@@ -57,16 +59,16 @@ class Github extends BasePlugin
         }
     }
 
-    public function github(Command $command): \Generator
+    public function github(Command $command): Promise
     {
         $query = $command->getParameter(0) ?? 'status';
 
         if ($query === 'status') {
-            return yield $this->status($command);
+            return $this->status($command);
         } elseif (strpos($query, '/') === false) {
-            return yield $this->profile($command, $query);
+            return $this->profile($command, $query);
         } elseif (substr_count($query, '/') === 1) {
-            return yield $this->repo($command, $query);
+            return $this->repo($command, $query);
         }
 
         return $this->chatClient->postMessage($command,
