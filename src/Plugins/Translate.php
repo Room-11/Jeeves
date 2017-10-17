@@ -3,17 +3,17 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
-use Room11\Jeeves\External\MicrosoftTranslationAPI\Consumer as TranslationAPIConsumer;
-use Room11\Jeeves\External\MicrosoftTranslationAPI\Credentials as TranslationAPICredentials;
+use DaveRandom\AsyncMicrosoftTranslate\Client as TranslationAPIClient;
+use DaveRandom\AsyncMicrosoftTranslate\Credentials as TranslationAPICredentials;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Room\Room as ChatRoom;
 
 class Translate extends BasePlugin
 {
-    const ACCESS_TOKEN_LIFETIME = 580; // really 10 minutes but this should avoid us needing to handle expired tokens
+    private const ACCESS_TOKEN_LIFETIME = 580; // really 10 minutes but this should avoid us needing to handle expired tokens
 
     private $chatClient;
     private $apiConsumer;
@@ -24,7 +24,7 @@ class Translate extends BasePlugin
 
     public function __construct(
         ChatClient $chatClient,
-        TranslationAPIConsumer $apiConsumer,
+        TranslationAPIClient $apiConsumer,
         KeyValueStore $storage,
         /* todo: replace with room-specific settings */
         TranslationAPICredentials $apiCredentials
@@ -45,17 +45,14 @@ class Translate extends BasePlugin
             }
         }
 
-        $accessToken = yield $this->apiConsumer->getAccessToken(
-            $this->apiCredentials->getClientId(),
-            $this->apiCredentials->getClientSecret()
-        );
+        $accessToken = yield $this->apiConsumer->getAccessToken($this->apiCredentials);
 
         yield $this->storage->set('access_token', [$accessToken, time() + self::ACCESS_TOKEN_LIFETIME], $room);
 
         return $accessToken;
     }
 
-    private function getTranslation(ChatRoom $room, string $text, string $toLanguage, string $fromLanguage = null): \Generator
+    private function getTranslation(ChatRoom $room, string $text, string $toLanguage, string $fromLanguage = null)
     {
         $accessToken = yield from $this->getAccessTokenForRoom($room);
 
@@ -68,7 +65,7 @@ class Translate extends BasePlugin
         return sprintf('%s (translated from %s)', $translation, self::$supportedLanguages[$fromLanguage]);
     }
 
-    private function getTextFromArguments(ChatRoom $room, array $args): \Generator
+    private function getTextFromArguments(ChatRoom $room, array $args)
     {
         if (count($args) > 1 || !preg_match('#/message/([0-9]+)#', $args[0], $match)) {
             return implode(' ', $args);
@@ -98,7 +95,7 @@ class Translate extends BasePlugin
         return null;
     }
 
-    private function postSupportedLanguagesList(ChatRoom $room): Promise
+    private function postSupportedLanguagesList(Command $command): Promise
     {
         $message = "The languages I speak are:";
 
@@ -106,25 +103,25 @@ class Translate extends BasePlugin
             $message .= "\n{$name} ({$code})";
         }
 
-        return $this->chatClient->postMessage($room, $message);
+        return $this->chatClient->postMessage($command, $message);
     }
 
-    public function magic(Command $command): \Generator
+    public function magic(Command $command)
     {
         return yield from $this->toLanguage($command, $command->getCommandName());
     }
 
-    public function toEnglish(Command $command): \Generator
+    public function toEnglish(Command $command)
     {
         return yield from $this->toLanguage($command, 'en');
     }
 
-    public function toLanguage(Command $command, string $toLanguage = null): \Generator
+    public function toLanguage(Command $command, string $toLanguage = null)
     {
         $params = $command->getParameters();
 
         if ($params[0] === 'list') {
-            return $this->postSupportedLanguagesList($command->getRoom());
+            return $this->postSupportedLanguagesList($command);
         }
 
         $toLanguage = $toLanguage ?? array_shift($params);
@@ -150,7 +147,7 @@ class Translate extends BasePlugin
         $text = yield from $this->getTextFromArguments($command->getRoom(), $params);
         $translation = yield from $this->getTranslation($command->getRoom(), $text, $toLanguageCode, $fromLanguageCode);
 
-        return $this->chatClient->postMessage($command->getRoom(), $translation);
+        return $this->chatClient->postMessage($command, $translation);
     }
 
     public function getDescription(): string

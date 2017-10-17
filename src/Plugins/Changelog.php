@@ -1,18 +1,24 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
+
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Amp\Promise;
+use Room11\Jeeves\Chat\Command;
+use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use Room11\Jeeves\Chat\Client\PostFlags;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Client\PostFlags;
+use function Amp\all;
+
+class ReferenceNotFoundException extends Exception {}
 
 class Changelog extends BasePlugin
 {
-    const EXPRESSION = '~^[^/]+/[^/]+$~';
-    const BASE_URL = 'https://api.github.com';
+    private const EXPRESSION = '~^[^/]+/[^/]+$~';
+    private const BASE_URL = 'https://api.github.com';
 
     private $chatClient;
     private $httpClient;
@@ -25,7 +31,8 @@ class Changelog extends BasePlugin
         $this->pluginData = $pluginData;
     }
 
-    public function changelog(Command $command): \Generator {
+    public function changelog(Command $command)
+    {
 
         $repository = $command->getParameter(0) ?? 'Room-11/Jeeves';
 
@@ -33,45 +40,58 @@ class Changelog extends BasePlugin
             return yield from $this->getLastCommit($command, $repository);
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), "Usage: !!changelog [ <profile>/<repo> ]");
+        return $this->chatClient->postMessage($command, /** @lang text */ "Usage: !!changelog [ <profile>/<repo> <branch>]");
     }
 
     protected function getCommitReference(Command $command, string $path)
     {
         list($user, $repo) = explode('/', $path, 2);
 
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(
-            self::BASE_URL . '/repos/'
-            . urlencode($user) . '/'
-            . urlencode($repo) . '/git/refs/heads/master'
-        );
+        $branch = $command->getParameter(1) ?? 'master';
+        $heads  = self::BASE_URL . '/repos/' . urlencode($user) . '/' . urlencode($repo) . '/git/refs/heads/';
 
-        if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command->getRoom(), "Failed to fetch repo for $path");
+        $promises = $this->httpClient->requestMulti([
+            'heads'  => $heads,
+            'branch' => $heads . urlencode($branch)
+        ]);
+
+        /** @var HttpResponse[] $responses */
+        $responses = yield all($promises);
+
+        if($responses['heads']->getStatus() !== 200){
+            throw new ReferenceNotFoundException("Failed to fetch repository for $path. Typo?");
         }
 
-        $json = json_decode($response->getBody());
-        if (!isset($json->object->sha)) {
-            return $this->chatClient->postMessage($command->getRoom(), "Failed to fetch reference SHA for $path");
+        if($responses['branch']->getStatus() !== 200){
+            throw new ReferenceNotFoundException("Failed to fetch branch $branch for $path. Typo?");
         }
 
-        return $json->object->sha;
+        $commit = json_decode($responses['branch']->getBody(), true);
+
+        if (!isset($commit['object']['sha'])) {
+            throw new ReferenceNotFoundException("Failed to fetch the last commit reference for branch $branch of $path. Typo?");
+        }
+
+        return $commit['object']['sha'];
     }
 
     /**
      * Example:
-     *   !!changelog Room-11/Jeeves
+     *   !!changelog Room-11/Jeeves <branch>
      *
      * @param Command $command
      * @param string $path
-     * @return \Generator
+     * @return Promise
      */
-    protected function getLastCommit(Command $command, string $path): \Generator
+    protected function getLastCommit(Command $command, string $path)
     {
         list($user, $repo) = explode('/', $path, 2);
 
-        $sha = yield from $this->getCommitReference($command, $path);
+        try {
+            $sha = yield from $this->getCommitReference($command, $path);
+        } catch (ReferenceNotFoundException $e) {
+            return $this->chatClient->postMessage($command, $e->getMessage());
+        }
 
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(
@@ -82,18 +102,18 @@ class Changelog extends BasePlugin
         );
 
         if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command->getRoom(), "Failed to fetch last commit for $path");
+            return $this->chatClient->postMessage($command, "Failed to fetch last commit for $path");
         }
 
         $json = json_decode($response->getBody());
         if (!isset($json->html_url)) {
-            return $this->chatClient->postMessage($command->getRoom(), "Unknown commit url for $path");
+            return $this->chatClient->postMessage($command, "Unknown commit url for $path");
         }
 
         return $this->chatClient->postMessage(
-            $command->getRoom(),
+            $command,
             sprintf(
-                "[ [%s](%s) ] [ [%s](%s) ] %s - Commited by: %s on %s",
+                "[ [%s](%s) ] [ [%s](%s) ] %s - Committed by: %s on %s",
                 $repo,
                 "https://github.com/" . urlencode($user) . '/' . urlencode($repo),
                 substr($sha, 0, 7),

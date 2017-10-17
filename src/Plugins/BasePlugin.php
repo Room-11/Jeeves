@@ -2,8 +2,8 @@
 
 namespace Room11\Jeeves\Plugins;
 
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\System\Plugin;
+use Room11\StackChat\Room\Room as ChatRoom;
 
 abstract class BasePlugin implements Plugin
 {
@@ -19,14 +19,6 @@ abstract class BasePlugin implements Plugin
      * @inheritdoc
      */
     abstract public function getDescription(): string;
-
-    /**
-     * @inheritdoc
-     */
-    public function getHelpText(array $args): string
-    {
-        // TODO: Implement help
-    }
 
     /**
      * @inheritdoc

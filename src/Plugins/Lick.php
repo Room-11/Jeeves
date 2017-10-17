@@ -3,13 +3,13 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Lick extends BasePlugin
 {
-    const RESPONSES = [
+    private const RESPONSES = [
         "Eeeeeeew",
         "That's sticky.",
         "At least buy me a drink first."

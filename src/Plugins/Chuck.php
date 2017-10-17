@@ -4,13 +4,13 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Chuck extends BasePlugin
 {
-    const API_URL = 'http://api.icndb.com/jokes/random/';
+    private const API_URL = 'http://api.icndb.com/jokes/random/';
 
     private $chatClient;
 
@@ -21,7 +21,7 @@ class Chuck extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
-    private function getJoke(): \Generator
+    private function getJoke()
     {
         /** @var HttpResponse $response */
         $response = yield $this->httpClient->request(self::API_URL);
@@ -35,7 +35,7 @@ class Chuck extends BasePlugin
         return htmlspecialchars_decode($result['value']['joke']);
     }
 
-    public function getChuckJoke(Command $command): \Generator
+    public function getChuckJoke(Command $command)
     {
         try {
             $joke = yield from $this->getJoke();
@@ -45,10 +45,10 @@ class Chuck extends BasePlugin
             );
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), $joke);
+        return $this->chatClient->postMessage($command, $joke);
     }
 
-    public function getSkeetJoke(Command $command): \Generator
+    public function getSkeetJoke(Command $command)
     {
         try {
             $joke = str_replace(['Chuck', 'Norris'], ['Jon', 'Skeet'], yield from $this->getJoke());
@@ -58,7 +58,7 @@ class Chuck extends BasePlugin
             );
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), $joke);
+        return $this->chatClient->postMessage($command, $joke);
     }
 
     public function getName(): string

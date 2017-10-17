@@ -3,11 +3,12 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
+use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Client\PostFlags;
 use const Room11\Jeeves\PROCESS_START_TIME;
-use function Amp\resolve;
 use function Room11\Jeeves\dateinterval_to_string;
 
 class Uptime implements BuiltInCommand
@@ -23,19 +24,6 @@ class Uptime implements BuiltInCommand
         $this->startTime = new \DateTimeImmutable('@' . PROCESS_START_TIME);
     }
 
-    private function execute(CommandMessage $command): \Generator
-    {
-        if (!yield $command->getRoom()->isApproved()) {
-            return;
-        }
-
-        return $this->chatClient->postReply($command, sprintf(
-            'I have been running for %s, since %s',
-            dateinterval_to_string((new \DateTime)->diff($this->startTime)),
-            $this->startTime->format('Y-m-d H:i:s')
-        ));
-    }
-
     /**
      * Handle a command message
      *
@@ -44,16 +32,31 @@ class Uptime implements BuiltInCommand
      */
     public function handleCommand(CommandMessage $command): Promise
     {
-        return resolve($this->execute($command));
+        $lastAccident = dateinterval_to_string((new \DateTime)->diff($this->startTime));
+        $since = $this->startTime->format('Y-m-d H:i:s');
+
+        $lastAccidentMessage = " [" . $lastAccident . "] without an accident ";
+        $sinceMessage = " since [" . $since . "] ";
+
+        $lineLength = max(strlen($lastAccidentMessage), strlen($sinceMessage));
+
+        $message  = "╔" . str_repeat("═", $lineLength) . "╗\n";
+        $message .= "║" . str_pad($lastAccidentMessage, $lineLength, " ", STR_PAD_BOTH) . "║\n";
+        $message .= "║" . str_pad($sinceMessage, $lineLength, " ", STR_PAD_BOTH) . "║\n";
+        $message .= "╚" . str_repeat("═", $lineLength) . "╝\n";
+
+        return $this->chatClient->postMessage($command, $message, PostFlags::FIXED_FONT);
     }
 
     /**
      * Get a list of specific commands handled by this built-in
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['uptime'];
+        return [
+            new BuiltInCommandInfo('uptime', "Display how long the bot has been running."),
+        ];
     }
 }

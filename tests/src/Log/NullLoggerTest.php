@@ -3,15 +3,15 @@
 namespace Room11\Jeeves\Tests\Log;
 
 use Amp\Promise;
-use Room11\Jeeves\Log\NullLogger;
+use Psr\Log\LoggerInterface;
 use Room11\Jeeves\Log\BaseLogger;
-use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\Log\NullLogger;
 
-class NullLoggerTest extends \PHPUnit_Framework_TestCase
+class NullLoggerTest extends \PHPUnit\Framework\TestCase
 {
     public function testImplementsCorrectInterface()
     {
-        $this->assertInstanceOf(Logger::class, new NullLogger(0));
+        $this->assertInstanceOf(LoggerInterface::class, new NullLogger(0));
     }
 
     public function testExtendsBaseClass()

@@ -2,15 +2,15 @@
 
 namespace Room11\Jeeves\Plugins;
 
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\MessageResolver;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Client\MessageResolver;
 
 class Goochle extends BasePlugin
 {
     // From https://en.wikipedia.org/wiki/List_of_English_prepositions
-    const PREPOSITIONS = [
+    private const PREPOSITIONS = [
         'a',
         'an',
         'aboard',
@@ -195,7 +195,7 @@ class Goochle extends BasePlugin
 
     public function trenslete(CommandMessage $command)
     {
-        $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $command->getText());
+        $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $command->getCommandText());
         return $this->chatClient->postReply($command, $this->ruinPrepositions($text));
     }
 

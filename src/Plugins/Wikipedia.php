@@ -6,13 +6,13 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Wikipedia extends BasePlugin
 {
-    const BASE_URL = 'https://en.wikipedia.org/w/api.php';
+    private const BASE_URL = 'https://en.wikipedia.org/w/api.php';
 
     private $chatClient;
     private $httpClient;
@@ -33,7 +33,7 @@ class Wikipedia extends BasePlugin
         return $this->httpClient->request(self::BASE_URL . '?' . http_build_query($parameters + $defaultParameters));
     }
 
-    public function search(Command $command): \Generator
+    public function search(Command $command)
     {
         if (!$command->hasParameters()) {
             return new Success();
@@ -59,7 +59,7 @@ class Wikipedia extends BasePlugin
 
         $page = json_try_decode($response->getBody(), true);
 
-        return $this->chatClient->postMessage($command->getRoom(), $page['query']['pages'][$firstHit['pageid']]['canonicalurl']);
+        return $this->chatClient->postMessage($command, $page['query']['pages'][$firstHit['pageid']]['canonicalurl']);
     }
 
     public function getDescription(): string

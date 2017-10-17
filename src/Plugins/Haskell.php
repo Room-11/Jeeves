@@ -6,13 +6,13 @@ use Amp\Artax\FormBody;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request;
 use Amp\Artax\Response;
-use Generator;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
 
-class Haskell extends BasePlugin {
-    const USAGE = "Usage example: !!haskell sin(pi/2)";
+class Haskell extends BasePlugin
+{
+    private const USAGE = "Usage example: !!haskell sin(pi/2)";
 
     private $chatClient;
     private $httpClient;
@@ -49,13 +49,10 @@ class Haskell extends BasePlugin {
         return "Something went wrong, it has to be fixed in code.";
     }
 
-    public function run(Command $command): Generator
+    public function run(Command $command)
     {
         if (!$command->hasParameters()) {
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                self::USAGE
-            );
+            return $this->chatClient->postMessage($command, self::USAGE);
         }
 
         $form = (new FormBody)
@@ -68,10 +65,7 @@ class Haskell extends BasePlugin {
 
         $response = yield $this->httpClient->request($request);
 
-        return $this->chatClient->postMessage(
-            $command->getRoom(),
-            $this->getMessage($response)
-        );
+        return $this->chatClient->postMessage($command, $this->getMessage($response));
     }
 
     public function getDescription(): string

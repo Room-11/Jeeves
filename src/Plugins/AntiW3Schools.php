@@ -4,14 +4,14 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Message;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Entities\ChatMessage;
 
 class AntiW3Schools extends BasePlugin
 {
 
-    const BAD_HOST_PATTERN = 'w3schools\.com';
-    const W3S_CATEGORY_RESPONSES = [
+    private const BAD_HOST_PATTERN = 'w3schools\.com';
+    private const W3S_CATEGORY_RESPONSES = [
         'html' => '[Check the Mozilla Developer Network HTML documentation](https://developer.mozilla.org/docs/Web/HTML) for help with HTML.',
         'css' => '[Check the Mozilla Developer Network CSS documentation](https://developer.mozilla.org/docs/Web/CSS) for help with CSS.',
         'js' => '[Check the Mozilla Developer Network JS documentation](https://developer.mozilla.org/docs/Web/JavaScript) for help with JavaScript.',
@@ -57,10 +57,10 @@ class AntiW3Schools extends BasePlugin
 
     /**
      * Entry point for checking a message for w3schools links.
-     * @param Message $message
+     * @param ChatMessage $message
      * @return Promise
      */
-    public function handleMessage(Message $message): Promise
+    public function handleMessage(ChatMessage $message): Promise
     {
         return $this->containsTerribleUri($message->getText())
             ? $this->chatClient->postReply($message, $this->createReply($message))
@@ -79,10 +79,10 @@ class AntiW3Schools extends BasePlugin
 
     /**
      * Create a suitable message to bother people about W3C.
-     * @param Message $message
+     * @param ChatMessage $message
      * @return string
      */
-    private function createReply(Message $message) : string
+    private function createReply(ChatMessage $message) : string
     {
         $return = 'W3Schools should not be trusted as a reliable resource. [Click here to read why](http://www.w3fools.com/).';
 

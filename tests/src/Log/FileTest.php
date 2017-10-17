@@ -3,12 +3,12 @@
 namespace Room11\Jeeves\Tests\Log;
 
 use Amp\Promise;
-use Room11\Jeeves\Log\File;
+use Psr\Log\LoggerInterface;
 use Room11\Jeeves\Log\BaseLogger;
-use Room11\Jeeves\Log\Logger;
+use Room11\Jeeves\Log\File;
 use Room11\Jeeves\Log\Level;
 
-class FileTest extends \PHPUnit_Framework_TestCase
+class FileTest extends \PHPUnit\Framework\TestCase
 {
     private $logFile;
 
@@ -28,7 +28,7 @@ class FileTest extends \PHPUnit_Framework_TestCase
 
     public function testImplementsCorrectInterface()
     {
-        $this->assertInstanceOf(Logger::class, new File(0, $this->logFile));
+        $this->assertInstanceOf(LoggerInterface::class, new File(0, $this->logFile));
     }
 
     public function testExtendsBaseClass()
@@ -63,7 +63,7 @@ class FileTest extends \PHPUnit_Framework_TestCase
 
     public function testLogWithExtraDataWithoutExtraDataLevel()
     {
-        $result = (new File(Level::DEBUG, $this->logFile))->log(Level::DEBUG, 'foo', 'bar');
+        $result = (new File(Level::DEBUG, $this->logFile))->log(Level::DEBUG, 'foo', ['bar']);
 
         $this->assertInstanceOf(Promise::class, $result);
 
@@ -77,7 +77,7 @@ class FileTest extends \PHPUnit_Framework_TestCase
 
     public function testLogWithExtraData()
     {
-        $result = (new File(Level::DEBUG | Level::EXTRA_DATA, $this->logFile))->log(Level::DEBUG, 'foo', 'bar');
+        $result = (new File(Level::DEBUG | Level::CONTEXT, $this->logFile))->log(Level::DEBUG, 'foo', ['bar']);
 
         $this->assertInstanceOf(Promise::class, $result);
 
@@ -93,7 +93,7 @@ class FileTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertRegExp(
-            '~^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] "bar"$~',
+            '~^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] \["bar"]$~',
             $logLines[1]
         );
 

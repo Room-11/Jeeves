@@ -4,17 +4,18 @@ namespace Room11\Jeeves\System;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Event\Event;
-use Room11\Jeeves\Chat\Message\Command;
-use Room11\Jeeves\Log\Level;
-use Room11\Jeeves\Log\Logger;
+use Psr\Log\LoggerInterface as Logger;
+use Room11\Jeeves\Chat\Command;
+use Room11\Jeeves\Chat\RoomStatusManager;
 use Room11\Jeeves\Storage\Ban as BanStorage;
+use Room11\StackChat\Event\Event;
 use function Amp\all;
 use function Amp\resolve;
 
 class BuiltInActionManager
 {
     private $banStorage;
+    private $roomStatusManager;
     private $logger;
 
     /**
@@ -23,13 +24,19 @@ class BuiltInActionManager
     private $commands = [];
 
     /**
+     * @var BuiltInCommandInfo[]
+     */
+    private $commandInfo = [];
+
+    /**
      * @var BuiltInEventHandler[][]
      */
     private $eventHandlers = [];
 
-    public function __construct(BanStorage $banStorage, Logger $logger)
+    public function __construct(BanStorage $banStorage, RoomStatusManager $roomStatusManager, Logger $logger)
     {
         $this->banStorage = $banStorage;
+        $this->roomStatusManager = $roomStatusManager;
         $this->logger = $logger;
     }
 
@@ -37,10 +44,16 @@ class BuiltInActionManager
     {
         $className = get_class($command);
 
-        foreach ($command->getCommandNames() as $commandName) {
-            $this->logger->log(Level::DEBUG, "Registering command name '{$commandName}' with built in command {$className}");
+        foreach ($command->getCommandInfo() as $commandInfo) {
+            $commandName = strtolower($commandInfo->getCommand());
+
             $this->commands[$commandName] = $command;
+            $this->commandInfo[$commandName] = $commandInfo;
+
+            $this->logger->debug("Registered command name '{$commandName}' with built in command {$className}");
         }
+
+        ksort($this->commandInfo);
 
         return $this;
     }
@@ -50,19 +63,24 @@ class BuiltInActionManager
         $className = get_class($handler);
 
         foreach ($handler->getEventTypes() as $eventType) {
-            $this->logger->log(Level::DEBUG, "Registering event type {$eventType} with built in handler {$className}");
+            $this->logger->debug("Registering event type {$eventType} with built in handler {$className}");
             $this->eventHandlers[$eventType][] = $handler;
         }
 
         return $this;
     }
 
-    /**
-     * @return string[]
-     */
-    public function getRegisteredCommands(): array
+    public function hasRegisteredCommand(string $command): bool
     {
-        return array_keys($this->commands);
+        return isset($this->commands[strtolower($command)]);
+    }
+
+    /**
+     * @return BuiltInCommandInfo[]
+     */
+    public function getRegisteredCommandInfo(): array
+    {
+        return $this->commandInfo;
     }
 
     public function handleEvent(Event $event): Promise
@@ -79,8 +97,15 @@ class BuiltInActionManager
     public function handleCommand(Command $command): Promise
     {
         return resolve(function() use($command) {
-            $commandName = $command->getCommandName();
+            $commandName = strtolower($command->getCommandName());
+
             if (!isset($this->commands[$commandName])) {
+                return;
+            }
+
+            $room = $command->getRoom();
+
+            if ($this->commandInfo[$commandName]->requiresApprovedRoom() && !yield $this->roomStatusManager->isApproved($room)) {
                 return;
             }
 
@@ -89,17 +114,17 @@ class BuiltInActionManager
             $userId = $command->getUserId();
 
             try {
-                $userIsBanned = yield $this->banStorage->isBanned($command->getRoom(), $userId);
+                $userIsBanned = yield $this->banStorage->isBanned($room, $userId);
 
                 if ($userIsBanned) {
-                    $this->logger->log(Level::DEBUG, "User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
+                    $this->logger->debug("User #{$userId} is banned, ignoring event #{$eventId} for built in commands");
                     return;
                 }
 
-                $this->logger->log(Level::DEBUG, "Passing event #{$eventId} to built in command handler " . get_class($this->commands[$commandName]));
+                $this->logger->debug("Passing event #{$eventId} to built in command handler " . get_class($this->commands[$commandName]));
                 yield $this->commands[$commandName]->handleCommand($command);
             } catch (\Throwable $e) {
-                $this->logger->log(Level::ERROR, "Something went wrong while handling #{$eventId} for built-in commands: {$e}");
+                $this->logger->error("Something went wrong while handling #{$eventId} for built-in commands: {$e}");
             }
         });
     }

@@ -1,0 +1,113 @@
+#!/usr/bin/env php
+<?php declare(strict_types = 1);
+
+namespace Room11\Jeeves;
+
+const JEEVES_SHORT_OPTS = '';
+const JEEVES_LONG_OPTS = [
+    'help',
+    'version',
+    'info',
+    'debug',
+    'loglevel:',
+];
+const JEEVES_HELP_TEXT = '
+ Runs the bot service.
+
+ Options:
+      --help: Display this help and exit
+   --version: Display the current version identifier and exit
+      --info: Display extended information about the current version and exit
+     --debug: Enable debug mode. Sets logging to maximum and ensures all PHP
+              errors will be reported on stderr.
+  --loglevel: Set the log level to use.
+
+';
+
+function startup_error_exit(string $message, int $code = 1)
+{
+    fwrite(STDERR, rtrim($message) . "\n");
+    exit($code);
+}
+
+function startup_display_help()
+{
+    exit(JEEVES_HELP_TEXT);
+}
+
+function startup_display_version(bool $extended)
+{
+    $version = get_current_version();
+
+    if (!$extended) {
+        exit($version->getVersionString() . PHP_EOL);
+    }
+
+    exit("
+ Version: {$version->getVersionString()}
+ Last Tag: {$version->getLastTag()}
+ Last Commit Hash: {$version->getCommitHash()}
+ Commits Since Last Tag: {$version->getCommitsSinceTag()}
+ Github: {$version->getGithubUrl()}
+
+");
+}
+
+function startup_set_log_level_string(string $level)
+{
+    putenv('JEEVES_LOG_LEVEL=' . $level);
+}
+
+function startup_enable_debug_mode()
+{
+    // Log everything
+    startup_set_log_level_string('ALL | DEBUG | CONTEXT');
+
+    // Report all PHP errors
+    error_reporting(~0);
+
+    // Show PHP errors on STDERR only
+    ini_set('log_errors', '1');
+    ini_set('error_log', '');
+    ini_set('display_errors', '0');
+
+    // Make sure assertion will be checked and will throw, warn if we can't do that
+    if (ini_get('zend.assertions') === '-1') {
+        trigger_error(
+            'The process was started with the --debug flag, but the zend.assertions ini setting is set to production'
+            . ' mode (-1) - assertions will not be checked!',
+            E_USER_WARNING
+        );
+    } else {
+        ini_set('zend.assertions', '1');
+        ini_set('assert.exception', '1');
+    }
+}
+
+if (false === $parsedArgs = getopt(JEEVES_SHORT_OPTS, JEEVES_LONG_OPTS)) {
+    startup_error_exit("Error parsing command line options");
+}
+
+require __DIR__ . '/../bootstrap.php';
+
+if (isset($parsedArgs['help'])) {
+    startup_display_help();
+}
+
+if (isset($parsedArgs['version'])) {
+    startup_display_version(false);
+}
+
+if (isset($parsedArgs['info'])) {
+    startup_display_version(true);
+}
+
+if (isset($parsedArgs['loglevel'])) {
+    startup_set_log_level_string($parsedArgs['loglevel']);
+}
+
+if (isset($parsedArgs['debug'])) {
+    startup_enable_debug_mode();
+}
+
+require __DIR__ . '/../src/launcher.php';

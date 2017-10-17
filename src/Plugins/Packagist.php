@@ -4,9 +4,9 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Packagist extends BasePlugin
@@ -20,7 +20,8 @@ class Packagist extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
-    private function getResultFromSearchFallback(string $vendor, string $package): \Generator {
+    private function getResultFromSearchFallback(string $vendor, string $package)
+    {
         $url = 'https://packagist.org/search/?q=' . urlencode($vendor) . '%2F' . urldecode($package);
 
         /** @var HttpResponse $response */
@@ -43,7 +44,7 @@ class Packagist extends BasePlugin
         return yield $this->httpClient->request('https://packagist.org' . $node->getAttribute('data-url') . '.json');
     }
 
-    public function search(Command $command): \Generator
+    public function search(Command $command)
     {
         $info = explode('/', implode('/', $command->getParameters()), 2);
 
@@ -66,7 +67,7 @@ class Packagist extends BasePlugin
             $data = json_try_decode($response->getBody());
 
             return $this->chatClient->postMessage(
-                $command->getRoom(),
+                $command,
                 sprintf(
                     "[ [%s](%s) ] %s",
                     $data->package->name,

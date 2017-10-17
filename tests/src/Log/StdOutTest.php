@@ -3,16 +3,23 @@
 namespace Room11\Jeeves\Tests\Log;
 
 use Amp\Promise;
-use Room11\Jeeves\Log\StdOut;
+use Psr\Log\LoggerInterface;
 use Room11\Jeeves\Log\BaseLogger;
-use Room11\Jeeves\Log\Logger;
 use Room11\Jeeves\Log\Level;
+use Room11\Jeeves\Log\StdOut;
 
-class StdOutTest extends \PHPUnit_Framework_TestCase
+class StdOutTest extends \PHPUnit\Framework\TestCase
 {
+    private function tellXDebugToFuckOff()
+    {
+        if (extension_loaded('xdebug')) {
+            ini_set('xdebug.overload_var_dump', '0');
+        }
+    }
+
     public function testImplementsCorrectInterface()
     {
-        $this->assertInstanceOf(Logger::class, new StdOut(0));
+        $this->assertInstanceOf(LoggerInterface::class, new StdOut(0));
     }
 
     public function testExtendsBaseClass()
@@ -50,7 +57,7 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
     {
         ob_start();
 
-        (new StdOut(Level::DEBUG))->log(Level::DEBUG, 'foo', 'bar');
+        (new StdOut(Level::DEBUG))->log(Level::DEBUG, 'foo', ['bar']);
 
         $this->assertRegExp(
             '~^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] foo$~',
@@ -62,16 +69,18 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
     {
         ob_start();
 
-        (new StdOut(Level::DEBUG, false))->log(Level::DEBUG, 'foo', 'bar');
+        (new StdOut(Level::DEBUG, false))->log(Level::DEBUG, 'foo', ['bar']);
 
         $this->assertSame("foo\n", ob_get_clean());
     }
 
     public function testLogWithExtraData()
     {
+        $this->tellXDebugToFuckOff();
+
         ob_start();
 
-        (new StdOut(Level::DEBUG | Level::EXTRA_DATA))->log(Level::DEBUG, 'foo', 'bar');
+        (new StdOut(Level::DEBUG | Level::CONTEXT))->log(Level::DEBUG, 'foo', ['bar']);
 
         $logLines = explode("\n", ob_get_clean());
 
@@ -82,16 +91,18 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
             $logLines[0]
         );
 
-        $this->assertSame('string(3) "bar"', $logLines[1]);
+        $this->assertSame('0: string(3) "bar"', $logLines[1]);
 
         $this->assertSame('', $logLines[2]);
     }
 
     public function testLogWithExtraDataNoTimestamp()
     {
+        $this->tellXDebugToFuckOff();
+
         ob_start();
 
-        (new StdOut(Level::DEBUG | Level::EXTRA_DATA, false))->log(Level::DEBUG, 'foo', 'bar');
+        (new StdOut(Level::DEBUG | Level::CONTEXT, false))->log(Level::DEBUG, 'foo', ['bar']);
 
         $logLines = explode("\n", ob_get_clean());
 
@@ -99,7 +110,7 @@ class StdOutTest extends \PHPUnit_Framework_TestCase
 
         $this->assertSame('foo', $logLines[0]);
 
-        $this->assertSame('string(3) "bar"', $logLines[1]);
+        $this->assertSame('0: string(3) "bar"', $logLines[1]);
 
         $this->assertSame('', $logLines[2]);
     }

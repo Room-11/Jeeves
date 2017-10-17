@@ -2,16 +2,21 @@
 
 namespace Room11\Jeeves\Plugins;
 
-use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Message;
+use PeeHaa\AsyncChatterBot\Client\CleverBot;
+use PeeHaa\AsyncChatterBot\Response\CleverBot as ChatterBotResponse;
+use Room11\StackChat\Auth\SessionTracker;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Entities\ChatMessage;
 
 class Terminator extends BasePlugin
 {
-    const COMMAND = 'terminator';
+    // todo: remove this when no longer experimental
+    private const ALLOWED_ROOMS = [11, 100286, 110670];
 
     private $chatClient;
+    private $chatBotClient;
+    private $sessions;
 
     private $patterns = [
         'you suck'                                    => 'And *you* like it.',
@@ -20,7 +25,7 @@ class Terminator extends BasePlugin
         '^\?$'                                        => 'What?',
         '^(wtf|wth|defak|thefuck|the fuck|dafuq)'     => 'What? I only execute commands. Go blame somebody else.',
         'give (?:my|your|me my) (.*) back'            => '/me gives $1 back.',
-        '(?:thank you|thanks|thks|tnx|thx)'           => 'You\'re welcome!',
+        '(?:thank you|thanks|thks|tnx|thx|^ta$)'        => 'You\'re welcome!',
         '(?:you dead|are you dead|you are dead|dead)' => 'Nope. Not that I know of...',
         '(?:hi|hey|heya|yo|hello|hellow|hola)^'       => 'Hola',
         '(?:are )?you drunk'                          => 'Screw you human!',
@@ -38,26 +43,39 @@ class Terminator extends BasePlugin
         'can you do (?:a trick|tricks)'               => 'Type this code in your chat window: `<(?:"[^"]*"[\'"]*|\'[^\']*\'[\'"]*|[^\'">])+>`',
         'what do you think (?:of|about) me'           => 'You\'re ok.',
         'what do you think (?:of|about) cap(.*)'      => 'It\'s ok for a first prototype I guess.',
-        'what do you think (?:of|about) (?:singletons|globals|javascript|js|node|mongo|laravel)' => 'It\'s crap and should be avoided',
+        'what do you think (?:of|about) (?:singletons|globals|javascript|js|node|mongo|laravel)' => 'It\'s crap and should be avoided.',
+        'did you try (?:singletons|globals|javascript|js|node|mongo|laravel)(?: yet)?' => 'Yes. It\'s crap and should be avoided.',
         'what (?:do you think)? (?:of|about) jquery'  => 'It\'s great and does all the things!',
         'what do you think (?:of|about) (.*)'         => 'I don\'t think I like $1',
+        'what\'s your opinion on (.*)'                => 'I don\'t think I like $1',
         'what about (?:.*)'                           => 'What about it?',
         '^why'                                        => 'Because',
         '(?:What is|What\'s the meaning of life)'     => '42',
         '(?:Are )you a (?:ro)?bot'                    => 'Step aside you filthy human.',
     ];
 
-    public function __construct(ChatClient $chatClient)
+    public function __construct(ChatClient $chatClient, CleverBot $chatBotClient, SessionTracker $sessions)
     {
         $this->chatClient = $chatClient;
+        $this->chatBotClient = $chatBotClient;
+        $this->sessions = $sessions;
     }
 
-    private function isMatch(Message $message): bool
+    private function getBotUserNameForMessage(ChatMessage $message)
     {
-        if (!$message->isConversation()) {
-            return false;
-        }
+        return $this->sessions->getSessionForRoom($message->getRoom())->getUser()->getName();
+    }
 
+    // we don't want to respond to replies.
+    // When somebody replies to a message (:messageid) the chat api will send *two* messages instead of 1 like it's sane
+    private function isMatch(ChatMessage $message): bool
+    {
+        return !$message->isReply()
+            && \Room11\Jeeves\text_contains_ping($message->getText(), $this->getBotUserNameForMessage($message));
+    }
+
+    private function isSpecialCased(ChatMessage $message): bool
+    {
         foreach ($this->patterns as $pattern => $response) {
             if (preg_match('/' . $pattern . '/iu', $this->normalizeText($message->getText())) === 1) {
                 return true;
@@ -67,7 +85,7 @@ class Terminator extends BasePlugin
         return false;
     }
 
-    private function getResponse(Message $message): string
+    private function getResponse(ChatMessage $message): string
     {
         foreach ($this->patterns as $pattern => $response) {
             if (preg_match('/' . $pattern . '/iu', $this->normalizeText($message->getText())) === 1) {
@@ -92,16 +110,38 @@ class Terminator extends BasePlugin
         return $response;
     }
 
-    public function handleMessage(Message $message): Promise
+    private function buildCleverBotResponse(ChatMessage $message)
     {
-        return $this->isMatch($message)
-            ? $this->chatClient->postReply($message, $this->getResponse($message))
-            : new Success();
+        $messageText = \Room11\Jeeves\text_strip_pings($message->getText(), $this->getBotUserNameForMessage($message));
+
+        /** @var ChatterBotResponse $response */
+        $response = yield $this->chatBotClient->request($messageText);
+
+        return $response->getText();
+    }
+
+    public function handleMessage(ChatMessage $message)
+    {
+        if (!$this->isMatch($message)) {
+            return new Success();
+        }
+
+        if ($this->isSpecialCased($message)) {
+            return $this->chatClient->postReply($message, $this->getResponse($message));
+        }
+
+        if (!in_array($message->getRoom()->getId(), self::ALLOWED_ROOMS)) {
+            return new Success();
+        }
+
+        $cleverBotResponse = yield from $this->buildCleverBotResponse($message);
+
+        return $this->chatClient->postReply($message, $cleverBotResponse);
     }
 
     public function getDescription(): string
     {
-        return 'Naive pattern matching chat bot logic';
+        return 'Naive pattern matching chat bot logic, now with a touch of extra smart-arsedness';
     }
 
     /**

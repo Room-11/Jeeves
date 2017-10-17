@@ -4,20 +4,31 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Artax\HttpClient;
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Entities\ChatUser;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
+use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Client\PostFlags;
+use Room11\StackChat\Entities\ChatUser;
 use function Amp\resolve;
 
 class Admin implements BuiltInCommand
 {
-    const ACTIONS = ["add", "remove", "list"];
-
     private $chatClient;
     private $httpClient;
     private $storage;
+
+    const COMMAND_HELP_TEXT =
+        "Sub-commands (* indicates admin-only):"
+        . "\n"
+        . "\n help    - Display this message"
+        . "\n list    - Display a list of the current admin users."
+        . "\n *add    - Add a user to the admin list."
+        . "\n            Syntax: admin add <user id>"
+        . "\n *remove - Remove a user from the admin list."
+        . "\n            Syntax: admin remove <user id>"
+    ;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $storage)
     {
@@ -26,19 +37,21 @@ class Admin implements BuiltInCommand
         $this->httpClient = $httpClient;
     }
 
-    private function list(CommandMessage $command)
+    private function list(Command $command)
     {
         $admins = yield $this->storage->getAll($command->getRoom());
 
         if ($admins['owners'] === [] && $admins['admins'] === []) {
-            return $this->chatClient->postMessage($command->getRoom(), "There are no registered admins");
+            return $this->chatClient->postMessage($command, 'There are no registered admins');
         }
 
         $userIds = array_merge($admins['owners'], $admins['admins']);
 
-        $users = /** @noinspection PhpStrictTypeCheckingInspection */
-            yield $this->chatClient->getChatUsers($command->getRoom(), ...$userIds);
-        usort($users, function (ChatUser $a, ChatUser $b) { return strcasecmp($a->getName(), $b->getName()); });
+        $users = yield $this->chatClient->getChatUsers($command->getRoom(), ...$userIds);
+
+        usort($users, function (ChatUser $a, ChatUser $b) {
+            return strcasecmp($a->getName(), $b->getName());
+        });
 
         $list = implode(', ', array_map(function(ChatUser $user) use($admins) {
             return in_array($user->getId(), $admins['owners'])
@@ -46,49 +59,52 @@ class Admin implements BuiltInCommand
                 : $user->getName();
         }, $users));
 
-        return $this->chatClient->postMessage($command->getRoom(), $list);
+        return $this->chatClient->postMessage($command, $list);
     }
 
-    private function add(CommandMessage $command, int $userId)
+    private function add(Command $command, int $userId)
     {
         $admins = yield $this->storage->getAll($command->getRoom());
 
         if (in_array($userId, $admins['admins'])) {
-            return $this->chatClient->postReply($command, "User already on admin list.");
+            return $this->chatClient->postReply($command, 'User already on admin list.');
         }
+
         if (in_array($userId, $admins['owners'])) {
-            return $this->chatClient->postReply($command, "User is a room owner and has implicit admin rights.");
+            return $this->chatClient->postReply($command, 'User is a room owner and has implicit admin rights.');
         }
 
         yield $this->storage->add($command->getRoom(), $userId);
 
-        return $this->chatClient->postMessage($command->getRoom(), "User added to the admin list.");
+        return $this->chatClient->postMessage($command, 'User added to the admin list.');
     }
 
-    private function remove(CommandMessage $command, int $userId)
+    private function remove(Command $command, int $userId)
     {
         $admins = yield $this->storage->getAll($command->getRoom());
 
         if (in_array($userId, $admins['owners'])) {
-            return $this->chatClient->postReply($command, "User is a room owner and has implicit admin rights.");
+            return $this->chatClient->postReply($command, 'User is a room owner and has implicit admin rights.');
         }
+
         if (!in_array($userId, $admins['admins'])) {
-            return $this->chatClient->postReply($command, "User not currently on admin list.");
+            return $this->chatClient->postReply($command, 'User not currently on admin list.');
         }
 
         yield $this->storage->remove($command->getRoom(), $userId);
 
-        return $this->chatClient->postMessage($command->getRoom(), "User removed from the admin list.");
+        return $this->chatClient->postMessage($command, 'User removed from the admin list.');
     }
 
-    private function execute(CommandMessage $command)
+    private function showCommandHelp(Command $command): Promise
     {
-        if (!yield $command->getRoom()->isApproved()) {
-            return;
-        }
+        return $this->chatClient->postMessage($command, self::COMMAND_HELP_TEXT, PostFlags::FIXED_FONT);
+    }
 
-        if (!in_array($command->getParameter(0), self::ACTIONS, true)) {
-            return;
+    private function execute(Command $command)
+    {
+        if ($command->getParameter(0) === "help") {
+            return $this->showCommandHelp($command);
         }
 
         if ($command->getParameter(0) === "list") {
@@ -104,16 +120,16 @@ class Admin implements BuiltInCommand
             case 'remove': return yield from $this->remove($command, (int)$command->getParameter(1));
         }
 
-        throw new \LogicException('Operation ' . $command->getParameter(0) . ' was considered valid but not handled??');
+        return null;
     }
 
     /**
      * Handle a command message
      *
-     * @param CommandMessage $command
+     * @param Command $command
      * @return Promise
      */
-    public function handleCommand(CommandMessage $command): Promise
+    public function handleCommand(Command $command): Promise
     {
         return resolve($this->execute($command));
     }
@@ -121,10 +137,12 @@ class Admin implements BuiltInCommand
     /**
      * Get a list of specific commands handled by this plugin
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['admin'];
+        return [
+            new BuiltInCommandInfo('admin', "Manage the bot's admin list. Use 'admin help' for details.")
+        ];
     }
 }

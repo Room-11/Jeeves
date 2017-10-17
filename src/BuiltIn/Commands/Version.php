@@ -3,12 +3,10 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\System\BuiltInCommand;
-use SebastianBergmann\Version as SebastianVersion;
-use const Room11\Jeeves\APP_BASE;
-use function Amp\resolve;
+use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Version implements BuiltInCommand
 {
@@ -19,27 +17,6 @@ class Version implements BuiltInCommand
         $this->chatClient = $chatClient;
     }
 
-    private function getVersion(CommandMessage $command): \Generator
-    {
-        if (!yield $command->getRoom()->isApproved()) {
-            return;
-        }
-
-        $version = (new SebastianVersion(VERSION, APP_BASE))->getVersion();
-
-        $messageText = preg_replace_callback('@v([0-9.]+)(?:-\d+-g([0-9a-f]+))?@', function($match) {
-            return sprintf(
-                "[%s](%s)",
-                $match[0],
-                empty($match[2])
-                    ? "https://github.com/Room-11/Jeeves/tree/v" . $match[1]
-                    : "https://github.com/Room-11/Jeeves/commit/" . $match[2]
-            );
-        }, $version);
-
-        yield $this->chatClient->postMessage($command->getRoom(), $messageText);
-    }
-
     /**
      * Handle a command message
      *
@@ -48,7 +25,13 @@ class Version implements BuiltInCommand
      */
     public function handleCommand(CommandMessage $command): Promise
     {
-        return resolve($this->getVersion($command));
+        $version = \Room11\Jeeves\get_current_version();
+
+        return $this->chatClient->postMessage($command, sprintf(
+            "[%s](%s)",
+            $version->getVersionString(),
+            $version->getGithubUrl()
+        ));
     }
 
     /**
@@ -56,8 +39,10 @@ class Version implements BuiltInCommand
      *
      * @return string[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['version'];
+        return [
+            new BuiltInCommandInfo('version', "Display the current running version of the bot."),
+        ];
     }
 }

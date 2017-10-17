@@ -3,14 +3,13 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class CanIUse extends BasePlugin
 {
-
-    const DOMAIN = 'http://caniuse.com';
+    private const DOMAIN = 'http://caniuse.com';
 
     private $chatClient;
 
@@ -89,6 +88,6 @@ class CanIUse extends BasePlugin
      */
     private function generateSearchUri(string $searchFor): string
     {
-        return self::DOMAIN . '/' . urlencode($searchFor);
+        return self::DOMAIN . '/' . rawurlencode($searchFor);
     }
 }

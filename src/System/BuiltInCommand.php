@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\System;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 
 interface BuiltInCommand
 {
@@ -13,12 +13,12 @@ interface BuiltInCommand
      * @param CommandMessage $command
      * @return Promise
      */
-    public function handleCommand(CommandMessage $command): Promise;
+    function handleCommand(CommandMessage $command): Promise;
 
     /**
      * Get a list of specific commands handled by this built-in
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array;
+    function getCommandInfo(): array;
 }

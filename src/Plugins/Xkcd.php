@@ -1,66 +1,61 @@
-<?php  declare(strict_types=1);
+<?php declare(strict_types=1);
+
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\GoogleSearcher\Searcher as GoogleSearcher;
+use Room11\GoogleSearcher\SearchResultSet;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
-use function Room11\DOMUtils\domdocument_load_html;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Xkcd extends BasePlugin
 {
-    const NOT_FOUND_COMIC = 'https://xkcd.com/1334/';
+    private const NOT_FOUND_COMIC = 'https://xkcd.com/1334/';
 
     private $chatClient;
     private $httpClient;
+    private $searcher;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
+    public function __construct(ChatClient $chatClient, HttpClient $httpClient, GoogleSearcher $searcher)
+    {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
+        $this->searcher = $searcher;
     }
 
-    public function search(Command $command): \Generator {
+    public function search(Command $command)
+    {
         if (!$command->hasParameters()) {
-            return new Success();
+            return null;
         }
 
-        $uri = "https://www.google.com/search?q=site:xkcd.com+intitle%3a%22xkcd%3a+%22+" . urlencode(implode(' ', $command->getParameters()));
+        $searchTerm = 'site:xkcd.com intitle:"xkcd: " ' . implode(' ', $command->getParameters());
 
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($uri);
+        /** @var SearchResultSet $results */
+        $results = yield $this->searcher->search($searchTerm);
 
-        if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage(
-                $command->getRoom(),
-                "Useless error message here so debugging this is harder than needed."
-            );
-        }
-
-        $dom = domdocument_load_html($response->getBody());
-        $nodes = (new \DOMXPath($dom))
-            ->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' g ')]/h3/a");
-
-        /** @var \DOMElement $node */
-        foreach ($nodes as $node) {
-            if (preg_match('~^/url\?q=(https://xkcd\.com/\d+/)~', $node->getAttribute('href'), $matches)) {
-                return $this->chatClient->postMessage($command->getRoom(), $matches[1]);
+        foreach ($results->getResults() as $result) {
+            if (preg_match('~^https?://(?:m\.)?xkcd\.com/(\d+)/?~', $result->getUrl(), $matches)) {
+                return $this->chatClient->postMessage($command, 'https://xkcd.com/' . $matches[1]);
             }
         }
 
-        if (preg_match('/^(\d+)$/', trim(implode(' ', $command->getParameters())), $matches) !== 1) {
-            return $this->chatClient->postMessage($command->getRoom(), self::NOT_FOUND_COMIC);
+        $comicId = $command->getParameter(0);
+
+        if (!\ctype_digit($comicId)) {
+            return $this->chatClient->postMessage($command, self::NOT_FOUND_COMIC);
         }
 
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request('https://xkcd.com/' . $matches[1]);
+        $response = yield $this->httpClient->request('https://xkcd.com/' . $comicId);
 
         if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command->getRoom(), self::NOT_FOUND_COMIC);
+            return $this->chatClient->postMessage($command, self::NOT_FOUND_COMIC);
         }
 
-        return $this->chatClient->postMessage($command->getRoom(), 'https://xkcd.com/' . $matches[1]);
+        return $this->chatClient->postMessage($command, 'https://xkcd.com/' . $comicId);
     }
 
     public function getName(): string

@@ -6,20 +6,23 @@ use Aerys\Request as AerysRequest;
 use Aerys\Response as AerysResponse;
 use Aerys\Router as AerysRouter;
 use ExceptionalJSON\DecodeErrorException as JSONDecodeErrorException;
-use Room11\Jeeves\Chat\Room\ConnectedRoomCollection as ChatRoomCollection;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\Ban as BanStorage;
-use const Room11\Jeeves\DNS_NAME_EXPR;
+use Room11\StackChat\Auth\SessionTracker;
+use Room11\StackChat\Room\ConnectedRoomTracker;
+use Room11\StackChat\Room\Room;
+use Room11\StackChat\Room\Room as ChatRoom;
+use const Room11\StackChat\DNS_NAME_EXPR;
 use function Aerys\router;
 
 class Server
 {
-    const ROOM_IDENTIFIER_EXPR = '{site:' . DNS_NAME_EXPR . '}/{roomid:[0-9]+}';
+    private const ROOM_IDENTIFIER_EXPR = '{site:' . DNS_NAME_EXPR . '}/{roomid:[0-9]+}';
 
     private $router;
 
     private $chatRooms;
     private $banStorage;
+    private $sessions;
 
     private function buildRouter()
     {
@@ -38,17 +41,18 @@ class Server
      */
     private function getRoomFromRoute(AerysResponse $response, array $route)
     {
-        $identifier = strtolower($route['site']) . '#' . $route['roomid'];
+        $room = new Room((int)$route['roomid'], strtolower($route['site']));
 
-        if (!$this->chatRooms->contains($identifier)) {
-            $this->respondWithError($response, 404, 'Invalid room identifier');
-            return null;
+        if ($this->chatRooms->contains($room)) {
+            return $room;
         }
 
-        return $this->chatRooms->get($identifier);
+        $this->respondWithError($response, 404, 'Invalid room identifier');
+
+        return null;
     }
 
-    private function getJsonRequestBody(AerysRequest $request, AerysResponse $response): \Generator
+    private function getJsonRequestBody(AerysRequest $request, AerysResponse $response)
     {
         if ($request->getHeader('Content-Type') !== 'application/json') {
             $this->respondWithError($response, 400, 'Type of request body must be application/json');
@@ -84,12 +88,13 @@ class Server
         $response->end(json_encode(['error' => $message]));
     }
 
-    public function __construct(ChatRoomCollection $chatRooms, BanStorage $banStorage)
+    public function __construct(ConnectedRoomTracker $chatRooms, SessionTracker $sessions, BanStorage $banStorage)
     {
         $this->buildRouter();
 
         $this->chatRooms = $chatRooms;
         $this->banStorage = $banStorage;
+        $this->sessions = $sessions;
     }
 
     public function getRouter(): AerysRouter
@@ -97,8 +102,12 @@ class Server
         return $this->router;
     }
 
-    public function getRoomBans(AerysRequest $request, AerysResponse $response, array $route)
-    {
+    public function getRoomBans(
+        /** @noinspection PhpUnusedParameterInspection */
+        AerysRequest $request,
+        AerysResponse $response,
+        array $route
+    ) {
         if (!$room = $this->getRoomFromRoute($response, $route)) {
             return;
         }
@@ -109,8 +118,12 @@ class Server
         $response->end(json_encode((object)$bans));
     }
 
-    public function banUserInRoom(AerysRequest $request, AerysResponse $response, array $route)
-    {
+    public function banUserInRoom(
+        /** @noinspection PhpUnusedParameterInspection */
+        AerysRequest $request,
+        AerysResponse $response,
+        array $route
+    ) {
         if (!$room = $this->getRoomFromRoute($response, $route)) {
             return;
         }
@@ -162,15 +175,18 @@ class Server
         $response->end();
     }
 
-    public function getAllRooms(AerysRequest $request, AerysResponse $response)
-    {
+    public function getAllRooms(
+        /** @noinspection PhpUnusedParameterInspection */
+        AerysRequest $request,
+        AerysResponse $response
+    ) {
         $result = [];
 
         /** @var ChatRoom $room */
         foreach ($this->chatRooms as $room) {
             $result[] = [
-                'host' => $room->getIdentifier()->getHost(),
-                'room_id' => $room->getIdentifier()->getId(),
+                'host' => $room->getHost(),
+                'room_id' => $room->getId(),
             ];
         }
 
@@ -178,21 +194,27 @@ class Server
         $response->end(json_encode($result));
     }
 
-    public function getRoomInfo(AerysRequest $request, AerysResponse $response, array $route)
-    {
+    public function getRoomInfo(
+        /** @noinspection PhpUnusedParameterInspection */
+        AerysRequest $request,
+        AerysResponse $response,
+        array $route
+    ) {
         if (!$room = $this->getRoomFromRoute($response, $route)) {
             return;
         }
 
+        $session = $this->sessions->getSessionForRoom($room);
+
         $response->setHeader('Content-Type', 'application/json');
         $response->end(json_encode([
             'identifier' => [
-                'host' => $room->getIdentifier()->getHost(),
-                'room_id' => $room->getIdentifier()->getId(),
+                'host' => $room->getHost(),
+                'room_id' => $room->getId(),
             ],
             'session' => [
-                'main_site_url' => $room->getSession()->getMainSiteUrl(),
-                'user_id' => $room->getSession()->getUser()->getId(),
+                'main_site_url' => $session->getMainSiteUrl(),
+                'user_id' => $session->getUser()->getId(),
             ],
         ]));
     }

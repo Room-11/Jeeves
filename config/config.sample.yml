@@ -40,13 +40,14 @@ plugins:
   - Room11\Jeeves\Plugins\Giphy
   - Room11\Jeeves\Plugins\Github
   - Room11\Jeeves\Plugins\Google
+  - Room11\Jeeves\Plugins\Horoscope
   - Room11\Jeeves\Plugins\HttpRequester
   - Room11\Jeeves\Plugins\Imdb
   - Room11\Jeeves\Plugins\Lick
   - Room11\Jeeves\Plugins\Man
   - Room11\Jeeves\Plugins\Mdn
   - Room11\Jeeves\Plugins\Packagist
-  - Room11\Jeeves\Plugins\PHPSrcGrok
+  - Room11\Jeeves\Plugins\OpenGrok
   - Room11\Jeeves\Plugins\Rebecca
   - Room11\Jeeves\Plugins\Regex
   - Room11\Jeeves\Plugins\Reminder
@@ -88,3 +89,11 @@ web-api:
 dev-mode:
   enable: true
 
+github:
+  url: https://api.github.com/repos/Room-11/Jeeves/issues
+  username: %username%
+  password: %password%
+  token:
+
+cleverbot:
+  key: yourcleverbotapikey

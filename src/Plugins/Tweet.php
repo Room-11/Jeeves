@@ -5,89 +5,132 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
-use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use PeeHaa\AsyncTwitter\Api\Client\Client as TwitterClient;
+use PeeHaa\AsyncTwitter\Api\Client\ClientFactory as TwitterClientFactory;
+use PeeHaa\AsyncTwitter\Api\Client\Exception\RequestFailed as TwitterRequestFailedException;
+use PeeHaa\AsyncTwitter\Api\Request\Media\Response\UploadResponse;
+use PeeHaa\AsyncTwitter\Api\Request\Media\Upload;
+use PeeHaa\AsyncTwitter\Api\Request\Status\Retweet as RetweetRequest;
+use PeeHaa\AsyncTwitter\Api\Request\Status\Update as UpdateRequest;
+use PeeHaa\AsyncTwitter\Credentials\AccessTokenFactory as TwitterAccessTokenFactory;
+use Room11\DOMUtils\LibXMLFatalErrorException;
+use Room11\Jeeves\Chat\Command;
+use Room11\Jeeves\Exception;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Client\MessageIDNotFoundException;
+use Room11\StackChat\Client\MessageResolver as ChatMessageResolver;
+use Room11\StackChat\Entities\MainSiteUser;
+use Room11\StackChat\Room\Room as ChatRoom;
 use function Room11\DOMUtils\domdocument_load_html;
+
+class NotConfiguredException extends Exception {}
+class TweetIDNotFoundException extends Exception {}
+class TweetLengthLimitExceededException extends Exception {}
+class TextProcessingFailedException extends Exception {}
 
 class Tweet extends BasePlugin
 {
-    const BASE_URI = "https://api.twitter.com/1.1";
-
+    private const MAX_TWEET_LENGTH = 280;
+    
     private $chatClient;
-
     private $admin;
-
-    private $storage;
-
+    private $keyValueStore;
+    private $apiClientFactory;
+    private $accessTokenFactory;
     private $httpClient;
+    private $messageResolver;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, AdminStorage $admin, KeyValueStore $keyValueStorage) {
-        $this->chatClient  = $chatClient;
-        $this->admin       = $admin;
-        $this->storage = $keyValueStorage;
-        $this->httpClient = $httpClient;
+    /**
+     * @var TwitterClient[]
+     */
+    private $clients = [];
+
+    public function __construct(
+        ChatClient $chatClient,
+        HttpClient $httpClient,
+        AdminStorage $admin,
+        KeyValueStore $keyValueStore,
+        TwitterClientFactory $apiClientFactory,
+        TwitterAccessTokenFactory $accessTokenFactory,
+        ChatMessageResolver $messageResolver
+    ) {
+        $this->chatClient         = $chatClient;
+        $this->admin              = $admin;
+        $this->keyValueStore      = $keyValueStore;
+        $this->apiClientFactory   = $apiClientFactory;
+        $this->accessTokenFactory = $accessTokenFactory;
+        $this->httpClient         = $httpClient;
+        $this->messageResolver    = $messageResolver;
     }
 
-    private function getNonce(): string {
-        return bin2hex(random_bytes(16));
-    }
+    private function getRawMessage(ChatRoom $room, string $link)
+    {
+        $messageID = $this->messageResolver->resolveMessageIDFromPermalink($link);
 
-    private function isMessageValid(string $url): bool {
-        return (bool) preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(#\d+)?$~', $url);
-    }
-
-    // @todo convert URLs to shortened URLs
-    // @todo handle twitter's character limit. perhaps we can do some clever replacing when above the limit?
-    private function getMessage(Command $command, string $url) {
-        preg_match('~^http://chat\.stackoverflow\.com/transcript/message/(\d+)(?:#\d+)?$~', $url, $matches);
-
-        $messageInfo = yield $this->chatClient->getMessageHTML($command->getRoom(), (int) $matches[1]);
+        $messageInfo = yield $this->chatClient->getMessageHTML($room, $messageID);
 
         $messageBody = html_entity_decode($messageInfo, ENT_QUOTES);
-        $dom = domdocument_load_html($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
-        $this->replaceEmphasizeTags($dom);
-        $this->replaceStrikeTags($dom);
-        $this->replaceImages($dom);
-        $this->replaceHrefs($dom);
-
-        return $this->removePings($dom->textContent);
+        return domdocument_load_html($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
     }
 
-    private function replaceEmphasizeTags(\DOMDocument $dom) {
-        $xpath = new \DOMXPath($dom);
-
-        foreach ($xpath->evaluate("//i|//b") as $node) {
-            $formattedNode = $dom->createTextNode("*" . $node->textContent . "*");
-
-            $node->parentNode->replaceChild($formattedNode, $node);
-        }
+    private function isRetweet(\DOMDocument $dom): bool
+    {
+        return (bool)(new \DOMXPath($dom))
+            ->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' ob-tweet ')]")
+            ->length;
     }
 
-    private function replaceStrikeTags(\DOMDocument $dom) {
-        foreach ($dom->getElementsByTagName('strike') as $node) {
-            $formattedNode = $dom->createTextNode("<strike>" . $node->textContent . "</strike>");
+    private function getTweetIdFromMessage(\DOMDocument $dom): int
+    {
+        /** @var \DOMElement $node */
+        foreach ($dom->getElementsByTagName('a') as $node) {
+            if (!preg_match('~https?://twitter\.com/[^/]+/status/(\d+)~', $node->getAttribute('href'), $matches)) {
+                continue;
+            }
 
-            $node->parentNode->replaceChild($formattedNode, $node);
+            return (int)$matches[1];
         }
+
+        throw new TweetIDNotFoundException("ID not found");
     }
 
     private function replaceImages(\DOMDocument $dom)
     {
+        $files = [];
+
         foreach ($dom->getElementsByTagName('img') as $node) {
             /** @var \DOMElement $node */
+            $target = $node->getAttribute('src');
 
-            $formattedNode = $dom->createTextNode($node->getAttribute('src'));
+            if (substr($target, 0, 2) === '//') {
+                $target = 'https:' . $target;
+            }
 
-            $node->parentNode->parentNode->replaceChild($formattedNode, $node->parentNode);
+            /** @var HttpResponse $response */
+            $request = (new HttpRequest)
+                ->setMethod('GET')
+                ->setUri($target)
+                ->setHeader('Connection', 'close');
+
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request($request);
+            $tmpFilePath = \Room11\Jeeves\DATA_BASE_DIR . '/' . uniqid('twitter-media-', true);
+            yield \Amp\File\put($tmpFilePath, $response->getBody());
+
+            $node->parentNode->parentNode->removeChild($node->parentNode);
+
+            $files[] = $tmpFilePath;
         }
+
+        return $files;
     }
 
-    private function replaceHrefs(\DOMDocument $dom) {
+    private function replaceHrefs(\DOMDocument $dom)
+    {
         foreach ($dom->getElementsByTagName('a') as $node) {
             /** @var \DOMElement $node */
             $linkText = "";
@@ -102,96 +145,166 @@ class Tweet extends BasePlugin
         }
     }
 
-    private function removePings(string $text) {
-        return preg_replace('/(?:^|\s)(@[^\s]+)(?:$|\s)/', '', $text);
+    private function replacePings(ChatRoom $room, string $text)
+    {
+        static $pingExpr = '/@([^\s]+)(?=$|\s)/';
+
+        if (!preg_match_all($pingExpr, $text, $matches)) {
+            return $text;
+        }
+
+        $pingableIDs = yield $this->chatClient->getPingableUserIDs($room, ...$matches[1]);
+        /** @var int $ids because PHP storm is dumb */
+        $ids = array_values($pingableIDs);
+        $users = yield $this->chatClient->getMainSiteUsers($room, ...$ids);
+
+        /** @var MainSiteUser[] $pingableUsers */
+        $pingableUsers = [];
+        foreach ($pingableIDs as $name => $id) {
+            $pingableUsers[$name] = $users[$id];
+        }
+
+        return preg_replace_callback($pingExpr, function($match) use($pingableUsers) {
+            $handle = isset($pingableUsers[$match[1]])
+                ? $pingableUsers[$match[1]]->getTwitterHandle()
+                : null;
+
+            return $handle !== null ? '@' . $handle : $match[1];
+        }, $text);
     }
 
-    public function tweet(Command $command) {
-        if (!$this->isMessageValid($command->getParameter(0))) {
-            return new Success();
+    private function fixBrokenImgurUrls(string $text)
+    {
+        return preg_replace('~((?!https?:)//i(?:\.stack)?\.imgur\.com/)~', 'https:\1', $text);
+    }
+
+    private function getClientForRoom(ChatRoom $room)
+    {
+        $ident = $room->getIdentString();
+
+        if (isset($this->clients[$ident])) {
+            return $this->clients[$ident];
         }
 
-        if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
-            return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
-        }
-
-        $tweetText = yield from $this->getMessage($command, $command->getParameters()[0]);
-
-        if (mb_strlen($tweetText, "UTF-8") > 140) {
-            return $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
-        }
-
-        $keys = ['oauth.consumer_key', 'oauth.access_token', 'oauth.consumer_secret', 'oauth.access_token_secret'];
+        $keys = ['oauth.access_token', 'oauth.access_token_secret'];
         $config = [];
 
         foreach ($keys as $key) {
-            if (!yield $this->storage->exists($key, $command->getRoom())) {
-                return $this->chatClient->postReply($command, "I'm not currently configured for tweeting :-(");
+            if (!yield $this->keyValueStore->exists($key, $room)) {
+                throw new NotConfiguredException('Missing config key: ' . $key);
             }
 
-            $config[$key] = yield $this->storage->get($key, $command->getRoom());
+            $config[$key] = yield $this->keyValueStore->get($key, $room);
         }
 
-        $oauthParameters = [
-            "oauth_consumer_key"     => $config['oauth.consumer_key'],
-            "oauth_token"            => $config['oauth.access_token'],
-            "oauth_nonce"            => $this->getNonce(),
-            "oauth_timestamp"        => (new \DateTimeImmutable)->format("U"),
-            "oauth_signature_method" => "HMAC-SHA1",
-            "oauth_version"          => "1.0",
-            "status"                 => $tweetText,
-        ];
+        $accessToken = $this->accessTokenFactory->create($config['oauth.access_token'], $config['oauth.access_token_secret']);
+        $this->clients[$ident] = $this->apiClientFactory->create($accessToken);
 
-        $oauthParameters = array_map("rawurlencode", $oauthParameters);
+        return $this->clients[$ident];
+    }
 
-        asort($oauthParameters);
-        ksort($oauthParameters);
+    private function buildRetweetRequest(\DOMDocument $dom): RetweetRequest
+    {
+        return new RetweetRequest($this->getTweetIdFromMessage($dom));
+    }
 
-        $queryString = urldecode(http_build_query($oauthParameters, '', '&'));
+    private function buildUpdateRequest(ChatRoom $room, \DOMDocument $dom)
+    {
+        $files = yield from $this->replaceImages($dom);
+        $this->replaceHrefs($dom);
 
-        $baseString = "POST&" . rawurlencode(self::BASE_URI . "/statuses/update.json") . "&" . rawurlencode($queryString);
-        $key        = $config['oauth.consumer_secret'] . "&" . $config['oauth.access_token_secret'];
-        $signature  = rawurlencode(base64_encode(hash_hmac('sha1', $baseString, $key, true)));
+        $text = trim(yield from $this->replacePings($room, $dom->textContent));
+        $text = $this->fixBrokenImgurUrls($text);
+        $text = \Normalizer::normalize(trim($text), \Normalizer::FORM_C);
 
-        $oauthParameters["oauth_signature"] = $signature;
-        $oauthParameters = array_map(function($value){
-            return '"'. $value . '"';
-        }, $oauthParameters);
+        if ($text === false) {
+            throw new TextProcessingFailedException;
+        }
 
-        unset($oauthParameters["status"]);
+        if (mb_strlen($text, 'UTF-8') > self::MAX_TWEET_LENGTH) {
+            throw new TweetLengthLimitExceededException;
+        }
 
-        asort($oauthParameters);
-        ksort($oauthParameters);
+        $result = new UpdateRequest($text);
 
-        $authorizationHeader = $auth = "OAuth " . urldecode(http_build_query($oauthParameters, '', ', '));
+        if (count($files) > 0) {
+            $mediaIds = yield from $this->uploadMediaFiles($room, $files);
+            $result->setMediaIds(...$mediaIds);
+        }
 
-        $request = (new HttpRequest)
-            ->setUri(self::BASE_URI . "/statuses/update.json")
-            ->setMethod('POST')
-            ->setProtocol('1.1')
-            ->setBody('status=' . urlencode($tweetText))
-            ->setAllHeaders([
-                'Authorization' => $authorizationHeader,
-                'Content-Type'  => 'application/x-www-form-urlencoded',
-            ])
-        ;
+        return $result;
+    }
 
-        /** @var HttpResponse $result */
-        $result    = yield $this->httpClient->request($request);
-        $tweetInfo = json_decode($result->getBody(), true);
-        $tweetUri  = 'https://twitter.com/' . $tweetInfo['user']['screen_name'] . '/status/' . $tweetInfo['id_str'];
+    private function uploadMediaFiles(ChatRoom $room, array $files)
+    {
+        /** @var TwitterClient $client */
+        $client = yield from $this->getClientForRoom($room);
+        $ids = [];
 
-        return $this->chatClient->postMessage($command->getRoom(), $tweetUri);
+        foreach ($files as $file) {
+            /** @var UploadResponse $result */
+            $result = yield $client->request((new Upload)->setFilePath($file));
+            $ids[] = $result->getMediaId();
+
+            yield \Amp\File\unlink($file);
+        }
+
+        return $ids;
+    }
+
+    private function buildTwitterRequest(ChatRoom $room, \DOMDocument $dom)
+    {
+        return $this->isRetweet($dom)
+            ? $this->buildRetweetRequest($dom)
+            : yield from $this->buildUpdateRequest($room, $dom);
+    }
+
+    public function tweet(Command $command)
+    {
+        $room = $command->getRoom();
+
+        if (!yield $this->admin->isAdmin($room, $command->getUserId())) {
+            return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
+        }
+
+        try {
+            /** @var TwitterClient $client */
+            $client = yield from $this->getClientForRoom($room); // do this first to make sure it's worth going further
+
+            $message = yield from $this->getRawMessage($room, $command->getParameter(0));
+
+            $request = yield from $this->buildTwitterRequest($room, $message);
+
+            $result = yield $client->request($request);
+
+            $tweetURL = sprintf('https://twitter.com/%s/status/%s', $result['user']['screen_name'], $result['id_str']);
+
+            return $this->chatClient->postMessage($command, $tweetURL);
+        } catch (NotConfiguredException $e) {
+            return $this->chatClient->postReply($command, "I'm not currently configured for tweeting :-(");
+        } catch (LibXMLFatalErrorException $e) {
+            return $this->chatClient->postReply($command, 'Totally failed to parse the chat message :-(');
+        } catch (MessageIDNotFoundException $e) {
+            return $this->chatClient->postReply($command, 'I need a chat message link to tweet');
+        } catch (TweetIDNotFoundException $e) {
+            return $this->chatClient->postReply($command, "That looks like a retweet but I can't find the tweet ID :-S");
+        } catch (TextProcessingFailedException $e) {
+            return $this->chatClient->postReply($command, "Processing the message text failed :-S");
+        } catch (TweetLengthLimitExceededException $e) {
+            return $this->chatClient->postReply($command, "Boo! The message exceeds the 140 character limit. :-(");
+        } catch (TwitterRequestFailedException $e) {
+            return $this->chatClient->postReply($command, 'Posting to Twitter failed :-( ' . $e->getMessage());
+        }
     }
 
     public function getName(): string
     {
-        return 'Tweeter';
+        return 'BetterTweet';
     }
 
     public function getDescription(): string
     {
-        return 'Tweets chat messages';
+        return 'Tweets chat messages just like !!tweet only better (WIP)';
     }
 
     /**
@@ -199,6 +312,6 @@ class Tweet extends BasePlugin
      */
     public function getCommandEndpoints(): array
     {
-        return [new PluginCommandEndpoint('Tweet', [$this, 'tweet'], 'tweet')];
+        return [new PluginCommandEndpoint('BetterTweet', [$this, 'tweet'], 'tweet2')];
     }
 }

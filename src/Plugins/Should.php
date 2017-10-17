@@ -3,14 +3,14 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Client\PostFlags;
 
 class Should extends BasePlugin
 {
-    const RESPONSES = [
+    private const RESPONSES = [
         "yes" => [
             "Yes.",
             "I think so.",
@@ -42,7 +42,7 @@ class Should extends BasePlugin
         static $expr = '~(\S+?)\s+(.*?)\sor\s(?:(?:should\s+\1|rather)\s+)?(.*?)(?:\?|$)~i';
 
         if (!preg_match($expr, implode(" ", $command->getParameters()), $match)) {
-            return $this->chatClient->postMessage($command->getRoom(), "Dunno.");
+            return $this->is($command);
         }
 
         $yes = $match[2];
@@ -63,7 +63,7 @@ class Should extends BasePlugin
 
         $reply = "{$target} should {$answer}.";
 
-        return $this->chatClient->postMessage($command->getRoom(), $reply, $flags);
+        return $this->chatClient->postMessage($command, $reply, $flags);
     }
 
     function translatePronouns(string $text): string
@@ -113,7 +113,7 @@ class Should extends BasePlugin
 
         $reply = $this->getRandomReply($reply);
 
-        return $this->chatClient->postMessage($command->getRoom(), $reply);
+        return $this->chatClient->postMessage($command, $reply);
     }
 
     private function getRandomReply(string $answer): string

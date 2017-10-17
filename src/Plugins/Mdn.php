@@ -6,9 +6,9 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
 
 class Mdn extends BasePlugin
 {
@@ -25,7 +25,7 @@ class Mdn extends BasePlugin
     {
         $message = sprintf("[ [%s](%s) ] %s", $result["title"], $result["url"], $result["excerpt"]);
 
-        return $this->chatClient->postMessage($command->getRoom(), $message);
+        return $this->chatClient->postMessage($command, $message);
     }
 
     private function postNoResult(Command $command): Promise
@@ -35,7 +35,7 @@ class Mdn extends BasePlugin
         );
     }
 
-    public function search(Command $command): \Generator
+    public function search(Command $command)
     {
         if (!$command->hasParameters()) {
             return new Success();

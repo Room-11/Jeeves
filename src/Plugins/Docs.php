@@ -6,9 +6,9 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Amp\resolve;
 use function Room11\DOMUtils\domdocument_load_html;
 
@@ -16,9 +16,9 @@ class NoComprendeException extends \RuntimeException {}
 
 class Docs extends BasePlugin
 {
-    const URL_BASE = 'http://php.net';
-    const LOOKUP_URL_BASE = self::URL_BASE . '/manual-lookup.php?scope=quickref&pattern=';
-    const MANUAL_URL_BASE = self::URL_BASE . '/manual/en';
+    private const URL_BASE = 'http://php.net';
+    private const LOOKUP_URL_BASE = self::URL_BASE . '/manual-lookup.php?scope=quickref&pattern=';
+    private const MANUAL_URL_BASE = self::URL_BASE . '/manual/en';
 
     private $chatClient;
 
@@ -225,7 +225,7 @@ class Docs extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
-    private function preProcessMatch(HttpResponse $response, string $pattern) : \Generator
+    private function preProcessMatch(HttpResponse $response, string $pattern)
     {
         if (preg_match('#/book\.[^.]+\.php$#', $response->getRequest()->getUri(), $matches)) {
             /** @var HttpResponse $classResponse */
@@ -416,7 +416,8 @@ class Docs extends BasePlugin
         return trim(preg_replace('/\s+/', ' ', $message));
     }
 
-    private function getMessageFromSearch(HttpResponse $response): \Generator {
+    private function getMessageFromSearch(HttpResponse $response)
+    {
         try {
             $dom = domdocument_load_html($response->getBody());
 
@@ -448,12 +449,12 @@ class Docs extends BasePlugin
                     ? $this->specialCases[substr($this->specialCases[$candidate], 1)]
                     : $this->specialCases[$candidate];
 
-                return $this->chatClient->postMessage($command->getRoom(), $result);
+                return $this->chatClient->postMessage($command, $result);
             }
         }
 
         if (substr($pattern, 0, 6) === "mysql_") {
-            return $this->chatClient->postMessage($command->getRoom(), $this->getMysqlMessage());
+            return $this->chatClient->postMessage($command, $this->getMysqlMessage());
         }
 
         $pattern = str_replace(['::', '->'], '.', $pattern);

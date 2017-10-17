@@ -4,14 +4,14 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Wotd extends BasePlugin
 {
-    const API_URL = 'http://www.dictionary.com/wordoftheday/wotd.rss';
+    private const API_URL = 'http://www.dictionary.com/wordoftheday/';
 
     private $chatClient;
     private $httpClient;
@@ -26,21 +26,24 @@ class Wotd extends BasePlugin
     {
         $dom = domdocument_load_html($response->getBody());
 
-        if ($dom->getElementsByTagName('description')->length === 0) {
+        $xpath = new \DOMXPath($dom);
+        $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' definition-box ')]");
+
+        if ($nodes->length === 0) {
             return 'I dun goofed';
         }
+        
+        $word       = $nodes->item(0)->getElementsByTagName('strong')->item(0)->textContent;
+        $definition = $nodes->item(0)->getElementsByTagName('li')->item(0)->textContent;
 
-        preg_match('/([^:]+)/', $dom->getElementsByTagName('description')->item(2)->textContent, $before);
-        preg_match('/\:(.*)/', $dom->getElementsByTagName('description')->item(2)->textContent, $after);
-
-        return '**['.$before[0].'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $before[0]).')**' . $after[0];
+        return '**['.$word.'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $word).')** ' . $definition;
     }
 
-    public function fetch(Command $command): \Generator
+    public function fetch(Command $command)
     {
         $response = yield $this->httpClient->request(self::API_URL);
 
-        return $this->chatClient->postMessage($command->getRoom(), $this->getMessage($response));
+        return $this->chatClient->postMessage($command, $this->getMessage($response));
     }
 
     public function getDescription(): string

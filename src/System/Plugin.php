@@ -2,20 +2,19 @@
 
 namespace Room11\Jeeves\System;
 
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Amp\Promise;
+use Room11\StackChat\Room\Room as ChatRoom;
 
 interface Plugin
 {
-    public function getName(): string;
+    function getName(): string;
 
-    public function getDescription(): string;
-
-    public function getHelpText(array $args): string;
+    function getDescription(): string;
 
     /**
      * @return PluginCommandEndpoint[]
      */
-    public function getCommandEndpoints(): array;
+    function getCommandEndpoints(): array;
 
     /**
      * @return callable[] An array of callbacks with filter strings as keys
@@ -51,14 +50,24 @@ interface Plugin
      *  type = 1 & room = chat.stackoverflow.com#11 // all NewMessage events from SO PHP chat
      *  room=chat.stackoverflow.com#11&class=any(user,room) // any message from SO PHP chat that is UserSourcedEvent or RoomSourcedEvent
      */
-    public function getEventHandlers(): array;
+    function getEventHandlers(): array;
 
     /**
      * @return callable|null
      */
-    public function getMessageHandler() /* : ?callable */;
+    function getMessageHandler() /* : ?callable */;
 
-    public function enableForRoom(ChatRoom $room, bool $persist) /* : void */;
+    /**
+     * @param ChatRoom $room
+     * @param bool $persist
+     * @return Promise|\Generator|null
+     */
+    function enableForRoom(ChatRoom $room, bool $persist);
 
-    public function disableForRoom(ChatRoom $room, bool $persist) /* : void */;
+    /**
+     * @param ChatRoom $room
+     * @param bool $persist
+     * @return Promise|\Generator|null
+     */
+    function disableForRoom(ChatRoom $room, bool $persist);
 }

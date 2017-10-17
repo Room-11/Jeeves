@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Storage;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Room\Room as ChatRoom;
+use Room11\StackChat\Room\Room as ChatRoom;
 
 interface Ban
 {
@@ -11,14 +11,14 @@ interface Ban
      * @param ChatRoom $room
      * @return Promise<array>
      */
-    public function getAll(ChatRoom $room): Promise;
+    function getAll(ChatRoom $room): Promise;
 
     /**
      * @param ChatRoom $room
      * @param int $userId
      * @return Promise<bool>
      */
-    public function isBanned(ChatRoom $room, int $userId): Promise;
+    function isBanned(ChatRoom $room, int $userId): Promise;
 
     /**
      * @param ChatRoom $room
@@ -26,12 +26,12 @@ interface Ban
      * @param string $duration
      * @return Promise<void>
      */
-    public function add(ChatRoom $room, int $userId, string $duration): Promise;
+    function add(ChatRoom $room, int $userId, string $duration): Promise;
 
     /**
      * @param ChatRoom $room
      * @param int $userId
      * @return Promise<void>
      */
-    public function remove(ChatRoom $room, int $userId): Promise;
+    function remove(ChatRoom $room, int $userId): Promise;
 }

@@ -2,9 +2,20 @@
 
 namespace Room11\Jeeves;
 
-const DNS_NAME_EXPR = '(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)\.)*(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]*[a-zA-Z0-9])?)';
-const ROOM_IDENTIFIER_EXPR = '(' . DNS_NAME_EXPR . ')#([0-9]+)';
-define(__NAMESPACE__ . '\\APP_BASE', realpath(__DIR__ . '/..'));
+use SebastianBergmann\Version as SebastianVersion;
+
+const PING_MATCH_EXPR = '((?<=^|\s)@(%s)(?=[\s,.\'"?!;:<>\#@~{}%%^&*-]|$))iu';
+
+function get_current_version(): VersionIdentifier
+{
+    $version = (new SebastianVersion(VERSION, APP_BASE))->getVersion();
+
+    if (!preg_match('@^(.+?)(?:-([0-9]+)-g([0-9a-f]+))?$@', $version, $match)) {
+        throw new InvalidVersionStringException('Invalid version string: ' . $version);
+    }
+
+    return new VersionIdentifier($match[0], $match[1], (int)($match[2] ?? 0), $match[3] ?? '');
+}
 
 function dateinterval_to_string(\DateInterval $interval, string $precision = 's'): string
 {
@@ -12,6 +23,10 @@ function dateinterval_to_string(\DateInterval $interval, string $precision = 's'
         'y' => 'year', 'm' => 'month', 'd' => 'day',
         'h' => 'hour', 'i' => 'minute', 's' => 'second',
     ];
+
+    // because apparently DateInterval is pointless
+    $now = new \DateTimeImmutable();
+    $interval = $now->diff($now->add($interval));
 
     $precision = strtolower($precision);
 
@@ -36,34 +51,55 @@ function dateinterval_to_string(\DateInterval $interval, string $precision = 's'
         }
     }
 
+    if (empty($parts)) {
+        return '0 seconds';
+    }
+
     $last = array_pop($parts);
 
-    return $parts ?
+    return !empty($parts) ?
         implode(', ', $parts) . ' and ' . $last
         : $last;
 }
 
-function getNormalisedStackExchangeURL(string $url): string
+function normalize_stack_exchange_url(string $url): string
 {
-    static $domains, $questionExpr, $answerExpr;
+    static $questionExpr, $answerExpr;
+    static $domains = [
+        'stackoverflow\.com',
+        'superuser\.com',
+        'serverfault\.com',
+        '[a-z0-9]+\.stackexchange\.com',
+    ];
 
-    $domains = $domains ?? [
-            'stackoverflow\.com',
-            'superuser\.com',
-            'serverfault\.com',
-            '[a-z0-9]+\.stackexchange\.com',
-        ];
+    $questionOrAnswerExpr = $questionExpr ?? '~^https?://(?:www\.|meta\.)?(' . implode('|', $domains) . ')/q(?:uestions)?/([0-9]+)(?:[^#]+#([0-9]+))?~';
+    $answerExpr = $answerExpr ?? '#^https?://(?:www\.|meta\.)?(' . implode('|', $domains) . ')/a/([0-9]+)#';
 
-    $questionExpr = $questionExpr ?? '#^https?://(?:www\.)?(' . implode('|', $domains) . ')/q(?:uestions)?/([0-9]+)#';
-    $answerExpr = $answerExpr ?? '#^https?://(?:www\.)?(' . implode('|', $domains) . ')/a/([0-9]+)#';
-
-    if (preg_match($questionExpr, $url, $match)) {
-        return 'https://' . $match[1] . '/q/' . $match[2];
+    if (preg_match($questionOrAnswerExpr, $url, $match)) {
+        return !empty($match[3])
+            ? 'https://' . $match[1] . '/a/' . $match[3]
+            : 'https://' . $match[1] . '/q/' . $match[2];
     }
 
     if (preg_match($answerExpr, $url, $match)) {
         return 'https://' . $match[1] . '/a/' . $match[2];
     }
 
-    throw new \Exception('Unrecognised SE URL format');
+    throw new InvalidStackExchangeUrlException('Unrecognised Stack Exchange URL format');
+}
+
+function text_contains_ping(string $text, string $userName): bool
+{
+    $userName = \preg_quote(\preg_replace('#\s+#', '', $userName));
+    $expr = \sprintf(PING_MATCH_EXPR, $userName);
+
+    return (bool)\preg_match($expr, $text);
+}
+
+function text_strip_pings(string $text, string $userName, string $replacement = ''): string
+{
+    $userName = \preg_quote(\preg_replace('#\s+#', '', $userName));
+    $expr = \sprintf(PING_MATCH_EXPR, $userName);
+
+    return \preg_replace($expr, $replacement, $text);
 }

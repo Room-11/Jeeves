@@ -5,10 +5,10 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Client\PostFlags;
 
 class Urban extends BasePlugin
 {
@@ -35,7 +35,7 @@ class Urban extends BasePlugin
         );
     }
 
-    public function search(Command $command): \Generator
+    public function search(Command $command)
     {
         if (!$command->hasParameters()) {
             return new Success();
@@ -48,7 +48,7 @@ class Urban extends BasePlugin
 
         $result = json_decode($response->getBody(), true);
 
-        return $this->chatClient->postMessage($command->getRoom(), $this->getMessage($result), PostFlags::TRUNCATE);
+        return $this->chatClient->postMessage($command, $this->getMessage($result), PostFlags::TRUNCATE);
     }
 
     public function getDescription(): string

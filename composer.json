@@ -19,37 +19,34 @@
     "autoload-dev": {
         "psr-4": {"Room11\\Jeeves\\Tests\\": "tests/src/"}
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com:/Room-11/artax"
-        }
-    ],
     "require": {
-        "php": ">=7",
+        "php": ">=7.1",
         "lib-libxml": ">=2.7.8",
         "ext-mbstring": "*",
         "ext-intl": "*",
-
-        "amphp/amp": "^1.2",
-        "amphp/artax": "dev-debug/requestcycle-backtrace as 2.x-dev",
         "amphp/aerys": "~0.4",
-        "amphp/websocket": "dev-master",
+        "amphp/amp": "^1.2",
+        "amphp/artax": "^2",
         "amphp/file": "0.1.*",
+        "amphp/websocket": "^0.1",
+        "ekinhbayar/interval-parser": "^0.1",
         "daverandom/async-bitly-client": "^0.1",
+        "daverandom/async-microsoft-translate-client": "^1.0",
         "daverandom/exceptional-json": "^1.0",
         "daverandom/mutex": "~0.0",
+        "peehaa/async-twitter": "^0.3",
+        "peehaa/async-chatter-bot": "^0.2",
         "php-ds/php-ds": "*",
-        "peehaa/async-twitter": "dev-master",
-        "ekinhbayar/interval-parser": "^0.1",
+        "psr/log": "^1",
         "rdlowrey/auryn": "^1.1",
-        "room11/openid": "~0.0",
         "room11/dom-utils": "~1.0",
+        "room11/google-searcher": "~1.0",
+        "room11/stack-chat": "dev-master",
         "sabre/uri": "^1.0",
-        "sebastian/version": "^1.0",
+        "sebastian/version": "^2.0",
         "symfony/yaml": "^3.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "5.3.*"
+        "phpunit/phpunit": "^6.0"
     }
 }

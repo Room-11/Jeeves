@@ -3,12 +3,13 @@
 namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Client\PostFlags;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\BuiltInCommand;
+use Room11\Jeeves\System\BuiltInCommandInfo;
 use Room11\Jeeves\System\PluginManager;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Client\PostFlags;
 use function Amp\resolve;
 
 class Plugin implements BuiltInCommand
@@ -17,6 +18,20 @@ class Plugin implements BuiltInCommand
     private $chatClient;
     private $adminStorage;
 
+    private const COMMAND_HELP_TEXT =
+        "Sub-commands (* indicates admin-only):"
+        . "\n"
+        . "\n help     - display this message"
+        . "\n list     - display a list of plugins, or a list of endpoints for the specified plugin."
+        . "\n             Syntax: plugin list [<name>]"
+        . "\n *enable  - Enable a plugin in this room."
+        . "\n             Syntax: plugin enable <name>"
+        . "\n *disable - Disable a plugin in this room."
+        . "\n             Syntax: plugin disable <name>"
+        . "\n status   - Query whether a plugin is enabled in this room."
+        . "\n             Syntax: plugin status <name>"
+    ;
+
     public function __construct(PluginManager $pluginManager, ChatClient $chatClient, AdminStorage $adminStorage)
     {
         $this->pluginManager = $pluginManager;
@@ -24,7 +39,7 @@ class Plugin implements BuiltInCommand
         $this->adminStorage = $adminStorage;
     }
 
-    private function listPlugins(CommandMessage $command): \Generator
+    private function listPlugins(CommandMessage $command)
     {
         $result = 'Currently registered plugins:';
 
@@ -33,14 +48,13 @@ class Plugin implements BuiltInCommand
             $result .= "\n[{$check}] {$plugin->getName()} - {$plugin->getDescription()}";
         }
 
-        yield $this->chatClient->postMessage($command->getRoom(), $result, PostFlags::FIXED_FONT);
+        return $this->chatClient->postMessage($command, $result, PostFlags::FIXED_FONT);
     }
 
-    private function listPluginEndpoints(string $plugin, CommandMessage $command): \Generator
+    private function listPluginEndpoints(string $plugin, CommandMessage $command)
     {
         if (!$this->pluginManager->isPluginRegistered($plugin)) {
-            yield $this->chatClient->postReply($command, "Invalid plugin name");
-            return null;
+            return $this->chatClient->postReply($command, 'Invalid plugin name');
         }
 
         $plugin = $this->pluginManager->getPluginByName($plugin);
@@ -62,18 +76,16 @@ class Plugin implements BuiltInCommand
             $result .= "\n[{$check}] {$name} - {$endpoint['description']} (Default command: {$endpoint['default_command']}, {$map})";
         }
 
-        yield $this->chatClient->postMessage($command->getRoom(), $result, PostFlags::FIXED_FONT);
+        return $this->chatClient->postMessage($command, $result, PostFlags::FIXED_FONT);
     }
 
     private function list(CommandMessage $command): Promise
     {
         $plugin = $command->getParameter(1);
 
-        return resolve(
-            $plugin === null
-                ? $this->listPlugins($command)
-                : $this->listPluginEndpoints($plugin, $command)
-        );
+        return $plugin === null
+            ? $this->listPlugins($command)
+            : $this->listPluginEndpoints($plugin, $command);
     }
 
     private function enable(CommandMessage $command): Promise
@@ -84,20 +96,20 @@ class Plugin implements BuiltInCommand
             }
 
             if (null === $plugin = $command->getParameter(1)) {
-                return $this->chatClient->postReply($command, "No plugin name supplied");
+                return $this->chatClient->postReply($command, 'No plugin name supplied');
             }
 
             if (!$this->pluginManager->isPluginRegistered($plugin)) {
-                return $this->chatClient->postReply($command, "Invalid plugin name");
+                return $this->chatClient->postReply($command, 'Invalid plugin name');
             }
 
             if ($this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())) {
-                return $this->chatClient->postReply($command, "Plugin already enabled in this room");
+                return $this->chatClient->postReply($command, 'Plugin already enabled in this room');
             }
 
             yield $this->pluginManager->enablePluginForRoom($plugin, $command->getRoom());
 
-            return $this->chatClient->postMessage($command->getRoom(), "Plugin '{$plugin}' is now enabled in this room");
+            return $this->chatClient->postMessage($command, "Plugin '{$plugin}' is now enabled in this room");
         });
     }
 
@@ -109,54 +121,43 @@ class Plugin implements BuiltInCommand
             }
 
             if (null === $plugin = $command->getParameter(1)) {
-                return $this->chatClient->postReply($command, "No plugin name supplied");
+                return $this->chatClient->postReply($command, 'No plugin name supplied');
             }
 
             if (!$this->pluginManager->isPluginRegistered($plugin)) {
-                return $this->chatClient->postReply($command, "Invalid plugin name");
+                return $this->chatClient->postReply($command, 'Invalid plugin name');
             }
 
             if (!$this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())) {
-                return $this->chatClient->postReply($command, "Plugin already disabled in this room");
+                return $this->chatClient->postReply($command, 'Plugin already disabled in this room');
             }
 
             yield $this->pluginManager->disablePluginForRoom($plugin, $command->getRoom());
 
-            return $this->chatClient->postMessage($command->getRoom(), "Plugin '{$plugin}' is now disabled in this room");
+            return $this->chatClient->postMessage($command, "Plugin '{$plugin}' is now disabled in this room");
         });
     }
 
     private function status(CommandMessage $command): Promise
     {
         if (null === $plugin = $command->getParameter(1)) {
-            return $this->chatClient->postReply($command, "No plugin name supplied");
+            return $this->chatClient->postReply($command, 'No plugin name supplied');
         }
 
         if (!$this->pluginManager->isPluginRegistered($plugin)) {
-            return $this->chatClient->postReply($command, "Invalid plugin name");
+            return $this->chatClient->postReply($command, 'Invalid plugin name');
         }
 
         $message = $this->pluginManager->isPluginEnabledForRoom($plugin, $command->getRoom())
             ? "Plugin '{$plugin}' is currently enabled in this room"
             : "Plugin '{$plugin}' is currently disabled in this room";
 
-        return $this->chatClient->postMessage($command->getRoom(), $message);
+        return $this->chatClient->postMessage($command, $message);
     }
 
-    private function execute(CommandMessage $command)
+    private function showCommandHelp(CommandMessage $command): Promise
     {
-        if (!yield $command->getRoom()->isApproved()) {
-            return null;
-        }
-
-        switch ($command->getParameter(0)) {
-            case 'list':    return $this->list($command);
-            case 'enable':  return $this->enable($command);
-            case 'disable': return $this->disable($command);
-            case 'status':  return $this->status($command);
-        }
-
-        return $this->chatClient->postReply($command, "Syntax: plugin [list|disable|enable] [plugin-name]");
+        return $this->chatClient->postMessage($command, self::COMMAND_HELP_TEXT, PostFlags::FIXED_FONT);
     }
 
     /**
@@ -167,16 +168,26 @@ class Plugin implements BuiltInCommand
      */
     public function handleCommand(CommandMessage $command): Promise
     {
-        return resolve($this->execute($command));
+        switch ($command->getParameter(0)) {
+            case 'help':    return $this->showCommandHelp($command);
+            case 'list':    return $this->list($command);
+            case 'enable':  return $this->enable($command);
+            case 'disable': return $this->disable($command);
+            case 'status':  return $this->status($command);
+        }
+
+        return $this->chatClient->postReply($command, 'Syntax: plugin [list|disable|enable] [plugin-name]');
     }
 
     /**
      * Get a list of specific commands handled by this built-in
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ['plugin'];
+        return [
+            new BuiltInCommandInfo('plugin', "Manage plugins. Use 'plugin help' for details."),
+        ];
     }
 }

@@ -6,9 +6,9 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command;
+use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Room11\DOMUtils\domdocument_load_html;
 
 class Man extends BasePlugin
@@ -58,7 +58,7 @@ class Man extends BasePlugin
 
     private function postResult(Command $command, \DOMXPath $xpath, string $url): Promise {
         return $this->chatClient->postMessage(
-            $command->getRoom(),
+            $command,
             sprintf(
                 "[ [`%s`%s](%s) ] `%s`",
                 $this->getSymbolName($xpath),
@@ -75,7 +75,8 @@ class Man extends BasePlugin
         );
     }
 
-    public function search(Command $command): \Generator {
+    public function search(Command $command)
+    {
         if (!$command->hasParameters()) {
             return new Success();
         }

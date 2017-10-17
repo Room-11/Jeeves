@@ -4,16 +4,16 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Message;
+use Room11\StackChat\Auth\SessionTracker;
+use Room11\StackChat\Client\Client as ChatClient;
+use Room11\StackChat\Entities\ChatMessage;
 
 class SwordFight extends BasePlugin
 {
-    const COMMAND = 'swordfight';
-
-    const MINIMUM_MATCH_PERCENTAGE = 60;
+    private const MINIMUM_MATCH_PERCENTAGE = 60;
 
     private $chatClient;
+    private $sessions;
 
     // We only match on insults for now because comparing text is actually pretty hard and I'm lazy
     private $matches = [
@@ -67,19 +67,23 @@ class SwordFight extends BasePlugin
         'I\'ll hound you night and day!' => 'Then be a good dog. Sit! Stay!',
     ];
 
-    public function __construct(ChatClient $chatClient)
+    public function __construct(ChatClient $chatClient, SessionTracker $sessions)
     {
         $this->chatClient = $chatClient;
+        $this->sessions = $sessions;
     }
 
-    private function isMatch(Message $message): bool
+    private function isMatch(ChatMessage $message): bool
     {
-        if (!$message->isConversation()) {
+        $botUserName = $this->sessions->getSessionForRoom($message->getRoom())->getUser()->getName();
+        $messageText = $message->getText();
+
+        if (!($message->isReply() || \Room11\Jeeves\text_contains_ping($messageText, $botUserName))) {
             return false;
         }
 
         foreach ($this->matches as $insult => $response) {
-            if ($this->getMatchingPercentage($insult, $message->getText()) >= self::MINIMUM_MATCH_PERCENTAGE) {
+            if ($this->getMatchingPercentage($insult, $messageText) >= self::MINIMUM_MATCH_PERCENTAGE) {
                 return true;
             }
         }
@@ -103,7 +107,7 @@ class SwordFight extends BasePlugin
         return trim(preg_replace('/\s+/', ' ', $text));
     }
 
-    private function getResponse(Message $message): string
+    private function getResponse(ChatMessage $message): string
     {
         $bestMatchPercentage = 0;
         $bestMatchResponse   = null;
@@ -124,7 +128,7 @@ class SwordFight extends BasePlugin
         return (string)$bestMatchResponse;
     }
 
-    public function handleMessage(Message $message): Promise
+    public function handleMessage(ChatMessage $message): Promise
     {
         return $this->isMatch($message)
             ? $this->chatClient->postReply($message, $this->getResponse($message))

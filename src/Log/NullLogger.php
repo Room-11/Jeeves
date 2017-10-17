@@ -2,12 +2,12 @@
 
 namespace Room11\Jeeves\Log;
 
-use Amp\Success;
 use Amp\Promise;
+use Amp\Success;
 
 class NullLogger extends BaseLogger
 {
-    public function log(int $logLevel, string $message, $extraData = null): Promise
+    public function log($logLevel, $message, array $extraData = null): Promise
     {
         return new Success();
     }

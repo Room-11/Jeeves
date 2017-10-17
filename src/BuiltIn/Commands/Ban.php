@@ -4,11 +4,12 @@ namespace Room11\Jeeves\BuiltIn\Commands;
 
 use Amp\Promise;
 use Amp\Success;
-use Room11\Jeeves\Chat\Client\ChatClient;
-use Room11\Jeeves\Chat\Message\Command as CommandMessage;
+use Room11\Jeeves\Chat\Command as CommandMessage;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\System\BuiltInCommand;
+use Room11\Jeeves\System\BuiltInCommandInfo;
+use Room11\StackChat\Client\Client as ChatClient;
 use function Amp\resolve;
 
 class Ban implements BuiltInCommand
@@ -24,11 +25,8 @@ class Ban implements BuiltInCommand
         $this->banStorage   = $banStorage;
     }
 
-    private function execute(CommandMessage $command): \Generator {
-        if (!yield $command->getRoom()->isApproved()) {
-            return;
-        }
-
+    private function execute(CommandMessage $command)
+    {
         if (!yield $this->adminStorage->isAdmin($command->getRoom(), $command->getUserId())) {
             return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
         }
@@ -37,13 +35,15 @@ class Ban implements BuiltInCommand
             yield from $this->list($command);
         } else if ($command->getCommandName() === "ban") {
             if (!$command->hasParameters(2)) {
-                return $this->chatClient->postReply($command, "Ban length must be specified");
+                return $this->chatClient->postReply($command, 'Ban length must be specified');
             }
 
             yield from $this->add($command, (int)$command->getParameter(0), $command->getParameter(1));
         } else if ($command->getCommandName() === "unban") {
             yield from $this->remove($command, (int)$command->getParameter(0));
         }
+
+        return null;
     }
 
     private function list(CommandMessage $command): \Generator
@@ -51,7 +51,7 @@ class Ban implements BuiltInCommand
         $bans = yield $this->banStorage->getAll($command->getRoom());
 
         if (!$bans) {
-            yield $this->chatClient->postMessage($command->getRoom(), "No users are currently on the naughty list.");
+            yield $this->chatClient->postMessage($command, 'No users are currently on the naughty list.');
             return;
         }
 
@@ -59,19 +59,21 @@ class Ban implements BuiltInCommand
             return sprintf("%s (%s)", $userId, $expiration);
         }, $bans, array_keys($bans)));
 
-        yield $this->chatClient->postMessage($command->getRoom(), $list);
+        yield $this->chatClient->postMessage($command, $list);
     }
 
-    private function add(CommandMessage $command, int $userId, string $duration): \Generator {
+    private function add(CommandMessage $command, int $userId, string $duration): \Generator
+    {
         yield $this->banStorage->add($command->getRoom(), $userId, $duration);
 
-        yield $this->chatClient->postMessage($command->getRoom(), "User is banned.");
+        yield $this->chatClient->postMessage($command, 'User is banned.');
     }
 
-    private function remove(CommandMessage $command, int $userId): \Generator {
+    private function remove(CommandMessage $command, int $userId): \Generator
+    {
         yield $this->banStorage->remove($command->getRoom(), $userId);
 
-        yield $this->chatClient->postMessage($command->getRoom(), "User is unbanned.");
+        yield $this->chatClient->postMessage($command, 'User is unbanned.');
     }
 
     /**
@@ -90,10 +92,13 @@ class Ban implements BuiltInCommand
     /**
      * Get a list of specific commands handled by this plugin
      *
-     * @return string[]
+     * @return BuiltInCommandInfo[]
      */
-    public function getCommandNames(): array
+    public function getCommandInfo(): array
     {
-        return ["ban", "unban"];
+        return [
+            new BuiltInCommandInfo('ban', 'Ban a user from interacting with the bot for a specified period of time', BuiltInCommandInfo::REQUIRE_ADMIN_USER),
+            new BuiltInCommandInfo('unban', "Remove a user's ban status", BuiltInCommandInfo::REQUIRE_ADMIN_USER),
+        ];
     }
 }

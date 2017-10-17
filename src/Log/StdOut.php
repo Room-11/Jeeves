@@ -18,7 +18,20 @@ class StdOut extends BaseLogger
             : '%s';
     }
 
-    public function log(int $logLevel, string $message, $extraData = null): Promise
+    private function outputContextData(array $data)
+    {
+        foreach ($data as $key => $value) {
+            echo $key . ': ';
+
+            if ($value instanceof \Throwable) {
+                echo "{$value}\n"; // stringified exceptions are much more useful than var_dump'd ones...
+            } else {
+                var_dump($value);
+            }
+        }
+    }
+
+    public function log($logLevel, $message, array $context = null): Promise
     {
         if (!$this->meetsLogLevel($logLevel)) {
             return new Success();
@@ -26,8 +39,8 @@ class StdOut extends BaseLogger
 
         printf("{$this->format}\n", $message, (new \DateTime())->format('Y-m-d H:i:s'));
 
-        if ($extraData !== null && $this->meetsLogLevel(Level::EXTRA_DATA)) {
-            var_dump($extraData);
+        if (!empty($context) && $this->meetsLogLevel(Level::CONTEXT)) {
+            $this->outputContextData($context);
         }
 
         return new Success();
