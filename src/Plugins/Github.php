@@ -59,14 +59,14 @@ class Github extends BasePlugin
 
     public function github(Command $command): \Generator
     {
-        $obj = $command->getParameter(0) ?? 'status';
+        $query = $command->getParameter(0) ?? 'status';
 
-        if ($obj === 'status') {
+        if ($query === 'status') {
             return yield $this->status($command);
-        } elseif (strpos($obj, '/') === false) {
-            return yield $this->profile($command, $obj);
-        } elseif (substr_count($obj, '/') === 1) {
-            return yield $this->repo($command, $obj);
+        } elseif (strpos($query, '/') === false) {
+            return yield $this->profile($command, $query);
+        } elseif (substr_count($query, '/') === 1) {
+            return yield $this->repo($command, $query);
         }
 
         return $this->chatClient->postMessage($command,
