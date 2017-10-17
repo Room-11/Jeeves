@@ -11,6 +11,8 @@ use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\MessageResolver;
+use Room11\StackChat\Entities\MainSiteUser;
+use Room11\StackChat\Room\Room as ChatRoom;
 
 class Issue extends BasePlugin
 {
@@ -64,7 +66,7 @@ class Issue extends BasePlugin
         }
 
         try {
-            $response = yield from $this->createIssue($title, $body, $command->getId());
+            $response = yield from $this->createIssue($command, $command->getId(), $title, $body);
         } catch (\Throwable $e) {
             $response = $e->getMessage();
         }
@@ -72,11 +74,28 @@ class Issue extends BasePlugin
         return $this->chatClient->postReply($command, $response);
     }
 
-    private function createIssue(string $title, $body = '', int $id)
+    private function createIssue(Command $command, int $messageId, string $title, $body = '')
     {
+        $users = yield $this->chatClient->getMainSiteUsers($command->getRoom(), $command->getUserId());
+
+        /** @var MainSiteUser $postingUser */
+        $postingUser = $users[$command->getUserId()];
+
+        $poster = sprintf('[%s](https://stackoverflow.com/users/%s)', $command->getUserName(), $command->getUserId());
+
+        if ($postingUser->getGithubUsername()) {
+            $poster = '@' . $postingUser->getGithubUsername();
+        }
+
         $requestBody = [
             'title' => $title,
-            'body' => $body . "\n Source - http://chat.stackoverflow.com/transcript/message/$id#$id"
+            'body'  => sprintf(
+                "%s\nPosted by: %s\nSource: http://chat.stackoverflow.com/transcript/message/%s#%s",
+                $body,
+                $poster,
+                $messageId,
+                $messageId
+            ),
         ];
 
         $request = (new HttpRequest)
