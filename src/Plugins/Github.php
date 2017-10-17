@@ -122,14 +122,10 @@ class Github extends BasePlugin
     private function postResponse($target, $response)
     {
         if (!$response) {
-            return $this->chatClient->postMessage($target, "Failed fetching status");
+            return $this->chatClient->postMessage($target, 'Failed fetching status');
         }
 
-        $messageTemplate = '%s *as of %s*';
-
-        if ($response->status === 'good') {
-            $messageTemplate = '[%s *as of %s*](https://www.youtube.com/watch?v=aJFyWBLeM7Q)';
-        }
+        $messageTemplate = '[%s *as of %s*](https://status.github.com/messages)';
 
         return $this->chatClient->postMessage(
             $target,
