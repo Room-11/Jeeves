@@ -157,16 +157,13 @@ class Issue extends BasePlugin
             $pingableUsers[$name] = $users[$id];
         }
 
-        return preg_replace_callback(self::PING_EXP,
-            function($match) use($pingableUsers)
-            {
-                if (isset($pingableUsers[$match[1]])) {
-                    return '@' . $pingableUsers[$match[1]]->getGithubUsername();
-                }
+        return preg_replace_callback(self::PING_EXP, function($match) use($pingableUsers) {
+            if (isset($pingableUsers[$match[1]]) && $pingableUsers[$match[1]]->getGithubUsername()) {
+                return '@' . $pingableUsers[$match[1]]->getGithubUsername();
+            }
 
-                return $match[1];
-            },
-        $text);
+            return $match[1];
+        }, $text);
     }
 
     public function getName(): string
