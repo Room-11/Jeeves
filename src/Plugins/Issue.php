@@ -5,6 +5,8 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
+use Amp\Promise;
+use function Amp\resolve;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\External\GithubIssue\Credentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -12,7 +14,6 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\MessageResolver;
 use Room11\StackChat\Entities\MainSiteUser;
-use Room11\StackChat\Room\Room as ChatRoom;
 
 class Issue extends BasePlugin
 {
@@ -40,80 +41,84 @@ class Issue extends BasePlugin
         $this->admin = $adminStorage;
     }
 
-    public function issue(Command $command)
+    public function issue(Command $command): Promise
     {
-        if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
-            return $this->chatClient->postReply($command, "Sorry, you're not cool enough to do that :(");
-        }
+        return resolve(function() use ($command) {
+            if (!yield $this->admin->isAdmin($command->getRoom(), $command->getUserId())) {
+                return $this->chatClient->postReply($command, "Sorry, you're not cool enough to do that :(");
+            }
 
-        if (!$this->credentialsPresent()) {
-            return $this->chatClient->postReply(
-                $command, 'I\'m not configured to use GitHub :('
-            );
-        }
+            if (!$this->credentialsPresent()) {
+                return $this->chatClient->postReply(
+                    $command, 'I\'m not configured to use GitHub :('
+                );
+            }
 
-        $content = explode('-', $command->getCommandText(), 2);
+            $content = explode('-', $command->getCommandText(), 2);
 
-        if (empty($content[0]) || count($content) > 2) {
-            return $this->chatClient->postReply($command, self::USAGE);
-        }
+            if (empty($content[0])) {
+                return $this->chatClient->postReply($command, self::USAGE);
+            }
 
-        $title = yield from $this->getTextFromCommand($content[0], $command);
-        $body = null;
+            $title = yield $this->getTextFromCommand($content[0], $command);
 
-        if (isset($content[1])) {
-            $body = yield from $this->getTextFromCommand($content[1], $command);
-        }
+            $body = '';
+            if (isset($content[1])) {
+                $body = yield $this->getTextFromCommand($content[1], $command);
+            }
 
-        try {
-            $response = yield from $this->createIssue($command, $command->getId(), $title, $body);
-        } catch (\Throwable $e) {
-            $response = $e->getMessage();
-        }
+            try {
+                $response = yield $this->createIssue($command, $title, $body);
+            } catch (\Throwable $e) {
+                $response = $e->getMessage();
+            }
 
-        return $this->chatClient->postReply($command, $response);
+            return $this->chatClient->postReply($command, $response);
+        });
     }
 
-    private function createIssue(Command $command, int $messageId, string $title, $body = '')
+    private function createIssue(Command $command, string $title, string $body = ''): Promise
     {
-        $users = yield $this->chatClient->getMainSiteUsers($command->getRoom(), $command->getUserId());
+        return resolve(function() use ($command, $title, $body) {
+            $users = yield $this->chatClient->getMainSiteUsers($command->getRoom(), $command->getUserId());
 
-        /** @var MainSiteUser $postingUser */
-        $postingUser = $users[$command->getUserId()];
+            /** @var MainSiteUser $postingUser */
+            $postingUser = $users[$command->getUserId()];
 
-        $poster = sprintf('[%s](https://stackoverflow.com/users/%s)', $command->getUserName(), $command->getUserId());
+            $poster = sprintf('[%s](https://stackoverflow.com/users/%s)', $command->getUserName(), $command->getUserId());
 
-        if ($postingUser->getGithubUsername()) {
-            $poster = '@' . $postingUser->getGithubUsername();
-        }
+            if ($postingUser->getGithubUsername()) {
+                $poster = '@' . $postingUser->getGithubUsername();
+            }
 
-        $requestBody = [
-            'title' => $title,
-            'body'  => sprintf(
-                "%s\nPosted by: %s\nSource: http://chat.stackoverflow.com/transcript/message/%s#%s",
-                $body,
-                $poster,
-                $messageId,
-                $messageId
-            ),
-        ];
+            $requestBody = [
+                'title' => $title,
+                'body'  => sprintf(
+                    "%s\n\nPosted by: %s\nSource: http://chat.stackoverflow.com/transcript/message/%s#%s",
+                    $body,
+                    $poster,
+                    $command->getId(),
+                    $command->getId()
+                ),
+            ];
 
-        $request = (new HttpRequest)
-            ->setUri($this->credentials->getUrl())
-            ->setMethod('POST')
-            ->setBody(json_encode($requestBody))
-            ->setAllHeaders($this->getAuthHeader());
+            $request = (new HttpRequest)
+                ->setUri($this->credentials->getUrl())
+                ->setMethod('POST')
+                ->setBody(json_encode($requestBody))
+                ->setAllHeaders($this->getAuthHeader());
 
-        /** @var HttpResponse $result */
-        $result = yield $this->httpClient->request($request);
+            /** @var HttpResponse $result */
+            $result = yield $this->httpClient->request($request);
 
-        if ($result->getStatus() !== 201) {
-            throw new \RuntimeException('I failed to create the issue :-(. You might want to create an issue about that');
-        }
+            if ($result->getStatus() !== 201) {
+                throw new \RuntimeException('I failed to create the issue :-(. You might want to create an issue about that');
+            }
 
-        $response = json_try_decode($result->getBody(), true);
+            $response = json_try_decode($result->getBody(), true);
 
-        return "Issue created - {$response['html_url']}";
+            return sprintf('Issue created: %s', $response['html_url']);
+        });
     }
 
     private function getAuthHeader(): array
@@ -143,46 +148,48 @@ class Issue extends BasePlugin
         return true;
     }
 
-    private function getTextFromCommand($text, Command $command)
+    private function getTextFromCommand($text, Command $command): Promise
     {
-        if (is_null($text)) {
-            return null;
-        }
-
-        if (preg_match(self::CHAT_URL_EXP, $text)) {
-            $text = yield from $this->messageResolver->resolveMessageText(
-                $command->getRoom(), $text
-            );
-        }
-
-        return yield from $this->replacePings($command, $text);
-    }
-
-    private function replacePings(Command $command, string $text)
-    {
-        $room = $command->getRoom();
-
-        if (!preg_match_all(self::PING_EXP, $text, $matches)) {
-            return $text;
-        }
-
-        $pingables = yield $this->chatClient->getPingableUserIDs($room, ...$matches[1]);
-
-        $ids = array_values($pingables);
-        $users = yield $this->chatClient->getMainSiteUsers($room, ...$ids);
-
-        $pingableUsers = [];
-        foreach ($pingables as $name => $id) {
-            $pingableUsers[$name] = $users[$id];
-        }
-
-        return preg_replace_callback(self::PING_EXP, function($match) use($pingableUsers) {
-            if (isset($pingableUsers[$match[1]]) && $pingableUsers[$match[1]]->getGithubUsername()) {
-                return '@' . $pingableUsers[$match[1]]->getGithubUsername();
+        return resolve(function() use ($text, $command) {
+            if (is_null($text)) {
+                return null;
             }
 
-            return $match[1];
-        }, $text);
+            if (preg_match(self::CHAT_URL_EXP, $text)) {
+                $text = yield $this->messageResolver->resolveMessageText($command->getRoom(), $text);
+            }
+
+            return $this->replacePings($command, $text);
+        });
+    }
+
+    private function replacePings(Command $command, string $text): Promise
+    {
+        return resolve(function() use ($command, $text) {
+            $room = $command->getRoom();
+
+            if (!preg_match_all(self::PING_EXP, $text, $matches)) {
+                return $text;
+            }
+
+            $pingables = yield $this->chatClient->getPingableUserIDs($room, ...$matches[1]);
+
+            $ids = array_values($pingables);
+            $users = yield $this->chatClient->getMainSiteUsers($room, ...$ids);
+
+            $pingableUsers = [];
+            foreach ($pingables as $name => $id) {
+                $pingableUsers[$name] = $users[$id];
+            }
+
+            return preg_replace_callback(self::PING_EXP, function($match) use($pingableUsers) {
+                if (isset($pingableUsers[$match[1]]) && $pingableUsers[$match[1]]->getGithubUsername()) {
+                    return '@' . $pingableUsers[$match[1]]->getGithubUsername();
+                }
+
+                return $match[1];
+            }, $text);
+        });
     }
 
     public function getName(): string
