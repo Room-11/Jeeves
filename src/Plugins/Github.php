@@ -65,7 +65,7 @@ class Github extends BasePlugin
             return yield $this->status($command);
         } elseif (strpos($obj, '/') === false) {
             return yield $this->profile($command, $obj);
-        } elseif (strpos($obj, '/') === strrpos($obj, '/')) {
+        } elseif (substr_count($obj, '/') === 1) {
             return yield $this->repo($command, $obj);
         }
 
