@@ -4,9 +4,7 @@ namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
-use function Amp\cancel;
 use Amp\Promise;
-use function Amp\resolve;
 use Amp\Success;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\Jeeves\Chat\Command;
@@ -15,7 +13,9 @@ use Room11\StackChat\Room\Room as ChatRoom;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use function Amp\all;
+use function Amp\cancel;
 use function Amp\repeat;
+use function Amp\resolve;
 
 class Github extends BasePlugin
 {
