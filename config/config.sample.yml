@@ -30,6 +30,7 @@ storage:
 
 plugins:
   - Room11\Jeeves\Plugins\Lmgtfy
+  - Room11\Jeeves\Plugins\Blame
   - Room11\Jeeves\Plugins\AntiW3Schools
   - Room11\Jeeves\Plugins\Canon
   - Room11\Jeeves\Plugins\Changelog
