@@ -6,7 +6,6 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
-use function Amp\resolve;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\External\GithubIssue\Credentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -14,6 +13,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\MessageResolver;
 use Room11\StackChat\Entities\MainSiteUser;
+use function Amp\resolve;
 
 class Issue extends BasePlugin
 {
