@@ -5,20 +5,26 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
-use Room11\Jeeves\Chat\Command;
-use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
-use Room11\Jeeves\System\PluginCommandEndpoint;
+use Amp\Success;
 use Room11\StackChat\Client\Client as ChatClient;
+use Room11\Jeeves\Chat\Command;
 use Room11\StackChat\Client\RoomContainer;
 use Room11\StackChat\Room\Room as ChatRoom;
+use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
+use Room11\Jeeves\System\PluginCommandEndpoint;
+use function Amp\all;
+use function Amp\cancel;
 use function Amp\repeat;
+use function Amp\resolve;
 
 class Github extends BasePlugin
 {
     private $chatClient;
     private $httpClient;
     private $pluginData;
-    private $lastKnownStatus = null;
+    private $lastKnownStatus  = null;
+    private $enabledRooms     = [];
+    private $pollingWatcherId = null;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
     {
@@ -29,61 +35,83 @@ class Github extends BasePlugin
 
     public function enableForRoom(ChatRoom $room, bool $persist = true)
     {
-        repeat(
-            function() use ($room) { return $this->checkStatusChange($room); }, 150000
-        );
+        $this->enabledRooms[$room->getId()] = $room;
+
+        if ($this->pollingWatcherId) {
+            return;
+        }
+
+        $this->pollingWatcherId = repeat(function () {
+            yield $this->checkStatusChange();
+        }, 150000);
     }
 
-    public function github(Command $command)
+    public function disableForRoom(ChatRoom $room, bool $persist = true)
     {
-        $obj = $command->getParameter(0) ?? 'status';
+        unset($this->enabledRooms[$room->getId()]);
 
-        if ($obj === 'status') {
-            return yield from $this->status($command);
-        } elseif (strpos($obj, '/') === false) {
-            return yield from $this->profile($command, $obj);
-        } elseif (strpos($obj, '/') === strrpos($obj, '/')) {
-            return yield from $this->repo($command, $obj);
+        if (!$this->enabledRooms) {
+            cancel($this->pollingWatcherId);
+
+            $this->pollingWatcherId = null;
+        }
+    }
+
+    public function github(Command $command): \Generator
+    {
+        $query = $command->getParameter(0) ?? 'status';
+
+        if ($query === 'status') {
+            return yield $this->status($command);
+        } elseif (strpos($query, '/') === false) {
+            return yield $this->profile($command, $query);
+        } elseif (substr_count($query, '/') === 1) {
+            return yield $this->repo($command, $query);
         }
 
         return $this->chatClient->postMessage($command,
-            /** @lang text */ "Usage: !!github [status | <project> | <profile> | <profile>/<repo> ]");
+            /** @lang text */ "Usage: !!github [status | <project> | <profile> | <profile>/<repo> ]"
+        );
     }
 
-    /**
+    /*
      * Example:
      *   !!github
      *   !!github status
      *
      * [tag:github-status] good: Everything operating normally. as of 2016-05-25T18:44:58Z
-     *
-     * @param Command $command
-     * @return Promise
      */
-    protected function status(Command $command)
+    protected function status(Command $command): Promise
     {
-        return $this->postResponse($command, yield from $this->getGithubStatus());
+        return resolve(function() use ($command) {
+            return $this->postResponse($command, yield $this->getGithubStatus());
+        });
     }
 
-    private function checkStatusChange(ChatRoom $room)
+    private function checkStatusChange(): Promise
     {
-        $response = yield from $this->getGithubStatus();
+        return resolve(function() {
+            $githubResponse = yield $this->getGithubStatus();
 
-        if (!$response) {
-            return null;
-        }
+            if (!$githubResponse) {
+                return new Success;
+            }
 
-        if (is_null($this->lastKnownStatus)) {
-            $this->lastKnownStatus = $response->status;
-            return null;
-        }
+            if ($this->lastKnownStatus === $githubResponse->status) {
+                return new Success;
+            }
 
-        if ($this->lastKnownStatus === $response->status) {
-            return null;
-        }
+            $before = $this->lastKnownStatus;
+            $this->lastKnownStatus = $githubResponse->status;
 
-        $this->lastKnownStatus = $response->status;
-        return $this->postResponse($room, $response);
+            if ($before === null) {
+                return new Success;
+            }
+
+            return all(array_map(function (ChatRoom $room) use ($githubResponse) {
+                return $this->postResponse($room, $githubResponse);
+            }, $this->enabledRooms));
+        });
     }
 
     /**
@@ -114,91 +142,91 @@ class Github extends BasePlugin
         );
     }
 
-    private function getGithubStatus()
+    private function getGithubStatus(): Promise
     {
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request('https://status.github.com/api/last-message.json');
+        return resolve(function() {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request('https://status.github.com/api/last-message.json');
 
-        if ($response->getStatus() !== 200) {
-            return false;
-        }
+            if ($response->getStatus() !== 200) {
+                return false;
+            }
 
-        return json_decode($response->getBody());
+            return json_decode($response->getBody());
+        });
     }
 
-    /**
+    /*
      * Example:
      *   !!github Room-11
      *
      * [tag:github-profile] Organization [Room-11](https://github.com/Room-11): 15 public repos
-     *
-     * @param Command $command
-     * @param string $profile
-     * @return Promise
      */
-    protected function profile(Command $command, string $profile)
+    protected function profile(Command $command, string $profile): Promise
     {
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request('https://api.github.com/users/' . urlencode($profile));
-        if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command, "Failed fetching profile for {$profile}");
-        }
+        return resolve(function() use ($command, $profile) {
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request('https://api.github.com/users/' . urlencode($profile));
 
-        $json = json_decode($response->getBody());
-        if (!isset($json->id)) {
-            return $this->chatClient->postMessage($command, "Unknown profile {$profile}");
-        }
+            if ($response->getStatus() !== 200) {
+                return $this->chatClient->postMessage($command, "Failed fetching profile for {$profile}");
+            }
 
-        return $this->chatClient->postMessage(
-            $command,
-            sprintf(
-                "[tag:github-profile] %s [%s](%s): %d public repos",
-                $json->type,
-                $json->name,
-                $json->html_url,
-                $json->public_repos
-            )
-        );
+            $json = json_decode($response->getBody());
+            if (!isset($json->id)) {
+                return $this->chatClient->postMessage($command, "Unknown profile {$profile}");
+            }
+
+            return $this->chatClient->postMessage(
+                $command,
+                sprintf(
+                    "[tag:github-profile] %s [%s](%s): %d public repos",
+                    $json->type,
+                    $json->name,
+                    $json->html_url,
+                    $json->public_repos
+                )
+            );
+        });
     }
 
-    /**
+    /*
      * Example:
      *   !!github Room-11/Jeeves
      *
      * [tag:github-repo] [Room-11/Jeeves](https://github.com/Room-11/Jeeves) Chatbot attempt -
      *    - Watchers: 14, Forks: 15, Last Pushed: 2016-05-26T08:57:41Z
-     *
-     * @param Command $command
-     * @param string $path
-     * @return Promise
      */
-    protected function repo(Command $command, string $path)
+    protected function repo(Command $command, string $path): Promise
     {
-        list($user, $repo) = explode('/', $path, 2);
+        return resolve(function() use ($command, $path) {
+            list($user, $repo) = explode('/', $path, 2);
 
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request('https://api.github.com/repos/' . urlencode($user).'/'.urlencode($repo));
-        if ($response->getStatus() !== 200) {
-            return $this->chatClient->postMessage($command, "Failed fetching repo for $path");
-        }
+            /** @var HttpResponse $response */
+            $response = yield $this->httpClient->request('https://api.github.com/repos/' . urlencode($user) . '/' . urlencode($repo));
 
-        $json = json_decode($response->getBody());
-        if (!isset($json->id)) {
-            return $this->chatClient->postMessage($command, "Unknown repo $path");
-        }
+            if ($response->getStatus() !== 200) {
+                return $this->chatClient->postMessage($command, "Failed fetching repo for $path");
+            }
 
-        return $this->chatClient->postMessage(
-            $command,
-            sprintf(
-                "[tag:github-repo] [%s](%s) %s - Watchers: %d, Forks: %d, Last Push: %s",
-                $json->full_name,
-                $json->html_url,
-                $json->description,
-                $json->watchers,
-                $json->forks,
-                $json->pushed_at
-            )
-        );
+            $json = json_decode($response->getBody());
+            if (!isset($json->id)) {
+                return $this->chatClient->postMessage($command, "Unknown repo $path");
+            }
+
+            return $this->chatClient->postMessage(
+                $command,
+                sprintf(
+                    "[tag:github-repo] [%s](%s) %s - Watchers: %d, Forks: %d, Last Push: %s",
+                    $json->full_name,
+                    $json->html_url,
+                    $json->description,
+                    $json->watchers,
+                    $json->forks,
+                    $json->pushed_at
+                )
+            );
+        });
     }
 
     public function getDescription(): string
