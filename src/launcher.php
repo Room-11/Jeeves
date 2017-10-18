@@ -14,6 +14,7 @@ use Room11\Jeeves\BuiltIn\Commands\Alias as AliasBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Ban as BanBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Command as CommandBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Plugin as PluginBuiltIn;
+use Room11\Jeeves\BuiltIn\Commands\Reboot as RebootBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Remove as RemoveBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\RoomPresence;
 use Room11\Jeeves\BuiltIn\Commands\Uptime as UptimeBuiltIn;
@@ -62,7 +63,8 @@ $builtInCommands = [
     RoomPresence::class,
     UptimeBuiltIn::class,
     VersionBuiltIn::class,
-    RemoveBuiltIn::class
+    RemoveBuiltIn::class,
+    RebootBuiltIn::class,
 ];
 
 $builtInEventHandlers = [
