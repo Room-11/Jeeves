@@ -40,6 +40,8 @@ class Github extends BasePlugin
 
             if ($this->pollingWatcherId) {
                 return;
+
+                yield;
             }
 
             $this->pollingWatcherId = repeat(function () {
