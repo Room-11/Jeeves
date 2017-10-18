@@ -60,7 +60,7 @@ class Translate extends BasePlugin
             $fromLanguage = yield $this->apiConsumer->detectLanguage($accessToken, $text);
         }
 
-        $translation = yield $this->apiConsumer->getTranslation($accessToken, $text, $fromLanguage, $toLanguage);
+        $translation = yield $this->apiConsumer->getTranslation($accessToken, $text, $toLanguage, $fromLanguage);
 
         return sprintf('%s (translated from %s)', $translation, self::$supportedLanguages[$fromLanguage]);
     }
@@ -176,6 +176,7 @@ class Translate extends BasePlugin
         self::$supportedLanguages = [];
 
         $accessToken = yield from $this->getAccessTokenForRoom($room);
+
         self::$supportedLanguages = yield $this->apiConsumer->getSupportedLanguages($accessToken);
     }
 }
