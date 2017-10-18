@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
+use function Amp\resolve;
 use DaveRandom\AsyncMicrosoftTranslate\Client as TranslationAPIClient;
 use DaveRandom\AsyncMicrosoftTranslate\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Chat\Command;
@@ -35,50 +36,52 @@ class Translate extends BasePlugin
         $this->apiCredentials = $apiCredentials;
     }
 
-    private function getAccessTokenForRoom(ChatRoom $room): \Generator
+    private function getAccessTokenForRoom(ChatRoom $room): Promise
     {
-        if (yield $this->storage->exists('access_token', $room)) {
-            list($accessToken, $expires) = yield $this->storage->get('access_token', $room);
+        return resolve(function() use ($room) {
+            if (yield $this->storage->exists('access_token', $room)) {
+                list($accessToken, $expires) = yield $this->storage->get('access_token', $room);
 
-            if ($expires > time()) {
-                return $accessToken;
+                if ($expires > time()) {
+                    return $accessToken;
+                }
             }
-        }
 
-        $accessToken = yield $this->apiConsumer->getAccessToken($this->apiCredentials);
+            $accessToken = yield $this->apiConsumer->getAccessToken($this->apiCredentials);
 
-        yield $this->storage->set('access_token', [$accessToken, time() + self::ACCESS_TOKEN_LIFETIME], $room);
+            yield $this->storage->set('access_token', [$accessToken, time() + self::ACCESS_TOKEN_LIFETIME], $room);
 
-        return $accessToken;
+            return $accessToken;
+        });
     }
 
-    private function getTranslation(ChatRoom $room, string $text, string $toLanguage, string $fromLanguage = null)
+    private function getTranslation(ChatRoom $room, string $text, string $toLanguage, string $fromLanguage = null): Promise
     {
-        $accessToken = yield from $this->getAccessTokenForRoom($room);
+        return resolve(function() use ($room, $text, $toLanguage, $fromLanguage) {
+            $accessToken = yield $this->getAccessTokenForRoom($room);
 
-        if ($fromLanguage === null) {
-            $fromLanguage = yield $this->apiConsumer->detectLanguage($accessToken, $text);
-        }
+            if ($fromLanguage === null) {
+                $fromLanguage = yield $this->apiConsumer->detectLanguage($accessToken, $text);
+            }
 
-        $translation = yield $this->apiConsumer->getTranslation($accessToken, $text, $toLanguage, $fromLanguage);
+            $translation = yield $this->apiConsumer->getTranslation($accessToken, $text, $toLanguage, $fromLanguage);
 
-        return sprintf('%s (translated from %s)', $translation, self::$supportedLanguages[$fromLanguage]);
+            return sprintf('%s (translated from %s)', $translation, self::$supportedLanguages[$fromLanguage]);
+        });
     }
 
-    private function getTextFromArguments(ChatRoom $room, array $args)
+    private function getTextFromArguments(ChatRoom $room, array $args): Promise
     {
-        if (count($args) > 1 || !preg_match('#/message/([0-9]+)#', $args[0], $match)) {
-            return implode(' ', $args);
-        }
+        return resolve(function() use ($room, $args) {
+            if (count($args) > 1 || !preg_match('#/message/([0-9]+)#', $args[0], $match)) {
+                return implode(' ', $args);
+            }
 
-        return yield $this->chatClient->getMessageText($room, (int)$match[1]);
+            return $this->chatClient->getMessageText($room, (int)$match[1]);
+        });
     }
 
-    /**
-     * @param string $language
-     * @return string|null
-     */
-    private function getLanguageCode(string $language)
+    private function getLanguageCode(string $language): ?string
     {
         if (isset(self::$supportedLanguages[$language])) {
             return $language;
@@ -106,48 +109,50 @@ class Translate extends BasePlugin
         return $this->chatClient->postMessage($command, $message);
     }
 
-    public function magic(Command $command)
+    public function magic(Command $command): Promise
     {
-        return yield from $this->toLanguage($command, $command->getCommandName());
+        return $this->toLanguage($command, $command->getCommandName());
     }
 
-    public function toEnglish(Command $command)
+    public function toEnglish(Command $command): Promise
     {
-        return yield from $this->toLanguage($command, 'en');
+        return $this->toLanguage($command, 'en');
     }
 
-    public function toLanguage(Command $command, string $toLanguage = null)
+    public function toLanguage(Command $command, string $toLanguage = null): Promise
     {
-        $params = $command->getParameters();
+        return resolve(function() use ($command, $toLanguage) {
+            $params = $command->getParameters();
 
-        if ($params[0] === 'list') {
-            return $this->postSupportedLanguagesList($command);
-        }
-
-        $toLanguage = $toLanguage ?? array_shift($params);
-        if (null === $toLanguageCode = $this->getLanguageCode($toLanguage ?? array_shift($params))) {
-            return $this->chatClient->postReply($command, 'Sorry, I don\'t speak ' . $toLanguage);
-        }
-
-        $fromLanguageCode = null;
-        if (preg_match('#^--from(?:=(.+))?$#', $params[0] ?? '', $match)) {
-            array_shift($params);
-
-            $fromLanguage = empty($match[1]) ? array_shift($params) : $match[1];
-
-            if (null === $fromLanguageCode = $this->getLanguageCode($fromLanguage)) {
-                return $this->chatClient->postReply($command, 'Sorry, I don\'t speak ' . $fromLanguage);
+            if ($params[0] === 'list') {
+                return $this->postSupportedLanguagesList($command);
             }
-        }
 
-        if (count($params) < 1) {
-            return $this->chatClient->postReply($command, 'The empty string is the same in every language');
-        }
+            $toLanguage = $toLanguage ?? array_shift($params);
+            if (null === $toLanguageCode = $this->getLanguageCode($toLanguage ?? array_shift($params))) {
+                return $this->chatClient->postReply($command, 'Sorry, I don\'t speak ' . $toLanguage);
+            }
 
-        $text = yield from $this->getTextFromArguments($command->getRoom(), $params);
-        $translation = yield from $this->getTranslation($command->getRoom(), $text, $toLanguageCode, $fromLanguageCode);
+            $fromLanguageCode = null;
+            if (preg_match('#^--from(?:=(.+))?$#', $params[0] ?? '', $match)) {
+                array_shift($params);
 
-        return $this->chatClient->postMessage($command, $translation);
+                $fromLanguage = empty($match[1]) ? array_shift($params) : $match[1];
+
+                if (null === $fromLanguageCode = $this->getLanguageCode($fromLanguage)) {
+                    return $this->chatClient->postReply($command, 'Sorry, I don\'t speak ' . $fromLanguage);
+                }
+            }
+
+            if (count($params) < 1) {
+                return $this->chatClient->postReply($command, 'The empty string is the same in every language');
+            }
+
+            $text = yield $this->getTextFromArguments($command->getRoom(), $params);
+            $translation = yield $this->getTranslation($command->getRoom(), $text, $toLanguageCode, $fromLanguageCode);
+
+            return $this->chatClient->postMessage($command, $translation);
+        });
     }
 
     public function getDescription(): string
