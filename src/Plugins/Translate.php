@@ -3,7 +3,7 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Promise;
-use function Amp\resolve;
+use Amp\Success;
 use DaveRandom\AsyncMicrosoftTranslate\Client as TranslationAPIClient;
 use DaveRandom\AsyncMicrosoftTranslate\Credentials as TranslationAPICredentials;
 use Room11\Jeeves\Chat\Command;
@@ -11,6 +11,7 @@ use Room11\Jeeves\Storage\KeyValue as KeyValueStore;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Room\Room as ChatRoom;
+use function Amp\resolve;
 
 class Translate extends BasePlugin
 {
@@ -72,13 +73,11 @@ class Translate extends BasePlugin
 
     private function getTextFromArguments(ChatRoom $room, array $args): Promise
     {
-        return resolve(function() use ($room, $args) {
-            if (count($args) > 1 || !preg_match('#/message/([0-9]+)#', $args[0], $match)) {
-                return implode(' ', $args);
-            }
+        if (count($args) > 1 || !preg_match('#/message/([0-9]+)#', $args[0], $match)) {
+            return new Success(implode(' ', $args));
+        }
 
-            return $this->chatClient->getMessageText($room, (int)$match[1]);
-        });
+        return $this->chatClient->getMessageText($room, (int)$match[1]);
     }
 
     private function getLanguageCode(string $language): ?string
@@ -172,16 +171,18 @@ class Translate extends BasePlugin
         ];
     }
 
-    public function enableForRoom(ChatRoom $room, bool $persist)
+    public function enableForRoom(ChatRoom $room, bool $persist): Promise
     {
-        if (self::$supportedLanguages === []) {
-            return;
-        }
+        return resolve(function() use ($room) {
+            if (self::$supportedLanguages === []) {
+                return;
+            }
 
-        self::$supportedLanguages = [];
+            self::$supportedLanguages = [];
 
-        $accessToken = yield from $this->getAccessTokenForRoom($room);
+            $accessToken = yield $this->getAccessTokenForRoom($room);
 
-        self::$supportedLanguages = yield $this->apiConsumer->getSupportedLanguages($accessToken);
+            self::$supportedLanguages = yield $this->apiConsumer->getSupportedLanguages($accessToken);
+        });
     }
 }
