@@ -36,6 +36,7 @@ class NotConfiguredException extends Exception {}
 class TweetIDNotFoundException extends Exception {}
 class TweetLengthLimitExceededException extends Exception {}
 class TextProcessingFailedException extends Exception {}
+class UnhandledOneboxException extends Exception {}
 class MediaProcessingFailedException extends Exception {}
 
 class Tweet extends BasePlugin
@@ -85,11 +86,6 @@ class Tweet extends BasePlugin
         return domdocument_load_html($messageBody, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
     }
 
-    private function isRetweet(\DOMXPath $xpath): bool
-    {
-        return $xpath->query("//*[" . xpath_html_class('ob-tweet') . "]")->length > 0;
-    }
-
     private function getTweetIdFromMessage(\DOMXPath $xpath): int
     {
         /** @var \DOMElement $element */
@@ -102,11 +98,6 @@ class Tweet extends BasePlugin
         }
 
         throw new TweetIDNotFoundException("ID not found");
-    }
-
-    private function removeNode(\DOMNode $node)
-    {
-        $node->parentNode->removeChild($node);
     }
 
     private function replaceNode(\DOMNode $old, $new)
@@ -133,26 +124,6 @@ class Tweet extends BasePlugin
         yield \Amp\File\put($tmpFilePath, $response->getBody());
 
         return $tmpFilePath;
-    }
-
-    private function replaceImages(\DOMXPath $xpath)
-    {
-        $files = [];
-
-        /** @var \DOMElement $element */
-        foreach ($xpath->document->getElementsByTagName('img') as $element) {
-            $target = $element->getAttribute('src');
-
-            if (substr($target, 0, 2) === '//') {
-                $target = 'https:' . $target;
-            }
-
-            $files[] = yield from $this->downloadMediaForUpload($target);
-
-            $this->removeNode($element->parentNode);
-        }
-
-        return $files;
     }
 
     private function anchorTextIsUrl(\DOMElement $element): bool
@@ -339,15 +310,68 @@ class Tweet extends BasePlugin
         return $this->clients[$ident];
     }
 
-    private function buildRetweetRequest(\DOMXPath $xpath): RetweetRequest
+    private function isOnebox(\DOMXPath $xpath): bool
     {
-        return new RetweetRequest($this->getTweetIdFromMessage($xpath));
+        return $xpath->query("/div[" . xpath_html_class('onebox') . "]")->length === 1;
+    }
+
+    private function attachMediaToUpdateRequest(UpdateRequest $request, ChatRoom $room, string ...$files)
+    {
+        /** @var TwitterClient $client */
+        $client = yield from $this->getClientForRoom($room);
+        $ids = [];
+
+        foreach ($files as $file) {
+            /** @var UploadResponse $result */
+            $result = yield $client->request((new Upload)->setFilePath($file));
+            $ids[] = $result->getMediaId();
+
+            yield \Amp\File\unlink($file);
+        }
+
+        if (!empty($ids)) {
+            $request->setMediaIds(...$ids);
+        }
+    }
+
+    private function buildUpdateRequestFromOnebox(ChatRoom $room, \DOMXPath $xpath)
+    {
+        $classList = $xpath->document->documentElement->getAttribute('class');
+
+        if (!preg_match('/\bob-(\S+)/', $classList, $match)) {
+            throw new UnhandledOneboxException;
+        }
+
+        switch ($match[1]) {
+            case 'tweet':
+                return new RetweetRequest($this->getTweetIdFromMessage($xpath));
+
+            case 'youtube':
+                $url = $xpath->document->getElementsByTagName('a')->item(0)->getAttribute('href');
+                return new UpdateRequest($url);
+
+            case 'image':
+                $target = $xpath->document->getElementsByTagName('img')->item(0)->getAttribute('src');
+
+                if (substr($target, 0, 2) === '//') {
+                    $target = 'https:' . $target;
+                }
+
+                $file = yield from $this->downloadMediaForUpload($target);
+
+                $request = new UpdateRequest('');
+
+                yield from $this->attachMediaToUpdateRequest($request, $room, $file);
+
+                return $request;
+        }
+
+        throw new UnhandledOneboxException;
     }
 
     private function buildUpdateRequest(ChatRoom $room, \DOMXPath $xpath)
     {
-        $files = yield from $this->replaceImages($xpath);
-        $files = array_merge($files, yield from $this->replaceAnchors($xpath));
+        $files = yield from $this->replaceAnchors($xpath);
 
         $text = trim(yield from $this->replacePings($room, $xpath->document->textContent));
         $text = \Normalizer::normalize(trim($text), \Normalizer::FORM_C);
@@ -367,35 +391,15 @@ class Tweet extends BasePlugin
 
         $result = new UpdateRequest($text);
 
-        if (count($files) > 0) {
-            $mediaIds = yield from $this->uploadMediaFiles($room, $files);
-            $result->setMediaIds(...$mediaIds);
-        }
+        yield from $this->attachMediaToUpdateRequest($result, $room, ...$files);
 
         return $result;
     }
 
-    private function uploadMediaFiles(ChatRoom $room, array $files)
-    {
-        /** @var TwitterClient $client */
-        $client = yield from $this->getClientForRoom($room);
-        $ids = [];
-
-        foreach ($files as $file) {
-            /** @var UploadResponse $result */
-            $result = yield $client->request((new Upload)->setFilePath($file));
-            $ids[] = $result->getMediaId();
-
-            yield \Amp\File\unlink($file);
-        }
-
-        return $ids;
-    }
-
     private function buildTwitterRequest(ChatRoom $room, \DOMXPath $xpath)
     {
-        return $this->isRetweet($xpath)
-            ? $this->buildRetweetRequest($xpath)
+        return $this->isOnebox($xpath)
+            ? yield from $this->buildUpdateRequestFromOnebox($room, $xpath)
             : yield from $this->buildUpdateRequest($room, $xpath);
     }
 
@@ -429,6 +433,8 @@ class Tweet extends BasePlugin
             return $this->chatClient->postReply($command, 'I need a chat message link to tweet');
         } catch (TweetIDNotFoundException $e) {
             return $this->chatClient->postReply($command, "That looks like a retweet but I can't find the tweet ID :-S");
+        } catch (UnhandledOneboxException $e) {
+            return $this->chatClient->postReply($command, "Sorry, I don't know how to turn that kind of onebox into a tweet");
         } catch (TextProcessingFailedException $e) {
             return $this->chatClient->postReply($command, "Processing the message text failed :-S");
         } catch (MediaProcessingFailedException $e) {
