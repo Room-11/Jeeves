@@ -144,7 +144,7 @@ class WebSocketEventDispatcher implements EventDispatcher
     {
         $session = $this->sessions->getSessionForRoom($message->getRoom());
 
-        if ($message->getUserId() === $session->getUser()->getId()) {
+        if (!$this->devMode && $message->getUserId() === $session->getUser()->getId()) {
             return new Success;
         }
 
