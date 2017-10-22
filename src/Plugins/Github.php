@@ -6,6 +6,8 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
 use Amp\Success;
+use Psr\Log\LoggerInterface;
+use Room11\Jeeves\Exception;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\Jeeves\Chat\Command;
 use Room11\StackChat\Client\RoomContainer;
@@ -17,6 +19,8 @@ use function Amp\cancel;
 use function Amp\repeat;
 use function Amp\resolve;
 
+class GithubStatusUnfetchableException extends Exception {}
+
 class Github extends BasePlugin
 {
     private $chatClient;
@@ -25,12 +29,24 @@ class Github extends BasePlugin
     private $lastKnownStatus  = null;
     private $enabledRooms     = [];
     private $pollingWatcherId = null;
+    private $logger;
 
-    public function __construct(ChatClient $chatClient, HttpClient $httpClient, KeyValueStore $pluginData)
+    private $unreachableAttempts = 0;
+
+    private const GITHUB_STATUS_POLL_MS = 150000;
+    private const UNREACHABLE_ATTEMPTS_THRESHOLD = 3;
+
+    public function __construct(
+        ChatClient $chatClient,
+        HttpClient $httpClient,
+        KeyValueStore $pluginData,
+        LoggerInterface $logger
+    )
     {
         $this->chatClient = $chatClient;
         $this->httpClient = $httpClient;
         $this->pluginData = $pluginData;
+        $this->logger = $logger;
     }
 
     public function enableForRoom(ChatRoom $room, bool $persist = true): void
@@ -46,7 +62,7 @@ class Github extends BasePlugin
 
             $this->pollingWatcherId = repeat(function () {
                 yield $this->checkStatusChange();
-            }, 150000);
+            }, self::GITHUB_STATUS_POLL_MS);
         });
     }
 
@@ -88,14 +104,48 @@ class Github extends BasePlugin
     protected function status(Command $command): Promise
     {
         return resolve(function() use ($command) {
-            return $this->postResponse($command, yield $this->getGithubStatus());
+            try {
+                $status = yield $this->getGithubStatus();
+                return $this->postResponse($command, $status);
+            } catch (GithubStatusUnfetchableException $e) {
+                $this->logger->warning('Status request to github failed: ' . $e->getMessage());
+                return $this->postUnreachableResponse($command);
+            }
         });
+    }
+
+    private function postUnreachableResponse($target)
+    {
+        return $this->chatClient->postMessage(
+            $target,
+            '[tag:github-status] status.github.com seems to be unreachable.'
+        );
+    }
+
+    private function processUnreachable()
+    {
+        $this->unreachableAttempts += 1;
+
+        // Speak up if Jeeves hasn't been able to reach github status for a few tries now.
+        if ($this->unreachableAttempts === self::UNREACHABLE_ATTEMPTS_THRESHOLD) {
+            return all(array_map(function (ChatRoom $room) {
+                return $this->postUnreachableResponse($room);
+            }, $this->enabledRooms));
+        }
+
+        return new Success;
     }
 
     private function checkStatusChange(): Promise
     {
         return resolve(function() {
-            $githubResponse = yield $this->getGithubStatus();
+            try {
+                $githubResponse = yield $this->getGithubStatus();
+            } catch (GithubStatusUnfetchableException $e) {
+                $this->logger->warning('Status request to github failed: ' . $e->getMessage());
+                return $this->processUnreachable();
+            }
+            $this->unreachableAttempts = 0;
 
             if (!$githubResponse) {
                 return new Success;
@@ -149,7 +199,7 @@ class Github extends BasePlugin
             $response = yield $this->httpClient->request('https://status.github.com/api/last-message.json');
 
             if ($response->getStatus() !== 200) {
-                return false;
+                throw new GithubStatusUnfetchableException('Request responded with code ' . $response->getStatus());
             }
 
             return json_decode($response->getBody());
