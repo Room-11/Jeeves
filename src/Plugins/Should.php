@@ -39,7 +39,7 @@ class Should extends BasePlugin
 
     public function should(Command $command)
     {
-        static $expr = '~(\S+?)\s+(.*?),?\sor\s(?:(?:should\s+\1|rather)\s+)?(.*?)(?:\?|$)~i';
+        static $expr = '~(\S+?)\s+(.*?)(?:,\s*|\s+)or\s(?:(?:should\s+\1|rather)\s+)?(.*?)(?:\?|$)~i';
 
         if (!preg_match($expr, implode(" ", $command->getParameters()), $match)) {
             return $this->is($command);
