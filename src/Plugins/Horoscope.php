@@ -104,7 +104,7 @@ class Horoscope extends BasePlugin
     {
         $url = $xpath->evaluate("
             string(
-                //a[contains(@class,'js_entry-link')][1]
+                //a[contains(concat(' ', normalize-space(@class), ' '), ' js_entry-link ')][1]
                 /@href
             )
         ");
