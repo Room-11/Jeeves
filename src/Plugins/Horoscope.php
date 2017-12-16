@@ -62,43 +62,38 @@ class Horoscope extends BasePlugin
             );
         }
 
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(self::GLOBAL_HOROSCOPE_TAG_URL);
+        /** @var HttpResponse $globalResponse */
+        $globalResponse = yield $this->httpClient->request(self::GLOBAL_HOROSCOPE_TAG_URL);
 
-        if ($response->getStatus() !== 200) {
+        if ($globalResponse->getStatus() !== 200) {
             return $this->chatClient->postReply(
                 $command,
                 "The stars are dead. Why have you killed the stars?"
             );
         }
 
-        $globalHoroscopePageDom = domdocument_load_html($response->getBody());
+        $globalHoroscopePageDom = domdocument_load_html($globalResponse->getBody());
         $globalHoroscopeXPath = new \DOMXPath($globalHoroscopePageDom);
 
         $currentHoroscopeUrl = $this->extractCurrentHoroscopeUrl($globalHoroscopeXPath);
 
-        /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request($currentHoroscopeUrl);
+        /** @var HttpResponse $currentHoroscopeResponse */
+        $currentHoroscopeResponse = yield $this->httpClient->request($currentHoroscopeUrl);
 
-        if ($response->getStatus() !== 200) {
+        if ($currentHoroscopeResponse->getStatus() !== 200) {
             return $this->chatClient->postReply(
                 $command,
                 "The second stars are dead. It's better, but not quite there yet."
             );
         }
 
-        $currentHoroscopeDom = domdocument_load_html($response->getBody());
+        $currentHoroscopeDom = domdocument_load_html($currentHoroscopeResponse->getBody());
         $currentHoroscopeXPath = new \DOMXPath($currentHoroscopeDom);
-
-        if (!$command->hasParameters()) {
-            $sign = $this->extractActiveSign($currentHoroscopeXPath);
-        }
 
         return $this->chatClient->postMessage(
             $command,
             $this->formatResponse(
                 $sign,
-                $this->extractDate($sign, $currentHoroscopeXPath),
                 $this->extractHoroscope($sign, $currentHoroscopeXPath),
                 $currentHoroscopeUrl
             )
@@ -131,49 +126,6 @@ class Horoscope extends BasePlugin
         return [new PluginCommandEndpoint('Horoscope', [$this, 'divine'], 'horoscope')];
     }
 
-    private function extractActiveSign(\DOMXPath $xpath): string
-    {
-        $sign = $xpath->evaluate('
-            string(
-                //li[contains(concat(" ", normalize-space(@class), " "), " active ")][1]
-                /div[1]
-                /img[1]
-                /@alt
-            )
-        ');
-
-        if (!$sign) {
-            throw new \RuntimeException("Could not extract current zodiac sign.");
-        }
-
-        return strtolower($sign);
-    }
-
-    /*
-     * this routine, as the name expertly hints at, extracts the date from the horoscope page
-     *
-     * however, it's not there anymore, so let's just turn that off for now
-     */
-    private function extractDate(string $sign, \DOMXPath $xpath): string
-    {
-        // totally legit date
-        return '';
-        $date = $xpath->evaluate("
-            string(
-                //li[contains(concat(' ', normalize-space(@class), ' '), ' astro-$sign ')][1]
-                /div[2]
-                /h3[1]
-                /span[contains(concat(' ', normalize-space(@class), ' '), ' date ')][1]
-            )
-        ");
-
-        if (!$date) {
-            throw new \RuntimeException("Could not extract date.");
-        }
-
-        return trim($date);
-    }
-
     private function extractHoroscope(string $sign, \DOMXPath $xpath): string
     {
         $sign = ucfirst($sign);
@@ -191,13 +143,12 @@ class Horoscope extends BasePlugin
         return trim($horoscope);
     }
 
-    private function formatResponse($sign, $date, $horoscope, $url): string
+    private function formatResponse($sign, $horoscope, $url): string
     {
         return sprintf(
-            "> %s %s | %s\n%s\n%s",
+            "> %s %s\n%s\n%s",
             self::SIGNS[$sign],
             ucfirst($sign),
-            $date,
             $horoscope,
             $url
         );
