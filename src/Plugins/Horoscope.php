@@ -11,7 +11,7 @@ use function Room11\DOMUtils\domdocument_load_html;
 
 class Horoscope extends BasePlugin
 {
-    private const HOROSCOPE_URL = "http://www.theonion.com/features/horoscope";
+    private const GLOBAL_HOROSCOPE_TAG_URL = "https://www.theonion.com/tag/horoscope";
     private const SIGNS = [
         "aries" => "♈",
         "taurus" => "♉",
@@ -36,11 +36,26 @@ class Horoscope extends BasePlugin
         $this->httpClient = $httpClient;
     }
 
+    /*
+     * we want to divine a specific sign so
+     *
+     * request the global horoscope page content
+     * follow the first horoscope link there (should be the current one)
+     * extract the specific sign
+     */
     public function divine(Command $command)
     {
+
+        if (!$command->hasParameters()) {
+            return $this->chatClient->postReply(
+                $command,
+                "Nope, I don't support no parameter anymore."
+            );
+        }
+
         $sign = strtolower((string)$command->getParameter(0));
 
-        if ($command->hasParameters() && !array_key_exists($sign, self::SIGNS)) {
+        if (!array_key_exists($sign, self::SIGNS)) {
             return $this->chatClient->postReply(
                 $command,
                 "Now you're just making shit up."
@@ -48,7 +63,7 @@ class Horoscope extends BasePlugin
         }
 
         /** @var HttpResponse $response */
-        $response = yield $this->httpClient->request(self::HOROSCOPE_URL);
+        $response = yield $this->httpClient->request(self::GLOBAL_HOROSCOPE_TAG_URL);
 
         if ($response->getStatus() !== 200) {
             return $this->chatClient->postReply(
@@ -57,21 +72,53 @@ class Horoscope extends BasePlugin
             );
         }
 
-        $dom = domdocument_load_html($response->getBody());
-        $xpath = new \DOMXPath($dom);
+        $globalHoroscopePageDom = domdocument_load_html($response->getBody());
+        $globalHoroscopeXPath = new \DOMXPath($globalHoroscopePageDom);
+
+        $currentHoroscopeUrl = $this->extractCurrentHoroscopeUrl($globalHoroscopeXPath);
+
+        /** @var HttpResponse $response */
+        $response = yield $this->httpClient->request($currentHoroscopeUrl);
+
+        if ($response->getStatus() !== 200) {
+            return $this->chatClient->postReply(
+                $command,
+                "The second stars are dead. It's better, but not quite there yet."
+            );
+        }
+
+        $currentHoroscopeDom = domdocument_load_html($response->getBody());
+        $currentHoroscopeXPath = new \DOMXPath($currentHoroscopeDom);
 
         if (!$command->hasParameters()) {
-            $sign = $this->extractActiveSign($xpath);
+            $sign = $this->extractActiveSign($currentHoroscopeXPath);
         }
 
         return $this->chatClient->postMessage(
             $command,
             $this->formatResponse(
                 $sign,
-                $this->extractDate($sign, $xpath),
-                $this->extractHoroscope($sign, $xpath)
+                $this->extractDate($sign, $currentHoroscopeXPath),
+                $this->extractHoroscope($sign, $currentHoroscopeXPath),
+                $currentHoroscopeUrl
             )
         );
+    }
+
+    private function extractCurrentHoroscopeUrl(\DOMXPath $xpath): string
+    {
+        $url = $xpath->evaluate("
+            string(
+                //a[contains(@class,'js_entry-link')][1]
+                /@href
+            )
+        ");
+
+        if (!$url) {
+            throw new \RuntimeException("Could not extract current horoscope URL.");
+        }
+
+        return trim($url);
     }
 
     public function getDescription(): string
@@ -102,8 +149,15 @@ class Horoscope extends BasePlugin
         return strtolower($sign);
     }
 
+    /*
+     * this routine, as the name expertly hints at, extracts the date from the horoscope page
+     *
+     * however, it's not there anymore, so let's just turn that off for now
+     */
     private function extractDate(string $sign, \DOMXPath $xpath): string
     {
+        // totally legit date
+        return '';
         $date = $xpath->evaluate("
             string(
                 //li[contains(concat(' ', normalize-space(@class), ' '), ' astro-$sign ')][1]
@@ -122,11 +176,11 @@ class Horoscope extends BasePlugin
 
     private function extractHoroscope(string $sign, \DOMXPath $xpath): string
     {
+        $sign = ucfirst($sign);
         $horoscope = $xpath->evaluate("
             string(
-                //li[contains(concat(' ', normalize-space(@class), ' '), ' astro-$sign ')][1]
-                /div[2]
-                /text()[last()]
+                //h4[contains(text(), '$sign')]
+                /following::p[1]
             )
         ");
 
@@ -137,7 +191,7 @@ class Horoscope extends BasePlugin
         return trim($horoscope);
     }
 
-    private function formatResponse($sign, $date, $horoscope): string
+    private function formatResponse($sign, $date, $horoscope, $url): string
     {
         return sprintf(
             "> %s %s | %s\n%s\n%s",
@@ -145,7 +199,7 @@ class Horoscope extends BasePlugin
             ucfirst($sign),
             $date,
             $horoscope,
-            self::HOROSCOPE_URL
+            $url
         );
     }
 }
