@@ -3,6 +3,7 @@
 namespace Room11\Jeeves\Plugins;
 
 use Amp\Artax\HttpClient;
+use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
@@ -77,8 +78,14 @@ class Horoscope extends BasePlugin
 
         $currentHoroscopeUrl = $this->extractCurrentHoroscopeUrl($globalHoroscopeXPath);
 
+        $request = (new HttpRequest)
+            ->setMethod('GET')
+            ->setUri($currentHoroscopeUrl)
+            ->setHeader('Connection', 'close')
+        ;
+
         /** @var HttpResponse $currentHoroscopeResponse */
-        $currentHoroscopeResponse = yield $this->httpClient->request($currentHoroscopeUrl);
+        $currentHoroscopeResponse = yield $this->httpClient->request($request);
 
         if ($currentHoroscopeResponse->getStatus() !== 200) {
             return $this->chatClient->postReply(
