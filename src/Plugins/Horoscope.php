@@ -49,7 +49,7 @@ class Horoscope extends BasePlugin
         if (!$command->hasParameters()) {
             return $this->chatClient->postReply(
                 $command,
-                "Nope, I don't support no parameter anymore."
+                "Usage: `!!horoscope <sign>`"
             );
         }
 
