@@ -8,7 +8,6 @@ use DaveRandom\AsyncBitlyClient\Client as BitlyClient;
 use DaveRandom\AsyncMicrosoftTranslate\Credentials as TranslationAPICredentials;
 use PeeHaa\AsyncChatterBot\Credential\CleverBot as CleverBotCredentials;
 use PeeHaa\AsyncTwitter\Credentials\Application as TwitterApplicationCredentials;
-use PeeHaa\PHPComicGenerator\Generator;
 use Psr\Log\LoggerInterface as Logger;
 use Room11\Jeeves\BuiltIn\Commands\Admin as AdminBuiltIn;
 use Room11\Jeeves\BuiltIn\Commands\Alias as AliasBuiltIn;
@@ -87,10 +86,6 @@ $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['acces
 
 $injector->define(CleverBotCredentials::class, [
     ':key' => $config['cleverbot']['key'] ?? '',
-]);
-
-$injector->define(Generator::class, [
-    ':outputDirectory' => __DIR__ . '/../vendor/peehaa/php-comic-generator/data/output',
 ]);
 
 $injector->define(PHPComic::class, [
