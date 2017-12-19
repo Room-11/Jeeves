@@ -26,6 +26,7 @@ use Room11\Jeeves\Chat\WebSocketEventDispatcherFactory;
 use Room11\Jeeves\External\GithubIssue\Credentials as GithubIssueCredentials;
 use Room11\Jeeves\Log\Level as LogLevel;
 use Room11\Jeeves\Log\StdOut as StdOutLogger;
+use Room11\Jeeves\Plugins\PHPComic;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\Ban as BanStorage;
 use Room11\Jeeves\Storage\CommandAlias as CommandAliasStorage;
@@ -85,6 +86,10 @@ $injector->define(BitlyClient::class, [':accessToken' => $config['bitly']['acces
 
 $injector->define(CleverBotCredentials::class, [
     ':key' => $config['cleverbot']['key'] ?? '',
+]);
+
+$injector->define(PHPComic::class, [
+    ':key' => $config['phpcomic']['key'] ?? '',
 ]);
 
 $injector->define(TwitterApplicationCredentials::class, [
