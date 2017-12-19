@@ -9,5 +9,7 @@ const DATA_BASE_DIR = APP_BASE . '/data';
 define(__NAMESPACE__ . '\\PROCESS_START_TIME', time());
 define(__NAMESPACE__ . '\\IS_WINDOWS', stripos(PHP_OS, 'win') === 0);
 
+define(__NAMESPACE__ . '\\PHP_COMIC_SOURCE_DIRECTORY', __DIR__ . '/vendor/peehaa/php-comic-generator/data');
+
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/version.php';
