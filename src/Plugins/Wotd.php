@@ -5,6 +5,7 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Pause;
+use Amp\Promise;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStorage;
@@ -72,14 +73,14 @@ class Wotd extends BasePlugin
         return isset($this->runningServiceControls[$room->getIdentString()]);
     }
 
-    private function setServiceEnabled(ChatRoom $room, bool $enabled): \Generator
+    private function setServiceEnabled(ChatRoom $room, bool $enabled): Promise
     {
-        yield $this->storage->set('wotdd', $enabled, $room);
+        return $this->storage->set('wotdd', $enabled, $room);
     }
 
-    private function setServiceNextRunTime(ChatRoom $room, \DateTimeImmutable $time): \Generator
+    private function setServiceNextRunTime(ChatRoom $room, \DateTimeImmutable $time): Promise
     {
-        yield $this->storage->set('wotdd-time', $time->getTimestamp(), $room);
+        return $this->storage->set('wotdd-time', $time->getTimestamp(), $room);
     }
 
     private function getServiceNextRunTime(ChatRoom $room)
@@ -94,7 +95,7 @@ class Wotd extends BasePlugin
     private function getMillisecondsUntilNextServiceMessage(ChatRoom $room)
     {
         /** @var \DateTimeImmutable $nextTime */
-        $nextTime = yield $this->getServiceNextRunTime($room);
+        $nextTime = yield from $this->getServiceNextRunTime($room);
         $delay = $nextTime->getTimestamp() - \time();
 
         return $delay > 0
@@ -111,13 +112,13 @@ class Wotd extends BasePlugin
         }
 
         /** @var PostedMessage $message */
-        $message = yield $this->postWotdMessageInRoom($room);
+        $message = yield from $this->postWotdMessageInRoom($room);
 
         yield $this->chatClient->pinOrUnpinMessage($message);
         yield $this->storage->set('wotdd-pin-message-id', $message->getId(), $room);
 
         /** @var \DateTimeImmutable $nextTime */
-        $nextTime = yield $this->getServiceNextRunTime($room);
+        $nextTime = yield from $this->getServiceNextRunTime($room);
         $now = \time();
 
         while ($nextTime->getTimestamp() <= $now) {
@@ -222,8 +223,8 @@ class Wotd extends BasePlugin
                     );
                 }
 
-                yield from $this->setServiceEnabled($room, true);
-                yield from $this->setServiceNextRunTime($room, $time);
+                yield $this->setServiceEnabled($room, true);
+                yield $this->setServiceNextRunTime($room, $time);
 
                 if (!$this->isServiceRunning($room)) {
                     $this->startServiceForRoom($room);
@@ -236,7 +237,7 @@ class Wotd extends BasePlugin
                     return $this->chatClient->postReply($command, "I'm sorry Dave, I'm afraid I can't do that");
                 }
 
-                yield from $this->setServiceEnabled($room, false);
+                yield $this->setServiceEnabled($room, false);
 
                 if ($this->isServiceRunning($room)) {
                     $this->stopServiceForRoom($room);
@@ -247,7 +248,8 @@ class Wotd extends BasePlugin
             case 'status':
                 $enabled = yield from $this->isServiceEnabled($room);
                 $running = $this->isServiceRunning($room);
-                $time = (yield from $this->getServiceNextRunTime($room))->format('H:i:s');
+                $dateTime = yield from $this->getServiceNextRunTime($room);
+                $time = $dateTime ? $dateTime->format('H:i:s') . ' UTC' : 'undefined';
 
                 if ($enabled && $running) {
                     $state = "enabled and running (run time: {$time})";
