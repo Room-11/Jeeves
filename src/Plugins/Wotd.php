@@ -65,7 +65,7 @@ class Wotd extends BasePlugin
 
     private function isServiceEnabled(ChatRoom $room)
     {
-        return (!yield $this->storage->exists('wotdd', $room)) || (yield $this->storage->get('wotdd', $room));
+        return (bool)yield $this->storage->get('wotdd', $room);
     }
 
     private function isServiceRunning(ChatRoom $room)
@@ -96,11 +96,12 @@ class Wotd extends BasePlugin
     {
         /** @var \DateTimeImmutable $nextTime */
         $nextTime = yield from $this->getServiceNextRunTime($room);
-        $delay = $nextTime->getTimestamp() - \time();
 
-        return $delay > 0
-            ? $delay * 1000
+        $delay = $nextTime !== null
+            ? $nextTime->getTimestamp() - \time()
             : 0;
+
+        return $delay * 1000;
     }
 
     private function postServiceMessageInRoom(ChatRoom $room): \Generator
@@ -134,7 +135,10 @@ class Wotd extends BasePlugin
             do {
                 try {
                     $delay = yield from $this->getMillisecondsUntilNextServiceMessage($room);
-                    yield new Pause($delay);
+
+                    if ($delay > 0) {
+                        yield new Pause($delay);
+                    }
 
                     if ($control->running) {
                         yield from $this->postServiceMessageInRoom($room);
