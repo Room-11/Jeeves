@@ -247,7 +247,7 @@ class Wotd extends BasePlugin
             case 'status':
                 $enabled = yield from $this->isServiceEnabled($room);
                 $running = $this->isServiceRunning($room);
-                $time = yield from $this->getServiceNextRunTime($room)->format('H:i:s');
+                $time = (yield from $this->getServiceNextRunTime($room))->format('H:i:s');
 
                 if ($enabled && $running) {
                     $state = "enabled and running (run time: {$time})";
