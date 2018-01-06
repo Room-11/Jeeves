@@ -6,6 +6,7 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Pause;
 use Amp\Promise;
+use function Amp\resolve;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
 use Room11\Jeeves\Storage\KeyValue as KeyValueStorage;
@@ -63,9 +64,13 @@ class Wotd extends BasePlugin
         return '**['.$word.'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $word).')** ' . $definition;
     }
 
-    private function isServiceEnabled(ChatRoom $room)
+    private function isServiceEnabled(ChatRoom $room): Promise
     {
-        return (bool)yield $this->storage->get('wotdd', $room);
+        return resolve(function() use ($room) {
+            // todo: do we really need this cast? otherwise just return the promise
+            //       instead of wrapping and yielding it
+            return (bool) yield $this->storage->get('wotdd', $room);
+        });
     }
 
     private function isServiceRunning(ChatRoom $room)
@@ -83,50 +88,56 @@ class Wotd extends BasePlugin
         return $this->storage->set('wotdd-time', $time->getTimestamp(), $room);
     }
 
-    private function getServiceNextRunTime(ChatRoom $room)
+    private function getServiceNextRunTime(ChatRoom $room): Promise
     {
-        $timestamp = yield $this->storage->get('wotdd-time', $room);
+        return resolve(function() use ($room) {
+            $timestamp = yield $this->storage->get('wotdd-time', $room);
 
-        return $timestamp !== null
-            ? new \DateTimeImmutable('@' . $timestamp, new \DateTimeZone('UTC'))
-            : null;
+            return $timestamp !== null
+                ? new \DateTimeImmutable('@' . $timestamp, new \DateTimeZone('UTC'))
+                : null;
+        });
     }
 
-    private function getMillisecondsUntilNextServiceMessage(ChatRoom $room)
+    private function getMillisecondsUntilNextServiceMessage(ChatRoom $room): Promise
     {
-        /** @var \DateTimeImmutable $nextTime */
-        $nextTime = yield from $this->getServiceNextRunTime($room);
+        return resolve(function() use ($room) {
+            /** @var \DateTimeImmutable $nextTime */
+            $nextTime = yield $this->getServiceNextRunTime($room);
 
-        $delay = $nextTime !== null
-            ? $nextTime->getTimestamp() - \time()
-            : 0;
+            $delay = $nextTime !== null
+                ? $nextTime->getTimestamp() - \time()
+                : 0;
 
-        return $delay * 1000;
+            return $delay * 1000;
+        });
     }
 
-    private function postServiceMessageInRoom(ChatRoom $room): \Generator
+    private function postServiceMessageInRoom(ChatRoom $room): Promise
     {
-        $previousPinnedMessageId = yield $this->storage->get('wotdd-pin-message-id', $room);
+        return resolve(function() use ($room) {
+            $previousPinnedMessageId = yield $this->storage->get('wotdd-pin-message-id', $room);
 
-        if (\in_array($previousPinnedMessageId, yield $this->chatClient->getPinnedMessages($room))) {
-            yield $this->chatClient->pinOrUnpinMessage($previousPinnedMessageId);
-        }
+            if (\in_array($previousPinnedMessageId, yield $this->chatClient->getPinnedMessages($room))) {
+                yield $this->chatClient->pinOrUnpinMessage($previousPinnedMessageId);
+            }
 
-        /** @var PostedMessage $message */
-        $message = yield from $this->postWotdMessageInRoom($room);
+            /** @var PostedMessage $message */
+            $message = yield $this->postWotdMessageInRoom($room);
 
-        yield $this->chatClient->pinOrUnpinMessage($message);
-        yield $this->storage->set('wotdd-pin-message-id', $message->getId(), $room);
+            yield $this->chatClient->pinOrUnpinMessage($message);
+            yield $this->storage->set('wotdd-pin-message-id', $message->getId(), $room);
 
-        /** @var \DateTimeImmutable $nextTime */
-        $nextTime = yield from $this->getServiceNextRunTime($room);
-        $now = \time();
+            /** @var \DateTimeImmutable $nextTime */
+            $nextTime = yield $this->getServiceNextRunTime($room);
+            $now = \time();
 
-        while ($nextTime->getTimestamp() <= $now) {
-            $nextTime = $nextTime->modify('+1 day');
-        }
+            while ($nextTime->getTimestamp() <= $now) {
+                $nextTime = $nextTime->modify('+1 day');
+            }
 
-        yield $this->setServiceNextRunTime($room, $nextTime);
+            yield $this->setServiceNextRunTime($room, $nextTime);
+        });
     }
 
     private function runServiceForRoom(ChatRoom $room, WotdServiceControl $control): \Generator
@@ -134,14 +145,14 @@ class Wotd extends BasePlugin
         try {
             do {
                 try {
-                    $delay = yield from $this->getMillisecondsUntilNextServiceMessage($room);
+                    $delay = yield $this->getMillisecondsUntilNextServiceMessage($room);
 
                     if ($delay > 0) {
                         yield new Pause($delay);
                     }
 
                     if ($control->running) {
-                        yield from $this->postServiceMessageInRoom($room);
+                        yield $this->postServiceMessageInRoom($room);
                     }
                 } catch (\Throwable $e) {
                     yield $this->chatClient->postMessage(
@@ -250,9 +261,9 @@ class Wotd extends BasePlugin
                 return $this->chatClient->postMessage($command, 'Word Of The Day service is now disabled');
 
             case 'status':
-                $enabled = yield from $this->isServiceEnabled($room);
+                $enabled = yield $this->isServiceEnabled($room);
                 $running = $this->isServiceRunning($room);
-                $dateTime = yield from $this->getServiceNextRunTime($room);
+                $dateTime = yield $this->getServiceNextRunTime($room);
                 $time = $dateTime ? $dateTime->format('H:i:s') . ' UTC' : 'undefined';
 
                 if ($enabled && $running) {
@@ -289,7 +300,7 @@ class Wotd extends BasePlugin
 
     public function enableForRoom(ChatRoom $room, bool $persist)
     {
-        if (yield from $this->isServiceEnabled($room)) {
+        if (yield $this->isServiceEnabled($room)) {
             $this->startServiceForRoom($room);
         }
     }
