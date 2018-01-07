@@ -119,13 +119,13 @@ class Wotd extends BasePlugin
             $previousPinnedMessageId = yield $this->storage->get('wotdd-pin-message-id', $room);
 
             if (\in_array($previousPinnedMessageId, yield $this->chatClient->getPinnedMessages($room))) {
-                yield $this->chatClient->pinOrUnpinMessage($previousPinnedMessageId);
+                yield $this->chatClient->pinOrUnpinMessage($previousPinnedMessageId, $room);
             }
 
             /** @var PostedMessage $message */
             $message = yield $this->postWotdMessageInRoom($room);
 
-            yield $this->chatClient->pinOrUnpinMessage($message);
+            yield $this->chatClient->pinOrUnpinMessage($message, $room);
             yield $this->storage->set('wotdd-pin-message-id', $message->getId(), $room);
 
             /** @var \DateTimeImmutable $nextTime */
