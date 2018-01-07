@@ -123,7 +123,7 @@ class Wotd extends BasePlugin
             }
 
             /** @var PostedMessage $message */
-            $message = yield $this->postWotdMessageInRoom($room);
+            $message = yield from $this->postWotdMessageInRoom($room);
 
             yield $this->chatClient->pinOrUnpinMessage($message, $room);
             yield $this->storage->set('wotdd-pin-message-id', $message->getId(), $room);
