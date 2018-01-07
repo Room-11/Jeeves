@@ -123,7 +123,7 @@ class Wotd extends BasePlugin
             }
 
             /** @var PostedMessage $message */
-            $message = yield from $this->postWotdMessageInRoom($room);
+            $message = yield $this->postWotdMessageInRoom($room);
 
             yield $this->chatClient->pinOrUnpinMessage($message, $room);
             yield $this->storage->set('wotdd-pin-message-id', $message->getId(), $room);
@@ -205,9 +205,11 @@ class Wotd extends BasePlugin
 
     private function postWotdMessageInRoom(ChatRoom $room)
     {
-        $response = yield $this->httpClient->request(self::API_URL);
+        return \Amp\resolve(function() use($room) {
+            $response = yield $this->httpClient->request(self::API_URL);
 
-        return yield $this->chatClient->postMessage($room, $this->getMessage($response));
+            return yield $this->chatClient->postMessage($room, $this->getMessage($response));
+        });
     }
 
     public function fetch(Command $command)
