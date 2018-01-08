@@ -47,7 +47,7 @@ class Wotd extends BasePlugin
         $this->storage = $keyValueStorage;
     }
 
-    private function getMessage(HttpResponse $response): string
+    private function getMessage(HttpResponse $response, bool $addTag): string
     {
         $dom = domdocument_load_html($response->getBody());
 
@@ -58,10 +58,12 @@ class Wotd extends BasePlugin
             return 'I dun goofed';
         }
 
+        $tag        = $addTag ? '[tag:wotd]' : '';
         $word       = $nodes->item(0)->getElementsByTagName('strong')->item(0)->textContent;
+        $url        = 'http://www.dictionary.com/browse/' . str_replace(" ", "-", $word);
         $definition = $nodes->item(0)->getElementsByTagName('li')->item(0)->textContent;
 
-        return '**['.$word.'](http://www.dictionary.com/browse/'.str_replace(" ", "-", $word).')** ' . $definition;
+        return trim(sprintf('%s **[%s](%s)** %s', $tag, $word, $url, $definition));
     }
 
     private function isServiceEnabled(ChatRoom $room): Promise
@@ -123,7 +125,7 @@ class Wotd extends BasePlugin
             }
 
             /** @var PostedMessage $message */
-            $message = yield $this->postWotdMessageInRoom($room);
+            $message = yield $this->postWotdMessageInRoom($room, true);
 
             yield $this->chatClient->pinOrUnpinMessage($message, $room);
             yield $this->storage->set('wotdd-pin-message-id', $message->getId(), $room);
@@ -203,18 +205,18 @@ class Wotd extends BasePlugin
             : $dateTime;
     }
 
-    private function postWotdMessageInRoom(ChatRoom $room)
+    private function postWotdMessageInRoom(ChatRoom $room, bool $addTag): Promise
     {
-        return \Amp\resolve(function() use($room) {
+        return \Amp\resolve(function() use($room, $addTag) {
             $response = yield $this->httpClient->request(self::API_URL);
 
-            return yield $this->chatClient->postMessage($room, $this->getMessage($response));
+            return yield $this->chatClient->postMessage($room, $this->getMessage($response, $addTag));
         });
     }
 
     public function fetch(Command $command)
     {
-        return $this->postWotdMessageInRoom($command->getRoom());
+        return $this->postWotdMessageInRoom($command->getRoom(), false);
     }
 
     public function service(Command $command): \Generator
