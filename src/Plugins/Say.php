@@ -2,6 +2,8 @@
 
 namespace Room11\Jeeves\Plugins;
 
+use Amp\Promise;
+use Amp\Success;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\Exception;
 use Room11\Jeeves\System\PluginCommandEndpoint;
@@ -12,10 +14,69 @@ use Room11\StackChat\Room\Room as ChatRoom;
 
 class InvalidMessageFormatException extends Exception {}
 
+class PrintfContext
+{
+    public $room;
+    public $string;
+    public $args;
+
+    public function __construct(ChatRoom $room, string $string, array $args)
+    {
+        $this->room = $room;
+        $this->string = $string;
+        $this->args = $args;
+    }
+
+    public function transmuteFormatSpecifier(array $match, string $newSpecifier): void
+    {
+        $this->string = substr_replace($this->string, $newSpecifier, $match[7][1], 1);
+    }
+
+    public function getArgIndex(array $match, int $default): int
+    {
+        return $match[1][0] !== ''
+            ? $match[1][0] - 1
+            : $default;
+    }
+}
+
 class Say extends BasePlugin
 {
+    private const PRINTF_AUGMENTATIONS = [
+        'p' => 'pingableFormatter',
+        'r' => 'urlFormatter',
+    ];
+
     private $chatClient;
     private $textFormatter;
+
+    private function pingableFormatter(array $match, int $argIndex, PrintfContext $context): Promise
+    {
+        return \Amp\resolve(function() use($match, $argIndex, $context) {
+            $context->transmuteFormatSpecifier($match, 's');
+
+            if (!isset($context->args[$argIndex])) {
+                return;
+            }
+
+            if ($context->args[$argIndex][0] === '@') {
+                $context->args[$argIndex] = $this->textFormatter->stripPingsFromText($context->args[$argIndex]);
+            } else if (null !== $pingable = yield $this->chatClient->getPingableName($context->room, $context->args[$argIndex])) {
+                $context->args[$argIndex] = '@' . $pingable;
+            }
+        });
+    }
+
+    private function urlFormatter(array $match, int $argIndex, PrintfContext $context): Promise
+    {
+        $context->transmuteFormatSpecifier($match, 's');
+
+        if (isset($context->args[$argIndex])) {
+            $context->args[$argIndex] = rawurldecode($context->args[$argIndex]);
+        }
+
+        return new Success();
+    }
 
     public function __construct(ChatClient $chatClient, TextFormatter $textFormatter)
     {
@@ -98,24 +159,27 @@ class Say extends BasePlugin
         return $result;
     }
 
+    /**
+     * @uses pingableFormatter
+     * @uses urlFormatter
+     */
     private function preProcessFormatSpecifiers(ChatRoom $room, array $components)
     {
         static $expr = /** @lang RegExp */ "/
           %
-          (?:([0-9]+)\\$)? # position
-          ([-+])?          # sign
-          (\\x20|0|'.)?    # padding char
-          (-)?             # alignment
-          ([0-9]+)?        # padding width
-          (\\.[0-9]*)?     # precision
-          (.)              # type
+          (?: (?<position> [0-9]+ ) \\$)?
+          (?<sign> [-+] )?
+          (?<padchar> \\x20|0|'. )?
+          (?<alignment> - )?
+          (?<padwidth> [0-9]+ )?
+          (?<precision> \\.[0-9]* )?
+          (?<type> . )
         /x";
 
-        $string = $components[0];
-        $args = array_slice($components, 1);
+        $ctx = new PrintfContext($room, $components[0], array_slice($components, 1));
 
-        if (0 === $count = preg_match_all($expr, $string, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
-            return [$string, $args];
+        if (0 === $count = preg_match_all($expr, $ctx->string, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
+            return [$ctx->string, $ctx->args];
         }
 
         foreach ($matches as $i => $match) {
@@ -124,27 +188,13 @@ class Say extends BasePlugin
                 throw new \InvalidArgumentException;
             }
 
-            if ($match[7][0] !== 'p') {
-                continue;
-            }
-
-            $string = substr_replace($string, 's', $match[7][1], 1);
-            $argIndex = $match[1][0] !== ''
-                ? $match[1][0] - 1
-                : $i;
-
-            if (!isset($args[$argIndex])) {
-                continue;
-            }
-
-            if ($args[$argIndex][0] === '@') {
-                $args[$argIndex] = $this->textFormatter->stripPingsFromText($args[$argIndex]);
-            } else if (null !== $pingable = yield $this->chatClient->getPingableName($room, $args[$argIndex])) {
-                $args[$argIndex] = '@' . $pingable;
+            if (\array_key_exists($match[7][0], self::PRINTF_AUGMENTATIONS)) {
+                $argIndex = $match[1][0] !== '' ? $match[1][0] - 1 : $i;
+                ([$this, self::PRINTF_AUGMENTATIONS[$match[7][0]]])($match, $argIndex, $ctx);
             }
         }
 
-        return [$string, $args];
+        return [$ctx->string, $ctx->args];
     }
 
     public function getDescription(): string
