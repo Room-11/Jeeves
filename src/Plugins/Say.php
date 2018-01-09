@@ -190,7 +190,7 @@ class Say extends BasePlugin
 
             if (\array_key_exists($match[7][0], self::PRINTF_AUGMENTATIONS)) {
                 $argIndex = $match[1][0] !== '' ? $match[1][0] - 1 : $i;
-                ([$this, self::PRINTF_AUGMENTATIONS[$match[7][0]]])($match, $argIndex, $ctx);
+                yield ([$this, self::PRINTF_AUGMENTATIONS[$match[7][0]]])($match, $argIndex, $ctx);
             }
         }
 
