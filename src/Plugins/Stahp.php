@@ -18,7 +18,7 @@ class Stahp extends BasePlugin
 
     public function handleMessage(ChatMessage $message): Promise
     {
-        return \preg_match('#^stop|stahp$#i', $message->getText(), $match)
+        return \preg_match('#^((:\d+|@\S+)\s)?\s*(stop|stahp)\s*$#i', $message->getText(), $match)
             ? $this->chatClient->postReply($message, "HAMMERTIME!")
             : new Success;
     }
