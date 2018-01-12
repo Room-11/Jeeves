@@ -2,6 +2,8 @@
 
 namespace Room11\Jeeves\Plugins;
 
+use Amp\Promise;
+use Amp\Success;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Entities\ChatMessage;
 
@@ -14,17 +16,18 @@ class Stahp extends BasePlugin
         $this->chatClient = $chatClient;
     }
 
-    public function handleMessage(ChatMessage $message)
+    public function handleMessage(ChatMessage $message): Promise
     {
-        if (preg_match('#\bstahp\b#i', $message->getText(), $match)) {
-            yield $this->chatClient->postReply($message, "HAMMERTIME!");
-        }
+        return \preg_match('#^stop|stahp$#i', $message->getText(), $match)
+            ? $this->chatClient->postReply($message, "HAMMERTIME!")
+            : new Success;
     }
 
     public function getDescription(): string
     {
         return 'Can\'t touch this.';
     }
+
     /**
      * @return callable|null
      */
