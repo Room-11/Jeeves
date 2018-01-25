@@ -276,13 +276,19 @@ class Tweet extends BasePlugin
             $pingableUsers[$name] = $users[$id];
         }
 
-        return preg_replace_callback($pingExpr, function($match) use($pingableUsers) {
+        $text = preg_replace_callback($pingExpr, function($match) use($pingableUsers) {
             $handle = isset($pingableUsers[$match[1]])
                 ? $pingableUsers[$match[1]]->getTwitterHandle()
                 : null;
 
             return $handle !== null ? '@' . $handle : $match[1];
         }, $text);
+
+        if ($text[0] === '@') {
+            $text = '.' . $text;
+        }
+
+        return $text;
     }
 
     private function getClientForRoom(ChatRoom $room)
