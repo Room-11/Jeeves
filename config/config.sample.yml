@@ -75,6 +75,10 @@ ms-translate:
   client-id: YourClientID
   client-secret: YourClientSecret
 
+mashape-manga-scraper:
+  api-key: MashApeApiKey
+  site-id: mangafox.me
+
 web-api:
   enable: true
   bind-addr: 0.0.0.0
