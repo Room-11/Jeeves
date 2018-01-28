@@ -58,6 +58,7 @@ plugins:
   - Room11\Jeeves\Plugins\Terminator
   - Room11\Jeeves\Plugins\Tweet
   - Room11\Jeeves\Plugins\Urban
+  - Room11\Jeeves\Plugins\Weather
   - Room11\Jeeves\Plugins\Wikipedia
   - Room11\Jeeves\Plugins\Wotd
   - Room11\Jeeves\Plugins\Xkcd
@@ -74,6 +75,9 @@ bitly:
 ms-translate:
   client-id: YourClientID
   client-secret: YourClientSecret
+
+openweathermap:
+  api-key: ApiKey
 
 web-api:
   enable: true
