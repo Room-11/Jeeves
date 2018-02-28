@@ -63,8 +63,14 @@ class Horoscope extends BasePlugin
             );
         }
 
+        $request = (new HttpRequest)
+            ->setMethod('GET')
+            ->setUri(self::GLOBAL_HOROSCOPE_TAG_URL)
+            ->setHeader('Connection', 'close')
+        ;
+
         /** @var HttpResponse $globalResponse */
-        $globalResponse = yield $this->httpClient->request(self::GLOBAL_HOROSCOPE_TAG_URL);
+        $globalResponse = yield $this->httpClient->request($request);
 
         if ($globalResponse->getStatus() !== 200) {
             return $this->chatClient->postReply(
