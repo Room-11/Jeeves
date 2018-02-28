@@ -10,7 +10,6 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Client\PostFlags;
 use Room11\StackChat\Client\TextFormatter;
-use Room11\StackChat\Room\Room as ChatRoom;
 
 class InvalidMessageFormatException extends Exception {}
 
@@ -19,14 +18,15 @@ class Say extends BasePlugin
     private const PRINTF_AUGMENTATIONS = [
         'p' => 'pingableFormatter',
         'r' => 'urlFormatter',
+        'm' => 'pingMeFormatter',
     ];
 
     private $chatClient;
     private $textFormatter;
 
-    private function pingableFormatter(PrintfSpecifier $specifier, int $argIndex, ChatRoom $room): Promise
+    private function pingableFormatter(PrintfSpecifier $specifier, int $argIndex, Command $command): Promise
     {
-        return \Amp\resolve(function() use($specifier, $argIndex, $room) {
+        return \Amp\resolve(function() use($specifier, $argIndex, $command) {
             $operation = $specifier->getOperation();
             $operation->transmuteFormatSpecifierType($specifier, 's');
 
@@ -43,7 +43,7 @@ class Say extends BasePlugin
             }
 
             // Check that the name is actually pingable and resolve the correct casing
-            if (null !== $pingable = yield $this->chatClient->getPingableName($room, $argValue)) {
+            if (null !== $pingable = yield $this->chatClient->getPingableName($command->getRoom(), $argValue)) {
                 $operation->setArgValue($argIndex, '@' . $pingable);
             }
         });
@@ -59,6 +59,19 @@ class Say extends BasePlugin
         }
 
         return new Success();
+    }
+
+    private function pingMeFormatter(PrintfSpecifier $specifier, int $argIndex, Command $command): Promise
+    {
+        return \Amp\resolve(function() use($specifier, $argIndex, $command) {
+            $operation = $specifier->getOperation();
+            $operation->transmuteFormatSpecifierType($specifier, 's');
+
+            $sourceName = \preg_replace('#\s+#u', '', $command->getUserName());
+            $pingable = yield $this->chatClient->getPingableName($command->getRoom(), $sourceName);
+
+            $operation->insertArg($argIndex, $pingable === null ? 'You' : '@' . $pingable);
+        });
     }
 
     public function __construct(ChatClient $chatClient, TextFormatter $textFormatter)
@@ -132,7 +145,7 @@ class Say extends BasePlugin
         }
 
         try {
-            list($string, $args) = yield from $this->preProcessFormatSpecifiers($command->getRoom(), $components);
+            list($string, $args) = yield from $this->preProcessFormatSpecifiers($command, $components);
         } catch (\InvalidArgumentException $e) {
             throw new InvalidMessageFormatException('Only if you say it first');
         }
@@ -148,13 +161,14 @@ class Say extends BasePlugin
     }
 
     /**
-     * @param ChatRoom $room
+     * @param Command $command
      * @param array $components
      * @return array|\Generator
      * @uses pingableFormatter
      * @uses urlFormatter
+     * @uses pingMeFormatter
      */
-    private function preProcessFormatSpecifiers(ChatRoom $room, array $components)
+    private function preProcessFormatSpecifiers(Command $command, array $components)
     {
         $operation = new PrintfOperation($components[0], array_slice($components, 1));
 
@@ -166,7 +180,7 @@ class Say extends BasePlugin
 
             if (\array_key_exists($specifier->getType(), self::PRINTF_AUGMENTATIONS)) {
                 $callback = [$this, self::PRINTF_AUGMENTATIONS[$specifier->getType()]];
-                yield $callback($specifier, $specifier->getArgIndex() ?? $i, $room);
+                yield $callback($specifier, $specifier->getArgIndex() ?? $i, $command);
             }
         }
 
@@ -239,6 +253,11 @@ final class PrintfOperation
     public function setArgValue(int $index, $value): void
     {
         $this->args[$index] = $value;
+    }
+
+    public function insertArg(int $index, $value): void
+    {
+        \array_splice($this->args, $index, 0, [$value]);
     }
 
     public function removeArg(int $index): void
