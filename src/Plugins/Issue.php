@@ -112,7 +112,10 @@ class Issue extends BasePlugin
             $result = yield $this->httpClient->request($request);
 
             if ($result->getStatus() !== 201) {
-                throw new \RuntimeException('I failed to create the issue :-(. You might want to create an issue about that');
+                throw new \RuntimeException(
+                    "I failed to create the issue :-(. You might want to create an issue about that."
+                    . " (HTTP Status: {$result->getStatus()})"
+                );
             }
 
             $response = json_try_decode($result->getBody(), true);
