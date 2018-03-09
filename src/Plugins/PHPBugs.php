@@ -116,6 +116,11 @@ class PHPBugs extends BasePlugin
     private function parseBugs(string $body)
     {
         static $query = "/html/body/table[2]/tr/td/table/tr[@valign]";
+        static $tags = [
+            "Doc" => "documentation",
+            "Req" => "feature-request",
+            "Sec Bug" => "security"
+        ];
 
         $dom = domdocument_load_html($body);
         $xpath = new \DOMXPath($dom);
@@ -125,7 +130,7 @@ class PHPBugs extends BasePlugin
         foreach ($xpath->query($query) as $row) {
             $cells = $row->getElementsByTagName("td");
             $id = (int) $cells->item(0)->firstChild->textContent;
-            $type = \str_replace(" ", "", $cells->item(4)->textContent);
+            $type = $tags[$cells->item(4)->textContent] ?? "bug";
 
             $bugs[] = [
                 "id" => $id,
