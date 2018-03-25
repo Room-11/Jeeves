@@ -16,7 +16,7 @@ class CanIUseTest extends AbstractPluginTest
             $this->plugin->getDescription()
         );
         $this->assertSame([], $this->plugin->getEventHandlers());
-        $this->assertSame(null, $this->plugin->getMessageHandler());
+        $this->assertNull($this->plugin->getMessageHandler());
     }
 
     public function testValidCommandEndpoints()
