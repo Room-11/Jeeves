@@ -298,7 +298,7 @@ class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
         $registeredCommand
             ->expects($this->once())
             ->method('handleCommand')
-            ->with($this->isInstanceOf($userCommand))
+            ->with($this->isInstanceOf(Command::class))
             ->willReturn(new Success())
         ;
 
