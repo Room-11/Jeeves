@@ -96,8 +96,8 @@ class BuiltInActionManagerTest extends \PHPUnit\Framework\TestCase
 
         $builtInCommandManager->registerCommand($command);
 
-        $this->assertSame(true, $builtInCommandManager->hasRegisteredCommand('foo'));
-        $this->assertSame(false, $builtInCommandManager->hasRegisteredCommand('bar'));
+        $this->assertTrue($builtInCommandManager->hasRegisteredCommand('foo'));
+        $this->assertFalse($builtInCommandManager->hasRegisteredCommand('bar'));
     }
 
     public function testGetRegisteredCommands()

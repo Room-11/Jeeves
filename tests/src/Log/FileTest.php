@@ -85,7 +85,7 @@ class FileTest extends \PHPUnit\Framework\TestCase
 
         $logLines = explode("\n", file_get_contents($this->logFile));
 
-        $this->assertSame(3, count($logLines));
+        $this->assertCount(3, $logLines);
 
         $this->assertRegExp(
             '~^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] foo$~',

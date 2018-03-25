@@ -23,7 +23,7 @@ class AntiW3SchoolsTest extends AbstractPluginTest
     {
         $result = $this->plugin->getMessageHandler();
 
-        $this->assertTrue(is_callable($result), 'Message handler expected to be callable, but wasn\'t.');
+        $this->assertInternalType('callable', $result, 'Message handler expected to be callable, but wasn\'t.');
     }
 
     public function testNoMentionOfW3Schools()
