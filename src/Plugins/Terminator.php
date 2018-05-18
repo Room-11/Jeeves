@@ -51,7 +51,7 @@ class Terminator extends BasePlugin
         'what about (?:.*)'                           => 'What about it?',
         '^why'                                        => 'Because',
         '(?:What is|What\'s the meaning of life)'     => '42',
-        '(?:What is|What\'s your favorite color)'     => 'Hex 9b53fc or RGB: 155,83,252- like my bow tie.',
+        '(?:What is|What\'s your favorite color)'     => 'Hex 9b53fc or RGB 155,83,252- like my bow tie.',
         '(?:Are )you a (?:ro)?bot'                    => 'Step aside you filthy human.',
     ];
 
