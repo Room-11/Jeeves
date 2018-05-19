@@ -45,13 +45,14 @@ class Terminator extends BasePlugin
         'what do you think (?:of|about) cap(.*)'      => 'It\'s ok for a first prototype I guess.',
         'what do you think (?:of|about) (?:singletons|globals|javascript|js|node|mongo|laravel)' => 'It\'s crap and should be avoided.',
         'did you try (?:singletons|globals|javascript|js|node|mongo|laravel)(?: yet)?' => 'Yes. It\'s crap and should be avoided.',
+        '(?:What is|What\'s) your favorite color'     => 'Hex 9b53fc or RGB 155,83,252- like my bow tie!',
+        'how do you take your coffee'                 => 'With a side of bacon and eggs, now step lively!',
         'what (?:do you think)? (?:of|about) jquery'  => 'It\'s great and does all the things!',
         'what do you think (?:of|about) (.*)'         => 'I don\'t think I like $1',
         'what\'s your opinion on (.*)'                => 'I don\'t think I like $1',
         'what about (?:.*)'                           => 'What about it?',
         '^why'                                        => 'Because',
-        '(?:What is|What\'s the meaning of life)'     => '42',
-        '(?:What is|What\'s your favorite color)'     => 'Hex 9b53fc or RGB: 155,83,252- like my bow tie.',
+        '(?:What is|What\'s) the meaning of life'     => '42',
         '(?:Are )you a (?:ro)?bot'                    => 'Step aside you filthy human.',
     ];
 
