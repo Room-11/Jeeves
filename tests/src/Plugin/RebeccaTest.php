@@ -20,6 +20,6 @@ class RebeccaTest extends AbstractPluginTest
     {
         $this->assertSame('Rebecca', $this->plugin->getName());
         $this->assertSame([], $this->plugin->getEventHandlers());
-        $this->assertSame(null, $this->plugin->getMessageHandler());
+        $this->assertNull($this->plugin->getMessageHandler());
     }
 }

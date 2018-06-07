@@ -89,7 +89,8 @@ class PHPBugs extends BasePlugin
 
             foreach ($this->rooms as $room) {
                 yield $this->chatClient->postMessage($room, \sprintf(
-                    "[tag:php] [tag:bug] %s – [#%d](%s)",
+                    "[tag:php] [tag:%s] %s – [#%d](%s)",
+                    $bug["type"],
                     $bug["title"],
                     $bug["id"],
                     $bug["url"]
@@ -114,29 +115,27 @@ class PHPBugs extends BasePlugin
 
     private function parseBugs(string $body)
     {
-        /** @var \DOMElement $table */
-        $table = domdocument_load_html($body)
-            ->getElementById("top")
-            ->nextSibling;
+        static $query = "/html/body/table[2]/tr/td/table/tr[@valign]";
+        static $tags = [
+            "Doc" => "documentation",
+            "Req" => "feature-request",
+            "Sec Bug" => "security"
+        ];
 
-        /** @var \DOMElement $content */
-        $content = $table->getElementsByTagName("td")->item(0);
-        $rows = $content->getElementsByTagName("tr");
+        $dom = domdocument_load_html($body);
+        $xpath = new \DOMXPath($dom);
 
         $bugs = [];
 
-        foreach ($rows as $row) {
-            /** @var \DOMElement $row */
-            if (!$row->hasAttribute("valign")) {
-                continue;
-            }
-
+        foreach ($xpath->query($query) as $row) {
             $cells = $row->getElementsByTagName("td");
             $id = (int) $cells->item(0)->firstChild->textContent;
+            $type = $tags[$cells->item(4)->textContent] ?? "bug";
 
             $bugs[] = [
                 "id" => $id,
                 "title" => $cells->item(8)->textContent ?: "*none*",
+                "type" => $type,
                 "url" => "https://bugs.php.net/bug.php?id={$id}",
             ];
         }

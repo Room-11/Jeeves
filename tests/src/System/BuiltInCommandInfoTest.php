@@ -33,7 +33,7 @@ class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
 
         $commandInfo = new BuiltInCommandInfo($command, $description);
 
-        $this->assertSame(false, $commandInfo->requiresAdminUser());
+        $this->assertFalse($commandInfo->requiresAdminUser());
     }
 
     public function testRequiresAdminUserExplicitNotSet()
@@ -44,7 +44,7 @@ class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
 
         $commandInfo = new BuiltInCommandInfo($command, $description, $flags);
 
-        $this->assertSame(false, $commandInfo->requiresAdminUser());
+        $this->assertFalse($commandInfo->requiresAdminUser());
     }
 
     public function testRequiresAdminUserExplicitSet()
@@ -55,7 +55,7 @@ class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
 
         $commandInfo = new BuiltInCommandInfo($command, $description, $flags);
 
-        $this->assertSame(true, $commandInfo->requiresAdminUser());
+        $this->assertTrue($commandInfo->requiresAdminUser());
     }
 
     public function testRequiresApprovedRoomDefaultSet()
@@ -65,7 +65,7 @@ class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
 
         $commandInfo = new BuiltInCommandInfo($command, $description);
 
-        $this->assertSame(true, $commandInfo->requiresApprovedRoom());
+        $this->assertTrue($commandInfo->requiresApprovedRoom());
     }
 
     public function testRequiresApprovedRoomExplicitSet()
@@ -76,7 +76,7 @@ class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
 
         $commandInfo = new BuiltInCommandInfo($command, $description, $flags);
 
-        $this->assertSame(true, $commandInfo->requiresApprovedRoom());
+        $this->assertTrue($commandInfo->requiresApprovedRoom());
     }
 
     public function testRequiresApprovedRoomExplicitNotSet()
@@ -87,6 +87,6 @@ class BuiltInCommandInfoTest extends \PHPUnit\Framework\TestCase
 
         $commandInfo = new BuiltInCommandInfo($command, $description, $flags);
 
-        $this->assertSame(false, $commandInfo->requiresApprovedRoom());
+        $this->assertFalse($commandInfo->requiresApprovedRoom());
     }
 }
