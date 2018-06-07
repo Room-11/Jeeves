@@ -142,6 +142,8 @@ class Docs extends BasePlugin
             . ' simple iterators without the overhead or complexity of creating a class that implements the `Iterator` interface.',
         'hints' => '[Type declarations](' . self::MANUAL_URL_BASE . '/functions.arguments.php#functions.arguments.type-declaration)'
             . ' can be used to specify the type of a function or method argument.',
+        'heredocs' => '[Heredoc](' . self::MANUAL_URL_BASE . '/language.types.string.php#language.types.string.syntax.heredoc)'
+            . ' syntax can be used to express multi-line interpolated strings cleanly in source code',
         'inheritance' => 'In PHP object-oriented programming, [inheritance](' . self::MANUAL_URL_BASE . '/language.oop5.inheritance.php)'
             . ' enables a class to build on the functionality of another class.',
         'interfaces' => '[Interfaces](' . self::MANUAL_URL_BASE . '/language.oop5.interfaces.php) allow you to create code'
@@ -156,6 +158,8 @@ class Docs extends BasePlugin
             . ' symbols. They can be used to organise and group classes, interfaces, traits, functions and constants and avoid'
             . ' naming collisions.',
         'new' => 'The new keyword is used to create an object instance from a class.',
+        'nowdocs' => '[Nowdoc](' . self::MANUAL_URL_BASE . '/language.types.string.php#language.types.string.syntax.nowdoc)'
+            . ' syntax can be used to express multi-line literal strings cleanly in source code',
         'oop' => '[Object-oriented programming](' . self::MANUAL_URL_BASE . '/language.oop5.php) (OOP) is a programming paradigm'
             . ' based on the concept of "objects", which may contain data, in the form of properties; and code, in the form'
             . ' of methods.',
