@@ -260,7 +260,7 @@ class Tweet extends BasePlugin
 
     private function replacePings(ChatRoom $room, string $text)
     {
-        static $pingExpr = '/@([^\s]+)(?=$|\s)/';
+        static $pingExpr = '/@\x{200c}?(\S+)(?=$|\s)/u';
 
         if (!preg_match_all($pingExpr, $text, $matches)) {
             return $text;
