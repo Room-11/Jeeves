@@ -204,12 +204,19 @@ class Tweet extends BasePlugin
             $this->addExtraAnchors($textNode);
         }
 
+        $previous = null;
+
         // First pass - replace [tag] with #tag
         foreach ($xpath->query("//a[span[" . xpath_html_class('ob-post-tag') . "]]") as $element) {
+            // If the previous sibling is a replaced tag, insert a space between them
+            if ($element->previousSibling === $previous && $previous !== null) {
+                $element->parentNode->insertBefore($element->ownerDocument->createTextNode(' '), $element);
+            }
+
             $parts = preg_split('/[^a-z0-9]+/i', $element->textContent, -1, PREG_SPLIT_NO_EMPTY);
             $tag = count($parts) > 1 ? implode('', array_map('ucfirst', $parts)) : $parts[0];
 
-            $this->replaceNode($element, "#{$tag}");
+            $previous = $this->replaceNode($element, "#{$tag}");
         }
 
         $elements = [];
