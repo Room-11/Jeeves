@@ -5,12 +5,9 @@ namespace Room11\Jeeves\Plugins;
 use Amp\Artax\HttpClient;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
-use Amp\Success;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Client as ChatClient;
-use function Amp\resolve;
-use function Room11\DOMUtils\domdocument_load_html;
 
 class NoComprendeException extends \RuntimeException {}
 
@@ -20,9 +17,7 @@ class Docs extends BasePlugin
     private const LOOKUP_URL_BASE = self::URL_BASE . '/manual-lookup.php?scope=quickref&pattern=';
     private const MANUAL_URL_BASE = self::URL_BASE . '/manual/en';
 
-    private $chatClient;
-
-    private $specialCases = [
+    private const LOCAL_DEFINITIONS = [
         /* operators */
         'arithmetic' => 'Remember basic arithmetic from school? [Arithmetic operators](' . self::MANUAL_URL_BASE . '/language.operators.arithmetic.php)'
             . ' still work just like they did then.',
@@ -39,8 +34,7 @@ class Docs extends BasePlugin
         'comparison' => '[Comparison operators](' . self::MANUAL_URL_BASE . '/language.operators.comparison.php) allow you to'
             . ' compare two values.',
         '==' => '@comparison', '===' => '@comparison', '!=' => '@comparison', '!==' => '@comparison', '<' => '@comparison',
-        '>' => '@comparison', '<=' => '@comparison', '>=' => '@comparison', '<=>' => '@comparison', '??' => '@comparison',
-        '<>' => '@comparison',
+        '>' => '@comparison', '<=' => '@comparison', '>=' => '@comparison', '<=>' => '@comparison', '<>' => '@comparison',
         'increment' => '[Incrementing/decrementing operators](' . self::MANUAL_URL_BASE . '/language.operators.increment.php)'
             . ' adjust the value of an integer variable by 1.',
         '++' => '@increment', '--' => '@increment',
@@ -52,13 +46,16 @@ class Docs extends BasePlugin
             . ' ignored. Since ignoring errors is usually bad, it should almost never be used.',
         '.' => '`.` is the [string concatenation operator](' . self::MANUAL_URL_BASE . '/language.operators.string.php).'
             . ' It is used to join two string values together.',
-        '`' => '` is the [execution operator](' . self::MANUAL_URL_BASE . '/language.operators.execution.php). It is identical'
+        'backticks' => '` is the [execution operator](' . self::MANUAL_URL_BASE . '/language.operators.execution.php). It is identical'
             . ' to the [`shell_exec()`](' . self::MANUAL_URL_BASE . '/function.shell-exec.php) function, which should be'
             . ' preferred for readability reasons.',
+        '`' => '@backticks', '``' => '@backticks',
         '::' => '`::` is the [scope resolution operator](' . self::MANUAL_URL_BASE . '/language.oop5.paamayim-nekudotayim.php).'
             . ' It is used for accessing class members defined in a different class than the current scope.',
-        '?:' => '`?:` is the [ternary operator](' . self::MANUAL_URL_BASE . 'http://php.net/manual/en/language.operators.comparison.php#language.operators.comparison.ternary).'
-            . 'The expression (expr1) ? (expr2) : (expr3) evaluates to expr2 if expr1 evaluates to TRUE, and expr3 if expr1 evaluates to FALSE.',
+        '?:' => '`?:` is the [ternary operator](' . self::MANUAL_URL_BASE . '/language.operators.comparison.php#language.operators.comparison.ternary).'
+            . 'The expression `expr1 ? expr2 : expr3` evaluates to `expr2` if `expr1` evaluates to `TRUE`, and `expr3` if `expr1` evaluates to `FALSE`.',
+        '??' => '`??` is the [null coalesce operator](' . self::MANUAL_URL_BASE . '/language.operators.comparison.php#language.operators.comparison.coalesce).'
+            . 'The expression `expr1 ?? expr2` evaluates to `expr2` if `expr1` is `NULL`, and `expr1` otherwise.',
 
         /* variables */
         '$_cookie' => 'The [`$_COOKIE`](' . self::MANUAL_URL_BASE . '/reserved.variables.cookie.php) superglobal variable'
@@ -90,6 +87,7 @@ class Docs extends BasePlugin
             . ' it can be treated as an array, list (vector), hash table (an implementation of a map), dictionary,'
             . ' collection, stack, queue, and probably more. As array values can be other arrays, trees and multidimensional'
             . ' arrays are also possible.',
+        '[]' => '@arrays',
         'bools' => 'A [boolean](' . self::MANUAL_URL_BASE . '/language.types.boolean.php) expresses a truth value. It can be'
             . ' either `TRUE` or `FALSE`.',
         'ints' => 'An [integer](' . self::MANUAL_URL_BASE . '/language.types.integer.php) is a whole number',
@@ -222,6 +220,7 @@ class Docs extends BasePlugin
         'variable scope' => '@variable scoping',
     ];
 
+    private $chatClient;
     private $httpClient;
 
     public function __construct(ChatClient $chatClient, HttpClient $httpClient) {
@@ -231,9 +230,9 @@ class Docs extends BasePlugin
 
     private function preProcessMatch(HttpResponse $response, string $pattern)
     {
-        if (preg_match('#/book\.[^.]+\.php$#', $response->getRequest()->getUri(), $matches)) {
+        if (\preg_match('#/book\.[^.]+\.php$#', $response->getRequest()->getUri(), $matches)) {
             /** @var HttpResponse $classResponse */
-            $classResponse = yield $this->httpClient->request(self::MANUAL_URL_BASE . '/class.' . rawurlencode($pattern) . '.php');
+            $classResponse = yield $this->httpClient->request(self::MANUAL_URL_BASE . '/class.' . \rawurlencode($pattern) . '.php');
 
             if ($classResponse->getStatus() != 404) {
                 return $classResponse;
@@ -257,16 +256,15 @@ class Docs extends BasePlugin
      * @uses getFunctionDetails()
      * @uses getClassDetails()
      * @uses getBookDetails()
-     * @uses getPageDetailsFromH2()
-     * @param HttpResponse $response
-     * @return string
+     * @throws \Room11\DOMUtils\LibXMLFatalErrorException
      */
-    private function getMessageFromMatch(HttpResponse $response): string {
-        $doc = domdocument_load_html($response->getBody());
+    private function getMessageFromMatch(HttpResponse $response): string
+    {
+        $doc = \Room11\DOMUtils\domdocument_load_html($response->getBody());
         $url = $response->getRequest()->getUri();
 
         try {
-            $details = preg_match('#/(book|class|function)\.[^.]+\.php$#', $url, $matches)
+            $details = \preg_match('#/(book|class|function)\.[^.]+\.php$#', $url, $matches)
                 ? $this->{"get{$matches[1]}Details"}($doc)
                 : $this->getPageDetailsFromPageContent($doc);
 
@@ -331,7 +329,7 @@ class Docs extends BasePlugin
 
         /** @var \DOMElement $h1Element */
         $h1Element = $h1Elements->item(0);
-        if (!preg_match('#(^|\s)refname(\s|$)#', $h1Element->getAttribute('class'))) {
+        if (!\preg_match('#(^|\s)refname(\s|$)#', $h1Element->getAttribute('class'))) {
             throw new NoComprendeException('h1 element does not have refname class');
         }
 
@@ -404,7 +402,7 @@ class Docs extends BasePlugin
         $descriptionElements = (new \DOMXPath($doc))->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' para ')]");
 
         $title = $this->normalizeMessageContent($h1Elements->item(0)->textContent);
-        $symbol = preg_match('/^\s*the\s+(\S+)\s+class\s*$/i', $title, $matches)
+        $symbol = \preg_match('/^\s*the\s+(\S+)\s+class\s*$/i', $title, $matches)
             ? $matches[1]
             : $title;
         $description = $descriptionElements->length > 0
@@ -417,13 +415,13 @@ class Docs extends BasePlugin
     // Handle broken SO's chat MD
     private function normalizeMessageContent(string $message): string
     {
-        return trim(preg_replace('/\s+/', ' ', $message));
+        return \trim(\preg_replace('/\s+/', ' ', $message));
     }
 
     private function getMessageFromSearch(HttpResponse $response)
     {
         try {
-            $dom = domdocument_load_html($response->getBody());
+            $dom = \Room11\DOMUtils\domdocument_load_html($response->getBody());
 
             /** @var \DOMElement $firstResult */
             $firstResult = $dom->getElementById("quickref_functions")->getElementsByTagName("li")->item(0);
@@ -440,31 +438,41 @@ class Docs extends BasePlugin
         }
     }
 
-    public function search(Command $command): Promise {
-        if (!$command->getParameters()) {
-            return new Success();
+    private function getLocalDefinition(string $key): ?string
+    {
+        $def = $firstDef = self::LOCAL_DEFINITIONS[$key] ?? null;
+
+        // recursively dereference aliases
+        while ($def !== null && $def[0] === '@' && \array_key_exists(\substr($def, 1), self::LOCAL_DEFINITIONS)) {
+            $def = self::LOCAL_DEFINITIONS[\substr($def, 1)];
+            \assert($def !== $firstDef, new \Error("Local docs definition '{$key}' causes an infinite alias loop"));
         }
 
-        $pattern = strtolower(implode(' ', $command->getParameters()));
+        return $def;
+    }
+
+    public function search(Command $command): Promise
+    {
+        if (!$command->hasParameters()) {
+            return $this->chatClient->postMessage($command, '[The PHP Manual](' . self::MANUAL_URL_BASE . ')');
+        }
+
+        $pattern = \strtolower(\implode(' ', $command->getParameters()));
 
         foreach ([$pattern, '$' . $pattern, $pattern . 's', $pattern . 'ing'] as $candidate) {
-            if (isset($this->specialCases[$candidate])) {
-                $result = $this->specialCases[$candidate][0] === '@' && isset($this->specialCases[substr($this->specialCases[$candidate], 1)])
-                    ? $this->specialCases[substr($this->specialCases[$candidate], 1)]
-                    : $this->specialCases[$candidate];
-
-                return $this->chatClient->postMessage($command, $result);
+            if (null === $local = $this->getLocalDefinition($candidate)) {
+                return $this->chatClient->postMessage($command, $local);
             }
         }
 
-        if (substr($pattern, 0, 6) === "mysql_") {
+        if (\substr($pattern, 0, 6) === "mysql_") {
             return $this->chatClient->postMessage($command, $this->getMysqlMessage());
         }
 
-        $pattern = str_replace(['::', '->'], '.', $pattern);
-        $url = self::LOOKUP_URL_BASE . rawurlencode($pattern);
+        $pattern = \str_replace(['::', '->'], '.', $pattern);
+        $url = self::LOOKUP_URL_BASE . \rawurlencode($pattern);
 
-        return resolve(function() use($command, $pattern, $url) {
+        return \Amp\resolve(function() use($command, $pattern, $url) {
             /** @var HttpResponse $response */
             $response = yield $this->httpClient->request($url);
 
