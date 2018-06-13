@@ -460,7 +460,7 @@ class Docs extends BasePlugin
         $pattern = \strtolower(\implode(' ', $command->getParameters()));
 
         foreach ([$pattern, '$' . $pattern, $pattern . 's', $pattern . 'ing'] as $candidate) {
-            if (null === $local = $this->getLocalDefinition($candidate)) {
+            if (null !== $local = $this->getLocalDefinition($candidate)) {
                 return $this->chatClient->postMessage($command, $local);
             }
         }
