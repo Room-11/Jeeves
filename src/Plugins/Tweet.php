@@ -435,7 +435,7 @@ class Tweet extends BasePlugin
     private function buildTwitterRequest(ChatRoom $room, \DOMXPath $xpath)
     {
         return $this->isOnebox($xpath)
-            ? yield from $this->buildUpdateRequestFromOnebox($room, $xpath)
+            ? yield $this->buildUpdateRequestFromOnebox($room, $xpath)
             : yield from $this->buildUpdateRequest($room, $xpath);
     }
 
