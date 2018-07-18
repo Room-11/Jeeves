@@ -6,6 +6,8 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Pause;
+use Amp\Promise;
+use Amp\Success;
 use PeeHaa\AsyncTwitter\Api\Client\Client as TwitterClient;
 use PeeHaa\AsyncTwitter\Api\Client\ClientFactory as TwitterClientFactory;
 use PeeHaa\AsyncTwitter\Api\Client\Exception\RequestFailed as TwitterRequestFailedException;
@@ -356,7 +358,7 @@ class Tweet extends BasePlugin
         return $text;
     }
 
-    private function buildUpdateRequestFromOnebox(ChatRoom $room, \DOMXPath $xpath)
+    private function buildUpdateRequestFromOnebox(ChatRoom $room, \DOMXPath $xpath): Promise
     {
         $classList = $xpath->document->documentElement->getAttribute('class');
 
@@ -366,11 +368,11 @@ class Tweet extends BasePlugin
 
         switch ($match[1]) {
             case 'tweet':
-                return new RetweetRequest($this->getTweetIdFromMessage($xpath));
+                return new Success(new RetweetRequest($this->getTweetIdFromMessage($xpath)));
 
             case 'youtube':
                 $url = $xpath->document->getElementsByTagName('a')->item(0)->getAttribute('href');
-                return new UpdateRequest($url);
+                return new Success(new UpdateRequest($url));
 
             case 'xkcd':
                 $img = $xpath->document->getElementsByTagName('img')->item(0);
