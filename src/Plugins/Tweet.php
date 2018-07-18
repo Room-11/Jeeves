@@ -347,6 +347,15 @@ class Tweet extends BasePlugin
         }
     }
 
+    private function truncateTextWithEllipsis(string $text): string
+    {
+        if (mb_strlen($text, 'UTF-8') > self::MAX_TWEET_LENGTH) {
+            $text = mb_substr($text, 0, self::MAX_TWEET_LENGTH - 1, 'UTF-8') . Utf8Chars::ELLIPSIS;
+        }
+
+        return $text;
+    }
+
     private function buildUpdateRequestFromOnebox(ChatRoom $room, \DOMXPath $xpath)
     {
         $classList = $xpath->document->documentElement->getAttribute('class');
@@ -363,23 +372,35 @@ class Tweet extends BasePlugin
                 $url = $xpath->document->getElementsByTagName('a')->item(0)->getAttribute('href');
                 return new UpdateRequest($url);
 
+            case 'xkcd':
+                $img = $xpath->document->getElementsByTagName('img')->item(0);
+
+                $url = $img->getAttribute('src');
+                $text = $this->truncateTextWithEllipsis($img->getAttribute('title'));
+
+                return resolve($this->buildUpdateRequestWithImageUrl($room, $url, $text));
+
             case 'image':
-                $target = $xpath->document->getElementsByTagName('img')->item(0)->getAttribute('src');
-
-                if (substr($target, 0, 2) === '//') {
-                    $target = 'https:' . $target;
-                }
-
-                $file = yield from $this->downloadMediaForUpload($target);
-
-                $request = new UpdateRequest('');
-
-                yield from $this->attachMediaToUpdateRequest($request, $room, $file);
-
-                return $request;
+                $url = $xpath->document->getElementsByTagName('img')->item(0)->getAttribute('src');
+                return resolve($this->buildUpdateRequestWithImageUrl($room, $url));
         }
 
         throw new UnhandledOneboxException;
+    }
+
+    private function buildUpdateRequestWithImageUrl(ChatRoom $room, string $target, string $text = '')
+    {
+        if (substr($target, 0, 2) === '//') {
+            $target = 'https:' . $target;
+        }
+
+        $file = yield from $this->downloadMediaForUpload($target);
+
+        $request = new UpdateRequest($text);
+
+        yield from $this->attachMediaToUpdateRequest($request, $room, $file);
+
+        return $request;
     }
 
     private function buildUpdateRequest(ChatRoom $room, \DOMXPath $xpath)
