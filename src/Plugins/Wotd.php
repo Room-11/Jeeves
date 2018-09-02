@@ -62,6 +62,10 @@ class Wotd extends BasePlugin
         $word       = $nodes->item(0)->getElementsByTagName('strong')->item(0)->textContent;
         $url        = 'http://www.dictionary.com/browse/' . str_replace(" ", "-", $word);
         $definition = $nodes->item(0)->getElementsByTagName('li')->item(0)->textContent;
+		
+        if (strlen($word) === 0) {
+            return sprintf('%s No wotd for today', $tag);
+        }
 
         return trim(sprintf('%s **[%s](%s)** %s', $tag, $word, $url, $definition));
     }
