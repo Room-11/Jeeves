@@ -14,6 +14,7 @@ use Room11\Jeeves\System\PluginCommandEndpoint;
 use Room11\StackChat\Client\Client as ChatClient;
 use Room11\StackChat\Entities\PostedMessage;
 use Room11\StackChat\Room\Room as ChatRoom;
+use Room11\Jeeves\Exception;
 use function Room11\DOMUtils\domdocument_load_html;
 
 final class WotdServiceControl
@@ -24,6 +25,8 @@ final class WotdServiceControl
 class Wotd extends BasePlugin
 {
     private const API_URL = 'http://www.dictionary.com/wordoftheday/';
+    
+    private const ALT_API_URL = 'https://www.merriam-webster.com/word-of-the-day';
 
     /**
      * @var WotdServiceControl[]
@@ -55,13 +58,44 @@ class Wotd extends BasePlugin
         $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' definition-box ')]");
 
         if ($nodes->length === 0) {
-            return 'I dun goofed';
+            throw new Exception('Unexpected html structure');
         }
-
+        
         $tag        = $addTag ? '[tag:wotd]' : '';
         $word       = $nodes->item(0)->getElementsByTagName('strong')->item(0)->textContent;
         $url        = 'http://www.dictionary.com/browse/' . str_replace(" ", "-", $word);
         $definition = $nodes->item(0)->getElementsByTagName('li')->item(0)->textContent;
+        
+        if (strlen($word) === 0) {
+            throw new Exception('No WOTD found');
+        }
+
+        return trim(sprintf('%s **[%s](%s)** %s', $tag, $word, $url, $definition));
+    }
+    
+    private function getAltMessage(HttpResponse $response, bool $addTag): string
+    {
+        $dom = domdocument_load_html($response->getBody());
+        
+        $xpath = new \DOMXPath($dom);
+        $wordNodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' word-header ')]");
+        $definitionNodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' wod-definition-container ')]");
+
+        if ($definitionNodes->length === 0 || $wordNodes->length === 0) {
+            return 'I dun goofed';
+        }
+
+        $definitionBullet = $definitionNodes->item(0)->getElementsByTagName('p')->item(0)->getElementsByTagName('strong')->item(0);
+        $definitionNodes->item(0)->getElementsByTagName('p')->item(0)->removeChild($definitionBullet);
+        
+        $tag        = $addTag ? '[tag:wotd]' : '';
+        $word       = $wordNodes->item(0)->getElementsByTagName('h1')->item(0)->textContent;
+        $url        = 'https://www.merriam-webster.com/dictionary/' . str_replace(" ", "-", $word);
+        $definition = $definitionNodes->item(0)->getElementsByTagName('p')->item(0)->textContent;
+        
+        if (strlen($word) === 0) {
+            return sprintf('%s No wotd for today', $tag);
+        }
 
         return trim(sprintf('%s **[%s](%s)** %s', $tag, $word, $url, $definition));
     }
@@ -209,8 +243,15 @@ class Wotd extends BasePlugin
     {
         return \Amp\resolve(function() use($room, $addTag) {
             $response = yield $this->httpClient->request(self::API_URL);
-
-            return yield $this->chatClient->postMessage($room, $this->getMessage($response, $addTag));
+            
+            try {
+                $message = $this->getMessage($response, $addTag);
+            } catch (\Exception $e) {
+                $response = yield $this->httpClient->request(self::ALT_API_URL);
+                $message = $this->getAltMessage($response, $addTag);
+            }
+            
+            return yield $this->chatClient->postMessage($room, $message);
         });
     }
 
