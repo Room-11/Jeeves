@@ -126,16 +126,16 @@ class Issue extends BasePlugin
 
     private function getAuthHeader(): array
     {
-        $auth = 'Basic %s';
+        $auth = '%s %s';
 
         if (empty($this->credentials->getToken())) {
             $credentials = base64_encode(
                 $this->credentials->getUsername() . ':' . $this->credentials->getPassword()
             );
-            return ['Authorization' => sprintf($auth, $credentials)];
+            return ['Authorization' => sprintf($auth, 'Basic', $credentials)];
         }
 
-        return ['Authorization' => sprintf($auth, $this->credentials->getToken())];
+        return ['Authorization' => sprintf($auth, 'Token', $this->credentials->getToken())];
     }
 
     private function credentialsPresent(): bool
