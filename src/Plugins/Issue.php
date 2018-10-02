@@ -6,6 +6,7 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
+use ExceptionalJSON\DecodeErrorException;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\External\GithubIssue\Credentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -115,9 +116,25 @@ class Issue extends BasePlugin
             $result = yield $this->httpClient->request($request);
 
             if ($result->getStatus() !== 201) {
+
+                $errorMessage = '';
+
+                if ($result->hasBody()) {
+                    try {
+                        $json = json_try_decode($result->getBody());
+                        $errorMessage = $json->message;
+                    } catch (DecodeErrorException $exception) {
+                        $errorMessage = "I expected a JSON response, but they didn't even give me that either.";
+                    }
+                }
+
                 throw new \RuntimeException(
-                    "I failed to create the issue :-(. You might want to create an issue about that."
-                    . " (HTTP Status: {$result->getStatus()})"
+                    sprintf(
+                        "I failed to create the issue :-(. You might want to create an issue about that."
+                        . " (HTTP %d%s)",
+                        $result->getStatus(),
+                        $errorMessage ? ' - ' . $errorMessage : ''
+                    )
                 );
             }
 
