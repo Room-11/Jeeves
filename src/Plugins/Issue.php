@@ -106,7 +106,10 @@ class Issue extends BasePlugin
                 ->setUri($this->credentials->getUrl())
                 ->setMethod('POST')
                 ->setBody(json_encode($requestBody))
-                ->setAllHeaders($this->getAuthHeader());
+                ->setAllHeaders(array_merge(
+                    $this->getAcceptHeader(),
+                    $this->getAuthHeader()
+                ));
 
             /** @var HttpResponse $result */
             $result = yield $this->httpClient->request($request);
@@ -136,6 +139,11 @@ class Issue extends BasePlugin
         }
 
         return ['Authorization' => sprintf($auth, 'Token', $this->credentials->getToken())];
+    }
+
+    private function getAcceptHeader(): array
+    {
+        return ['Accept' => 'application/vnd.github.v3+json'];
     }
 
     private function credentialsPresent(): bool
