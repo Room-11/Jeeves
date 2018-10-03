@@ -37,9 +37,12 @@ class Admin implements AdminStorage
                 return array_values(array_diff($data, $owners));
             }, $this->dataFileTemplate, $room);
 
+            $siteModerators = array_keys(yield $this->aclDataAccessor->getMainSiteModerators($room));
+
             return [
                 'owners' => $owners,
                 'admins' => $admins,
+                'site-moderators' => $siteModerators,
             ];
         });
     }
@@ -55,8 +58,9 @@ class Admin implements AdminStorage
             $administrators = yield $this->getAll($room);
 
             return ($administrators['owners'] === [] && $administrators['admins'] === [])
-                || in_array($userId, $administrators['owners'], true)
-                || in_array($userId, $administrators['admins'], true);
+                || \in_array($userId, $administrators['owners'], true)
+                || \in_array($userId, $administrators['admins'], true)
+                || \in_array($userId, $administrators['site-moderators'], true);
         });
     }
 
