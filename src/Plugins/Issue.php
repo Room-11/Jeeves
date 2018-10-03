@@ -6,6 +6,7 @@ use Amp\Artax\HttpClient;
 use Amp\Artax\Request as HttpRequest;
 use Amp\Artax\Response as HttpResponse;
 use Amp\Promise;
+use ExceptionalJSON\DecodeErrorException;
 use Room11\Jeeves\Chat\Command;
 use Room11\Jeeves\External\GithubIssue\Credentials;
 use Room11\Jeeves\Storage\Admin as AdminStorage;
@@ -106,15 +107,34 @@ class Issue extends BasePlugin
                 ->setUri($this->credentials->getUrl())
                 ->setMethod('POST')
                 ->setBody(json_encode($requestBody))
-                ->setAllHeaders($this->getAuthHeader());
+                ->setAllHeaders(array_merge(
+                    $this->getAcceptHeader(),
+                    $this->getAuthHeader()
+                ));
 
             /** @var HttpResponse $result */
             $result = yield $this->httpClient->request($request);
 
             if ($result->getStatus() !== 201) {
+
+                $errorMessage = '';
+
+                if ($result->hasBody()) {
+                    try {
+                        $json = json_try_decode($result->getBody());
+                        $errorMessage = $json->message;
+                    } catch (DecodeErrorException $exception) {
+                        $errorMessage = "I expected a JSON response, but they didn't even give me that either.";
+                    }
+                }
+
                 throw new \RuntimeException(
-                    "I failed to create the issue :-(. You might want to create an issue about that."
-                    . " (HTTP Status: {$result->getStatus()})"
+                    sprintf(
+                        "I failed to create the issue :-(. You might want to create an issue about that."
+                        . " (HTTP %d%s)",
+                        $result->getStatus(),
+                        $errorMessage ? ' - ' . $errorMessage : ''
+                    )
                 );
             }
 
@@ -126,16 +146,21 @@ class Issue extends BasePlugin
 
     private function getAuthHeader(): array
     {
-        $auth = 'Basic %s';
+        $auth = '%s %s';
 
         if (empty($this->credentials->getToken())) {
             $credentials = base64_encode(
                 $this->credentials->getUsername() . ':' . $this->credentials->getPassword()
             );
-            return ['Authorization' => sprintf($auth, $credentials)];
+            return ['Authorization' => sprintf($auth, 'Basic', $credentials)];
         }
 
-        return ['Authorization' => sprintf($auth, $this->credentials->getToken())];
+        return ['Authorization' => sprintf($auth, 'Token', $this->credentials->getToken())];
+    }
+
+    private function getAcceptHeader(): array
+    {
+        return ['Accept' => 'application/vnd.github.v3+json'];
     }
 
     private function credentialsPresent(): bool
