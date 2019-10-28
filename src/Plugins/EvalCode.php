@@ -99,7 +99,12 @@ class EvalCode extends BasePlugin
 
     private function generateMessageFromOutput(array $output, string $url): string
     {
-        return $this->getMessageText($output["versions"], htmlspecialchars_decode($output["output"]), $url);
+        $text = htmlspecialchars_decode($output["output"]);
+
+        if (preg_match('~^(?P<raw>.*)<br/><i>Process exited with code <b(?: title="(?P<errName>[^"]+)")?>(?P<errCode>\d+)</b>\.</i>$~s', $text, $m))
+            $text = sprintf('%s (process exited with %s code %d)', $m['raw'], $m['errName'], $m['errCode']);
+
+        return $this->getMessageText($output["versions"], $text, $url);
     }
 
     private function doEval(HttpRequest $request, Command $command): \Generator
